@@ -27,3 +27,6 @@ out/
 *.ipr
 *~
 *.swp
+
+# Cursor GSD tooling (skills, agents, gsd-core)
+.cursor/
