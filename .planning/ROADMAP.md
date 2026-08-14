@@ -7,7 +7,8 @@ Boris already reads articles. This milestone adds optional identity on Home: Amb
 ## Phases
 
 - [x] **Phase 1: Amber login** - Connect via Amber, persist npub, sign out, missing-signer UX
-- [ ] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
+- [x] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
+- [ ] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern
 
 ## Phase Details
 
@@ -54,12 +55,24 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1, 2
+Phases execute in numeric order: 1, 2, 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
-| 2. Bunker login (NIP-46) | 1/1 | In Progress|  |
+| 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
+| 3. Nostr highlights | 0/0 | Not started | |
+
+### Phase 3: Nostr highlights
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 3 to break down)
 
 ---
 *Roadmap created: 2026-08-14*

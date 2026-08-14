@@ -79,6 +79,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 2 added: Bunker login (NIP-46)
+- Phase 3 added: Nostr highlights
 
 ### Pending Todos
 
@@ -97,7 +98,7 @@ Items acknowledged and carried forward from previous milestone close:
 | Identity | Bunker / NIP-46 | Active (Phase 2) | 2026-08-14 init |
 | Identity | nostrconnect:// / camera QR | Deferred | 2026-08-14 Phase 2 discuss |
 | Identity | sign_event / NIP-44 | Deferred | 2026-08-14 init |
-| Reader | Bookmarks / highlights on Android | Deferred | 2026-08-14 init |
+| Reader | Bookmarks / highlights on Android | Active (Phase 3: highlights) | 2026-08-14 init |
 
 ## Session Continuity
 
