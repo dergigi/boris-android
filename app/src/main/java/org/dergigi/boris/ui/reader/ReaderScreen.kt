@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,6 +106,18 @@ fun ReaderScreenContent(
         context.startActivity(intent)
     }
 
+    fun shareArticle() {
+        val url = articleUrl ?: return
+        val title = (state as? ReaderUiState.Ready)?.content?.title
+        val text = if (title.isNullOrBlank()) url else "$title\n$url"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            if (!title.isNullOrBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share article"))
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
@@ -125,6 +138,9 @@ fun ReaderScreenContent(
                 },
                 actions = {
                     if (articleUrl != null) {
+                        IconButton(onClick = ::shareArticle) {
+                            Icon(Icons.Filled.Share, contentDescription = "Share article")
+                        }
                         IconButton(onClick = ::openOriginal) {
                             Icon(Icons.Filled.OpenInBrowser, contentDescription = "Open original")
                         }

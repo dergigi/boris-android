@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Image gallery can download, share, download all, and open the image URL
+- Article toolbar can share the current piece
 
 ## [0.0.2] - 2026-08-14
 
