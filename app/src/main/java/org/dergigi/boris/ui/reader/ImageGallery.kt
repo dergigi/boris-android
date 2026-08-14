@@ -1,20 +1,38 @@
 package org.dergigi.boris.ui.reader
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,10 +61,16 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import kotlin.math.abs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.dergigi.boris.data.ImageStore
+
 
 data class ImageGalleryState(
     val urls: List<String>,
@@ -64,9 +88,96 @@ fun ImageGallery(
 
     val startPage = state.initialIndex.coerceIn(0, urls.lastIndex)
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { urls.size })
+    val context = LocalContext.current
     var zoomed by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
+    var pendingStorageAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val storagePermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        val action = pendingStorageAction
+        pendingStorageAction = null
+        if (granted) action?.invoke()
+        else Toast.makeText(context, "Need storage access to save images", Toast.LENGTH_SHORT).show()
+    }
+
+    fun withStorage(action: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= 29 ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            action()
+        } else {
+            pendingStorageAction = action
+            storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
+
+    fun currentUrl(): String = urls[pagerState.currentPage]
+
+    fun downloadCurrent() {
+        if (busy) return
+        withStorage {
+            scope.launch {
+                busy = true
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching { ImageStore.save(context, currentUrl(), pagerState.currentPage) }.isSuccess
+                }
+                busy = false
+                Toast.makeText(
+                    context,
+                    if (ok) "Saved to Pictures" else "Couldn't save this image",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    fun downloadAll() {
+        if (busy) return
+        withStorage {
+            scope.launch {
+                busy = true
+                val saved = withContext(Dispatchers.IO) { ImageStore.saveAll(context, urls) }
+                busy = false
+                Toast.makeText(
+                    context,
+                    if (saved == 0) "Couldn't save images"
+                    else if (saved == urls.size) "Saved $saved images"
+                    else "Saved $saved of ${urls.size} images",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    fun shareCurrent() {
+        if (busy) return
+        scope.launch {
+            busy = true
+            val intent = withContext(Dispatchers.IO) {
+                runCatching { ImageStore.shareIntent(context, currentUrl(), pagerState.currentPage) }.getOrNull()
+            }
+            busy = false
+            if (intent == null) {
+                Toast.makeText(context, "Couldn't share this image", Toast.LENGTH_SHORT).show()
+            } else {
+                context.startActivity(Intent.createChooser(intent, "Share image"))
+            }
+        }
+    }
+
+    fun openCurrentUrl() {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentUrl())))
+        }.onFailure {
+            Toast.makeText(context, "Couldn't open this URL", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun goTo(page: Int) {
         if (urls.size <= 1) return
@@ -117,18 +228,76 @@ fun ImageGallery(
                     onZoomedChange = { zoomed = it },
                 )
             }
-            IconButton(
-                onClick = onDismiss,
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .statusBarsPadding()
-                    .align(Alignment.TopStart)
-                    .padding(4.dp),
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Close",
-                    tint = Color.White,
-                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = Color.White,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (busy) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                    IconButton(onClick = ::downloadCurrent, enabled = !busy) {
+                        Icon(
+                            Icons.Filled.Download,
+                            contentDescription = "Download",
+                            tint = Color.White,
+                        )
+                    }
+                    IconButton(onClick = ::shareCurrent, enabled = !busy) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = "Share",
+                            tint = Color.White,
+                        )
+                    }
+                    Box {
+                        IconButton(onClick = { menuOpen = true }, enabled = !busy) {
+                            Icon(
+                                Icons.Filled.MoreVert,
+                                contentDescription = "More",
+                                tint = Color.White,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Download all") },
+                                enabled = !busy,
+                                onClick = {
+                                    menuOpen = false
+                                    downloadAll()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Open URL") },
+                                onClick = {
+                                    menuOpen = false
+                                    openCurrentUrl()
+                                },
+                            )
+                        }
+                    }
+                }
             }
             if (urls.size > 1) {
                 Text(

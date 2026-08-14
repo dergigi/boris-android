@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Image gallery can download, share, download all, and open the image URL
+
 ## [0.0.2] - 2026-08-14
 
 ### Added
