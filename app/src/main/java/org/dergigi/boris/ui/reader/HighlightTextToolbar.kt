@@ -1,6 +1,5 @@
 package org.dergigi.boris.ui.reader
 
-import android.os.Build
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
@@ -11,6 +10,7 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
 import org.dergigi.boris.R
+import kotlin.math.roundToInt
 
 class HighlightTextToolbar(
     private val view: View,
@@ -19,6 +19,7 @@ class HighlightTextToolbar(
     private val onHighlight: (String) -> Unit,
 ) : TextToolbar {
     private var actionMode: ActionMode? = null
+    private val contentRect = android.graphics.Rect()
 
     override var status: TextToolbarStatus = TextToolbarStatus.Hidden
         private set
@@ -37,7 +38,13 @@ class HighlightTextToolbar(
         onSelectAllRequested: (() -> Unit)?,
     ) {
         hide()
-        val callback = object : ActionMode.Callback {
+        contentRect.set(
+            rect.left.roundToInt(),
+            rect.top.roundToInt(),
+            rect.right.roundToInt().coerceAtLeast(rect.left.roundToInt() + 1),
+            rect.bottom.roundToInt().coerceAtLeast(rect.top.roundToInt() + 1),
+        )
+        val callback = object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 if (onCopyRequested != null) {
                     menu.add(0, MENU_COPY, 0, android.R.string.copy)
@@ -77,13 +84,12 @@ class HighlightTextToolbar(
                 actionMode = null
                 status = TextToolbarStatus.Hidden
             }
+
+            override fun onGetContentRect(mode: ActionMode, view: View?, outRect: android.graphics.Rect) {
+                outRect.set(contentRect)
+            }
         }
-        actionMode = if (Build.VERSION.SDK_INT >= 23) {
-            view.startActionMode(callback, ActionMode.TYPE_FLOATING)
-        } else {
-            @Suppress("DEPRECATION")
-            view.startActionMode(callback)
-        }
+        actionMode = view.startActionMode(callback, ActionMode.TYPE_FLOATING)
         status = if (actionMode != null) TextToolbarStatus.Shown else TextToolbarStatus.Hidden
     }
 

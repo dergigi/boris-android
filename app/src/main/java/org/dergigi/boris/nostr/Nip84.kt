@@ -18,12 +18,13 @@ object Nip84 {
         url: String,
         context: String?,
         pubkeyHex: String? = null,
+        createdAt: Long = System.currentTimeMillis() / 1000,
     ): String {
         val obj = JSONObject()
             .put("kind", KIND)
             .put("content", quote)
             .put("tags", tagsToJson(tags(url, context)))
-            .put("created_at", System.currentTimeMillis() / 1000)
+            .put("created_at", createdAt)
         if (!pubkeyHex.isNullOrBlank()) {
             obj.put("pubkey", pubkeyHex)
         }

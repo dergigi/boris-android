@@ -51,6 +51,19 @@ data class Nip01Event(
         const val KIND_HIGHLIGHT = 9802
         const val KIND_RELAY_LIST = 10002
 
+        fun complete(
+            pubkey: String,
+            createdAt: Long,
+            kind: Int,
+            tags: List<List<String>>,
+            content: String,
+            sig: String,
+        ): Nip01Event {
+            val serialized = serializeForId(pubkey, createdAt, kind, tags, content)
+            val id = sha256(serialized.toByteArray(Charsets.UTF_8)).toHex()
+            return Nip01Event(id, pubkey, createdAt, kind, tags, content, sig)
+        }
+
         fun sign(
             privkey: ByteArray,
             pubkeyHex: String,
@@ -64,7 +77,7 @@ data class Nip01Event(
             val aux = ByteArray(32)
             SecureRandom().nextBytes(aux)
             val sig = Secp256k1.signSchnorr(id.hexToByteArray(), privkey, aux).toHex()
-            return Nip01Event(id, pubkeyHex, createdAt, kind, tags, content, sig)
+            return complete(pubkeyHex, createdAt, kind, tags, content, sig)
         }
 
         fun parse(json: JSONObject): Nip01Event? {

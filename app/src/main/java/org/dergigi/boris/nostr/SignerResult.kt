@@ -11,6 +11,14 @@ sealed class SignerResult {
     data object Cancelled : SignerResult()
 }
 
+data class PendingUnsignedEvent(
+    val pubkey: String,
+    val createdAt: Long,
+    val kind: Int,
+    val tags: List<List<String>>,
+    val content: String,
+)
+
 object SignerResults {
     fun parse(
         resultCode: Int,
@@ -58,26 +66,73 @@ object SignerResults {
         eventJson: String?,
         resultJson: String?,
         sessionHex: String,
+        signature: String? = null,
+        pending: PendingUnsignedEvent? = null,
     ): SignerResult {
         if (rejected) return SignerResult.Rejected
         if (resultCode != Activity.RESULT_OK) return SignerResult.Cancelled
-        val raw = eventJson?.takeIf { it.isNotBlank() } ?: resultJson?.takeIf { it.isNotBlank() }
-            ?: return SignerResult.Cancelled
-        val event = try {
-            Nip01Event.parse(JSONObject(raw))
-        } catch (_: Exception) {
-            null
-        }
+        val event = eventFromSigner(
+            eventJson = eventJson,
+            resultPayload = resultJson,
+            signature = signature,
+            pending = pending,
+        )
         return parseSignedEvent(resultCode, rejected = false, event = event, sessionHex = sessionHex)
     }
 
-    fun parseSignedEvent(resultCode: Int, data: Intent?, sessionHex: String): SignerResult {
+    fun parseSignedEvent(
+        resultCode: Int,
+        data: Intent?,
+        sessionHex: String,
+        pending: PendingUnsignedEvent? = null,
+    ): SignerResult {
         return parseSignedEvent(
             resultCode = resultCode,
             rejected = data?.getBooleanExtra("rejected", false) == true,
             eventJson = data?.getStringExtra("event"),
             resultJson = data?.getStringExtra("result"),
             sessionHex = sessionHex,
+            signature = data?.getStringExtra("signature"),
+            pending = pending,
         )
+    }
+
+    private fun eventFromSigner(
+        eventJson: String?,
+        resultPayload: String?,
+        signature: String?,
+        pending: PendingUnsignedEvent?,
+    ): Nip01Event? {
+        parseEventJson(eventJson)?.let { return it }
+        val payload = resultPayload?.takeIf { it.isNotBlank() }
+        if (payload != null && payload.trimStart().startsWith("{")) {
+            parseEventJson(payload)?.let { return it }
+        }
+        val sig = signature?.takeIf { isSchnorrHex(it) }
+            ?: payload?.takeIf { isSchnorrHex(it) }
+            ?: return null
+        val unsigned = pending ?: return null
+        return Nip01Event.complete(
+            pubkey = unsigned.pubkey,
+            createdAt = unsigned.createdAt,
+            kind = unsigned.kind,
+            tags = unsigned.tags,
+            content = unsigned.content,
+            sig = sig,
+        )
+    }
+
+    private fun parseEventJson(raw: String?): Nip01Event? {
+        val json = raw?.takeIf { it.isNotBlank() } ?: return null
+        return try {
+            Nip01Event.parse(JSONObject(json))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun isSchnorrHex(value: String): Boolean {
+        if (value.length != 128) return false
+        return value.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
     }
 }

@@ -23,6 +23,7 @@ import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip84
+import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
@@ -59,6 +60,7 @@ class ReaderViewModel(
     val message: StateFlow<String?> = _message.asStateFlow()
 
     private var highlightJob: Job? = null
+    private var pendingUnsigned: PendingUnsignedEvent? = null
 
     init {
         load()
@@ -122,7 +124,22 @@ class ReaderViewModel(
         val context = Nip84.extractContext(trimmed, content.body)
         when (session) {
             is Session.Amber -> {
-                val unsigned = Nip84.unsignedJson(trimmed, content.url, context, session.pubkeyHex)
+                val createdAt = System.currentTimeMillis() / 1000
+                val tags = Nip84.tags(content.url, context)
+                pendingUnsigned = PendingUnsignedEvent(
+                    pubkey = session.pubkeyHex,
+                    createdAt = createdAt,
+                    kind = Nip01Event.KIND_HIGHLIGHT,
+                    tags = tags,
+                    content = trimmed,
+                )
+                val unsigned = Nip84.unsignedJson(
+                    trimmed,
+                    content.url,
+                    context,
+                    session.pubkeyHex,
+                    createdAt,
+                )
                 return RemoteSignerBridge.buildSignEventIntent(
                     unsigned,
                     session.signerPackage,
@@ -130,6 +147,7 @@ class ReaderViewModel(
                 )
             }
             is Session.Bunker -> {
+                pendingUnsigned = null
                 val unsigned = Nip84.unsignedJson(trimmed, content.url, context, pubkeyHex = null)
                 viewModelScope.launch {
                     signWithBunker(session, unsigned)
@@ -142,7 +160,9 @@ class ReaderViewModel(
     fun onSignerResult(resultCode: Int, data: Intent?) {
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return
-        when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex)) {
+        val pending = pendingUnsigned
+        pendingUnsigned = null
+        when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
             is SignerResult.Signed -> onSignedEvent(result.event)
             SignerResult.Rejected -> {
                 _message.value = app.getString(R.string.highlight_rejected)
@@ -162,12 +182,9 @@ class ReaderViewModel(
         if (event.kind != Nip01Event.KIND_HIGHLIGHT) return
         if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
         if (!event.verify()) return
-        val content = (_state.value as? ReaderUiState.Ready)?.content
-        if (content != null && canPaint(content, event.content)) {
-            val painted = PaintedHighlight(event.id, event.content)
-            if (_highlights.value.none { it.id == event.id }) {
-                _highlights.value = _highlights.value + painted
-            }
+        val painted = PaintedHighlight(event.id, event.content)
+        if (_highlights.value.none { it.id == event.id }) {
+            _highlights.value = _highlights.value + painted
         }
         viewModelScope.launch(Dispatchers.IO) {
             val published = try {

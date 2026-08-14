@@ -142,4 +142,77 @@ class SignerResultTest {
         )
         assertTrue(result is SignerResult.Cancelled)
     }
+
+    @Test
+    fun parseSignedEventAttachesSchnorrHexToPendingUnsigned() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = Nip84.tags("https://example.com/article", null),
+            content = "a quote",
+        )
+        val pending = PendingUnsignedEvent(
+            pubkey = event.pubkey,
+            createdAt = event.createdAt,
+            kind = event.kind,
+            tags = event.tags,
+            content = event.content,
+        )
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            eventJson = null,
+            resultJson = event.sig,
+            sessionHex = key.pubkeyHex,
+            pending = pending,
+        )
+        val signed = result as SignerResult.Signed
+        assertEquals(event.id, signed.event.id)
+        assertEquals(event.sig, signed.event.sig)
+        assertTrue(signed.event.verify())
+    }
+
+    @Test
+    fun parseSignedEventUsesSignatureExtraWhenResultIsAbsent() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = Nip84.tags("https://example.com/article", null),
+            content = "a quote",
+        )
+        val pending = PendingUnsignedEvent(
+            pubkey = event.pubkey,
+            createdAt = event.createdAt,
+            kind = event.kind,
+            tags = event.tags,
+            content = event.content,
+        )
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            eventJson = null,
+            resultJson = null,
+            sessionHex = key.pubkeyHex,
+            signature = event.sig,
+            pending = pending,
+        )
+        val signed = result as SignerResult.Signed
+        assertEquals(event.id, signed.event.id)
+    }
+
+    @Test
+    fun parseSignedEventSchnorrHexWithoutPendingIsCancelled() {
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            eventJson = null,
+            resultJson = "ab".repeat(64),
+            sessionHex = hex,
+        )
+        assertTrue(result is SignerResult.Cancelled)
+    }
 }
