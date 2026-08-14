@@ -58,4 +58,88 @@ class SignerResultTest {
         )
         assertTrue(result is SignerResult.Cancelled)
     }
+
+    @Test
+    fun parseSignedEventAcceptsValidHighlight() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = Nip84.tags("https://example.com/article", null),
+            content = "a quote",
+        )
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            event = event,
+            sessionHex = key.pubkeyHex,
+        )
+        val signed = result as SignerResult.Signed
+        assertEquals(event.id, signed.event.id)
+        assertEquals(key.pubkeyHex, signed.event.pubkey)
+    }
+
+    @Test
+    fun parseSignedEventRejectedMapsToRejected() {
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = true,
+            eventJson = "{}",
+            resultJson = null,
+            sessionHex = hex,
+        )
+        assertTrue(result is SignerResult.Rejected)
+    }
+
+    @Test
+    fun parseSignedEventCancelMapsToCancelled() {
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_CANCELED,
+            rejected = false,
+            eventJson = null,
+            resultJson = null,
+            sessionHex = hex,
+        )
+        assertTrue(result is SignerResult.Cancelled)
+    }
+
+    @Test
+    fun parseSignedEventWrongKindIsCancelled() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = 1,
+            tags = emptyList(),
+            content = "note",
+        )
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            event = event,
+            sessionHex = key.pubkeyHex,
+        )
+        assertTrue(result is SignerResult.Cancelled)
+    }
+
+    @Test
+    fun parseSignedEventFailedVerifyIsCancelled() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = Nip84.tags("https://example.com/article", null),
+            content = "a quote",
+        )
+        val tampered = event.copy(sig = "00".repeat(64))
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            event = tampered,
+            sessionHex = key.pubkeyHex,
+        )
+        assertTrue(result is SignerResult.Cancelled)
+    }
 }
