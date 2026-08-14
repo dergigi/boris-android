@@ -56,4 +56,21 @@ class UrlExtractorTest {
         assertNull(UrlExtractor.articleUrl("mailto:hi@example.com"))
         assertNull(UrlExtractor.articleUrl("#section"))
     }
+
+    @Test
+    fun extractsMarkdownImageUrls() {
+        val markdown = """
+            Intro
+            ![one](https://example.com/a.jpg)
+            ![two](/images/b.png "caption")
+            ![skip](mailto:x@example.com)
+        """.trimIndent()
+        assertEquals(
+            listOf(
+                "https://example.com/a.jpg",
+                "https://www.citadel21.com/images/b.png",
+            ),
+            UrlExtractor.imageUrls(markdown, "https://www.citadel21.com/the-paranoid-wallet"),
+        )
+    }
 }

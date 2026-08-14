@@ -2,6 +2,7 @@ package org.dergigi.boris.ui.reader
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +31,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
@@ -48,6 +53,8 @@ import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
+import com.mikepenz.markdown.model.ImageData
+import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.markdownPadding
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.UrlExtractor
@@ -193,6 +200,18 @@ private fun ArticleBody(
             }
         }
     }
+    var gallery by remember { mutableStateOf<ImageGalleryState?>(null) }
+    val imageTransformer = ClickableCoilImageTransformer { link ->
+        val opened = UrlExtractor.articleUrl(link, content.url) ?: return@ClickableCoilImageTransformer
+        val urls = UrlExtractor.imageUrls(content.body, content.url)
+        val index = urls.indexOf(opened)
+        gallery = ImageGalleryState(
+            urls = if (index >= 0) urls else listOf(opened),
+            initialIndex = index.coerceAtLeast(0),
+        )
+    }
+
+    gallery?.let { ImageGalleryDialog(it, onDismiss = { gallery = null }) }
 
     Column(
         modifier = modifier
@@ -262,7 +281,7 @@ private fun ArticleBody(
                             codeBlock = PaddingValues(16.dp),
                             blockQuote = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                         ),
-                        imageTransformer = Coil3ImageTransformerImpl,
+                        imageTransformer = imageTransformer,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -276,4 +295,20 @@ internal fun readingTimeLabel(text: String): String? {
     if (words == 0) return null
     val minutes = max(1, (words / 200.0).roundToInt())
     return if (minutes == 1) "1 min read" else "$minutes min read"
+}
+
+private class ClickableCoilImageTransformer(
+    private val onImageClick: (String) -> Unit,
+) : ImageTransformer {
+    @Composable
+    override fun transform(link: String): ImageData {
+        val data = Coil3ImageTransformerImpl.transform(link)
+        return data.copy(
+            modifier = data.modifier.clickable { onImageClick(link) },
+        )
+    }
+
+    @Composable
+    override fun intrinsicSize(painter: Painter): Size =
+        Coil3ImageTransformerImpl.intrinsicSize(painter)
 }
