@@ -9,8 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.0.1] - 2026-08-14
+
 ### Added
 
+- Native Jetpack Compose reader for regular web articles
+- Home screen to paste a URL and open it
+- Share and open-with intents so a URL from the browser lands in the reader
+- Readable-content fetch via `r.jina.ai`, matching the Boris webapp
+- Serif reading view with Source Serif 4, system light/dark colors, reading time, and a link to the original
 - Empty URL field falls back to `https://www.citadel21.com/the-paranoid-wallet`
 - In-article http(s) links open in the reader instead of the browser
 - Fetch errors offer an Open original action that uses the system view intent
@@ -24,12 +31,5 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-## [0.1.0] - 2026-08-14
-
-### Added
-
-- Native Jetpack Compose reader for regular web articles
-- Home screen to paste a URL and open it
-- Share and open-with intents so a URL from the browser lands in the reader
-- Readable-content fetch via `r.jina.ai`, matching the Boris webapp
-- Serif reading view with Source Serif 4, system light/dark colors, reading time, and a link to the original
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/dergigi/boris-android/releases/tag/v0.0.1
