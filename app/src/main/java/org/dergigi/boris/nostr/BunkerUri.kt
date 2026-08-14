@@ -26,12 +26,30 @@ data class BunkerUri(
                 val key = param.substring(0, eq)
                 val value = URLDecoder.decode(param.substring(eq + 1), StandardCharsets.UTF_8.name())
                 when (key) {
-                    "relay" -> if (value.startsWith("wss://", ignoreCase = true)) relays.add(value)
+                    "relay" -> if (isAllowedRelay(value) && value !in relays) relays.add(value)
                     "secret" -> if (value.isNotEmpty()) secret = value
                 }
             }
-            if (relays.isEmpty()) return null
+            if (relays.none { it.startsWith("wss://", ignoreCase = true) }) return null
             return BunkerUri(remote, relays, secret)
         }
+
+        internal fun isAllowedRelay(value: String): Boolean {
+            if (value.startsWith("wss://", ignoreCase = true)) return true
+            if (!value.startsWith("ws://", ignoreCase = true)) return false
+            return isLoopbackHost(wsHost(value))
+        }
+
+        private fun wsHost(value: String): String {
+            val rest = value.substring("ws://".length)
+            return if (rest.startsWith("[")) {
+                rest.substringAfter("[").substringBefore("]").lowercase()
+            } else {
+                rest.substringBefore("/").substringBefore(":").lowercase()
+            }
+        }
+
+        private fun isLoopbackHost(host: String): Boolean =
+            host == "127.0.0.1" || host == "localhost" || host == "::1"
     }
 }

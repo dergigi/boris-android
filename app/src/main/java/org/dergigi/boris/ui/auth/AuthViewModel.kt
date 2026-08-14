@@ -17,7 +17,6 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
-import org.dergigi.boris.data.SpentBunkerSecrets
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerResult
 import org.dergigi.boris.nostr.BunkerUri
@@ -63,12 +62,8 @@ class AuthViewModel(
         _state.value = AuthUiState.Connecting(prior)
         val app = getApplication<Application>()
         pairJob = viewModelScope.launch {
-            val parsed = BunkerUri.parse(uri)
-            val secret = parsed?.secret
-            val includeSecret = secret.isNullOrEmpty() ||
-                !SpentBunkerSecrets.contains(app, secret)
             val result = withContext(Dispatchers.IO) {
-                BunkerClient(onAuthUrl = ::openAuthUrl).pair(uri, includeSecret)
+                BunkerClient(onAuthUrl = ::openAuthUrl).pair(uri)
             }
             if (!isActive) return@launch
             when (result) {
@@ -135,7 +130,6 @@ class AuthViewModel(
                     bunkerSecretCiphertext = secretCipher,
                 ),
             )
-            parsed.secret?.let { SpentBunkerSecrets.add(app, it) }
             _message.value = null
             _state.value = AuthUiState.LoggedIn(Nip19.npubEncode(result.userHex))
         } catch (_: Exception) {

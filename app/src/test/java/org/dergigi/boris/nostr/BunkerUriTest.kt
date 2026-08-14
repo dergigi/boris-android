@@ -37,6 +37,34 @@ class BunkerUriTest {
     }
 
     @Test
+    fun parseKeepsLoopbackWsWithWss() {
+        val uri = BunkerUri.parse(
+            "bunker://$remote?relay=wss://relay.primal.net/&relay=ws://127.0.0.1:4869/&relay=wss://relay.nsec.app/",
+        )
+        assertEquals(
+            listOf(
+                "wss://relay.primal.net/",
+                "ws://127.0.0.1:4869/",
+                "wss://relay.nsec.app/",
+            ),
+            uri?.relays,
+        )
+    }
+
+    @Test
+    fun parseRejectsLoopbackWithoutWss() {
+        assertNull(BunkerUri.parse("bunker://$remote?relay=ws://127.0.0.1:4869/"))
+    }
+
+    @Test
+    fun parseIgnoresRemoteWsButKeepsWss() {
+        val uri = BunkerUri.parse(
+            "bunker://$remote?relay=ws://relay.one&relay=wss://relay.two",
+        )
+        assertEquals(listOf("wss://relay.two"), uri?.relays)
+    }
+
+    @Test
     fun parseRejectsShortHost() {
         assertNull(BunkerUri.parse("bunker://abcd?relay=wss://relay.one"))
     }

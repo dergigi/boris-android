@@ -7,7 +7,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 class RelaySocket(
-    private val url: String,
+    val url: String,
     private val client: OkHttpClient,
 ) {
     @Volatile
@@ -17,7 +17,11 @@ class RelaySocket(
     private var socket: WebSocket? = null
     private val pending = ArrayDeque<String>()
 
-    fun open(onOpen: () -> Unit, onMessage: (String) -> Unit) {
+    fun open(
+        onOpen: () -> Unit,
+        onMessage: (String) -> Unit,
+        onFailure: () -> Unit = {},
+    ) {
         val request = Request.Builder().url(url).build()
         socket = client.newWebSocket(
             request,
@@ -38,6 +42,7 @@ class RelaySocket(
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                     isOpen = false
+                    onFailure()
                 }
             },
         )
