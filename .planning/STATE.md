@@ -22,8 +22,8 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 
 Phase: 2 of 2 (Bunker login)
 Plan: 0 of 1 in current phase
-Status: Plan created; ready to execute
-Last activity: 2026-08-14 — Phase 2 plan written (02-01-PLAN.md)
+Status: Plan revised after checker; ready to execute
+Last activity: 2026-08-14 — Phase 2 plan revised (failed-pair refresh, Success privkey, onAuthUrl, Connecting chrome)
 
 Progress: [█████░░░░░] 50%
 
