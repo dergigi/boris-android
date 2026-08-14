@@ -17,7 +17,7 @@ Features users assume exist. Missing these = login feels broken. These four are 
 | Connect via Amber (`get_public_key`) | "Login with Amber" is the Android Nostr login users already know from Amethyst and Dark Wisp | MEDIUM | One NIP-55 intent. Do not set `package` on that first call. Compose owns `ActivityResultLauncher`; domain code must not launch activities. Amber may return an `npub1…` bech32 in `result`; decode to hex before persist. |
 | Persist pubkey hex + signer package; show npub | Logged-in state must survive process death. Users expect to see their `npub`, not a hex blob | LOW | Store the pair (DataStore or SharedPreferences). Do not call `get_public_key` again while logged in (NIP-55 SHOULD). Display bech32 `npub` derived from stored hex. |
 | Sign out | Identity login without a way out feels trapped | LOW | Delete the stored pair. No Amber call required. Next login is a fresh `get_public_key`. |
-| Missing-signer UX | Amber is not on Play Store as a first-class listing. If the button silently fails, users think Boris is broken | LOW | `PackageManager` query for `nostrsigner:` (needs manifest `<queries>`). If none, say Amber is missing and point at F-Droid / GitHub / Zapstore / Obtainium. Do not hide the connect action the way Dark Wisp does. |
+| Missing-signer UX | Amber is not on Play Store as a first-class listing. If the button silently fails, users think Boris is broken | LOW | `PackageManager` query for `nostrsigner:` (needs manifest `<queries>`). If none, say Amber is missing and point at Zapstore first, then F-Droid / GitHub. Do not hide the connect action the way Dark Wisp does. |
 
 ### Differentiators (Competitive Advantage)
 
@@ -136,7 +136,7 @@ Defer until the reader-plus-identity product is real.
 | Amber / NIP-55 login | `AuthScreen` + `RemoteSignerBridge`. "Login with Signer" only if a signer is installed. Compose launcher; `loginWithSigner(pubkeyHex, pkg)` | `ExternalSignerButton` + Quartz `ExternalSignerLogin`. Always shows "Login with Amber"; picker if several signers | Follow Dark Wisp's smaller login shape. Always offer connect; if none installed, explain and point at Amber |
 | Show npub | Keys screen now reads `getPubkeyHex()` so REMOTE accounts are not blank (PR #43, 2026-06) | Account model shows npub after external login | Show npub in Boris while the pair is stored. No keys/reveal screen |
 | Sign out | Deletes account / pair as part of a multi-account key store | Full account switcher | Delete the one stored pair |
-| Missing signer | Hide the button | Launch and surface an error | Explicit copy + install destinations (F-Droid, GitHub releases, Zapstore, Obtainium). Amber is not a Play Store first-class app |
+| Missing signer | Hide the button | Launch and surface an error | Explicit copy + install destinations: Zapstore first, then F-Droid and GitHub. Amber is not a Play Store first-class app |
 | `nsec` paste | Primary AuthScreen field (`nsec` or `npub`) | First-class login path | Anti-feature. Do not add the field |
 | Bunker | Not the Android path | First-class (`bunker://`) | Out of scope this slice |
 | Permissions on login | Large JSON: many `sign_event` kinds + NIP-44 | `DefaultSignerPermissions` | Send no `permissions`. Login is `get_public_key` only |

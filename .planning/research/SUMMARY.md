@@ -24,7 +24,7 @@ See [STACK.md](STACK.md). Stay on the shipped catalog. Login needs platform APIs
 - NIP-55 `nostrsigner:` intent + manifest `<queries>` — the Amber handshake. Include `BROWSABLE`. Query by scheme, not by Amber's package.
 - Plain SharedPreferences (`boris_session`) — two public strings (`pubkey_hex`, `signer_package`). No DataStore, no EncryptedSharedPreferences, no Room, no DI.
 - Tiny in-repo NIP-19 helper — encode for display, decode Amber's `npub1` to hex. Official NIP-19 vector in a JVM test. Not Quartz, not Dark Wisp's full `Nip19.kt`.
-- Amber `com.greenart7c3.nostrsigner` — holds the key. Install pointer: F-Droid first, GitHub releases as fallback.
+- Amber `com.greenart7c3.nostrsigner` — holds the key. Install pointer: Zapstore first, F-Droid and GitHub releases as secondary.
 
 Do not add DataStore, security-crypto, secp256k1, Kotlinx Serialization, Hilt, or Koin. A later `sign_event` slice can grow a `SignerIntentBridge` mutex. This slice does not.
 
@@ -36,7 +36,7 @@ See [FEATURES.md](FEATURES.md). Table stakes are exactly PROJECT.md Active. Ther
 - Connect via Amber (`get_public_key`, no `package` on first call) — the only way to become logged in
 - Persist pubkey hex + signer package; show npub — survives process death; do not re-ask Amber
 - Sign out deletes that pair — local only; Amber keeps the key
-- Missing-signer UX — say Amber is missing and point at F-Droid / GitHub; do not dead-tap Connect
+- Missing-signer UX — say Amber is missing and point at Zapstore first, then F-Droid / GitHub; do not dead-tap Connect
 - Reading remains ungated — already shipped; login sits beside Home, it does not replace it
 
 **Should have (competitive):**
@@ -118,7 +118,7 @@ If a later milestone adds `sign_event` or bunker, that milestone needs its own r
 ### Gaps to Address
 
 - **Amber `result` encoding:** Spec says hex; Dark Wisp sees `npub1`. Handle both. Confirm on a current Amber build during UAT.
-- **Install URL:** STACK picks F-Droid as primary. FEATURES also lists GitHub, Zapstore, Obtainium. Ship F-Droid + GitHub; do not send users to Play Store first.
+- **Install URL:** Zapstore first (`https://zapstore.dev/apps/com.greenart7c3.nostrsigner`). F-Droid and GitHub releases are secondary. Do not send users to Play Store.
 - **Backup exclude:** PITFALLS wants `dataExtractionRules` / `fullBackupContent` (or `allowBackup=false`). Decide the smallest manifest change in planning; do not leave default backup on the new prefs file.
 - **Bridge thickness:** Prefer Dark Wisp names with a login-only result type. If the mutex object feels heavy for one Connect, collapse to a helper plus `SignerHost`. Do not grow a `NostrSigner` interface to resolve the naming.
 - **Rotation + share collision:** Boris already has an `incomingUrl` / `LaunchedEffect` rotate bug. Login must not copy that pattern. UAT: rotate while Amber is open, then approve once.

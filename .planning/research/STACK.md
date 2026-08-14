@@ -103,7 +103,7 @@ val intent = Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:"))
 context.packageManager.queryIntentActivities(intent, 0).isNotEmpty()
 ```
 
-If empty: say Amber is missing and open `https://f-droid.org/packages/com.greenart7c3.nostrsigner/` (fallback: `https://github.com/greenart7c3/Amber/releases`). Do not send users to Play Store as the primary path.
+If empty: say Amber is missing and open Zapstore first (`https://zapstore.dev/apps/com.greenart7c3.nostrsigner`). Secondary: F-Droid (`https://f-droid.org/packages/com.greenart7c3.nostrsigner/`) and GitHub (`https://github.com/greenart7c3/Amber/releases`). Do not send users to Play Store.
 
 ### Activity Result API
 

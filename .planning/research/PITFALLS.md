@@ -212,7 +212,7 @@ Tap Connect, Android shows a blank resolve error or nothing. User thinks Boris i
 The install check was skipped, or it failed because `<queries>` is missing (Pitfall 1), so the button stays up.
 
 **How to avoid:**
-If the query is empty: do not offer Connect as a working action. Show that Amber is missing and point at install (GitHub / Zapstore / F-Droid for `com.greenart7c3.nostrsigner`). If the query is non-empty: show Connect. Do not deep-link a store as the only success path when Amber is already present.
+If the query is empty: do not offer Connect as a working action. Show that Amber is missing and point at Zapstore first (`https://zapstore.dev/apps/com.greenart7c3.nostrsigner`), with F-Droid and GitHub as secondary. If the query is non-empty: show Connect. Do not deep-link a store as the only success path when Amber is already present.
 
 **Warning signs:**
 Connect is always enabled in the emulator without Amber. Copy says "rejected" when the real problem is "not installed."

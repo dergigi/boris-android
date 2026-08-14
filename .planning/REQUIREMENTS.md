@@ -10,7 +10,7 @@
 - [ ] **AUTH-01**: User can connect by approving a NIP-55 `get_public_key` request in Amber (or another `nostrsigner` app). Boris does not set `package` on that first intent.
 - [ ] **AUTH-02**: After a successful connect, Boris stores pubkey hex and signer package, and shows the user's npub. Restarting the app still shows that npub without opening Amber again.
 - [ ] **AUTH-03**: User can sign out. Boris deletes the stored pair. Amber keeps the key. The next connect is a fresh `get_public_key`.
-- [ ] **AUTH-04**: If no `nostrsigner` app is installed, Boris says Amber is missing and points the user at F-Droid and GitHub releases. Connect does not fail silently.
+- [ ] **AUTH-04**: If no `nostrsigner` app is installed, Boris says Amber is missing and points the user at Zapstore first (`https://zapstore.dev/apps/com.greenart7c3.nostrsigner`), with F-Droid and GitHub releases as secondary options. Connect does not fail silently.
 
 ### Reader
 
@@ -44,21 +44,19 @@ Deferred. Not in this roadmap.
 
 ## Traceability
 
-Filled during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | | Pending |
-| AUTH-02 | | Pending |
-| AUTH-03 | | Pending |
-| AUTH-04 | | Pending |
-| READ-01 | | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| READ-01 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 5 total
-- Mapped to phases: 0
-- Unmapped: 5
+- Mapped to phases: 5
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-14*
-*Last updated: 2026-08-14 after initial definition*
+*Last updated: 2026-08-14 after roadmap creation*

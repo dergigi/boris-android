@@ -24,7 +24,7 @@ Reading stays first. Login is a stored identity (npub + signer package), never a
 - [ ] Connect via Amber (NIP-55 `get_public_key`)
 - [ ] Persist pubkey hex and signer package; show npub while logged in
 - [ ] Sign out clears that stored identity
-- [ ] If Amber is missing, say so and point the user at installing it
+- [ ] If Amber is missing, say so and point the user at Zapstore first, then F-Droid / GitHub
 
 ### Out of Scope
 
@@ -71,6 +71,7 @@ Companion webapp (bookmarks, highlights, Nostr) is `/Users/gigi/Development/vibe
 | Login only (npub + sign out) | Smallest useful Nostr identity | Pending |
 | Follow Dark Wisp's smaller model | Clear login + intent bridge without Amethyst's KMP signer tree | Pending |
 | No `nsec` in Boris | Key stays in Amber | Pending |
+| Missing-Amber install: Zapstore first | Boris already lives on Zapstore; F-Droid and GitHub are backups | Pending |
 | Kotlin + Compose | Already the app stack | Good |
 
 ## Evolution
