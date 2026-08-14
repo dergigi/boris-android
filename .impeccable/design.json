@@ -41,8 +41,8 @@
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Outlined Signer / Cancel.",
-      "html": "<button class=\"ds-btn-secondary\">Signer</button>",
+      "description": "Outlined Bunker / Cancel.",
+      "html": "<button class=\"ds-btn-secondary\">Bunker</button>",
       "css": ".ds-btn-secondary { background: #27272A; color: #E4E4E7; min-height: 52px; padding: 14px 20px; border: 1px solid #3F3F46; border-radius: 8px; font: 500 16px/24px system-ui, sans-serif; }"
     },
     {
@@ -78,7 +78,7 @@
     ],
     "dos": [
       "Do keep Home copy identical to the webapp, including the two yellow marks.",
-      "Do use Amber / Signer / Read as the Android button labels.",
+      "Do use Amber / Bunker / Read as the Android button labels.",
       "Do theme through Material color roles in BorisTheme."
     ],
     "donts": [

@@ -38,9 +38,9 @@ A reading app that can know who you are without ever storing the user's key. Ide
 ## Brand Commitments
 
 - Name: Boris. Greeting: "Hi! I'm Boris."
-- Home login copy matches the webapp, including yellow marks on "Connect your npub" and "your own highlights." Button labels on Android are Amber, Signer, and Read.
+- Home login copy matches the webapp, including yellow marks on "Connect your npub" and "your own highlights." Button labels on Android are Amber, Bunker, and Read.
 - Voice: plain, short, no hype. Do not write like typical AI.
-- Visual home language follows the webapp login: zinc surfaces, indigo filled actions, outlined Signer, yellow highlight marks, nstart.me footer.
+- Visual home language follows the webapp login: zinc surfaces, indigo filled actions, outlined Bunker, yellow highlight marks, nstart.me footer.
 
 ## Evidence on Hand
 
@@ -53,6 +53,6 @@ A reading app that can know who you are without ever storing the user's key. Ide
 
 - Reading stays first.
 - Identity is stored npub, never a user key.
-- Match the webapp's home words and chrome; keep Android buttons honest (Amber, Signer, Read).
+- Match the webapp's home words and chrome; keep Android buttons honest (Amber, Bunker, Read).
 - Fail closed on secrets, URIs, and missing signers.
 - Keep the UI small. Do not add routes or chrome the reader does not need.

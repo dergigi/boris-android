@@ -118,7 +118,7 @@ fun AuthBar(
                         },
                     )
                     LoginButton(
-                        label = stringResource(R.string.auth_signer),
+                        label = stringResource(R.string.auth_bunker),
                         icon = Icons.Filled.Shield,
                         primary = false,
                         enabled = !connecting,

@@ -7,7 +7,7 @@
     <string name="home_mark_highlights">your own highlights.</string>
     <string name="home_read">Read</string>
     <string name="auth_connect">Amber</string>
-    <string name="auth_signer">Signer</string>
+    <string name="auth_bunker">Bunker</string>
     <string name="auth_sign_out">Sign out</string>
     <string name="auth_missing_amber">Amber is not installed. Install it, then come back to connect.</string>
     <string name="auth_install_zapstore">Install Amber on Zapstore</string>

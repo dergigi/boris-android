@@ -153,7 +153,7 @@ Flat. Depth is tonal (surface vs surfaceVariant) and 1dp outlines (`#3F3F46` dar
 ### Buttons
 - **Shape:** 8dp
 - **Primary:** indigo fill, white label, sans Medium, min height 52dp, optional 18dp icon
-- **Secondary:** zinc-800 fill, 1dp zinc-700 border, on-background label (Signer, Cancel)
+- **Secondary:** zinc-800 fill, 1dp zinc-700 border, on-background label (Bunker, Cancel)
 - **Text:** Sign out, compact links
 
 ### Inputs / Fields
@@ -164,7 +164,7 @@ Flat. Depth is tonal (surface vs surfaceVariant) and 1dp outlines (`#3F3F46` dar
 - Two screens: Home and Reader. Reader top app bar: back, title, share, open original. System Back pops. No bottom bar.
 
 ### Signature: Home login
-Matches the webapp login: greeting, marked sentence, Amber then Signer, nstart.me footer. Signer expands to bunker field + Connect / Cancel. Amber-missing install links appear only after Amber is tapped.
+Matches the webapp login: greeting, marked sentence, Amber then Bunker, nstart.me footer. Bunker expands to the bunker field + Connect / Cancel. Amber-missing install links appear only after Amber is tapped.
 
 ### Signature: Article
 Selectable Source Serif markdown, reading time in sans small, images open the gallery.
@@ -173,7 +173,7 @@ Selectable Source Serif markdown, reading time in sans small, images open the ga
 
 ### Do:
 - **Do** keep Home copy identical to the webapp, including the two yellow marks.
-- **Do** use Amber / Signer / Read as the Android button labels.
+- **Do** use Amber / Bunker / Read as the Android button labels.
 - **Do** theme through Material color roles in `BorisTheme`.
 - **Do** honor IME, status bar, and gesture inset padding.
 
