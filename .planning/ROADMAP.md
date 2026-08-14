@@ -2,7 +2,7 @@
 
 ## Overview
 
-Boris already reads articles. This milestone adds optional identity on Home: Amber first, then bunker. Reading stays ungated.
+Boris already reads articles. This milestone adds optional identity on Home (Amber, then bunker) and NIP-84 highlights in the reader. Reading stays ungated.
 
 ## Phases
 
@@ -65,9 +65,18 @@ Phases execute in numeric order: 1, 2, 3
 
 ### Phase 3: Nostr highlights
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Logged-in user can create a NIP-84 highlight from selected article text and see their highlights for that URL painted in the reader, without an nsec in Boris.
+**Mode:** mvp
 **Depends on:** Phase 2
+**Requirements:** HIGH-01, AUTH-06, READ-01
+**Success Criteria** (what must be TRUE):
+
+  1. Logged-in user can select title or body text, tap Highlight next to Copy, approve in Amber or bunker, and see the quote marked in the article
+  2. After killing and reopening Boris while still logged in, opening the same article still shows those highlights
+  3. Logged out, the article looks like today: no marks, no Highlight action, reading still works
+  4. A highlight created on the webapp for the same URL (same npub) paints on Android when the quote is in the fetched body
+  5. Relays failing does not block reading
+
 **Plans:** 0 plans
 
 Plans:

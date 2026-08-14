@@ -25,14 +25,15 @@ Reading stays first. Login is a stored identity (npub plus Amber package or bunk
 - [x] Persist pubkey hex and signer package; show npub while logged in
 - [x] Sign out clears that stored identity
 - [x] If Amber is missing, say so and point the user at Zapstore first, then F-Droid / GitHub
-- [ ] Pair a bunker (`bunker://` / NIP-46) and show npub
+- [x] Pair a bunker (`bunker://` / NIP-46) and show npub
+- [ ] Create and show own NIP-84 highlights in the reader while logged in
 
 ### Out of Scope
 
 - Importing or storing an `nsec` in Boris
-- Signing events, encrypt/decrypt, bookmarks, highlights
+- Encrypt/decrypt, bookmarks, comments, highlight sidebar
 - `nostrconnect://`, camera QR, Boris as a bunker server
-- Relays, profiles, feeds, zaps: not a social client
+- Profiles, feeds, zaps: not a social client
 
 ## Context
 

@@ -16,18 +16,16 @@
 ### Reader
 
 - [x] **READ-01**: User can paste, share, or open a URL and read the article while logged out. Login UI sits on Home; it does not replace or block reading.
+- [ ] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
+- [ ] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
 
 ## v2 Requirements
 
 Deferred. Not in this roadmap.
 
-### Identity
-
-- **AUTH-06**: User can sign a Nostr event through the stored signer when a later feature needs a signature
-
 ### Reader
 
-- **READ-02**: User can bookmark or highlight an article on Android (needs signed events + sync)
+- **READ-02**: User can bookmark an article on Android (needs signed events + sync)
 
 ## Out of Scope
 
@@ -35,8 +33,8 @@ Deferred. Not in this roadmap.
 |---------|--------|
 | Paste or store an `nsec` | Amber holds the key. Boris must never request a private key. |
 | Bunker as a signing server | Amber / nsec.app hold the key. Boris is the client. |
-| `sign_event`, NIP-04/44, ContentResolver signing | Nothing to publish or encrypt yet. |
-| Bookmarks, highlights, relays, profiles, feeds, zaps | Not a social client. Companion webapp covers some of this. |
+| `sign_event` for anything except kind 9802; NIP-04/44 | Highlights are the only signed event this slice. |
+| Bookmarks, profiles, feeds, zaps | Not a social client. Companion webapp covers some of this. |
 | Amethyst Quartz signer tree | Too large. Copy Dark Wisp's login shape only. |
 | Watch-only npub paste | Second login path with no signer package. |
 | Multi-account | One stored pair is the whole v1 record. |
@@ -52,13 +50,15 @@ Deferred. Not in this roadmap.
 | AUTH-04 | Phase 1 | Implemented |
 | READ-01 | Phase 1 | Implemented |
 | AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 3 | Pending |
+| HIGH-01 | Phase 3 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 6 total
-- Mapped to phases: 6
+- v1 requirements: 8 total
+- Mapped to phases: 8
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-14*
-*Last updated: 2026-08-14 after promoting AUTH-05 to Phase 2*
+*Last updated: 2026-08-14 after promoting AUTH-06 and HIGH-01 to Phase 3*
