@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-08-15
+
+### Added
+
+- Logged-in readers can highlight selected title or body text as NIP-84 kind 9802
+- Yellow marks for your own highlights on this article URL
+- Sign each highlight with the stored Amber or bunker session
+
 ## [0.0.5] - 2026-08-14
 
 ### Added
@@ -72,7 +80,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/dergigi/boris-android/releases/tag/v0.0.6
 [0.0.5]: https://github.com/dergigi/boris-android/releases/tag/v0.0.5
 [0.0.4]: https://github.com/dergigi/boris-android/releases/tag/v0.0.4
 [0.0.3]: https://github.com/dergigi/boris-android/releases/tag/v0.0.3
