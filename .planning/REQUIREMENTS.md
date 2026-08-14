@@ -11,7 +11,7 @@
 - [x] **AUTH-02**: After a successful connect, Boris stores pubkey hex and signer package, and shows the user's npub. Restarting the app still shows that npub without opening Amber again.
 - [x] **AUTH-03**: User can sign out. Boris deletes the stored pair. Amber keeps the key. The next connect is a fresh `get_public_key`.
 - [x] **AUTH-04**: If no `nostrsigner` app is installed, Boris says Amber is missing and points the user at Zapstore first (`https://zapstore.dev/apps/com.greenart7c3.nostrsigner`), with F-Droid and GitHub releases as secondary options. Connect does not fail silently.
-- [ ] **AUTH-05**: User can pair a bunker by pasting a `bunker://` token (or opening one via VIEW). Boris connects as a NIP-46 client, stores the user pubkey, and shows npub. Amber login still works. Boris never holds an `nsec`.
+- [x] **AUTH-05**: User can pair a bunker by pasting a `bunker://` token (or opening one via VIEW). Boris connects as a NIP-46 client, stores the user pubkey, and shows npub. Amber login still works. Boris never holds an `nsec`.
 
 ### Reader
 
@@ -51,9 +51,10 @@ Deferred. Not in this roadmap.
 | AUTH-03 | Phase 1 | Implemented |
 | AUTH-04 | Phase 1 | Implemented |
 | READ-01 | Phase 1 | Implemented |
-| AUTH-05 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Complete |
 
 **Coverage:**
+
 - v1 requirements: 6 total
 - Mapped to phases: 6
 - Unmapped: 0

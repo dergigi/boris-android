@@ -38,16 +38,18 @@ Plans:
 **Depends on:** Phase 1
 **Requirements:** AUTH-05, AUTH-01, AUTH-02, AUTH-03, AUTH-04, READ-01
 **Success Criteria** (what must be TRUE):
+
   1. User can paste a valid `bunker://` token (or open one via VIEW), approve the connect on the remote signer, and see their npub on Home
   2. After killing and reopening Boris, the same npub is still shown without pasting the bunker URI again
   3. User can sign out; Home no longer shows the npub; a later bunker connect is a fresh pairing
   4. Amber Connect / missing-Amber install links still work; a successful Amber or bunker login replaces the other
   5. User can still paste, share, or open a URL and read while logged out
-**Plans:** 1 plan
+
+**Plans:** 1/1 plans executed
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Bunker login (NIP-46) on Home
+- [x] 02-01-PLAN.md — Bunker login (NIP-46) on Home
 
 ## Progress
 
@@ -57,7 +59,7 @@ Phases execute in numeric order: 1, 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
-| 2. Bunker login (NIP-46) | 0/1 | Not started | - |
+| 2. Bunker login (NIP-46) | 1/1 | In Progress|  |
 
 ---
 *Roadmap created: 2026-08-14*
