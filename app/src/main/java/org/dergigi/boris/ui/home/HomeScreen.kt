@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -58,6 +57,7 @@ import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
+import org.dergigi.boris.ui.reader.HighlightMarks
 import org.dergigi.boris.ui.theme.HighlightMine
 
 const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
@@ -198,9 +198,9 @@ private fun HomeCopy() {
             val padYPx = padY.toPx()
             val corner = CornerRadius(radius.toPx())
             annotated.getStringAnnotations(HIGHLIGHT_TAG, 0, annotated.length).forEach { range ->
-                highlightRects(result, range.start, range.end).forEach { box ->
+                HighlightMarks.highlightRects(result, range.start, range.end).forEach { box ->
                     drawRoundRect(
-                        color = HighlightMine,
+                        color = HighlightMine.copy(alpha = HighlightMarks.HighlightMarkAlpha),
                         topLeft = Offset(box.left - padXPx, box.top - padYPx),
                         size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
                         cornerRadius = corner,
@@ -219,23 +219,3 @@ private fun HomeCopy() {
 }
 
 private const val HIGHLIGHT_TAG = "highlight"
-
-private fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> {
-    if (start >= end) return emptyList()
-    val first = layout.getLineForOffset(start)
-    val last = layout.getLineForOffset(end - 1)
-    return (first..last).mapNotNull { line ->
-        val lineStart = maxOf(start, layout.getLineStart(line))
-        val lineEnd = minOf(end, layout.getLineEnd(line, visibleEnd = true))
-        if (lineEnd <= lineStart) return@mapNotNull null
-        val lastChar = (lineEnd - 1).coerceAtLeast(lineStart)
-        val firstBox = layout.getBoundingBox(lineStart)
-        val lastBox = layout.getBoundingBox(lastChar)
-        Rect(
-            left = firstBox.left,
-            top = minOf(firstBox.top, lastBox.top),
-            right = lastBox.right,
-            bottom = maxOf(firstBox.bottom, lastBox.bottom),
-        )
-    }
-}

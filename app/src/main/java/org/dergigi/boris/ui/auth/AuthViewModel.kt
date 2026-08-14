@@ -91,6 +91,8 @@ class AuthViewModel(
             SignerResult.Cancelled -> {
                 _message.value = app.getString(R.string.auth_cancelled)
             }
+            is SignerResult.Signed -> {
+            }
         }
     }
 

@@ -9,6 +9,12 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+sealed class BunkerSignResult {
+    data class Signed(val event: Nip01Event) : BunkerSignResult()
+    data object RelayTimeout : BunkerSignResult()
+    data object Rejected : BunkerSignResult()
+}
+
 sealed class BunkerResult {
     data class Success(val userHex: String, val clientPrivkey: ByteArray) : BunkerResult() {
         override fun equals(other: Any?): Boolean {
@@ -99,6 +105,50 @@ class BunkerClient(
                 firstTimeoutMs = LOGOUT_TIMEOUT_MS,
             )
         } catch (_: Exception) {
+        } finally {
+            sockets.forEach { it.close() }
+        }
+    }
+
+    fun signEvent(
+        relays: List<String>,
+        remoteSignerPubkey: String,
+        clientPrivkey: ByteArray,
+        unsignedJson: String,
+    ): BunkerSignResult {
+        val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerSignResult.Rejected
+        val sockets = mutableListOf<RelaySocket>()
+        val inbox = LinkedBlockingQueue<Nip01Event>()
+        val seenAuthUrls = mutableSetOf<String>()
+        val subId = newId()
+        try {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+                return BunkerSignResult.RelayTimeout
+            }
+            val id = newId()
+            publish(
+                sockets,
+                keypair,
+                remoteSignerPubkey,
+                rpcJson(id, "sign_event", JSONArray().put(unsignedJson)),
+            )
+            val outcome = awaitRpc(
+                inbox,
+                id,
+                keypair,
+                remoteSignerPubkey,
+                seenAuthUrls,
+                firstTimeoutMs = RPC_TIMEOUT_MS,
+            ) ?: return BunkerSignResult.RelayTimeout
+            if (outcome.rejected) return BunkerSignResult.Rejected
+            val event = try {
+                Nip01Event.parse(JSONObject(outcome.result.orEmpty()))
+            } catch (_: Exception) {
+                null
+            } ?: return BunkerSignResult.Rejected
+            return BunkerSignResult.Signed(event)
+        } catch (_: Exception) {
+            return BunkerSignResult.Rejected
         } finally {
             sockets.forEach { it.close() }
         }

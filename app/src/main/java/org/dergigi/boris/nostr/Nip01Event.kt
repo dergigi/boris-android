@@ -48,6 +48,8 @@ data class Nip01Event(
     companion object {
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242
+        const val KIND_HIGHLIGHT = 9802
+        const val KIND_RELAY_LIST = 10002
 
         fun sign(
             privkey: ByteArray,

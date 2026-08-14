@@ -2,6 +2,9 @@ package org.dergigi.boris.ui.reader
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,16 +34,24 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,7 +59,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mikepenz.markdown.annotator.annotatorSettings
+import com.mikepenz.markdown.annotator.buildMarkdownAnnotatedString
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
+import com.mikepenz.markdown.compose.components.MarkdownComponentModel
+import com.mikepenz.markdown.compose.components.markdownComponents
+import com.mikepenz.markdown.compose.elements.MarkdownText
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
@@ -69,15 +85,34 @@ fun ReaderScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gallery by viewModel.gallery.collectAsStateWithLifecycle()
+    val highlights by viewModel.highlights.collectAsStateWithLifecycle()
+    val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        viewModel.onSignerResult(result.resultCode, result.data)
+    }
+    LaunchedEffect(message) {
+        val text = message ?: return@LaunchedEffect
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        viewModel.consumeMessage()
+    }
     ReaderScreenContent(
         state = state,
         gallery = gallery,
+        highlights = highlights,
+        loggedIn = loggedIn,
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
+        onHighlight = { quote ->
+            viewModel.highlight(quote)?.let(launcher::launch)
+        },
     )
 }
 
@@ -86,12 +121,15 @@ fun ReaderScreen(
 fun ReaderScreenContent(
     state: ReaderUiState,
     gallery: ImageGalleryState?,
+    highlights: List<PaintedHighlight>,
+    loggedIn: Boolean,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
+    onHighlight: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val articleUrl = when (state) {
@@ -194,8 +232,11 @@ fun ReaderScreenContent(
             is ReaderUiState.Ready -> {
                 ArticleBody(
                     content = state.content,
+                    highlights = highlights,
+                    loggedIn = loggedIn,
                     onOpenArticle = onOpenArticle,
                     onOpenGallery = onOpenGallery,
+                    onHighlight = onHighlight,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -214,8 +255,11 @@ fun ReaderScreenContent(
 @Composable
 private fun ArticleBody(
     content: ReadableContent,
+    highlights: List<PaintedHighlight>,
+    loggedIn: Boolean,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
+    onHighlight: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -240,6 +284,29 @@ private fun ArticleBody(
         if (opened !in urls) urls.add(0, opened)
         onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
     }
+    val quotes = remember(highlights) { highlights.map { it.quote } }
+    val view = LocalView.current
+    val clipboard = LocalClipboardManager.current
+    val toolbar = remember(view, clipboard, loggedIn, onHighlight) {
+        HighlightTextToolbar(
+            view = view,
+            showHighlight = loggedIn,
+            clipboard = clipboard,
+            onHighlight = onHighlight,
+        )
+    }
+    val highlightedComponents = remember(quotes) {
+        markdownComponents(
+            text = { HighlightedMarkdownNode(it, it.typography.text, quotes) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, quotes) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, quotes) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, quotes) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, quotes) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, quotes) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, quotes) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, quotes) },
+        )
+    }
 
     Column(
         modifier = modifier
@@ -248,6 +315,7 @@ private fun ArticleBody(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        CompositionLocalProvider(LocalTextToolbar provides toolbar) {
         SelectionContainer(
             modifier = Modifier
                 .widthIn(max = 720.dp)
@@ -256,11 +324,15 @@ private fun ArticleBody(
         ) {
             Column {
                 if (!content.title.isNullOrBlank()) {
+                    var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                     Text(
                         text = content.title,
                         style = typography.headlineLarge,
                         color = colors.onBackground,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                        onTextLayout = { titleLayout = it },
+                        modifier = Modifier
+                            .padding(top = 8.dp, bottom = 12.dp)
+                            .drawHighlightMarks(titleLayout, content.title, quotes),
                     )
                 }
                 if (readingTime != null) {
@@ -310,12 +382,34 @@ private fun ArticleBody(
                             blockQuote = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                         ),
                         imageTransformer = imageTransformer,
+                        components = highlightedComponents,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
         }
+        }
     }
+}
+
+@Composable
+private fun HighlightedMarkdownNode(
+    model: MarkdownComponentModel,
+    style: TextStyle,
+    quotes: List<String>,
+) {
+    val styledText = model.content.buildMarkdownAnnotatedString(
+        model.node,
+        style,
+        annotatorSettings(),
+    )
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    MarkdownText(
+        content = styledText,
+        style = style,
+        modifier = Modifier.drawHighlightMarks(layout, styledText.text, quotes),
+        onTextLayout = { result, _ -> layout = result },
+    )
 }
 
 internal fun readingTimeLabel(text: String): String? {

@@ -27,4 +27,17 @@ object RemoteSignerBridge {
             putExtra("type", "get_public_key")
         }
     }
+
+    fun buildSignEventIntent(
+        unsignedJson: String,
+        signerPackage: String,
+        currentUserHex: String,
+    ): Intent {
+        return Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:$unsignedJson")).apply {
+            `package` = signerPackage
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("type", "sign_event")
+            putExtra("current_user", currentUserHex)
+        }
+    }
 }

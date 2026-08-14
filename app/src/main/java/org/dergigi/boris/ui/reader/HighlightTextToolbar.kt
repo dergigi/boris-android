@@ -1,0 +1,95 @@
+package org.dergigi.boris.ui.reader
+
+import android.os.Build
+import android.view.ActionMode
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
+import androidx.compose.ui.text.AnnotatedString
+import org.dergigi.boris.R
+
+class HighlightTextToolbar(
+    private val view: View,
+    private val showHighlight: Boolean,
+    private val clipboard: ClipboardManager,
+    private val onHighlight: (String) -> Unit,
+) : TextToolbar {
+    private var actionMode: ActionMode? = null
+
+    override var status: TextToolbarStatus = TextToolbarStatus.Hidden
+        private set
+
+    override fun hide() {
+        status = TextToolbarStatus.Hidden
+        actionMode?.finish()
+        actionMode = null
+    }
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?,
+    ) {
+        hide()
+        val callback = object : ActionMode.Callback {
+            override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+                if (onCopyRequested != null) {
+                    menu.add(0, MENU_COPY, 0, android.R.string.copy)
+                }
+                if (showHighlight) {
+                    menu.add(0, MENU_HIGHLIGHT, 1, view.context.getString(R.string.highlight_action))
+                }
+                if (onSelectAllRequested != null) {
+                    menu.add(0, MENU_SELECT_ALL, 2, android.R.string.selectAll)
+                }
+                return true
+            }
+
+            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
+
+            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+                when (item.itemId) {
+                    MENU_COPY -> onCopyRequested?.invoke()
+                    MENU_HIGHLIGHT -> {
+                        val prior = clipboard.getText()
+                        onCopyRequested?.invoke()
+                        val quote = clipboard.getText()?.text.orEmpty()
+                        if (prior != null) {
+                            clipboard.setText(prior)
+                        } else {
+                            clipboard.setText(AnnotatedString(""))
+                        }
+                        onHighlight(quote)
+                    }
+                    MENU_SELECT_ALL -> onSelectAllRequested?.invoke()
+                }
+                mode.finish()
+                return true
+            }
+
+            override fun onDestroyActionMode(mode: ActionMode) {
+                actionMode = null
+                status = TextToolbarStatus.Hidden
+            }
+        }
+        actionMode = if (Build.VERSION.SDK_INT >= 23) {
+            view.startActionMode(callback, ActionMode.TYPE_FLOATING)
+        } else {
+            @Suppress("DEPRECATION")
+            view.startActionMode(callback)
+        }
+        status = if (actionMode != null) TextToolbarStatus.Shown else TextToolbarStatus.Hidden
+    }
+
+    private companion object {
+        const val MENU_COPY = 1
+        const val MENU_HIGHLIGHT = 2
+        const val MENU_SELECT_ALL = 3
+    }
+}
