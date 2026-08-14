@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Empty URL field falls back to `https://www.citadel21.com/the-paranoid-wallet`
+- In-article http(s) links open in the reader instead of the browser
 
 ### Fixed
 

@@ -31,4 +31,29 @@ class UrlExtractorTest {
         assertNull(UrlExtractor.extract("   "))
         assertNull(UrlExtractor.extract(null))
     }
+
+    @Test
+    fun resolvesRelativeArticleLinks() {
+        assertEquals(
+            "https://www.citadel21.com/other",
+            UrlExtractor.articleUrl(
+                "/other",
+                "https://www.citadel21.com/the-paranoid-wallet",
+            ),
+        )
+    }
+
+    @Test
+    fun keepsAbsoluteHttpLinks() {
+        assertEquals(
+            "https://wizardsardine.com/blog/zero-entropy",
+            UrlExtractor.articleUrl("https://wizardsardine.com/blog/zero-entropy"),
+        )
+    }
+
+    @Test
+    fun ignoresMailtoAndAnchors() {
+        assertNull(UrlExtractor.articleUrl("mailto:hi@example.com"))
+        assertNull(UrlExtractor.articleUrl("#section"))
+    }
 }

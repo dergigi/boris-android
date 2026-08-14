@@ -26,10 +26,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +48,7 @@ import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.markdownPadding
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.theme.SourceSerif
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -51,6 +56,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ReaderScreen(
     onBack: () -> Unit,
+    onOpenArticle: (String) -> Unit,
     viewModel: ReaderViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -58,6 +64,7 @@ fun ReaderScreen(
         state = state,
         onBack = onBack,
         onRetry = viewModel::load,
+        onOpenArticle = onOpenArticle,
     )
 }
 
@@ -67,6 +74,7 @@ fun ReaderScreenContent(
     state: ReaderUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onOpenArticle: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val articleUrl = when (state) {
@@ -144,6 +152,7 @@ fun ReaderScreenContent(
             is ReaderUiState.Ready -> {
                 ArticleBody(
                     content = state.content,
+                    onOpenArticle = onOpenArticle,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -154,11 +163,25 @@ fun ReaderScreenContent(
 @Composable
 private fun ArticleBody(
     content: ReadableContent,
+    onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
     val readingTime = readingTimeLabel(content.body)
+    val defaultUriHandler = LocalUriHandler.current
+    val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler) {
+        object : UriHandler {
+            override fun openUri(uri: String) {
+                val article = UrlExtractor.articleUrl(uri, content.url)
+                if (article != null && article != content.url) {
+                    onOpenArticle(article)
+                } else if (article == null) {
+                    defaultUriHandler.openUri(uri)
+                }
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -189,7 +212,8 @@ private fun ArticleBody(
                     modifier = Modifier.padding(bottom = 24.dp),
                 )
             }
-            Markdown(
+            CompositionLocalProvider(LocalUriHandler provides uriHandler) {
+                Markdown(
                 content = content.body,
                 colors = markdownColor(
                     text = colors.onBackground,
@@ -229,6 +253,7 @@ private fun ArticleBody(
                 imageTransformer = Coil3ImageTransformerImpl,
                 modifier = Modifier.fillMaxWidth(),
             )
+            }
         }
     }
 }

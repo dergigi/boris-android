@@ -31,4 +31,25 @@ object UrlExtractor {
         if (candidate.contains(' ') || candidate.contains('\n')) return false
         return hostLike.matches(candidate)
     }
+
+    fun articleUrl(href: String?, baseUrl: String? = null): String? {
+        if (href.isNullOrBlank()) return null
+        val trimmed = href.trim()
+        val scheme = trimmed.substringBefore(':', missingDelimiterValue = "").lowercase()
+        if (scheme in nonHttpSchemes) return null
+        if (trimmed.startsWith("#")) return null
+
+        val absolute = try {
+            if (baseUrl.isNullOrBlank()) {
+                trimmed
+            } else {
+                java.net.URI(baseUrl).resolve(trimmed).toString()
+            }
+        } catch (_: Exception) {
+            trimmed
+        }
+        return extract(absolute.substringBefore('#'))
+    }
+
+    private val nonHttpSchemes = setOf("mailto", "tel", "javascript", "sms", "geo", "blob", "data")
 }

@@ -62,6 +62,7 @@ fun BorisApp(incomingUrl: String? = null) {
                             }
                         }
                     },
+                    onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
                 )
             }
         }
