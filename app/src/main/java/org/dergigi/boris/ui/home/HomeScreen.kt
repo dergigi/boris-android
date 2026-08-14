@@ -25,13 +25,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -161,7 +168,6 @@ private fun HomeCopy() {
     val npub = stringResource(R.string.home_mark_npub)
     val highlights = stringResource(R.string.home_mark_highlights)
     val mark = SpanStyle(
-        background = HighlightMine,
         color = Color.Black,
         fontWeight = FontWeight.Medium,
     )
@@ -171,20 +177,65 @@ private fun HomeCopy() {
             val index = copy.indexOf(token, cursor)
             if (index < 0) return@forEach
             append(copy.substring(cursor, index))
+            val start = length
             withStyle(mark) { append(token) }
+            addStringAnnotation(HIGHLIGHT_TAG, token, start, length)
             cursor = index + token.length
         }
         if (cursor < copy.length) append(copy.substring(cursor))
         if (length == 0) append(copy)
     }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val padX = 5.dp
+    val padY = 3.dp
+    val radius = 3.dp
     Text(
         text = annotated,
+        onTextLayout = { layout = it },
+        modifier = Modifier.drawBehind {
+            val result = layout ?: return@drawBehind
+            val padXPx = padX.toPx()
+            val padYPx = padY.toPx()
+            val corner = CornerRadius(radius.toPx())
+            annotated.getStringAnnotations(HIGHLIGHT_TAG, 0, annotated.length).forEach { range ->
+                highlightRects(result, range.start, range.end).forEach { box ->
+                    drawRoundRect(
+                        color = HighlightMine,
+                        topLeft = Offset(box.left - padXPx, box.top - padYPx),
+                        size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
+                        cornerRadius = corner,
+                    )
+                }
+            }
+        },
         style = MaterialTheme.typography.bodyMedium.copy(
             fontFamily = FontFamily.SansSerif,
             fontSize = 16.sp,
-            lineHeight = 26.sp,
+            lineHeight = 32.sp,
             textAlign = TextAlign.Center,
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+private const val HIGHLIGHT_TAG = "highlight"
+
+private fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> {
+    if (start >= end) return emptyList()
+    val first = layout.getLineForOffset(start)
+    val last = layout.getLineForOffset(end - 1)
+    return (first..last).mapNotNull { line ->
+        val lineStart = maxOf(start, layout.getLineStart(line))
+        val lineEnd = minOf(end, layout.getLineEnd(line, visibleEnd = true))
+        if (lineEnd <= lineStart) return@mapNotNull null
+        val lastChar = (lineEnd - 1).coerceAtLeast(lineStart)
+        val firstBox = layout.getBoundingBox(lineStart)
+        val lastBox = layout.getBoundingBox(lastChar)
+        Rect(
+            left = firstBox.left,
+            top = minOf(firstBox.top, lastBox.top),
+            right = lastBox.right,
+            bottom = maxOf(firstBox.bottom, lastBox.bottom),
+        )
+    }
 }
