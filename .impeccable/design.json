@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T21:15:00Z",
+  "title": "Design System: Boris",
+  "extensions": {
+    "colorMeta": {
+      "indigo-500": { "role": "primary", "displayName": "Indigo 500", "canonical": "#6366F1" },
+      "indigo-600": { "role": "primary", "displayName": "Indigo 600", "canonical": "#4F46E5" },
+      "highlight-mine": { "role": "secondary", "displayName": "Highlight mine", "canonical": "#FDE047" },
+      "zinc-900": { "role": "neutral", "displayName": "Zinc 900", "canonical": "#18181B" },
+      "zinc-800": { "role": "neutral", "displayName": "Zinc 800", "canonical": "#27272A" },
+      "zinc-200": { "role": "neutral", "displayName": "Zinc 200", "canonical": "#E4E4E7" },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#FFFFFF" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Rare large serif; not Home chrome." },
+      "headline": { "displayName": "Headline", "purpose": "Article titles." },
+      "title": { "displayName": "Title", "purpose": "Buttons and app bar." },
+      "body": { "displayName": "Body", "purpose": "Article reading." },
+      "label": { "displayName": "Label", "purpose": "Chrome, footer, reading time." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "material-standard", "value": "system", "purpose": "Use Material motion; honor Remove animations." }
+    ],
+    "breakpoints": [
+      { "name": "home-column", "value": "420dp" },
+      { "name": "reader-column", "value": "720dp" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled indigo action (Amber, Read, Connect).",
+      "html": "<button class=\"ds-btn-primary\">Amber</button>",
+      "css": ".ds-btn-primary { background: #6366F1; color: #fff; min-height: 52px; padding: 14px 20px; border: none; border-radius: 8px; font: 500 16px/24px system-ui, sans-serif; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined Signer / Cancel.",
+      "html": "<button class=\"ds-btn-secondary\">Signer</button>",
+      "css": ".ds-btn-secondary { background: #27272A; color: #E4E4E7; min-height: 52px; padding: 14px 20px; border: 1px solid #3F3F46; border-radius: 8px; font: 500 16px/24px system-ui, sans-serif; }"
+    },
+    {
+      "name": "Outlined Field",
+      "kind": "input",
+      "refersTo": "field-outlined",
+      "description": "Single-line URL or bunker field.",
+      "html": "<input class=\"ds-field\" placeholder=\"bunker://…\" />",
+      "css": ".ds-field { width: 100%; background: #18181B; color: #E4E4E7; border: 1px solid #3F3F46; border-radius: 8px; padding: 12px 16px; font: 16px/24px ui-monospace, monospace; }"
+    },
+    {
+      "name": "Highlight Mark",
+      "kind": "custom",
+      "refersTo": "mark-highlight",
+      "description": "Home copy marks.",
+      "html": "<p class=\"ds-copy\">Connect <mark class=\"ds-mark\">your npub</mark>.</p>",
+      "css": ".ds-copy { color: #A1A1AA; font: 16px/26px system-ui, sans-serif; text-align: center; } .ds-mark { background: #FDE047; color: #000; font-weight: 500; padding: 0 0.25em; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Article",
+    "overview": "Chrome is the webapp login: zinc, indigo, yellow marks, short sans type. The article is a book: Source Serif 4, justified body, little else on the page. Identity is optional and must never look more important than reading.",
+    "keyCharacteristics": [
+      "Zinc surfaces, indigo filled actions, 8dp corners",
+      "Yellow marks only on Home copy",
+      "Source Serif for reading; sans for chrome",
+      "Flat tonal surfaces"
+    ],
+    "rules": [
+      { "name": "The Two Loud Colors Rule", "body": "Indigo is for actions. Yellow is for marks. Do not add a third accent.", "section": "colors" },
+      { "name": "The Face Split Rule", "body": "Serif reads. Sans steers.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Do not add drop shadows to Home or the reader.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Home copy identical to the webapp, including the two yellow marks.",
+      "Do use Amber / Signer / Read as the Android button labels.",
+      "Do theme through Material color roles in BorisTheme."
+    ],
+    "donts": [
+      "Don't put an nsec field anywhere.",
+      "Don't gate reading on login.",
+      "Don't invent bookmarks, highlights, or social chrome on Android.",
+      "Don't use Inter-as-brand, purple gradients, glassmorphism, or nested cards."
+    ]
+  }
+}
