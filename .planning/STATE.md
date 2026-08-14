@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
-current_phase_name: Bunker login
+current_phase: 3
+current_phase_name: Nostr highlights
 status: planning
-stopped_at: Phase 3 context gathered
-last_updated: "2026-08-14T21:58:57.429Z"
-last_activity: 2026-08-14
-last_activity_desc: Phase 2 plan revised (failed-pair refresh, Success privkey, onAuthUrl, Connecting chrome)
+stopped_at: Phase 3 plan written
+last_updated: "2026-08-15T00:20:00.000Z"
+last_activity: 2026-08-15
+last_activity_desc: Phase 3 plan written (NIP-84 highlights tracer)
 progress:
   total_phases: 3
   completed_phases: 2
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 2: Bunker login (NIP-46)
+**Current focus:** Phase 3: Nostr highlights
 
 ## Current Position
 
-Phase: 2 of 2 (Bunker login)
+Phase: 3 of 3 (Nostr highlights)
 Plan: 1 of 1 in current phase
-Status: Plan revised after checker; ready to execute
-Last activity: 2026-08-14 — Phase 2 plan revised (failed-pair refresh, Success privkey, onAuthUrl, Connecting chrome)
+Status: Plan written; ready for execute
+Last activity: 2026-08-15 — Phase 3 plan written (NIP-84 highlights tracer)
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 67%
 
 ## Performance Metrics
 
@@ -102,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-14T21:58:57.420Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-nostr-highlights/03-CONTEXT.md
+Last session: 2026-08-15
+Stopped at: Phase 3 plan written
+Resume file: .planning/phases/03-nostr-highlights/03-01-PLAN.md
