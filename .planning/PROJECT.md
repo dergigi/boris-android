@@ -2,11 +2,11 @@
 
 ## What This Is
 
-Boris is a native Android reader. Paste a URL, share a link, or open http(s) in the app, and it fetches a clean markdown article for calm reading. The next slice adds Nostr identity through Amber, so Boris can know who you are without ever holding an `nsec`.
+Boris is a native Android reader. Paste a URL, share a link, or open http(s) in the app, and it fetches a clean markdown article for calm reading. The next slice adds optional bunker identity (`bunker://` / NIP-46) beside Amber, so Boris can know who you are when the key lives on another device. Boris never holds an `nsec`.
 
 ## Core Value
 
-Reading stays first. Login is a stored identity (npub + signer package), never a key in Boris.
+Reading stays first. Login is a stored identity (npub plus Amber package or bunker connection), never a user key in Boris.
 
 ## Requirements
 
@@ -21,17 +21,17 @@ Reading stays first. Login is a stored identity (npub + signer package), never a
 
 ### Active
 
-- [ ] Connect via Amber (NIP-55 `get_public_key`)
-- [ ] Persist pubkey hex and signer package; show npub while logged in
-- [ ] Sign out clears that stored identity
-- [ ] If Amber is missing, say so and point the user at Zapstore first, then F-Droid / GitHub
+- [x] Connect via Amber (NIP-55 `get_public_key`)
+- [x] Persist pubkey hex and signer package; show npub while logged in
+- [x] Sign out clears that stored identity
+- [x] If Amber is missing, say so and point the user at Zapstore first, then F-Droid / GitHub
+- [ ] Pair a bunker (`bunker://` / NIP-46) and show npub
 
 ### Out of Scope
 
-- Bunker / NIP-46: later, after Amber login works
-- Importing or storing an `nsec` in Boris: Amber holds the key
-- Signing events, encrypt/decrypt, bookmarks, highlights: login only this slice
-- Amethyst-sized signer stack: too large for v1; follow Dark Wisp instead
+- Importing or storing an `nsec` in Boris
+- Signing events, encrypt/decrypt, bookmarks, highlights
+- `nostrconnect://`, camera QR, Boris as a bunker server
 - Relays, profiles, feeds, zaps: not a social client
 
 ## Context
@@ -60,18 +60,19 @@ Companion webapp (bookmarks, highlights, Nostr) is `/Users/gigi/Development/vibe
 - **Stack**: Kotlin, Jetpack Compose, no Hilt/Koin, no Room. Prefer DataStore or SharedPreferences for the tiny login record.
 - **Versions**: Stay on `0.x.y` until 1.0.0 is explicitly requested.
 - **Security**: Never log or persist private keys. Boris must not request an `nsec`.
-- **Compatibility**: `minSdk` 26. Amber must be installed for login to succeed.
+- **Compatibility**: `minSdk` 26. Amber login needs a `nostrsigner` app. Bunker login needs a `bunker://` token and network.
 - **Placement**: New code under `app/src/main/java/org/dergigi/boris/` (e.g. `data/` or a small `nostr/` package). Match existing file-per-concern style.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Amber / NIP-55 only for this slice | Native Android signer; bunker later | Pending |
-| Login only (npub + sign out) | Smallest useful Nostr identity | Pending |
-| Follow Dark Wisp's smaller model | Clear login + intent bridge without Amethyst's KMP signer tree | Pending |
-| No `nsec` in Boris | Key stays in Amber | Pending |
-| Missing-Amber install: Zapstore first | Boris already lives on Zapstore; F-Droid and GitHub are backups | Pending |
+| Amber / NIP-55 only for Phase 1 | Native Android signer; bunker later | Done |
+| Login only (npub + sign out) | Smallest useful Nostr identity | Done |
+| Follow Dark Wisp's smaller model | Amber login without Amethyst's KMP signer tree | Done |
+| No `nsec` in Boris | Key stays in Amber or the bunker | Done |
+| Missing-Amber install: Zapstore first | Boris already lives on Zapstore; F-Droid and GitHub are backups | Done |
+| Follow Amethyst bunker login for Phase 2 | Dark Wisp has no NIP-46; copy `BunkerLoginUseCase` shape, not Quartz | Pending |
 | Kotlin + Compose | Already the app stack | Good |
 
 ## Evolution
