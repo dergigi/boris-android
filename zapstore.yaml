@@ -1,0 +1,25 @@
+repository: https://github.com/dergigi/boris-android
+pubkey: npub1dergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsh9xzpc
+release_notes: ./CHANGELOG.md
+
+name: Boris
+summary: A calm Android reader for web articles
+description: |
+  Boris takes a web URL and shows a readable article. Paste a link, share one
+  from the browser, or open an http(s) URL with the app.
+
+  Article text comes from r.jina.ai, the same path the Boris webapp uses.
+  In-article links stay in the reader. If a page cannot be parsed, open the
+  original in whatever app handles that URL.
+
+  No accounts. No Nostr. Just reading.
+tags:
+  - reading
+  - articles
+  - android
+license: MIT
+website: https://readwithboris.com/
+icon: ./zapstore-icon.png
+
+metadata_sources:
+  - github
