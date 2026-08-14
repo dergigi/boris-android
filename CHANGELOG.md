@@ -9,6 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-08-14
+
+### Added
+
+- Optional Amber login on Home via NIP-55 `get_public_key`
+- Persist pubkey hex and signer package; show npub after restart
+- Sign out clears the stored pair without touching Amber
+- Missing Amber points at Zapstore first, then F-Droid and GitHub
+
 ## [0.0.3] - 2026-08-14
 
 ### Added
@@ -51,7 +60,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/dergigi/boris-android/releases/tag/v0.0.4
 [0.0.3]: https://github.com/dergigi/boris-android/releases/tag/v0.0.3
 [0.0.2]: https://github.com/dergigi/boris-android/releases/tag/v0.0.2
 [0.0.1]: https://github.com/dergigi/boris-android/releases/tag/v0.0.1
