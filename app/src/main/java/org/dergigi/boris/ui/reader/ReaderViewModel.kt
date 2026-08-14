@@ -16,8 +16,8 @@ import java.nio.charset.StandardCharsets
 
 class ReaderViewModel(
     savedStateHandle: SavedStateHandle,
-    private val repository: ReaderRepository = ReaderRepository(),
 ) : ViewModel() {
+    private val repository = ReaderRepository()
     val url: String = decodeUrl(savedStateHandle.get<String>(URL_ARG).orEmpty())
 
     private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)

@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Empty URL field falls back to `https://www.citadel21.com/the-paranoid-wallet`
 
+### Fixed
+
+- Opening an article no longer crashes when creating `ReaderViewModel`
+
 ### Changed
 
 - Application ID and namespace are now `org.dergigi.boris`
