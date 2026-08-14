@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.reader
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -43,8 +44,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import kotlin.math.abs
 import kotlinx.coroutines.launch
@@ -55,9 +54,10 @@ data class ImageGalleryState(
 )
 
 @Composable
-fun ImageGalleryDialog(
+fun ImageGallery(
     state: ImageGalleryState,
     onDismiss: () -> Unit,
+    onPageChange: (Int) -> Unit,
 ) {
     val urls = state.urls
     if (urls.isEmpty()) return
@@ -75,35 +75,37 @@ fun ImageGalleryDialog(
         scope.launch { pagerState.animateScrollToPage(target) }
     }
 
+    BackHandler(onBack = onDismiss)
+
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .focusRequester(focusRequester)
-                .focusable()
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.DirectionLeft, Key.NavigatePrevious -> {
-                            goTo(pagerState.currentPage - 1)
-                            true
-                        }
-                        Key.DirectionRight, Key.NavigateNext -> {
-                            goTo(pagerState.currentPage + 1)
-                            true
-                        }
-                        else -> false
+    LaunchedEffect(pagerState.currentPage) {
+        onPageChange(pagerState.currentPage)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft, Key.NavigatePrevious -> {
+                        goTo(pagerState.currentPage - 1)
+                        true
                     }
-                },
-        ) {
+                    Key.DirectionRight, Key.NavigateNext -> {
+                        goTo(pagerState.currentPage + 1)
+                        true
+                    }
+                    else -> false
+                }
+            },
+    ) {
             HorizontalPager(
                 state = pagerState,
                 userScrollEnabled = urls.size > 1 && !zoomed,
@@ -138,7 +140,6 @@ fun ImageGalleryDialog(
                         .padding(bottom = 24.dp),
                 )
             }
-        }
     }
 }
 

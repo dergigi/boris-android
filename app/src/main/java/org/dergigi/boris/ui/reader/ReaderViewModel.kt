@@ -23,8 +23,30 @@ class ReaderViewModel(
     private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
 
+    private val _gallery = MutableStateFlow<ImageGalleryState?>(null)
+    val gallery: StateFlow<ImageGalleryState?> = _gallery.asStateFlow()
+
     init {
         load()
+    }
+
+    fun openGallery(urls: List<String>, index: Int) {
+        if (urls.isEmpty()) return
+        _gallery.value = ImageGalleryState(
+            urls = urls,
+            initialIndex = index.coerceIn(0, urls.lastIndex),
+        )
+    }
+
+    fun closeGallery() {
+        _gallery.value = null
+    }
+
+    fun setGalleryIndex(index: Int) {
+        val current = _gallery.value ?: return
+        val next = index.coerceIn(0, current.urls.lastIndex)
+        if (next == current.initialIndex) return
+        _gallery.value = current.copy(initialIndex = next)
     }
 
     fun load() {

@@ -31,9 +31,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -69,11 +67,16 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val gallery by viewModel.gallery.collectAsStateWithLifecycle()
     ReaderScreenContent(
         state = state,
+        gallery = gallery,
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
+        onOpenGallery = viewModel::openGallery,
+        onCloseGallery = viewModel::closeGallery,
+        onGalleryPage = viewModel::setGalleryIndex,
     )
 }
 
@@ -81,9 +84,13 @@ fun ReaderScreen(
 @Composable
 fun ReaderScreenContent(
     state: ReaderUiState,
+    gallery: ImageGalleryState?,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenGallery: (List<String>, Int) -> Unit,
+    onCloseGallery: () -> Unit,
+    onGalleryPage: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     val articleUrl = when (state) {
@@ -98,6 +105,7 @@ fun ReaderScreenContent(
         context.startActivity(intent)
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -171,10 +179,19 @@ fun ReaderScreenContent(
                 ArticleBody(
                     content = state.content,
                     onOpenArticle = onOpenArticle,
+                    onOpenGallery = onOpenGallery,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
         }
+    }
+    gallery?.let { open ->
+        ImageGallery(
+            state = open,
+            onDismiss = onCloseGallery,
+            onPageChange = onGalleryPage,
+        )
+    }
     }
 }
 
@@ -182,6 +199,7 @@ fun ReaderScreenContent(
 private fun ArticleBody(
     content: ReadableContent,
     onOpenArticle: (String) -> Unit,
+    onOpenGallery: (List<String>, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -200,18 +218,12 @@ private fun ArticleBody(
             }
         }
     }
-    var gallery by remember { mutableStateOf<ImageGalleryState?>(null) }
     val imageTransformer = ClickableCoilImageTransformer { link ->
         val opened = UrlExtractor.articleUrl(link, content.url) ?: return@ClickableCoilImageTransformer
         val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
         if (opened !in urls) urls.add(0, opened)
-        gallery = ImageGalleryState(
-            urls = urls,
-            initialIndex = urls.indexOf(opened).coerceAtLeast(0),
-        )
+        onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
     }
-
-    gallery?.let { ImageGalleryDialog(it, onDismiss = { gallery = null }) }
 
     Column(
         modifier = modifier

@@ -18,6 +18,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Image gallery swipes left and right between images in the article
+- Image gallery stays open when the device rotates
 
 ## [0.0.1] - 2026-08-14
 
