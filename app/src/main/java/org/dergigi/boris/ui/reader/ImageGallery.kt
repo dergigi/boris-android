@@ -1,6 +1,7 @@
 package org.dergigi.boris.ui.reader
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -24,12 +25,20 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
@@ -38,6 +47,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 data class ImageGalleryState(
     val urls: List<String>,
@@ -55,6 +65,19 @@ fun ImageGalleryDialog(
     val startPage = state.initialIndex.coerceIn(0, urls.lastIndex)
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { urls.size })
     var zoomed by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+
+    fun goTo(page: Int) {
+        if (urls.size <= 1) return
+        val target = page.coerceIn(0, urls.lastIndex)
+        if (target == pagerState.currentPage) return
+        scope.launch { pagerState.animateScrollToPage(target) }
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -63,7 +86,23 @@ fun ImageGalleryDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black),
+                .background(Color.Black)
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionLeft, Key.NavigatePrevious -> {
+                            goTo(pagerState.currentPage - 1)
+                            true
+                        }
+                        Key.DirectionRight, Key.NavigateNext -> {
+                            goTo(pagerState.currentPage + 1)
+                            true
+                        }
+                        else -> false
+                    }
+                },
         ) {
             HorizontalPager(
                 state = pagerState,

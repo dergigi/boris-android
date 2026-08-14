@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Article title and body text can be selected and copied
 - Tapping an article image opens a zoomable gallery
+- Arrow keys move to the previous and next image in the gallery
 
 ### Fixed
 
