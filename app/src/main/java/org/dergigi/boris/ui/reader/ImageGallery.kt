@@ -1,8 +1,10 @@
 package org.dergigi.boris.ui.reader
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,11 +31,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import kotlin.math.abs
 
 data class ImageGalleryState(
     val urls: List<String>,
@@ -106,10 +111,16 @@ private fun ZoomableImage(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var lastTapAt by remember { mutableLongStateOf(0L) }
 
     fun applyScale(next: Float, nextOffset: Offset = offset) {
         scale = next.coerceIn(1f, 5f)
-        offset = if (scale == 1f) Offset.Zero else nextOffset
+        offset = if (scale <= 1.01f) {
+            scale = 1f
+            Offset.Zero
+        } else {
+            nextOffset
+        }
         onZoomedChange(scale > 1.01f)
     }
 
@@ -124,16 +135,41 @@ private fun ZoomableImage(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(url) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        if (scale > 1.01f) applyScale(1f) else applyScale(2.5f)
-                    },
-                )
-            }
-            .pointerInput(url) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val next = (scale * zoom).coerceIn(1f, 5f)
-                    applyScale(next, if (next == 1f) Offset.Zero else offset + pan)
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    val startedAt = System.currentTimeMillis()
+                    var pinching = false
+                    var dragged = false
+                    do {
+                        val event = awaitPointerEvent()
+                        val pressed = event.changes.count { it.pressed }
+                        val zoomChange = event.calculateZoom()
+                        val panChange = event.calculatePan()
+                        if (pressed >= 2) pinching = true
+                        if (abs(panChange.x) > 1f || abs(panChange.y) > 1f) dragged = true
+
+                        val currentlyZoomed = scale > 1.01f
+                        if (pinching || currentlyZoomed) {
+                            event.changes.forEach { change ->
+                                if (change.positionChanged()) change.consume()
+                            }
+                            val next = (scale * zoomChange).coerceIn(1f, 5f)
+                            applyScale(next, offset + panChange)
+                        }
+                    } while (event.changes.any { it.pressed })
+
+                    if (pinching && scale < 1.05f) applyScale(1f)
+
+                    val wasTap = !pinching && !dragged &&
+                        System.currentTimeMillis() - startedAt < 300
+                    if (wasTap) {
+                        if (startedAt - lastTapAt < 300) {
+                            lastTapAt = 0L
+                            if (scale > 1.01f) applyScale(1f) else applyScale(2.5f)
+                        } else {
+                            lastTapAt = startedAt
+                        }
+                    }
                 }
             }
             .graphicsLayer {

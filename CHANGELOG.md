@@ -14,6 +14,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Article title and body text can be selected and copied
 - Tapping an article image opens a zoomable gallery
 
+### Fixed
+
+- Image gallery swipes left and right between images in the article
+
 ## [0.0.1] - 2026-08-14
 
 ### Added

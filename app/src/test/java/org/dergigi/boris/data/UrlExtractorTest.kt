@@ -73,4 +73,15 @@ class UrlExtractorTest {
             UrlExtractor.imageUrls(markdown, "https://www.citadel21.com/the-paranoid-wallet"),
         )
     }
+
+    @Test
+    fun extractsHtmlImageUrls() {
+        assertEquals(
+            listOf("https://cdn.example.com/photo.webp"),
+            UrlExtractor.imageUrls(
+                """<img src="https://cdn.example.com/photo.webp" alt="photo">""",
+                "https://example.com/article",
+            ),
+        )
+    }
 }

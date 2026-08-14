@@ -52,12 +52,16 @@ object UrlExtractor {
     }
 
     fun imageUrls(markdown: String, baseUrl: String? = null): List<String> {
-        return markdownImageRegex.findAll(markdown).mapNotNull { match ->
-            articleUrl(match.groupValues[1], baseUrl)
-        }.distinct().toList()
+        val fromMarkdown = markdownImageRegex.findAll(markdown).map { it.groupValues[1] }
+        val fromHtml = htmlImgRegex.findAll(markdown).map { it.groupValues[1] }
+        return (fromMarkdown + fromHtml).mapNotNull { articleUrl(it, baseUrl) }.distinct().toList()
     }
 
     private val markdownImageRegex = Regex("""!\[[^\]]*]\(\s*<?([^)\s>]+)>?""")
+    private val htmlImgRegex = Regex(
+        """<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']""",
+        RegexOption.IGNORE_CASE,
+    )
 
     private val nonHttpSchemes = setOf("mailto", "tel", "javascript", "sms", "geo", "blob", "data")
 }

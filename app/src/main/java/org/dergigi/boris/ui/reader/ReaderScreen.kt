@@ -203,11 +203,11 @@ private fun ArticleBody(
     var gallery by remember { mutableStateOf<ImageGalleryState?>(null) }
     val imageTransformer = ClickableCoilImageTransformer { link ->
         val opened = UrlExtractor.articleUrl(link, content.url) ?: return@ClickableCoilImageTransformer
-        val urls = UrlExtractor.imageUrls(content.body, content.url)
-        val index = urls.indexOf(opened)
+        val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
+        if (opened !in urls) urls.add(0, opened)
         gallery = ImageGalleryState(
-            urls = if (index >= 0) urls else listOf(opened),
-            initialIndex = index.coerceAtLeast(0),
+            urls = urls,
+            initialIndex = urls.indexOf(opened).coerceAtLeast(0),
         )
     }
 
