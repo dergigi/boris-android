@@ -15,6 +15,7 @@ class RelaySocket(
         private set
 
     private var socket: WebSocket? = null
+    private val pending = ArrayDeque<String>()
 
     fun open(onOpen: () -> Unit, onMessage: (String) -> Unit) {
         val request = Request.Builder().url(url).build()
@@ -24,6 +25,7 @@ class RelaySocket(
                 override fun onOpen(webSocket: WebSocket, response: Response) {
                     isOpen = true
                     onOpen()
+                    flushPending()
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
@@ -42,12 +44,27 @@ class RelaySocket(
     }
 
     fun send(text: String) {
-        socket?.send(text)
+        synchronized(pending) {
+            if (isOpen) {
+                socket?.send(text)
+            } else {
+                pending.addLast(text)
+            }
+        }
     }
 
     fun close() {
         isOpen = false
+        synchronized(pending) { pending.clear() }
         socket?.close(1000, null)
         socket = null
+    }
+
+    private fun flushPending() {
+        synchronized(pending) {
+            while (pending.isNotEmpty()) {
+                socket?.send(pending.removeFirst())
+            }
+        }
     }
 }

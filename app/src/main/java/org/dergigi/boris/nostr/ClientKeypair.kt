@@ -18,6 +18,12 @@ data class ClientKeypair(
             val xOnly = pub.copyOfRange(1, 33)
             return ClientKeypair(priv, xOnly.toHex())
         }
+
+        fun fromPrivkey(priv: ByteArray): ClientKeypair? {
+            if (priv.size != 32 || !Secp256k1.secKeyVerify(priv)) return null
+            val pub = Secp256k1.pubkeyCreate(priv)
+            return ClientKeypair(priv.copyOf(), pub.copyOfRange(1, 33).toHex())
+        }
     }
 
     override fun equals(other: Any?): Boolean {

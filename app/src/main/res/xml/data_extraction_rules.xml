@@ -2,8 +2,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="boris_session.xml" />
+        <exclude domain="sharedpref" path="boris_bunker_spent.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="boris_session.xml" />
+        <exclude domain="sharedpref" path="boris_bunker_spent.xml" />
     </device-transfer>
 </data-extraction-rules>

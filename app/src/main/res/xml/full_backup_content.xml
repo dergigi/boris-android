@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <exclude domain="sharedpref" path="boris_session.xml" />
+    <exclude domain="sharedpref" path="boris_bunker_spent.xml" />
 </full-backup-content>
