@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Boris</string>
-    <string name="auth_connect">Connect with Amber</string>
+    <string name="home_hello">Hi! I\'m Boris.</string>
+    <string name="home_copy">Connect your npub to see your bookmarks, explore long-form articles, and create your own highlights.</string>
+    <string name="home_mark_npub">Connect your npub</string>
+    <string name="home_mark_highlights">your own highlights.</string>
+    <string name="home_read">Read</string>
+    <string name="auth_connect">Amber</string>
+    <string name="auth_signer">Signer</string>
     <string name="auth_sign_out">Sign out</string>
     <string name="auth_missing_amber">Amber is not installed. Install it, then come back to connect.</string>
     <string name="auth_install_zapstore">Install Amber on Zapstore</string>
@@ -9,11 +15,14 @@
     <string name="auth_install_github">Install Amber from GitHub</string>
     <string name="auth_rejected">Amber declined the request.</string>
     <string name="auth_cancelled">Amber did not return a key.</string>
-    <string name="auth_connect_bunker">Connect bunker</string>
+    <string name="auth_connect_bunker">Connect</string>
+    <string name="auth_bunker_cancel">Cancel</string>
     <string name="auth_bunker_hint">bunker://…</string>
-    <string name="auth_bunker_connecting">Connecting to bunker…</string>
+    <string name="auth_bunker_connecting">Connecting…</string>
     <string name="auth_bunker_bad_uri">That bunker link is not valid.</string>
     <string name="auth_bunker_timeout">The bunker did not respond in time.</string>
     <string name="auth_bunker_rejected">The bunker declined the request.</string>
     <string name="auth_bunker_missing_pubkey">The bunker did not return a public key.</string>
+    <string name="auth_nstart_prefix">New to nostr? Start here:\u00a0</string>
+    <string name="auth_nstart_host">nstart.me</string>
 </resources>

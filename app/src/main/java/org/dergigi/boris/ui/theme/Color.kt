@@ -19,6 +19,7 @@ val Gray500 = Color(0xFF6B7280)
 
 val Indigo500 = Color(0xFF6366F1)
 val Indigo600 = Color(0xFF4F46E5)
+val HighlightMine = Color(0xFFFDE047)
 val Sky400 = Color(0xFF38BDF8)
 val Blue500 = Color(0xFF3B82F6)
 val Slate950 = Color(0xFF0F172A)

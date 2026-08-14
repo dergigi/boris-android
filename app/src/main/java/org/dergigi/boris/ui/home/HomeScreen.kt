@@ -3,17 +3,20 @@ package org.dergigi.boris.ui.home
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,17 +29,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.dergigi.boris.R
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.auth.AuthBar
+import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.auth.NstartFooter
+import org.dergigi.boris.ui.theme.HighlightMine
 
 const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
 
@@ -71,31 +86,32 @@ fun HomeScreen(
         extracted?.let(onRead)
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .imePadding()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .imePadding(),
     ) {
         Column(
-            modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Text(
-                text = "Hello! I'm Boris.",
-                style = MaterialTheme.typography.headlineMedium.copy(textAlign = TextAlign.Center),
+                text = stringResource(R.string.home_hello),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                ),
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "I like to read.",
-                style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(24.dp))
+            HomeCopy()
             AuthBar(
                 state = authState,
                 message = authMessage,
@@ -107,27 +123,68 @@ fun HomeScreen(
                 onConnectBunker = { viewModel.connectBunker(bunkerUri) },
                 onSignOut = viewModel::signOut,
             )
-            Spacer(Modifier.height(24.dp))
             OutlinedTextField(
                 value = url,
                 onValueChange = { url = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(DEFAULT_ARTICLE_URL) },
                 singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+                shape = RoundedCornerShape(8.dp),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Go,
                 ),
                 keyboardActions = KeyboardActions(onGo = { submit() }),
             )
-            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = ::submit,
                 enabled = canRead,
-                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) {
-                Text("Read")
+                Text(
+                    stringResource(R.string.home_read),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            if (authState !is AuthUiState.LoggedIn) {
+                NstartFooter()
             }
         }
     }
+}
+
+@Composable
+private fun HomeCopy() {
+    val copy = stringResource(R.string.home_copy)
+    val npub = stringResource(R.string.home_mark_npub)
+    val highlights = stringResource(R.string.home_mark_highlights)
+    val mark = SpanStyle(
+        background = HighlightMine,
+        color = Color.Black,
+        fontWeight = FontWeight.Medium,
+    )
+    val annotated = buildAnnotatedString {
+        var cursor = 0
+        listOf(npub, highlights).forEach { token ->
+            val index = copy.indexOf(token, cursor)
+            if (index < 0) return@forEach
+            append(copy.substring(cursor, index))
+            withStyle(mark) { append(token) }
+            cursor = index + token.length
+        }
+        if (cursor < copy.length) append(copy.substring(cursor))
+        if (length == 0) append(copy)
+    }
+    Text(
+        text = annotated,
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 16.sp,
+            lineHeight = 26.sp,
+            textAlign = TextAlign.Center,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
