@@ -22,8 +22,8 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 
 Phase: 2 of 2 (Bunker login)
 Plan: 0 of 1 in current phase
-Status: Context gathered; ready to plan
-Last activity: 2026-08-14 — Phase 2 context locked (Amethyst bunker:// login shape)
+Status: Research complete; ready to plan
+Last activity: 2026-08-14 — Phase 2 research written (small NIP-46 client stack)
 
 Progress: [█████░░░░░] 50%
 
@@ -85,5 +85,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-bunker-login-nip-46/02-CONTEXT.md
+Stopped at: Phase 2 research complete
+Resume file: .planning/phases/02-bunker-login-nip-46/02-RESEARCH.md
