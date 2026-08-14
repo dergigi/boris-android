@@ -2,7 +2,7 @@
 
 A calm native reader for web articles. Paste a URL, share one from the browser, or open an `http`/`https` link with Boris.
 
-Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Notable changes are listed in [`CHANGELOG.md`](CHANGELOG.md) using [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and stay in `0.x.y` until 1.0.0. Notable changes are listed in [`CHANGELOG.md`](CHANGELOG.md) using [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ```bash
 ./gradlew :app:assembleDebug
