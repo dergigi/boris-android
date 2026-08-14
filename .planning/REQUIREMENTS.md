@@ -16,8 +16,8 @@
 ### Reader
 
 - [x] **READ-01**: User can paste, share, or open a URL and read the article while logged out. Login UI sits on Home; it does not replace or block reading.
-- [ ] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
-- [ ] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
+- [x] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
+- [x] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
 
 ## v2 Requirements
 
@@ -50,8 +50,8 @@ Deferred. Not in this roadmap.
 | AUTH-04 | Phase 1 | Implemented |
 | READ-01 | Phase 1 | Implemented |
 | AUTH-05 | Phase 2 | Complete |
-| AUTH-06 | Phase 3 | Pending |
-| HIGH-01 | Phase 3 | Pending |
+| AUTH-06 | Phase 3 | Complete |
+| HIGH-01 | Phase 3 | Complete |
 
 **Coverage:**
 

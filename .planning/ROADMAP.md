@@ -61,7 +61,7 @@ Phases execute in numeric order: 1, 2, 3
 |-------|----------------|--------|-----------|
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
-| 3. Nostr highlights | 0/1 | Planned | |
+| 3. Nostr highlights | 1/1 | In Progress|  |
 
 ### Phase 3: Nostr highlights
 
@@ -77,11 +77,11 @@ Phases execute in numeric order: 1, 2, 3
   4. A highlight created on the webapp for the same URL (same npub) paints on Android when the quote is in the fetched body
   5. Relays failing does not block reading
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans executed
 
 Plans:
 
-- [ ] 03-01-PLAN.md — NIP-84 highlights in the reader
+- [x] 03-01-PLAN.md — NIP-84 highlights in the reader
 
 ---
 *Roadmap created: 2026-08-14*

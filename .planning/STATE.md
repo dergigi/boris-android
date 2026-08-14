@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 3
 current_phase_name: Nostr highlights
-status: planning
-stopped_at: Phase 3 plan written
-last_updated: "2026-08-14T22:16:58.017Z"
+status: ready_for_verification
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-08-14T22:26:03.693Z"
 last_activity: 2026-08-15
-last_activity_desc: Phase 3 plan written (NIP-84 highlights tracer)
+last_activity_desc: Phase 3 plan 01 executed (NIP-84 highlights tracer)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 
 Phase: 3 of 3 (Nostr highlights)
 Plan: 1 of 1 in current phase
-Status: Plan written; ready for execute
-Last activity: 2026-08-15 — Phase 3 plan written (NIP-84 highlights tracer)
+Status: Plan executed; ready for verification
+Last activity: 2026-08-15 — Phase 3 plan 01 executed (NIP-84 highlights tracer)
 
-Progress: [██████░░░░] 67%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████░░░░] 67%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 02-bunker-login-nip-46 P01 | 12min | 3 tasks | 23 files |
+| Phase 03-nostr-highlights P01 | 8min | 3 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Pinned secp256k1-kmp 0.22.0 because 0.24.0 is Kotlin 2.3 metadata and this app compiles with Kotlin 2.1.21
 - [Phase ?]: mavenCentral() first so the ACINQ AAR resolves; Huawei mirror had the POM without the AAR
 - [Phase ?]: Success wraps the pair's clientPrivkey; Connecting(prior) keeps Amber chrome; refresh skips only while the pair Job isActive
+- [Phase ?]: D-08 locked: webapp NIP-84 tags (kind 9802, r, optional context, Android alt). No Lantern selector tags.
+- [Phase ?]: parseSignedEvent accepts a parsed Nip01Event on the JVM because org.json is stubbed in unit tests.
+- [Phase ?]: AuthViewModel handles SignerResult.Signed as a no-op so the sealed when still compiles.
 
 ### Roadmap Evolution
 
@@ -102,6 +106,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-15
-Stopped at: Phase 3 plan written
-Resume file: .planning/phases/03-nostr-highlights/03-01-PLAN.md
+Last session: 2026-08-14T22:26:03.683Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
