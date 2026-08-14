@@ -29,10 +29,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UrlExtractor
 
+const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
+
 @Composable
 fun HomeScreen(onRead: (String) -> Unit) {
     var url by rememberSaveable { mutableStateOf("") }
-    val extracted = UrlExtractor.extract(url)
+    val extracted = UrlExtractor.extract(url.trim().ifEmpty { DEFAULT_ARTICLE_URL })
     val canRead = extracted != null
 
     fun submit() {
@@ -68,7 +70,7 @@ fun HomeScreen(onRead: (String) -> Unit) {
                 value = url,
                 onValueChange = { url = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Paste an article URL") },
+                placeholder = { Text(DEFAULT_ARTICLE_URL) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,

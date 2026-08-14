@@ -9,9 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Empty URL field falls back to `https://www.citadel21.com/the-paranoid-wallet`
+
 ### Changed
 
 - Application ID and namespace are now `org.dergigi.boris`
+- Home URL hint shows the default Citadel21 article
 
 ## [0.1.0] - 2026-08-14
 
