@@ -110,9 +110,12 @@ ICON="$ROOT/zapstore-icon.png"
 echo "Publishing to Zapstore (notes from CHANGELOG.md via zapstore.yaml)…"
 echo "  APK: $APK"
 echo "  notes: $NOTES"
-zsp publish "$PUBLISH_CFG" \
-  --skip-preview \
-  --skip-certificate-linking \
-  ${ZSP_EXTRA_ARGS:-}
+ZSP_ARGS=(publish "$PUBLISH_CFG" --skip-preview --skip-certificate-linking)
+# zsp asks for TTY confirmation; --quiet auto-yes when stdin is not a terminal.
+if [[ ! -t 0 ]]; then
+  ZSP_ARGS+=(--quiet)
+fi
+# shellcheck disable=SC2086
+zsp "${ZSP_ARGS[@]}" ${ZSP_EXTRA_ARGS:-}
 
 echo "Done. Check Zapstore for org.dergigi.boris"
