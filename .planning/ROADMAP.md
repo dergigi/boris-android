@@ -43,11 +43,11 @@ Plans:
   3. User can sign out; Home no longer shows the npub; a later bunker connect is a fresh pairing
   4. Amber Connect / missing-Amber install links still work; a successful Amber or bunker login replaces the other
   5. User can still paste, share, or open a URL and read while logged out
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 2 to break down)
+- [ ] 02-01-PLAN.md — Bunker login (NIP-46) on Home
 
 ## Progress
 

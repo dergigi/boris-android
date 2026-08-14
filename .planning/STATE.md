@@ -22,8 +22,8 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 
 Phase: 2 of 2 (Bunker login)
 Plan: 0 of 1 in current phase
-Status: Research complete; ready to plan
-Last activity: 2026-08-14 — Phase 2 research written (small NIP-46 client stack)
+Status: Plan created; ready to execute
+Last activity: 2026-08-14 — Phase 2 plan written (02-01-PLAN.md)
 
 Progress: [█████░░░░░] 50%
 
