@@ -21,6 +21,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -85,7 +86,8 @@ fun ReaderScreenContent(
 
     fun openOriginal() {
         val url = articleUrl ?: return
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
     }
 
     Scaffold(
@@ -146,6 +148,14 @@ fun ReaderScreenContent(
                         modifier = Modifier.padding(top = 16.dp),
                     ) {
                         Text("Try again")
+                    }
+                    if (state.url.isNotBlank()) {
+                        OutlinedButton(
+                            onClick = ::openOriginal,
+                            modifier = Modifier.padding(top = 8.dp),
+                        ) {
+                            Text("Open original")
+                        }
                     }
                 }
             }

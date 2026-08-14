@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Empty URL field falls back to `https://www.citadel21.com/the-paranoid-wallet`
 - In-article http(s) links open in the reader instead of the browser
+- Fetch errors offer an Open original action that uses the system view intent
 
 ### Fixed
 
