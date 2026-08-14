@@ -6,7 +6,7 @@ Boris already reads articles. This milestone adds optional Amber identity on Hom
 
 ## Phases
 
-- [ ] **Phase 1: Amber login** - Connect via Amber, persist npub, sign out, missing-signer UX
+- [ ] **Phase 1: Amber login** - Connect via Amber, persist npub, sign out, missing-signer UX (code done; device UAT pending)
 
 ## Phase Details
 
@@ -24,7 +24,7 @@ Boris already reads articles. This milestone adds optional Amber identity on Hom
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-01: Amber login (manifest queries, get_public_key, session store, Home chrome)
+- [x] 01-01: Amber login (manifest queries, get_public_key, session store, Home chrome)
 
 ## Progress
 
@@ -33,7 +33,7 @@ Phases execute in numeric order: 1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Amber login | 0/1 | Not started | - |
+| 1. Amber login | 1/1 | Executed (UAT pending) | 2026-08-14 |
 
 ---
 *Roadmap created: 2026-08-14*

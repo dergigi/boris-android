@@ -1,12 +1,12 @@
 ---
 gsd_state_version: '1.0'
-status: planning
+status: executing
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 90
 ---
 
 # Project State
@@ -16,29 +16,29 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity (npub + signer package), never a key in Boris.
-**Current focus:** Phase 1: Amber login
+**Current focus:** Phase 1: Amber login — code in; device UAT via 0.0.4 install
 
 ## Current Position
 
 Phase: 1 of 1 (Amber login)
-Plan: 0 of 1 in current phase
-Status: Ready to execute
-Last activity: 2026-08-14 — Phase 1 plan 01-01 written; plan check running
+Plan: 1 of 1 in current phase
+Status: Plan executed; awaiting device UAT
+Last activity: 2026-08-14 — Amber login implemented; cutting 0.0.4 for device install
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 1
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: —
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Amber login | 0 | 1 | — |
+| 1. Amber login | 1 | 1 | — |
 
 **Recent Trend:**
 - Last 5 plans: —
@@ -79,5 +79,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Roadmap created; ready for `/gsd-plan-phase 1`
+Stopped at: Amber login shipped in working tree; 0.0.4 release next for device UAT
 Resume file: None

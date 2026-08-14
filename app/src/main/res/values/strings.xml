@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Boris</string>
+    <string name="auth_connect">Connect with Amber</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_missing_amber">Amber is not installed. Install it, then come back to connect.</string>
+    <string name="auth_install_zapstore">Install Amber on Zapstore</string>
+    <string name="auth_install_fdroid">Install Amber on F-Droid</string>
+    <string name="auth_install_github">Install Amber from GitHub</string>
+    <string name="auth_rejected">Amber declined the request.</string>
+    <string name="auth_cancelled">Amber did not return a key.</string>
 </resources>

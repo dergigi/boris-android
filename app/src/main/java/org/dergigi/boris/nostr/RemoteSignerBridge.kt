@@ -1,0 +1,30 @@
+package org.dergigi.boris.nostr
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+
+object RemoteSignerBridge {
+    fun isSignerAvailable(context: Context): Boolean {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:"))
+        val infos = if (Build.VERSION.SDK_INT >= 33) {
+            context.packageManager.queryIntentActivities(
+                intent,
+                PackageManager.ResolveInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(intent, 0)
+        }
+        return infos.isNotEmpty()
+    }
+
+    fun buildGetPublicKeyIntent(): Intent {
+        return Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("type", "get_public_key")
+        }
+    }
+}

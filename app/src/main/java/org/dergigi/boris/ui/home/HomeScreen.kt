@@ -1,5 +1,7 @@
 package org.dergigi.boris.ui.home
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,15 +29,35 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.ui.auth.AuthBar
+import org.dergigi.boris.ui.auth.AuthViewModel
 
 const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
 
 @Composable
-fun HomeScreen(onRead: (String) -> Unit) {
+fun HomeScreen(
+    onRead: (String) -> Unit,
+    viewModel: AuthViewModel = viewModel(),
+) {
     var url by rememberSaveable { mutableStateOf("") }
     val extracted = UrlExtractor.extract(url.trim().ifEmpty { DEFAULT_ARTICLE_URL })
     val canRead = extracted != null
+    val authState by viewModel.state.collectAsStateWithLifecycle()
+    val authMessage by viewModel.message.collectAsStateWithLifecycle()
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        viewModel.onSignerResult(result.resultCode, result.data)
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+    }
 
     fun submit() {
         extracted?.let(onRead)
@@ -65,7 +87,16 @@ fun HomeScreen(onRead: (String) -> Unit) {
                 style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+            AuthBar(
+                state = authState,
+                message = authMessage,
+                onConnect = {
+                    viewModel.connectIntent()?.let(launcher::launch)
+                },
+                onSignOut = viewModel::signOut,
+            )
+            Spacer(Modifier.height(24.dp))
             OutlinedTextField(
                 value = url,
                 onValueChange = { url = it },
