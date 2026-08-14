@@ -40,6 +40,21 @@ object SignerResults {
     fun parseSignedEvent(
         resultCode: Int,
         rejected: Boolean,
+        event: Nip01Event?,
+        sessionHex: String,
+    ): SignerResult {
+        if (rejected) return SignerResult.Rejected
+        if (resultCode != Activity.RESULT_OK) return SignerResult.Cancelled
+        if (event == null) return SignerResult.Cancelled
+        if (event.kind != Nip01Event.KIND_HIGHLIGHT) return SignerResult.Cancelled
+        if (!event.pubkey.equals(sessionHex, ignoreCase = true)) return SignerResult.Cancelled
+        if (!event.verify()) return SignerResult.Cancelled
+        return SignerResult.Signed(event)
+    }
+
+    fun parseSignedEvent(
+        resultCode: Int,
+        rejected: Boolean,
         eventJson: String?,
         resultJson: String?,
         sessionHex: String,
@@ -52,11 +67,8 @@ object SignerResults {
             Nip01Event.parse(JSONObject(raw))
         } catch (_: Exception) {
             null
-        } ?: return SignerResult.Cancelled
-        if (event.kind != Nip01Event.KIND_HIGHLIGHT) return SignerResult.Cancelled
-        if (!event.pubkey.equals(sessionHex, ignoreCase = true)) return SignerResult.Cancelled
-        if (!event.verify()) return SignerResult.Cancelled
-        return SignerResult.Signed(event)
+        }
+        return parseSignedEvent(resultCode, rejected = false, event = event, sessionHex = sessionHex)
     }
 
     fun parseSignedEvent(resultCode: Int, data: Intent?, sessionHex: String): SignerResult {

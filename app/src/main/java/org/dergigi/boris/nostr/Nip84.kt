@@ -48,7 +48,8 @@ object Nip84 {
         }
         val paragraph = containingParagraph ?: return null
 
-        val parts = paragraph.split(Regex("""([.!?]+\s+)""")).filter { it.trim().isNotEmpty() }
+        val parts = splitKeepingDelimiters(paragraph, Regex("""[.!?]+\s+"""))
+            .filter { it.trim().isNotEmpty() }
         val reconstructed = mutableListOf<String>()
         for (part in parts) {
             if (part.matches(Regex("""^[.!?]+\s*$"""))) {
@@ -72,6 +73,20 @@ object Nip84 {
             contextParts.add(reconstructed[selectedSentenceIndex + 1].trim())
         }
         return if (contextParts.size > 1) contextParts.joinToString(" ") else null
+    }
+
+    private fun splitKeepingDelimiters(input: String, delimiter: Regex): List<String> {
+        val out = mutableListOf<String>()
+        var last = 0
+        delimiter.findAll(input).forEach { match ->
+            if (match.range.first > last) {
+                out.add(input.substring(last, match.range.first))
+            }
+            out.add(match.value)
+            last = match.range.last + 1
+        }
+        if (last < input.length) out.add(input.substring(last))
+        return out
     }
 
     private fun tagsToJson(tags: List<List<String>>): JSONArray {
