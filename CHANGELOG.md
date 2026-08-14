@@ -9,6 +9,18 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-08-14
+
+### Added
+
+- Optional bunker login on Home via NIP-46 `bunker://`
+- Paste or open a bunker link, pair, and show npub after restart
+- Home restyled to match the webapp login (Amber, Bunker, Read)
+
+### Changed
+
+- Home greeting and copy match the webapp, including yellow highlight marks
+
 ## [0.0.4] - 2026-08-14
 
 ### Added
@@ -60,7 +72,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/dergigi/boris-android/releases/tag/v0.0.5
 [0.0.4]: https://github.com/dergigi/boris-android/releases/tag/v0.0.4
 [0.0.3]: https://github.com/dergigi/boris-android/releases/tag/v0.0.3
 [0.0.2]: https://github.com/dergigi/boris-android/releases/tag/v0.0.2

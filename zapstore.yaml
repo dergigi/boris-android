@@ -12,8 +12,8 @@ description: |
   In-article links stay in the reader. If a page cannot be parsed, open the
   original in whatever app handles that URL.
 
-  Optional Amber login (NIP-55) so Boris can show your npub without holding
-  an nsec. Reading works without an account.
+  Optional Amber (NIP-55) or bunker (NIP-46) login so Boris can show your npub
+  without holding an nsec. Reading works without an account.
 
 tags:
   - reading
