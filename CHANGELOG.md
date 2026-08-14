@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Article title and body text can be selected and copied
+
 ## [0.0.1] - 2026-08-14
 
 ### Added

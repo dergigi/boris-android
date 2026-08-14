@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -200,69 +201,71 @@ private fun ArticleBody(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
+        SelectionContainer(
             modifier = Modifier
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
                 .padding(bottom = 48.dp),
         ) {
-            if (!content.title.isNullOrBlank()) {
-                Text(
-                    text = content.title,
-                    style = typography.headlineLarge,
-                    color = colors.onBackground,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                )
-            }
-            if (readingTime != null) {
-                Text(
-                    text = readingTime,
-                    style = typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 24.dp),
-                )
-            }
-            CompositionLocalProvider(LocalUriHandler provides uriHandler) {
-                Markdown(
-                content = content.body,
-                colors = markdownColor(
-                    text = colors.onBackground,
-                    codeBackground = colors.surfaceVariant,
-                    inlineCodeBackground = colors.surfaceVariant,
-                    dividerColor = colors.outline,
-                    tableBackground = colors.surfaceVariant.copy(alpha = 0.4f),
-                ),
-                typography = markdownTypography(
-                    h1 = typography.headlineLarge,
-                    h2 = typography.headlineMedium,
-                    h3 = typography.headlineSmall,
-                    h4 = typography.titleLarge,
-                    h5 = typography.titleLarge.copy(fontSize = 18.sp),
-                    h6 = typography.titleLarge.copy(fontSize = 16.sp),
-                    text = typography.bodyLarge,
-                    paragraph = typography.bodyLarge,
-                    quote = typography.bodyLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                    ordered = typography.bodyLarge,
-                    bullet = typography.bodyLarge,
-                    list = typography.bodyLarge,
-                    code = typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, textAlign = TextAlign.Left),
-                    inlineCode = typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-                    table = typography.bodyMedium.copy(fontFamily = SourceSerif, textAlign = TextAlign.Left),
-                    textLink = TextLinkStyles(
-                        style = typography.bodyLarge.copy(color = colors.secondary).toSpanStyle(),
-                    ),
-                ),
-                padding = markdownPadding(
-                    block = 12.dp,
-                    list = 8.dp,
-                    listItemTop = 4.dp,
-                    listItemBottom = 4.dp,
-                    codeBlock = PaddingValues(16.dp),
-                    blockQuote = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                ),
-                imageTransformer = Coil3ImageTransformerImpl,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column {
+                if (!content.title.isNullOrBlank()) {
+                    Text(
+                        text = content.title,
+                        style = typography.headlineLarge,
+                        color = colors.onBackground,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                    )
+                }
+                if (readingTime != null) {
+                    Text(
+                        text = readingTime,
+                        style = typography.bodySmall,
+                        color = colors.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 24.dp),
+                    )
+                }
+                CompositionLocalProvider(LocalUriHandler provides uriHandler) {
+                    Markdown(
+                        content = content.body,
+                        colors = markdownColor(
+                            text = colors.onBackground,
+                            codeBackground = colors.surfaceVariant,
+                            inlineCodeBackground = colors.surfaceVariant,
+                            dividerColor = colors.outline,
+                            tableBackground = colors.surfaceVariant.copy(alpha = 0.4f),
+                        ),
+                        typography = markdownTypography(
+                            h1 = typography.headlineLarge,
+                            h2 = typography.headlineMedium,
+                            h3 = typography.headlineSmall,
+                            h4 = typography.titleLarge,
+                            h5 = typography.titleLarge.copy(fontSize = 18.sp),
+                            h6 = typography.titleLarge.copy(fontSize = 16.sp),
+                            text = typography.bodyLarge,
+                            paragraph = typography.bodyLarge,
+                            quote = typography.bodyLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                            ordered = typography.bodyLarge,
+                            bullet = typography.bodyLarge,
+                            list = typography.bodyLarge,
+                            code = typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, textAlign = TextAlign.Left),
+                            inlineCode = typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                            table = typography.bodyMedium.copy(fontFamily = SourceSerif, textAlign = TextAlign.Left),
+                            textLink = TextLinkStyles(
+                                style = typography.bodyLarge.copy(color = colors.secondary).toSpanStyle(),
+                            ),
+                        ),
+                        padding = markdownPadding(
+                            block = 12.dp,
+                            list = 8.dp,
+                            listItemTop = 4.dp,
+                            listItemBottom = 4.dp,
+                            codeBlock = PaddingValues(16.dp),
+                            blockQuote = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                        ),
+                        imageTransformer = Coil3ImageTransformerImpl,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
