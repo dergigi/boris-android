@@ -9,4 +9,11 @@
     <string name="auth_install_github">Install Amber from GitHub</string>
     <string name="auth_rejected">Amber declined the request.</string>
     <string name="auth_cancelled">Amber did not return a key.</string>
+    <string name="auth_connect_bunker">Connect bunker</string>
+    <string name="auth_bunker_hint">bunker://…</string>
+    <string name="auth_bunker_connecting">Connecting to bunker…</string>
+    <string name="auth_bunker_bad_uri">That bunker link is not valid.</string>
+    <string name="auth_bunker_timeout">The bunker did not respond in time.</string>
+    <string name="auth_bunker_rejected">The bunker declined the request.</string>
+    <string name="auth_bunker_missing_pubkey">The bunker did not return a public key.</string>
 </resources>

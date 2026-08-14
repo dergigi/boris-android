@@ -27,11 +27,14 @@ object Routes {
 }
 
 @Composable
-fun BorisApp(incomingUrl: String? = null) {
+fun BorisApp(
+    incomingUrl: String? = null,
+    incomingBunker: String? = null,
+) {
     val navController = rememberNavController()
 
     LaunchedEffect(incomingUrl) {
-        if (!incomingUrl.isNullOrBlank()) {
+        if (!incomingUrl.isNullOrBlank() && !incomingUrl.trim().startsWith("bunker:", ignoreCase = true)) {
             navController.navigate(Routes.reader(incomingUrl)) {
                 launchSingleTop = true
             }
@@ -46,6 +49,7 @@ fun BorisApp(incomingUrl: String? = null) {
             composable(Routes.HOME) {
                 HomeScreen(
                     onRead = { url -> navController.navigate(Routes.reader(url)) },
+                    incomingBunker = incomingBunker,
                 )
             }
             composable(

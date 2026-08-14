@@ -78,6 +78,12 @@ android {
     lint {
         disable += "NullSafeMutableLiveData"
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
 }
 
 dependencies {
@@ -94,6 +100,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.okhttp)
+    implementation(libs.secp256k1.kmp)
+    implementation(libs.secp256k1.jni.android)
+    implementation(libs.bouncycastle.bcprov)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.markdown.renderer)
@@ -101,4 +110,5 @@ dependencies {
     implementation(libs.markdown.renderer.coil3)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.secp256k1.jni.jvm)
 }

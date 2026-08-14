@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,9 +43,16 @@ const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
 @Composable
 fun HomeScreen(
     onRead: (String) -> Unit,
+    incomingBunker: String? = null,
     viewModel: AuthViewModel = viewModel(),
 ) {
     var url by rememberSaveable { mutableStateOf("") }
+    var bunkerUri by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(incomingBunker) {
+        if (!incomingBunker.isNullOrBlank()) {
+            bunkerUri = incomingBunker
+        }
+    }
     val extracted = UrlExtractor.extract(url.trim().ifEmpty { DEFAULT_ARTICLE_URL })
     val canRead = extracted != null
     val authState by viewModel.state.collectAsStateWithLifecycle()
@@ -91,9 +99,12 @@ fun HomeScreen(
             AuthBar(
                 state = authState,
                 message = authMessage,
+                bunkerUri = bunkerUri,
+                onBunkerUriChange = { bunkerUri = it },
                 onConnect = {
                     viewModel.connectIntent()?.let(launcher::launch)
                 },
+                onConnectBunker = { viewModel.connectBunker(bunkerUri) },
                 onSignOut = viewModel::signOut,
             )
             Spacer(Modifier.height(24.dp))

@@ -14,14 +14,18 @@ import org.dergigi.boris.ui.theme.BorisTheme
 
 class MainActivity : ComponentActivity() {
     private var incomingUrl by mutableStateOf<String?>(null)
+    private var incomingBunker by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        incomingUrl = urlFrom(intent)
+        applyIntent(intent)
         enableEdgeToEdge()
         setContent {
             BorisTheme {
-                BorisApp(incomingUrl = incomingUrl)
+                BorisApp(
+                    incomingUrl = incomingUrl,
+                    incomingBunker = incomingBunker,
+                )
             }
         }
     }
@@ -29,7 +33,28 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        incomingUrl = urlFrom(intent)
+        applyIntent(intent)
+    }
+
+    private fun applyIntent(intent: Intent) {
+        val bunker = bunkerFrom(intent)
+        if (bunker != null) {
+            incomingBunker = bunker
+            incomingUrl = null
+        } else {
+            incomingUrl = urlFrom(intent)
+            incomingBunker = null
+        }
+    }
+
+    private fun bunkerFrom(intent: Intent): String? {
+        val raw = when (intent.action) {
+            Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)
+            Intent.ACTION_VIEW -> intent.dataString
+            else -> null
+        }
+        val trimmed = raw?.trim().orEmpty()
+        return if (trimmed.startsWith("bunker:", ignoreCase = true)) trimmed else null
     }
 
     private fun urlFrom(intent: Intent): String? {
