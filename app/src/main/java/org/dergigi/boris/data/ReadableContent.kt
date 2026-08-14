@@ -1,4 +1,4 @@
-package com.readwithboris.data
+package org.dergigi.boris.data
 
 data class ReadableContent(
     val url: String,

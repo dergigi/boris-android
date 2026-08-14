@@ -1,4 +1,4 @@
-package com.readwithboris
+package org.dergigi.boris
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,9 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.readwithboris.data.UrlExtractor
-import com.readwithboris.ui.BorisApp
-import com.readwithboris.ui.theme.BorisTheme
+import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.ui.BorisApp
+import org.dergigi.boris.ui.theme.BorisTheme
 
 class MainActivity : ComponentActivity() {
     private var incomingUrl by mutableStateOf<String?>(null)

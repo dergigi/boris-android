@@ -1,10 +1,10 @@
-package com.readwithboris.ui.reader
+package org.dergigi.boris.ui.reader
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.readwithboris.data.ReadableContent
-import com.readwithboris.data.ReaderRepository
+import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReaderRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

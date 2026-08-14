@@ -1,4 +1,4 @@
-package com.readwithboris.ui.theme
+package org.dergigi.boris.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

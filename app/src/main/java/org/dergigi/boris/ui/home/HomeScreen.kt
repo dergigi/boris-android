@@ -1,4 +1,4 @@
-package com.readwithboris.ui.home
+package org.dergigi.boris.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.readwithboris.data.UrlExtractor
+import org.dergigi.boris.data.UrlExtractor
 
 @Composable
 fun HomeScreen(onRead: (String) -> Unit) {

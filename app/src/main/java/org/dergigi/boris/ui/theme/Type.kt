@@ -1,4 +1,4 @@
-package com.readwithboris.ui.theme
+package org.dergigi.boris.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import com.readwithboris.R
+import org.dergigi.boris.R
 
 @OptIn(ExperimentalTextApi::class)
 val SourceSerif = FontFamily(

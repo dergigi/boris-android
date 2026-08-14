@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-    namespace = "com.readwithboris"
+    namespace = "org.dergigi.boris"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.readwithboris"
+        applicationId = "org.dergigi.boris"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

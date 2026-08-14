@@ -1,4 +1,4 @@
-package com.readwithboris.ui
+package org.dergigi.boris.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -10,9 +10,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.readwithboris.ui.home.HomeScreen
-import com.readwithboris.ui.reader.ReaderScreen
-import com.readwithboris.ui.reader.ReaderViewModel
+import org.dergigi.boris.ui.home.HomeScreen
+import org.dergigi.boris.ui.reader.ReaderScreen
+import org.dergigi.boris.ui.reader.ReaderViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 

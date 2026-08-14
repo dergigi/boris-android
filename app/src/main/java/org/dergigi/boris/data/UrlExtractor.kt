@@ -1,4 +1,4 @@
-package com.readwithboris.data
+package org.dergigi.boris.data
 
 object UrlExtractor {
     private val urlRegex = Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)

@@ -1,4 +1,4 @@
-package com.readwithboris.ui.reader
+package org.dergigi.boris.ui.reader
 
 import android.content.Intent
 import android.net.Uri
@@ -43,8 +43,8 @@ import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.markdownPadding
-import com.readwithboris.data.ReadableContent
-import com.readwithboris.ui.theme.SourceSerif
+import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.ui.theme.SourceSerif
 import kotlin.math.max
 import kotlin.math.roundToInt
 

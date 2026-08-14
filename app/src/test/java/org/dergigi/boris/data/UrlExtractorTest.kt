@@ -1,4 +1,4 @@
-package com.readwithboris.data
+package org.dergigi.boris.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

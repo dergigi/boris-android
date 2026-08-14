@@ -1,4 +1,4 @@
-package com.readwithboris.data
+package org.dergigi.boris.data
 
 import okhttp3.OkHttpClient
 import okhttp3.Request

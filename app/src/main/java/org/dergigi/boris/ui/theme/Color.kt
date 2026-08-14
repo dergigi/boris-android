@@ -1,4 +1,4 @@
-package com.readwithboris.ui.theme
+package org.dergigi.boris.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

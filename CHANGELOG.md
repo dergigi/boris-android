@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Application ID and namespace are now `org.dergigi.boris`
+
 ## [0.1.0] - 2026-08-14
 
 ### Added
