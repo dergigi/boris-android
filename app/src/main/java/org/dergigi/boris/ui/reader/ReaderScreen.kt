@@ -489,17 +489,25 @@ private fun ArticleBody(
             scope.launch { scrollState.animateScrollTo(target) }
         }
     }
-    val onJump = remember<(HighlightStop) -> Unit> { { stop -> jumpState.value(stop) } }
-    val highlightedComponents = remember(mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) {
+    var paneOpen by remember { mutableStateOf(false) }
+    var selectedId by remember { mutableStateOf<String?>(null) }
+    val openFromStop = remember<(HighlightStop) -> Unit> {
+        { stop ->
+            jumpState.value(navigator.select(stop))
+            selectedId = stop.highlightId
+            paneOpen = true
+        }
+    }
+    val highlightedComponents = remember(mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) {
         markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
         )
     }
     VolumeKeys.Handle(enabled = volumeScroll && settings.volumeButtonScroll) { up ->
@@ -600,7 +608,7 @@ private fun ArticleBody(
                             onTap = { offset ->
                                 val laid = titleLayout ?: return@readerSelectable false
                                 val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
-                                onJump(navigator.select(stop))
+                                openFromStop(stop)
                                 true
                             },
                         ),
@@ -633,10 +641,7 @@ private fun ArticleBody(
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
                     published = if (coverUrl == null) published else null,
-                    onHighlightsClick = {
-                        val stop = navigator.next() ?: return@ArticleMetaRow
-                        onJump(stop)
-                    },
+                    onHighlightsClick = { paneOpen = true },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
                     Markdown(
@@ -727,6 +732,29 @@ private fun ArticleBody(
                 selection.selectAll(owner, selection.text)
             },
         )
+        HighlightsPane(
+            open = paneOpen,
+            highlights = highlights,
+            selectedId = selectedId,
+            loggedIn = loggedIn,
+            settings = settings,
+            mineColor = mineColor,
+            friendsColor = friendsColor,
+            otherColor = otherColor,
+            onDismiss = { paneOpen = false },
+            onSelect = { item ->
+                navigator.firstStop(item.id)?.let { jumpState.value(navigator.select(it)) }
+                selectedId = item.id
+                paneOpen = false
+            },
+            onOpenProfile = { pubkey ->
+                paneOpen = false
+                onOpenProfile(pubkey)
+            },
+            onToggleMarks = {
+                SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
+            },
+        )
     }
 }
 
@@ -741,7 +769,7 @@ private fun HighlightedMarkdownNode(
     underline: Boolean,
     selection: ReaderSelectionState,
     navigator: HighlightNavigator,
-    onJump: (HighlightStop) -> Unit,
+    onHighlightTap: (HighlightStop) -> Unit,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -783,7 +811,7 @@ private fun HighlightedMarkdownNode(
                 onTap = { offset ->
                     val laid = layout ?: return@readerSelectable false
                     val stop = navigator.hit(owner, laid, offset) ?: return@readerSelectable false
-                    onJump(navigator.select(stop))
+                    onHighlightTap(stop)
                     true
                 },
             ),

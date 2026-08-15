@@ -90,6 +90,9 @@ class HighlightNavigator {
         return stop
     }
 
+    fun firstStop(highlightId: String): HighlightStop? =
+        stops.firstOrNull { it.highlightId == highlightId }
+
     fun hit(owner: Any, layout: TextLayoutResult, position: Offset): HighlightStop? {
         val node = nodes[owner] ?: return null
         return node.stops.firstOrNull { stop ->

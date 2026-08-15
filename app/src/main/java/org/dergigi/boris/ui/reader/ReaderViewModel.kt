@@ -44,6 +44,10 @@ data class PaintedHighlight(
     val quote: String,
     val mine: Boolean,
     val friend: Boolean = false,
+    val pubkey: String = "",
+    val createdAt: Long = 0L,
+    val context: String? = null,
+    val authorName: String = "",
 )
 
 class ReaderViewModel(
@@ -327,7 +331,14 @@ class ReaderViewModel(
     }
 
     private fun onSignedHighlight(session: Session, event: Nip01Event) {
-        val painted = PaintedHighlight(event.id, event.content, mine = true)
+        val painted = PaintedHighlight(
+            id = event.id,
+            quote = event.content,
+            mine = true,
+            pubkey = event.pubkey,
+            createdAt = event.createdAt,
+            context = event.tagValue("context"),
+        )
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
             _highlightCount.value = _highlightCount.value + 1
@@ -873,14 +884,20 @@ class ReaderViewModel(
         pubkeyHex: String?,
         friends: Set<String>,
     ) {
+        val profiles = RelayQuery.cachedProfiles(events.map { it.pubkey })
         _highlightCount.value = events.size
         _highlights.value = events.map { event ->
             val mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            val key = event.pubkey.lowercase()
             PaintedHighlight(
                 id = event.id,
                 quote = event.content,
                 mine = mine,
-                friend = !mine && event.pubkey.lowercase() in friends,
+                friend = !mine && key in friends,
+                pubkey = event.pubkey,
+                createdAt = event.createdAt,
+                context = event.tagValue("context"),
+                authorName = Profile.displayName(event.pubkey, profiles[key]),
             )
         }
     }
@@ -919,6 +936,11 @@ class ReaderViewModel(
                     else -> RelayQuery.fetchHighlights(relays, content.url)
                 }
                 paintHighlights(events, session?.pubkeyHex, contacts)
+                val authors = events.map { it.pubkey }.distinct()
+                if (authors.isNotEmpty()) {
+                    RelayQuery.fetchProfiles(relays, authors)
+                    paintHighlights(events, session?.pubkeyHex, contacts)
+                }
             } catch (_: Exception) {
             }
         }
