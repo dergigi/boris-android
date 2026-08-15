@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Boris</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_library">Library</string>
+    <string name="nav_feed">Feed</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_account">Account</string>
     <string name="home_hello">Hi! I\'m Boris.</string>
     <string name="home_copy">Connect your npub to see your bookmarks, explore long-form articles, and create your own highlights.</string>
     <string name="home_mark_npub">Connect your npub</string>

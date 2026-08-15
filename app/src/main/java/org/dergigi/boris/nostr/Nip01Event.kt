@@ -46,6 +46,7 @@ data class Nip01Event(
         tags.any { it.size >= 2 && it[0] == "p" && it[1].equals(pubkeyHex, ignoreCase = true) }
 
     companion object {
+        const val KIND_METADATA = 0
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242
         const val KIND_HIGHLIGHT = 9802

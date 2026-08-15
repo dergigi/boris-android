@@ -2,6 +2,7 @@ package org.dergigi.boris.ui.home
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,6 +66,7 @@ const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
 fun HomeScreen(
     onRead: (String) -> Unit,
     incomingBunker: String? = null,
+    modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
 ) {
     var url by rememberSaveable { mutableStateOf("") }
@@ -94,9 +95,9 @@ fun HomeScreen(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .systemBarsPadding()
+            .background(MaterialTheme.colorScheme.background)
             .imePadding(),
     ) {
         Column(

@@ -1,23 +1,41 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
+import org.dergigi.boris.ui.shell.BorisBottomBar
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.StubScreen
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object Routes {
     const val HOME = "home"
+    const val LIBRARY = "library"
+    const val FEED = "feed"
+    const val SEARCH = "search"
+    const val ACCOUNT = "account"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
 
     fun reader(url: String): String {
@@ -30,8 +48,14 @@ object Routes {
 fun BorisApp(
     incomingUrl: String? = null,
     incomingBunker: String? = null,
+    authViewModel: AuthViewModel = viewModel(),
 ) {
     val navController = rememberNavController()
+    val pictureUrl by authViewModel.pictureUrl.collectAsStateWithLifecycle()
+    val backStack by navController.currentBackStackEntryAsState()
+    val currentRoute = backStack?.destination?.route
+    val selectedTab = MainTab.entries.firstOrNull { it.route == currentRoute }
+    val showBar = selectedTab != null
 
     LaunchedEffect(incomingUrl) {
         if (!incomingUrl.isNullOrBlank() && !incomingUrl.trim().startsWith("bunker:", ignoreCase = true)) {
@@ -42,32 +66,71 @@ fun BorisApp(
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController = navController,
-            startDestination = Routes.HOME,
-        ) {
-            composable(Routes.HOME) {
-                HomeScreen(
-                    onRead = { url -> navController.navigate(Routes.reader(url)) },
-                    incomingBunker = incomingBunker,
-                )
-            }
-            composable(
-                route = Routes.READER,
-                arguments = listOf(
-                    navArgument(ReaderViewModel.URL_ARG) { type = NavType.StringType },
-                ),
-            ) {
-                ReaderScreen(
-                    onBack = {
-                        if (!navController.popBackStack()) {
-                            navController.navigate(Routes.HOME) {
+        Scaffold(
+            contentWindowInsets = if (showBar) {
+                ScaffoldDefaults.contentWindowInsets
+            } else {
+                WindowInsets(0)
+            },
+            bottomBar = {
+                if (selectedTab != null) {
+                    BorisBottomBar(
+                        selected = selectedTab,
+                        pictureUrl = pictureUrl,
+                        onSelect = { tab ->
+                            navController.navigate(tab.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
+                                restoreState = true
                             }
-                        }
-                    },
-                    onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
-                )
+                        },
+                    )
+                }
+            },
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                modifier = Modifier.padding(innerPadding),
+            ) {
+                composable(Routes.HOME) {
+                    HomeScreen(
+                        onRead = { url -> navController.navigate(Routes.reader(url)) },
+                        incomingBunker = incomingBunker,
+                        viewModel = authViewModel,
+                    )
+                }
+                composable(Routes.LIBRARY) {
+                    StubScreen(stringResource(MainTab.Library.labelRes))
+                }
+                composable(Routes.FEED) {
+                    StubScreen(stringResource(MainTab.Feed.labelRes))
+                }
+                composable(Routes.SEARCH) {
+                    StubScreen(stringResource(MainTab.Search.labelRes))
+                }
+                composable(Routes.ACCOUNT) {
+                    StubScreen(stringResource(MainTab.Account.labelRes))
+                }
+                composable(
+                    route = Routes.READER,
+                    arguments = listOf(
+                        navArgument(ReaderViewModel.URL_ARG) { type = NavType.StringType },
+                    ),
+                ) {
+                    ReaderScreen(
+                        onBack = {
+                            if (!navController.popBackStack()) {
+                                navController.navigate(Routes.HOME) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        },
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                    )
+                }
             }
         }
     }

@@ -21,6 +21,7 @@ import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerResult
 import org.dergigi.boris.nostr.BunkerUri
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
 import org.dergigi.boris.nostr.SignerResults
@@ -34,11 +35,20 @@ class AuthViewModel(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _pictureUrl = MutableStateFlow<String?>(null)
+    val pictureUrl: StateFlow<String?> = _pictureUrl.asStateFlow()
+
     private var pairJob: Job? = null
+    private var pictureJob: Job? = null
+
+    init {
+        loadPicture()
+    }
 
     fun refresh() {
         if (pairJob?.isActive == true) return
         _state.value = readState()
+        loadPicture()
     }
 
     fun connectIntent(): Intent? {
@@ -84,6 +94,7 @@ class AuthViewModel(
                 SessionStore.save(app, Session.Amber(result.pubkeyHex, result.signerPackage))
                 _message.value = null
                 _state.value = AuthUiState.LoggedIn(Nip19.npubEncode(result.pubkeyHex))
+                loadPicture()
             }
             SignerResult.Rejected -> {
                 _message.value = app.getString(R.string.auth_rejected)
@@ -104,6 +115,8 @@ class AuthViewModel(
         val remote = bunker?.remoteSignerPubkey
         val relays = bunker?.relays.orEmpty()
         SessionStore.clear(app)
+        pictureJob?.cancel()
+        _pictureUrl.value = null
         _message.value = null
         _state.value = readState()
         if (privkey != null && remote != null && relays.isNotEmpty()) {
@@ -134,6 +147,7 @@ class AuthViewModel(
             )
             _message.value = null
             _state.value = AuthUiState.LoggedIn(Nip19.npubEncode(result.userHex))
+            loadPicture()
         } catch (_: Exception) {
             failPair(app, R.string.auth_bunker_rejected)
         }
@@ -142,6 +156,22 @@ class AuthViewModel(
     private fun failPair(app: Application, messageRes: Int) {
         _state.value = readState()
         _message.value = app.getString(messageRes)
+    }
+
+    private fun loadPicture() {
+        val session = SessionStore.load(getApplication()) ?: run {
+            _pictureUrl.value = null
+            return
+        }
+        if (pictureJob?.isActive == true) return
+        pictureJob = viewModelScope.launch(Dispatchers.IO) {
+            val url = try {
+                RelayQuery.fetchProfilePicture(session.pubkeyHex)
+            } catch (_: Exception) {
+                null
+            }
+            _pictureUrl.value = url
+        }
     }
 
     private fun openAuthUrl(url: String) {

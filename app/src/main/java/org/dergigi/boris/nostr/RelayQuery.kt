@@ -20,6 +20,21 @@ object RelayQuery {
         return RelayList.parse(events)
     }
 
+    fun fetchProfilePicture(pubkeyHex: String): String? {
+        val relays = fetchRelayList(pubkeyHex).read
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_METADATA))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 5)
+        val newest = query(relays, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_METADATA &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .maxByOrNull { it.createdAt } ?: return null
+        return pictureUrl(newest.content)
+    }
+
     fun fetchHighlights(readRelays: List<String>, pubkeyHex: String, url: String): List<Nip01Event> {
         val opened = url
         val normalized = ArticleUrl.normalize(url)
@@ -137,6 +152,15 @@ object RelayQuery {
             return events.values.toList()
         } finally {
             sockets.forEach { it.close() }
+        }
+    }
+
+    private fun pictureUrl(content: String): String? {
+        return try {
+            val url = JSONObject(content).optString("picture").trim()
+            if (url.startsWith("http://") || url.startsWith("https://")) url else null
+        } catch (_: Exception) {
+            null
         }
     }
 
