@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.reader.ReaderScreen
@@ -57,11 +58,26 @@ fun BorisApp(
     val selectedTab = MainTab.entries.firstOrNull { it.route == currentRoute }
     val showBar = selectedTab != null
 
+    fun goToTab(tab: MainTab) {
+        navController.navigate(tab.route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     LaunchedEffect(incomingUrl) {
         if (!incomingUrl.isNullOrBlank() && !incomingUrl.trim().startsWith("bunker:", ignoreCase = true)) {
             navController.navigate(Routes.reader(incomingUrl)) {
                 launchSingleTop = true
             }
+        }
+    }
+    LaunchedEffect(incomingBunker) {
+        if (!incomingBunker.isNullOrBlank()) {
+            goToTab(MainTab.Account)
         }
     }
 
@@ -77,15 +93,7 @@ fun BorisApp(
                     BorisBottomBar(
                         selected = selectedTab,
                         pictureUrl = pictureUrl,
-                        onSelect = { tab ->
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onSelect = ::goToTab,
                     )
                 }
             },
@@ -98,8 +106,6 @@ fun BorisApp(
                 composable(Routes.HOME) {
                     HomeScreen(
                         onRead = { url -> navController.navigate(Routes.reader(url)) },
-                        incomingBunker = incomingBunker,
-                        viewModel = authViewModel,
                     )
                 }
                 composable(Routes.LIBRARY) {
@@ -112,7 +118,10 @@ fun BorisApp(
                     StubScreen(stringResource(MainTab.Search.labelRes))
                 }
                 composable(Routes.ACCOUNT) {
-                    StubScreen(stringResource(MainTab.Account.labelRes))
+                    AccountScreen(
+                        incomingBunker = incomingBunker,
+                        viewModel = authViewModel,
+                    )
                 }
                 composable(
                     route = Routes.READER,
