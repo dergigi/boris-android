@@ -84,4 +84,17 @@ class UrlExtractorTest {
             ),
         )
     }
+
+    @Test
+    fun extractsNaddrFromShareTextAndGateways() {
+        val naddr =
+            "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
+        assertEquals("nostr:$naddr", UrlExtractor.extract(naddr))
+        assertEquals("nostr:$naddr", UrlExtractor.extract("nostr:$naddr"))
+        assertEquals("nostr:$naddr", UrlExtractor.extract("https://njump.to/$naddr"))
+        assertEquals(
+            "nostr:$naddr",
+            UrlExtractor.articleUrl("/a/$naddr", "https://readwithboris.com/article"),
+        )
+    }
 }

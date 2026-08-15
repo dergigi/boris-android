@@ -133,7 +133,13 @@ class ReaderViewModel(
         when (session) {
             is Session.Amber -> {
                 val createdAt = System.currentTimeMillis() / 1000
-                val tags = Nip84.tags(content.url, context)
+                val tags = Nip84.tags(
+                    content.url,
+                    context,
+                    content.articleCoordinate,
+                    content.eventId,
+                    content.authorPubkey,
+                )
                 pendingUnsigned = PendingUnsignedEvent(
                     pubkey = session.pubkeyHex,
                     createdAt = createdAt,
@@ -147,6 +153,9 @@ class ReaderViewModel(
                     context,
                     session.pubkeyHex,
                     createdAt,
+                    content.articleCoordinate,
+                    content.eventId,
+                    content.authorPubkey,
                 )
                 return RemoteSignerBridge.buildSignEventIntent(
                     unsigned,
@@ -156,7 +165,15 @@ class ReaderViewModel(
             }
             is Session.Bunker -> {
                 pendingUnsigned = null
-                val unsigned = Nip84.unsignedJson(trimmed, content.url, context, pubkeyHex = null)
+                val unsigned = Nip84.unsignedJson(
+                    trimmed,
+                    content.url,
+                    context,
+                    pubkeyHex = null,
+                    coordinate = content.articleCoordinate,
+                    eventId = content.eventId,
+                    authorPubkey = content.authorPubkey,
+                )
                 viewModelScope.launch {
                     signWithBunker(session, unsigned)
                 }
@@ -250,7 +267,15 @@ class ReaderViewModel(
                     addAll(RelayList.FALLBACK)
                     if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
                 }.distinct()
-                val events = RelayQuery.fetchHighlights(relays, content.url)
+                val events = if (!content.articleCoordinate.isNullOrBlank()) {
+                    RelayQuery.fetchHighlightsForArticle(
+                        relays,
+                        content.articleCoordinate,
+                        content.eventId,
+                    )
+                } else {
+                    RelayQuery.fetchHighlights(relays, content.url)
+                }
                 _highlightCount.value = events.size
                 _highlights.value = events.map { event ->
                     PaintedHighlight(

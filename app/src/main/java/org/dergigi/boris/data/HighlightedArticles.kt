@@ -17,10 +17,13 @@ object HighlightedArticles {
         val out = ArrayList<HighlightedArticle>(limit)
         for (event in events.sortedByDescending { it.createdAt }) {
             val raw = Nip84.articleUrl(event) ?: continue
-            val url = ArticleUrl.normalize(raw)
-            if (!url.startsWith("http")) continue
+            val article = NostrArticle.parse(raw)
+            val url = article?.uri ?: ArticleUrl.normalize(raw)
+            if (article == null && !url.startsWith("http")) continue
             if (!seen.add(url)) continue
-            val host = ArticleUrl.host(url) ?: continue
+            val host = article?.pointer?.identifier?.ifBlank { "nostr" }
+                ?: ArticleUrl.host(url)
+                ?: continue
             out.add(
                 HighlightedArticle(
                     url = url,

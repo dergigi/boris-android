@@ -6,6 +6,9 @@ data class ReadableContent(
     val markdown: String? = null,
     val html: String? = null,
     val publishedAt: Long? = null,
+    val articleCoordinate: String? = null,
+    val eventId: String? = null,
+    val authorPubkey: String? = null,
 ) {
     val body: String
         get() = markdown?.takeIf { it.isNotBlank() } ?: html?.let(::stripHtml).orEmpty()

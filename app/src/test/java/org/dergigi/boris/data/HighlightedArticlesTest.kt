@@ -27,6 +27,19 @@ class HighlightedArticlesTest {
     }
 
     @Test
+    fun includesNostrArticlesFromATags() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article"
+        val articles = HighlightedArticles.fromEvents(
+            listOf(highlight("ignored", createdAt = 5, tags = listOf(listOf("a", coordinate)))),
+            limit = 12,
+        )
+        assertEquals(1, articles.size)
+        assertEquals("my-article", articles[0].host)
+        assertEquals("nostr:", articles[0].url.take(6))
+    }
+
+    @Test
     fun uniqueRecentHonorsLimit() {
         val events = (1..5).map { i ->
             highlight("https://example.com/p$i", createdAt = i.toLong())

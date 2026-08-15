@@ -27,4 +27,39 @@ class Nip19Test {
         assertEquals(hex, Nip19.normalizePubkey(hex.uppercase()))
         assertEquals(hex, Nip19.normalizePubkey(npub))
     }
+
+    @Test
+    fun decodesBareNaddrFromNostrTools() {
+        val naddr = "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
+        val pointer = Nip19.naddrDecode(naddr)
+        assertEquals("my-article", pointer.identifier)
+        assertEquals("3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d", pointer.pubkey)
+        assertEquals(30023, pointer.kind)
+        assertEquals(emptyList<String>(), pointer.relays)
+        assertEquals(
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article",
+            pointer.coordinate,
+        )
+    }
+
+    @Test
+    fun decodesNaddrWithRelayHint() {
+        val naddr = "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqy28wumn8ghj7un9d3shjtnyv9kh2uewd9hsqznd0ykkzun5d93kceg3p9se6"
+        val pointer = Nip19.naddrDecode(naddr)
+        assertEquals("my-article", pointer.identifier)
+        assertEquals(listOf("wss://relay.damus.io"), pointer.relays)
+    }
+
+    @Test
+    fun naddrRoundTrips() {
+        val original = NaddrPointer(
+            identifier = "my-article",
+            pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            kind = 30023,
+        )
+        val decoded = Nip19.naddrDecode(Nip19.naddrEncode(original))
+        assertEquals(original.identifier, decoded.identifier)
+        assertEquals(original.pubkey, decoded.pubkey)
+        assertEquals(original.kind, decoded.kind)
+    }
 }

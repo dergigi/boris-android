@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -60,7 +61,10 @@ class MainActivity : ComponentActivity() {
     private fun urlFrom(intent: Intent): String? {
         return when (intent.action) {
             Intent.ACTION_SEND -> UrlExtractor.extract(intent.getStringExtra(Intent.EXTRA_TEXT))
-            Intent.ACTION_VIEW -> intent.dataString
+            Intent.ACTION_VIEW -> {
+                val raw = intent.dataString
+                NostrArticle.parse(raw)?.uri ?: raw
+            }
             else -> null
         }
     }

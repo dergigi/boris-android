@@ -91,6 +91,7 @@ import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.markdownPadding
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.HexColor
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.SettingsSync
@@ -171,14 +172,16 @@ fun ReaderScreenContent(
 
     fun openOriginal() {
         val url = articleUrl ?: return
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val target = NostrArticle.parse(url)?.publicUrl ?: url
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target))
         context.startActivity(intent)
     }
 
     fun shareArticle() {
         val url = articleUrl ?: return
+        val shareUrl = NostrArticle.parse(url)?.publicUrl ?: url
         val title = (state as? ReaderUiState.Ready)?.content?.title
-        val text = if (title.isNullOrBlank()) url else "$title\n$url"
+        val text = if (title.isNullOrBlank()) shareUrl else "$title\n$shareUrl"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)

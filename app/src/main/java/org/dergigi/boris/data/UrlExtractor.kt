@@ -10,6 +10,7 @@ object UrlExtractor {
     fun extract(text: String?): String? {
         if (text.isNullOrBlank()) return null
         val trimmed = text.trim()
+        NostrArticle.parse(trimmed)?.uri?.let { return it }
         if (looksLikeUrl(trimmed)) return normalize(trimmed)
         val match = urlRegex.find(trimmed)?.value?.trimEnd('.', ',', ';', ')', ']', '"', '\'')
         return match?.let { normalize(it) }
@@ -35,6 +36,7 @@ object UrlExtractor {
     fun articleUrl(href: String?, baseUrl: String? = null): String? {
         if (href.isNullOrBlank()) return null
         val trimmed = href.trim()
+        NostrArticle.parse(trimmed)?.uri?.let { return it }
         val scheme = trimmed.substringBefore(':', missingDelimiterValue = "").lowercase()
         if (scheme in nonHttpSchemes) return null
         if (trimmed.startsWith("#")) return null
@@ -48,7 +50,7 @@ object UrlExtractor {
         } catch (_: Exception) {
             trimmed
         }
-        return extract(absolute.substringBefore('#'))
+        return NostrArticle.parse(absolute)?.uri ?: extract(absolute.substringBefore('#'))
     }
 
     fun imageUrls(markdown: String, baseUrl: String? = null): List<String> {

@@ -142,6 +142,53 @@ object RelayQuery {
         return newest.mapValues { Profile.parse(it.value.content) }
     }
 
+    fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
+        val relays = buildList {
+            addAll(pointer.relays)
+            addAll(RelayList.FALLBACK)
+        }.mapNotNull { Nip66.normalize(it) }.distinct()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(pointer.kind))
+            .put("authors", JSONArray().put(pointer.pubkey))
+            .put("#d", JSONArray().put(pointer.identifier))
+            .put("limit", 5)
+        return query(relays, listOf(filter))
+            .filter { event ->
+                event.kind == pointer.kind &&
+                    event.pubkey.equals(pointer.pubkey, ignoreCase = true) &&
+                    event.tagValue("d") == pointer.identifier
+            }
+            .maxByOrNull { it.createdAt }
+    }
+
+    fun fetchHighlightsForArticle(
+        readRelays: List<String>,
+        coordinate: String,
+        eventId: String? = null,
+    ): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filters = buildList {
+            add(
+                JSONObject()
+                    .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+                    .put("#a", JSONArray().put(coordinate))
+                    .put("limit", 200),
+            )
+            if (!eventId.isNullOrBlank()) {
+                add(
+                    JSONObject()
+                        .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+                        .put("#e", JSONArray().put(eventId))
+                        .put("limit", 200),
+                )
+            }
+        }
+        return query(urls, filters)
+            .filter { it.kind == Nip01Event.KIND_HIGHLIGHT && it.content.isNotBlank() }
+            .distinctBy { it.id }
+    }
+
     fun fetchHighlights(
         readRelays: List<String>,
         url: String,

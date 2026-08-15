@@ -1,5 +1,6 @@
 package org.dergigi.boris.nostr
 
+import org.dergigi.boris.data.NostrArticle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -68,6 +69,42 @@ class Nip84Test {
             sig = "bb".repeat(32),
         )
         assertNull(Nip84.articleUrl(event))
+    }
+
+    @Test
+    fun articleUrlReadsLongFormATag() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article"
+        val event = Nip01Event(
+            id = "3".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(listOf("a", coordinate)),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        val url = Nip84.articleUrl(event)
+        assertEquals("nostr:", url?.take(6))
+        assertEquals("my-article", NostrArticle.parse(url)?.pointer?.identifier)
+    }
+
+    @Test
+    fun tagsForNostrArticleUseAddressPointer() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article"
+        val tags = Nip84.tags(
+            url = "nostr:naddr1qq",
+            context = null,
+            coordinate = coordinate,
+            eventId = "ab".repeat(32),
+            authorPubkey = "cd".repeat(32),
+        )
+        assertEquals(listOf("a", coordinate), tags[0])
+        assertEquals(listOf("e", "ab".repeat(32)), tags[1])
+        assertEquals(listOf("p", "cd".repeat(32)), tags[2])
+        assertEquals(listOf("alt", Nip84.ALT), tags.last())
+        assertFalse(tags.any { it[0] == "r" })
     }
 
     @Test

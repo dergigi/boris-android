@@ -2,6 +2,7 @@ package org.dergigi.boris.data
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.dergigi.boris.nostr.RelayQuery
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -9,6 +10,8 @@ class ReaderRepository(
     private val client: OkHttpClient = defaultClient,
 ) {
     fun fetch(url: String): ReadableContent {
+        val article = NostrArticle.parse(url)
+        if (article != null) return fetchNostr(article)
         val targetUrl = UrlExtractor.normalize(url)
         val request = Request.Builder()
             .url(toProxyUrl(targetUrl))
@@ -23,6 +26,21 @@ class ReaderRepository(
             val text = response.body?.string().orEmpty()
             return parse(targetUrl, text)
         }
+    }
+
+    private fun fetchNostr(article: NostrArticleRef): ReadableContent {
+        val event = RelayQuery.fetchArticle(article.pointer)
+            ?: throw IOException("Article not found")
+        val published = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt
+        return ReadableContent(
+            url = article.uri,
+            title = event.tagValue("title")?.ifBlank { null },
+            markdown = event.content,
+            publishedAt = published,
+            articleCoordinate = article.coordinate,
+            eventId = event.id,
+            authorPubkey = event.pubkey,
+        )
     }
 
     internal fun parse(targetUrl: String, text: String): ReadableContent {

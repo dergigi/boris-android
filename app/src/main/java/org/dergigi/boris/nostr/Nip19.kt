@@ -1,5 +1,14 @@
 package org.dergigi.boris.nostr
 
+data class NaddrPointer(
+    val identifier: String,
+    val pubkey: String,
+    val kind: Int,
+    val relays: List<String> = emptyList(),
+) {
+    val coordinate: String get() = "$kind:${pubkey.lowercase()}:$identifier"
+}
+
 object Nip19 {
     private const val CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
     private val charsetRev = IntArray(128) { -1 }.also { table ->
@@ -14,6 +23,69 @@ object Nip19 {
         require(hrp == "npub") { "Expected npub, got $hrp" }
         require(data.size == 32) { "Invalid npub length" }
         return data.toHex()
+    }
+
+    fun naddrEncode(pointer: NaddrPointer): String {
+        val payload = buildList {
+            add(tlv(0, pointer.identifier.toByteArray(Charsets.UTF_8)))
+            for (relay in pointer.relays) {
+                add(tlv(1, relay.toByteArray(Charsets.UTF_8)))
+            }
+            add(tlv(2, pointer.pubkey.hexToByteArray()))
+            add(tlv(3, uint32be(pointer.kind)))
+        }.fold(ByteArray(0)) { acc, chunk -> acc + chunk }
+        return bech32Encode("naddr", payload)
+    }
+
+    fun naddrDecode(naddr: String): NaddrPointer {
+        val (hrp, data) = bech32Decode(naddr)
+        require(hrp == "naddr") { "Expected naddr, got $hrp" }
+        val fields = parseTlv(data)
+        val identifier = fields[0]?.firstOrNull()?.toString(Charsets.UTF_8)
+        require(!identifier.isNullOrEmpty()) { "naddr missing identifier" }
+        val pubkey = fields[2]?.firstOrNull()?.toHex()
+        require(pubkey != null && pubkey.length == 64) { "naddr missing author" }
+        val kindBytes = fields[3]?.firstOrNull()
+        require(kindBytes != null && kindBytes.isNotEmpty()) { "naddr missing kind" }
+        val relays = fields[1].orEmpty().map { it.toString(Charsets.UTF_8) }
+        return NaddrPointer(
+            identifier = identifier,
+            pubkey = pubkey,
+            kind = be32(kindBytes),
+            relays = relays,
+        )
+    }
+
+    private fun tlv(type: Int, value: ByteArray): ByteArray {
+        require(value.size <= 255) { "TLV value too long" }
+        return byteArrayOf(type.toByte(), value.size.toByte()) + value
+    }
+
+    private fun parseTlv(data: ByteArray): Map<Int, List<ByteArray>> {
+        val out = mutableMapOf<Int, MutableList<ByteArray>>()
+        var i = 0
+        while (i + 2 <= data.size) {
+            val type = data[i].toInt() and 0xFF
+            val len = data[i + 1].toInt() and 0xFF
+            i += 2
+            if (i + len > data.size) break
+            out.getOrPut(type) { mutableListOf() }.add(data.copyOfRange(i, i + len))
+            i += len
+        }
+        return out
+    }
+
+    private fun uint32be(value: Int): ByteArray = byteArrayOf(
+        (value ushr 24).toByte(),
+        (value ushr 16).toByte(),
+        (value ushr 8).toByte(),
+        value.toByte(),
+    )
+
+    private fun be32(bytes: ByteArray): Int {
+        var n = 0
+        for (b in bytes) n = (n shl 8) or (b.toInt() and 0xFF)
+        return n
     }
 
     fun normalizePubkey(value: String): String? {

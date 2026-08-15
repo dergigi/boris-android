@@ -1,5 +1,6 @@
 package org.dergigi.boris.nostr
 
+import org.dergigi.boris.data.NostrArticle
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -7,13 +8,31 @@ object Nip84 {
     const val KIND = 9802
     const val ALT = "Highlight created by Boris Android. readwithboris.com"
 
-    fun articleUrl(event: Nip01Event): String? =
-        event.tags.firstOrNull { tag ->
+    fun articleUrl(event: Nip01Event): String? {
+        val http = event.tags.firstOrNull { tag ->
             tag.size >= 2 && tag[0] == "r" && tag[1].startsWith("http")
         }?.get(1)
+        if (http != null) return http
+        val coordinate = event.tags.firstOrNull { tag ->
+            tag.size >= 2 && tag[0] == "a" && tag[1].startsWith("30023:")
+        }?.get(1) ?: return null
+        return NostrArticle.fromCoordinate(coordinate)?.uri
+    }
 
-    fun tags(url: String, context: String?): List<List<String>> = buildList {
-        add(listOf("r", url))
+    fun tags(
+        url: String,
+        context: String?,
+        coordinate: String? = null,
+        eventId: String? = null,
+        authorPubkey: String? = null,
+    ): List<List<String>> = buildList {
+        if (!coordinate.isNullOrBlank()) {
+            add(listOf("a", coordinate))
+            if (!eventId.isNullOrBlank()) add(listOf("e", eventId))
+            if (!authorPubkey.isNullOrBlank()) add(listOf("p", authorPubkey))
+        } else {
+            add(listOf("r", url))
+        }
         if (!context.isNullOrBlank()) add(listOf("context", context))
         add(listOf("alt", ALT))
     }
@@ -24,11 +43,14 @@ object Nip84 {
         context: String?,
         pubkeyHex: String? = null,
         createdAt: Long = System.currentTimeMillis() / 1000,
+        coordinate: String? = null,
+        eventId: String? = null,
+        authorPubkey: String? = null,
     ): String {
         val obj = JSONObject()
             .put("kind", KIND)
             .put("content", quote)
-            .put("tags", tagsToJson(tags(url, context)))
+            .put("tags", tagsToJson(tags(url, context, coordinate, eventId, authorPubkey)))
             .put("created_at", createdAt)
         if (!pubkeyHex.isNullOrBlank()) {
             obj.put("pubkey", pubkeyHex)
