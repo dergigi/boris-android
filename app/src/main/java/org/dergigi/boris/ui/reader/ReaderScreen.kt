@@ -556,6 +556,8 @@ private fun ArticleBody(
                 imageUrl = coverUrl,
                 title = content.title,
                 summary = overlaySummary,
+                author = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
+                    ?.let { Profile.displayName(it, author) },
                 published = published,
                 onClick = {
                     val urls = buildList {
@@ -882,11 +884,13 @@ private fun ArticleHero(
     imageUrl: String,
     title: String?,
     summary: String?,
+    author: String?,
     published: String?,
     onClick: () -> Unit,
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val height = (screenHeight * 0.42f).dp.coerceIn(240.dp, 420.dp)
+    val byline = listOfNotNull(author, published).joinToString(" · ").ifEmpty { null }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -910,16 +914,6 @@ private fun ArticleHero(
                     ),
                 ),
         )
-        if (published != null) {
-            Text(
-                text = published,
-                style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-                color = Color.White.copy(alpha = 0.72f),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp),
-            )
-        }
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -934,6 +928,18 @@ private fun ArticleHero(
                         lineHeight = 34.sp,
                     ),
                     color = Color.White,
+                    modifier = Modifier.padding(
+                        bottom = if (byline == null && summary.isNullOrBlank()) 0.dp else 8.dp,
+                    ),
+                )
+            }
+            if (byline != null) {
+                Text(
+                    text = byline,
+                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
+                    color = Color.White.copy(alpha = 0.72f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(bottom = if (summary.isNullOrBlank()) 0.dp else 8.dp),
                 )
             }

@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it
+- The cover image shows an author and publication date byline below the title, replacing the hard-to-read date in the top-right corner
 
 ## [0.29.0] - 2026-08-15
 
