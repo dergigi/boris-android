@@ -48,14 +48,22 @@ class HomeViewModel(
     fun refresh() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            val pubkey = SessionStore.load(getApplication())?.pubkeyHex
             val keep = _highlights.value is HomeHighlightsState.Ready
-            if (keep) {
+            var showing = keep
+            if (!keep) {
+                val cached = withContext(Dispatchers.IO) { loadCached(pubkey) }
+                if (cached != null) {
+                    _highlights.value = cached
+                    showing = true
+                }
+            }
+            if (showing) {
                 _refreshing.value = true
             } else {
                 _highlights.value = HomeHighlightsState.Loading
             }
             try {
-                val pubkey = SessionStore.load(getApplication())?.pubkeyHex
                 val (yours, friends, others) = withContext(Dispatchers.IO) {
                     coroutineScope {
                         val friendKeysDeferred = async {
@@ -106,6 +114,37 @@ class HomeViewModel(
                 _refreshing.value = false
             }
         }
+    }
+
+    private fun loadCached(pubkey: String?): HomeHighlightsState.Ready? {
+        val friendKeys = if (pubkey == null) {
+            emptySet()
+        } else {
+            RelayQuery.cachedContactPubkeys(pubkey) - pubkey.lowercase()
+        }
+        val yours = if (pubkey == null) {
+            emptyList()
+        } else {
+            HighlightedArticles.fromEvents(
+                RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, pubkey),
+                ARTICLE_LIMIT,
+            )
+        }
+        val friends = if (friendKeys.isEmpty()) {
+            emptyList()
+        } else {
+            HighlightedArticles.fromEvents(
+                RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = friendKeys),
+                ARTICLE_LIMIT,
+            )
+        }
+        val others = HighlightedArticles.fromEvents(
+            RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT)
+                .filter { event -> isNetworkHighlight(event.pubkey, pubkey, friendKeys) },
+            ARTICLE_LIMIT,
+        )
+        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) return null
+        return HomeHighlightsState.Ready(yours, friends, others, loggedIn = pubkey != null)
     }
 
     private fun loadYours(relays: List<String>, pubkeyHex: String): List<HighlightedArticle> {

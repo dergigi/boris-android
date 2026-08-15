@@ -859,6 +859,25 @@ class ReaderViewModel(
         }
     }
 
+    private fun cachedHighlightsFor(content: ReadableContent): List<Nip01Event> =
+        when {
+            !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
+                RelayQuery.cachedHighlightsForArticle(content.articleCoordinate, content.eventId)
+            }
+            else -> RelayQuery.cachedHighlights(content.url)
+        }
+
+    private fun paintHighlights(events: List<Nip01Event>, pubkeyHex: String?) {
+        _highlightCount.value = events.size
+        _highlights.value = events.map { event ->
+            PaintedHighlight(
+                id = event.id,
+                quote = event.content,
+                mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true),
+            )
+        }
+    }
+
     private fun startHighlightFetch(content: ReadableContent) {
         highlightJob?.cancel()
         val session = SessionStore.load(getApplication())
@@ -866,6 +885,8 @@ class ReaderViewModel(
         publishSaveState()
         highlightJob = viewModelScope.launch(Dispatchers.IO) {
             try {
+                val cached = cachedHighlightsFor(content)
+                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex)
                 val relays = buildList {
                     addAll(RelayList.FALLBACK)
                     if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
@@ -880,14 +901,7 @@ class ReaderViewModel(
                     }
                     else -> RelayQuery.fetchHighlights(relays, content.url)
                 }
-                _highlightCount.value = events.size
-                _highlights.value = events.map { event ->
-                    PaintedHighlight(
-                        id = event.id,
-                        quote = event.content,
-                        mine = session != null && event.pubkey.equals(session.pubkeyHex, ignoreCase = true),
-                    )
-                }
+                paintHighlights(events, session?.pubkeyHex)
             } catch (_: Exception) {
             }
         }

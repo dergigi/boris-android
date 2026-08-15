@@ -88,7 +88,18 @@ class FeedViewModel(
             val session = SessionStore.load(getApplication())
             _loggedIn.value = session != null
             _scope.value = resolveScope(session != null)
-            if (keepItems) {
+            var showing = keepItems
+            if (!keepItems) {
+                val cached = withContext(Dispatchers.IO) { loadCatalogFromCache(session?.pubkeyHex) }
+                if (cached != null) {
+                    highlights = cached.highlights
+                    writings = cached.writings
+                    failed = false
+                    publish()
+                    showing = true
+                }
+            }
+            if (showing) {
                 _refreshing.value = true
             } else {
                 _state.value = FeedUiState.Loading
@@ -153,6 +164,35 @@ class FeedViewModel(
     private fun initialScope(): FeedScope {
         val loggedIn = SessionStore.load(getApplication()) != null
         return resolveScope(loggedIn)
+    }
+
+    private fun loadCatalogFromCache(pubkeyHex: String?): Catalog? {
+        val friends = if (pubkeyHex == null) emptySet() else RelayQuery.cachedContactPubkeys(pubkeyHex)
+        val highlightEvents = buildList {
+            addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT))
+            if (pubkeyHex != null) {
+                addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, pubkeyHex))
+                if (friends.isNotEmpty()) {
+                    addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = friends))
+                }
+            }
+        }.distinctBy { it.id }.sortedByDescending { it.createdAt }
+        val writingEvents = buildList {
+            addAll(RelayQuery.cachedRecentWritings(WRITING_LIMIT))
+            if (pubkeyHex != null) {
+                addAll(RelayQuery.cachedRecentWritings(WRITING_LIMIT, pubkeyHex))
+                if (friends.isNotEmpty()) {
+                    addAll(RelayQuery.cachedRecentWritings(WRITING_LIMIT, authors = friends))
+                }
+            }
+        }.distinctBy { it.id }.sortedByDescending { Nip23.publishedAt(it) }
+        if (highlightEvents.isEmpty() && writingEvents.isEmpty()) return null
+        val authors = (highlightEvents + writingEvents).map { it.pubkey }.distinct().take(PROFILE_LIMIT)
+        val profiles = RelayQuery.cachedProfiles(authors)
+        return Catalog(
+            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends),
+            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends),
+        )
     }
 
     private suspend fun loadCatalog(pubkeyHex: String?): Catalog = coroutineScope {

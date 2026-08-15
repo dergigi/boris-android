@@ -83,7 +83,16 @@ class YouViewModel(
         val keepItems = samePerson && _state.value is YouUiState.Ready
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            if (keepItems) {
+            var showing = keepItems
+            if (!keepItems) {
+                val cached = withContext(Dispatchers.IO) { loadCached(key) }
+                if (cached != null) {
+                    _profile.value = cached.profile
+                    _state.value = YouUiState.Ready(cached.highlights, cached.writings)
+                    showing = true
+                }
+            }
+            if (showing) {
                 _refreshing.value = true
             } else {
                 _state.value = YouUiState.Loading
@@ -130,6 +139,25 @@ class YouViewModel(
         }
     }
 
+    private fun loadCached(key: String): Loaded? {
+        val highlights = RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, key).map { event ->
+            val url = Nip84.articleUrl(event)
+            YouHighlight(
+                id = event.id,
+                quote = event.content.trim(),
+                url = url,
+                host = url?.let { ArticleUrl.host(it) },
+                createdAt = event.createdAt,
+            )
+        }
+        val writings = RelayQuery.cachedRecentWritings(WRITING_LIMIT, key).mapNotNull { event ->
+            writingFrom(event)
+        }
+        val profile = RelayQuery.cachedProfiles(listOf(key))[key]
+        if (highlights.isEmpty() && writings.isEmpty() && profile == null) return null
+        return Loaded(highlights, writings, profile)
+    }
+
     private data class Loaded(
         val highlights: List<YouHighlight>,
         val writings: List<YouWriting>,
@@ -138,6 +166,7 @@ class YouViewModel(
 
     companion object {
         private const val HIGHLIGHT_LIMIT = 80
+        private const val WRITING_LIMIT = 200
         private const val UNTITLED = "Untitled"
 
         internal fun writingFrom(event: Nip01Event): YouWriting? {
