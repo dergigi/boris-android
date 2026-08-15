@@ -38,7 +38,7 @@ class RelayListTest {
     }
 
     @Test
-    fun nonWssRejected() {
+    fun localWsAcceptedAndHttpRejected() {
         val parsed = RelayList.parse(
             listOf(
                 event(
@@ -46,14 +46,15 @@ class RelayListTest {
                     tags = listOf(
                         listOf("r", "ws://127.0.0.1:4869"),
                         listOf("r", "https://relay.one"),
+                        listOf("r", "ws://example.com"),
                         listOf("r", "wss://relay.ok"),
                     ),
                 ),
             ),
         )
-        assertEquals(listOf("wss://relay.ok"), parsed.read)
-        assertEquals(listOf("wss://relay.ok"), parsed.write)
-        assertFalse(parsed.read.any { it.startsWith("ws://") })
+        assertEquals(listOf("ws://127.0.0.1:4869", "wss://relay.ok"), parsed.read)
+        assertEquals(listOf("ws://127.0.0.1:4869", "wss://relay.ok"), parsed.write)
+        assertFalse(parsed.read.contains("ws://example.com"))
     }
 
     @Test

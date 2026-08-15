@@ -23,8 +23,7 @@ data class RelayList(
             val write = mutableListOf<String>()
             for (tag in newest.tags) {
                 if (tag.size < 2 || tag[0] != "r") continue
-                val url = tag[1].trim()
-                if (!url.startsWith("wss://", ignoreCase = true)) continue
+                val url = acceptedRelayUrl(tag[1]) ?: continue
                 when (tag.getOrNull(2)?.lowercase()) {
                     null, "" -> {
                         read.add(url)
@@ -38,6 +37,12 @@ data class RelayList(
                 read = read.ifEmpty { FALLBACK },
                 write = write.ifEmpty { FALLBACK },
             )
+        }
+
+        private fun acceptedRelayUrl(raw: String): String? {
+            val url = raw.trim()
+            LocalRelays.canonical(url)?.let { return it }
+            return url.takeIf { it.startsWith("wss://", ignoreCase = true) }
         }
     }
 }

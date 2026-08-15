@@ -32,6 +32,7 @@ class UserSettingsTest {
         assertTrue(settings.openLinksInReader)
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
+        assertTrue(settings.useLocalRelayAsCache)
     }
 
     @Test

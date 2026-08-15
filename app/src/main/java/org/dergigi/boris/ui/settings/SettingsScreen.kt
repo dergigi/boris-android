@@ -121,6 +121,10 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                AirplaneModeSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
                 VolumeButtonsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },

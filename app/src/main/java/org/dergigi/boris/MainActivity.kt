@@ -13,6 +13,8 @@ import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
+import org.dergigi.boris.nostr.OfflineOutbox
+import org.dergigi.boris.nostr.OfflineSync
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -26,6 +28,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         EventCache.init(File(filesDir, "event_cache"))
         ReaderRepository.init(File(filesDir, "reader_http_cache"))
+        OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
+        OfflineSync.bind(this)
         applyIntent(intent)
         enableEdgeToEdge()
         setContent {
@@ -46,6 +50,11 @@ class MainActivity : ComponentActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (VolumeKeys.handle(keyCode, event)) return true
         return super.onKeyUp(keyCode, event)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        OfflineSync.flush()
     }
 
     override fun onNewIntent(intent: Intent) {

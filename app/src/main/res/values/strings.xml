@@ -112,6 +112,15 @@
     <string name="settings_full_width_images">Full-width images in articles</string>
     <string name="settings_open_links_in_reader">Open links in Reader</string>
     <string name="settings_feed_scope">Default Feed Scope</string>
+    <string name="settings_airplane_mode">App &amp; Airplane Mode</string>
+    <string name="settings_airplane_body">Boris is offline-first by design. You can read, create highlights, and browse your library without being connected to the internet. Boris will store changes locally and sync later.</string>
+    <string name="settings_use_local_relay">Use local relays as cache</string>
+    <string name="settings_citrine">Citrine</string>
+    <string name="settings_citrine_checking">Checking for Citrine…</string>
+    <string name="settings_citrine_connected">Citrine is running on this device</string>
+    <string name="settings_citrine_missing">Citrine is not running (ws://127.0.0.1:4869)</string>
+    <string name="settings_airplane_note">Note: Boris works best with a local relay. Citrine is the Android option. Events created while offline are rebroadcast to your other relays when you are back online.</string>
+    <string name="settings_airplane_learn_more">What are relays?</string>
     <string name="settings_volume_buttons">Volume buttons</string>
     <string name="settings_volume_scroll">Scroll the article with volume buttons</string>
     <string name="settings_volume_scroll_amount">Scroll amount</string>

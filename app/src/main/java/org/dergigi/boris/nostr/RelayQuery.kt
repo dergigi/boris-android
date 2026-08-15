@@ -11,15 +11,22 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.SettingsSync
 
 object RelayQuery {
     fun fetchRelayList(pubkeyHex: String): RelayList {
         val cached = EventCache.latest(Nip01Event.KIND_RELAY_LIST, pubkeyHex)
-        if (cached != null) {
+        val parsed = if (cached != null) {
             refreshOnce("relaylist:${pubkeyHex.lowercase()}") { fetchRelayListRemote(pubkeyHex) }
-            return RelayList.parse(listOf(cached))
+            RelayList.parse(listOf(cached))
+        } else {
+            fetchRelayListRemote(pubkeyHex)
         }
-        return fetchRelayListRemote(pubkeyHex)
+        return LocalRelays.withLocal(
+            parsed,
+            SettingsSync.settings.value.useLocalRelayAsCache,
+            LocalRelays.citrineReachable(),
+        )
     }
 
     private fun fetchRelayListRemote(pubkeyHex: String): RelayList {
@@ -136,7 +143,7 @@ object RelayQuery {
         pubkeyHex: String? = null,
         authors: Collection<String> = emptyList(),
     ): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         val keys = authorKeys(pubkeyHex, authors)
         if (urls.isNotEmpty()) {
             val filters = if (keys.isEmpty()) {
@@ -175,7 +182,7 @@ object RelayQuery {
         readRelays: List<String>,
         pubkeys: List<String>,
     ): Map<String, Profile> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         val keys = pubkeys.map { it.lowercase() }.distinct()
         if (keys.isEmpty()) return emptyMap()
         val cached = keys.mapNotNull { key ->
@@ -220,7 +227,7 @@ object RelayQuery {
     }
 
     fun fetchBookmarkList(pubkeyHex: String, readRelays: List<String>): Nip01Event? {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             val filter = JSONObject()
                 .put("kinds", JSONArray().put(Nip01Event.KIND_BOOKMARKS))
@@ -238,7 +245,7 @@ object RelayQuery {
     }
 
     fun fetchWebBookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             val filter = JSONObject()
                 .put("kinds", JSONArray().put(Nip01Event.KIND_WEB_BOOKMARK))
@@ -263,7 +270,7 @@ object RelayQuery {
             .sortedByDescending { NipB0.publishedAt(it) }
 
     fun fetchLookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             val filter = JSONObject()
                 .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
@@ -284,7 +291,7 @@ object RelayQuery {
             .sortedByDescending { it.createdAt }
 
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             val filters = listOf(
                 JSONObject()
@@ -322,7 +329,7 @@ object RelayQuery {
         pubkeyHex: String? = null,
         authors: Collection<String> = emptyList(),
     ): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         val keys = authorKeys(pubkeyHex, authors)
         if (urls.isNotEmpty()) {
             val filters = if (keys.isEmpty()) {
@@ -371,10 +378,12 @@ object RelayQuery {
     }
 
     private fun fetchArticleRemote(pointer: NaddrPointer): Nip01Event? {
-        val relays = buildList {
-            addAll(pointer.relays)
-            addAll(RelayList.FALLBACK)
-        }.mapNotNull { Nip66.normalize(it) }.distinct()
+        val relays = relayUrls(
+            buildList {
+                addAll(pointer.relays)
+                addAll(RelayList.FALLBACK)
+            },
+        )
         val filter = JSONObject()
             .put("kinds", JSONArray().put(pointer.kind))
             .put("authors", JSONArray().put(pointer.pubkey))
@@ -404,10 +413,12 @@ object RelayQuery {
             if (cached != null) found[id] = cached else missing.add(id)
         }
         if (missing.isEmpty()) return found
-        val urls = buildList {
-            addAll(relays)
-            addAll(RelayList.FALLBACK)
-        }.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(
+            buildList {
+                addAll(relays)
+                addAll(RelayList.FALLBACK)
+            },
+        )
         if (urls.isEmpty()) return found
         val fetched = mutableListOf<Nip01Event>()
         for (chunk in missing.chunked(EVENT_CHUNK)) {
@@ -428,7 +439,7 @@ object RelayQuery {
         coordinate: String? = null,
         eventId: String? = null,
     ): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         val filters = buildList {
             if (!coordinate.isNullOrBlank()) {
                 add(
@@ -495,7 +506,7 @@ object RelayQuery {
                     }
                 }
         }
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             EventCache.putAll(
                 query(urls, filters).filter { event ->
@@ -549,7 +560,7 @@ object RelayQuery {
             }
             else -> return emptyList()
         }
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
             val remote = query(urls, listOf(filter))
                 .filter { event ->
@@ -576,13 +587,16 @@ object RelayQuery {
             else -> false
         }
 
-    fun publish(writeRelays: List<String>, event: Nip01Event): Boolean {
-        if (writeRelays.isEmpty()) return false
+    fun publish(writeRelays: List<String>, event: Nip01Event): PublishResult {
+        cacheEvent(event)
+        val targets = reachableRelays(relayUrls(writeRelays))
+        if (targets.isEmpty()) return PublishResult(remoteOk = false, localOk = false)
         val sockets = mutableListOf<RelaySocket>()
-        val okTrue = AtomicBoolean(false)
-        val responses = CountDownLatch(writeRelays.size)
+        val remoteOk = AtomicBoolean(false)
+        val localOk = AtomicBoolean(false)
+        val responses = CountDownLatch(targets.size)
         try {
-            for (url in writeRelays) {
+            for (url in targets) {
                 val socket = RelaySocket(url, client)
                 sockets.add(socket)
                 val signaled = AtomicBoolean(false)
@@ -602,7 +616,9 @@ object RelayQuery {
                             try {
                                 val arr = JSONArray(text)
                                 if (arr.optString(0) == "OK") {
-                                    if (arr.optBoolean(2)) okTrue.set(true)
+                                    if (arr.optBoolean(2)) {
+                                        if (LocalRelays.isLocal(url)) localOk.set(true) else remoteOk.set(true)
+                                    }
                                     signal()
                                 }
                             } catch (_: Exception) {
@@ -619,24 +635,17 @@ object RelayQuery {
         } finally {
             sockets.forEach { it.close() }
         }
-        val ok = okTrue.get()
-        if (ok) {
-            if (event.kind == Nip01Event.KIND_DELETION) {
-                EventCache.applyDeletion(event)
-            } else {
-                EventCache.put(event)
-            }
-        }
-        return ok
+        return PublishResult(remoteOk = remoteOk.get(), localOk = localOk.get())
     }
 
     private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> {
-        if (urls.isEmpty()) return emptyList()
+        val targets = reachableRelays(urls)
+        if (targets.isEmpty()) return emptyList()
         val sockets = mutableListOf<RelaySocket>()
         val events = ConcurrentHashMap<String, Nip01Event>()
-        val eose = CountDownLatch(urls.size)
+        val eose = CountDownLatch(targets.size)
         try {
-            for (url in urls) {
+            for (url in targets) {
                 val socket = RelaySocket(url, client)
                 sockets.add(socket)
                 val eoseSignaled = AtomicBoolean(false)
@@ -700,6 +709,19 @@ object RelayQuery {
             if (key.isNotBlank()) add(key.lowercase())
         }
     }.distinct()
+
+    private fun relayUrls(urls: List<String>): List<String> =
+        urls.mapNotNull { LocalRelays.resolve(it) }.distinct()
+
+    private fun reachableRelays(urls: List<String>): List<String> =
+        if (OfflineSync.hasNetwork()) urls else urls.filter { LocalRelays.isLocal(it) }
+
+    private fun cacheEvent(event: Nip01Event) {
+        if (event.kind == Nip01Event.KIND_DELETION) {
+            EventCache.applyDeletion(event)
+        }
+        EventCache.put(event)
+    }
 
     private fun newId(): String = UUID.randomUUID().toString().take(12)
 

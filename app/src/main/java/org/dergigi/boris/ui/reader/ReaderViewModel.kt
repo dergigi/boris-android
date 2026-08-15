@@ -21,6 +21,7 @@ import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.Archive
+import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerDecryptResult
 import org.dergigi.boris.nostr.BunkerEncryptResult
@@ -344,25 +345,16 @@ class ReaderViewModel(
             _highlightCount.value = _highlightCount.value + 1
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val published = publish(session, event)
-            if (!published) {
-                _highlights.value = _highlights.value.filterNot { it.id == event.id }
-                _highlightCount.value = (_highlightCount.value - 1).coerceAtLeast(0)
-                _message.value = getApplication<Application>().getString(R.string.highlight_not_published)
-            }
+            publish(session, event)
         }
     }
 
     private fun onSignedLibrary(session: Session, event: Nip01Event) {
         viewModelScope.launch(Dispatchers.IO) {
-            val published = publish(session, event)
-            if (published) {
-                inLibrary = true
-                saving = false
-                _message.value = getApplication<Application>().getString(R.string.reader_saved)
-            } else {
-                failSave(getApplication<Application>().getString(R.string.reader_save_failed))
-            }
+            publish(session, event)
+            inLibrary = true
+            saving = false
+            _message.value = getApplication<Application>().getString(R.string.reader_saved)
             publishSaveState()
         }
     }
@@ -437,34 +429,22 @@ class ReaderViewModel(
     }
 
     private fun onSignedArchive(session: Session, event: Nip01Event) {
-        val previousIds = archiveIds
         archiveIds = listOf(event.id)
         _archived.value = true
         archiving = false
         pendingArchive = false
         viewModelScope.launch(Dispatchers.IO) {
-            val published = publish(session, event)
-            if (!published) {
-                archiveIds = previousIds
-                _archived.value = previousIds.isNotEmpty()
-                _message.value = getApplication<Application>().getString(R.string.reader_archive_failed)
-            }
+            publish(session, event)
         }
     }
 
     private fun onSignedUnarchive(session: Session, event: Nip01Event) {
-        val previousIds = archiveIds
         archiveIds = emptyList()
         _archived.value = false
         archiving = false
         pendingArchive = false
         viewModelScope.launch(Dispatchers.IO) {
-            val published = publish(session, event)
-            if (!published) {
-                archiveIds = previousIds
-                _archived.value = previousIds.isNotEmpty()
-                _message.value = getApplication<Application>().getString(R.string.reader_archive_failed)
-            }
+            publish(session, event)
         }
     }
 
@@ -788,13 +768,8 @@ class ReaderViewModel(
             sig = "0".repeat(128),
         )
 
-    private fun publish(session: Session, event: Nip01Event): Boolean {
-        return try {
-            val relays = RelayQuery.fetchRelayList(session.pubkeyHex)
-            RelayQuery.publish(relays.write, event)
-        } catch (_: Exception) {
-            false
-        }
+    private fun publish(session: Session, event: Nip01Event) {
+        EventPublisher.publish(session.pubkeyHex, event)
     }
 
     private fun failSave(message: String) {

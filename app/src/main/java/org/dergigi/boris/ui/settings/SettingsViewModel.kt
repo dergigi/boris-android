@@ -19,12 +19,12 @@ import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip78
 import org.dergigi.boris.nostr.PendingUnsignedEvent
-import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
 import org.dergigi.boris.nostr.SignerResults
@@ -141,17 +141,8 @@ class SettingsViewModel(
         SettingsSync.apply(saved)
         lastSynced = saved
         viewModelScope.launch(Dispatchers.IO) {
-            val published = try {
-                val relays = RelayQuery.fetchRelayList(session.pubkeyHex)
-                RelayQuery.publish(relays.write, event)
-            } catch (_: Exception) {
-                false
-            }
-            if (published) {
-                SettingsSync.markSynced(saved)
-            } else {
-                _message.value = app.getString(R.string.settings_not_published)
-            }
+            EventPublisher.publish(session.pubkeyHex, event)
+            SettingsSync.markSynced(saved)
         }
     }
 
