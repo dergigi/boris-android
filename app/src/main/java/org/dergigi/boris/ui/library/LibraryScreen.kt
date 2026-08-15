@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -257,6 +258,7 @@ private fun ReadyLibrary(
             ShelfChip(
                 selected = bucket == BookmarkBucket.Look,
                 label = stringResource(R.string.library_look),
+                icon = Icons.Outlined.Visibility,
                 onClick = { onSelect(BookmarkBucket.Look) },
             )
         }
@@ -500,6 +502,7 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
                     body = stringResource(R.string.library_info_web),
                 )
                 LibraryInfoRow(
+                    icon = Icons.Outlined.Visibility,
                     title = stringResource(R.string.library_info_look_title),
                     body = stringResource(R.string.library_info_look),
                 )
@@ -517,22 +520,20 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
 private fun LibraryInfoRow(
     title: String,
     body: String,
-    icon: ImageVector? = null,
+    icon: ImageVector,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(top = 2.dp)
-                    .size(20.dp),
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(20.dp),
+        )
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = title,

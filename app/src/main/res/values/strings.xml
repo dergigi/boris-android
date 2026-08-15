@@ -7,7 +7,7 @@
     <string name="library_private">Private</string>
     <string name="library_public">Public</string>
     <string name="library_web">Web</string>
-    <string name="library_look">👀</string>
+    <string name="library_look">Lookmarks</string>
     <string name="library_empty">No bookmarks here yet.</string>
     <string name="library_error">Could not load bookmarks.</string>
     <string name="library_private_locked">Private bookmarks are encrypted. Unlock them with your signer.</string>

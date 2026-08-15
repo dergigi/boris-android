@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Library sources explainer names Private, Public, and Web bookmarks, and says lookmarks are public
+- Lookmarks use an eye icon so they line up with the other library shelves
 
 ## [0.20.0] - 2026-08-15
 
