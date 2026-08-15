@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-15
+
+### Added
+
+- Logged-in You tab shows your profile and highlights, like the webapp `/my/highlights`
+- Settings gear in the top-right opens Theme and Reading & Display
+
+### Changed
+
+- Theme and reading settings moved off the You tab onto a Settings screen
+
 ## [0.2.0] - 2026-08-15
 
 ### Added
@@ -127,7 +138,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/dergigi/boris-android/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dergigi/boris-android/releases/tag/v0.2.0
 [0.1.0]: https://github.com/dergigi/boris-android/releases/tag/v0.1.0
 [0.0.9]: https://github.com/dergigi/boris-android/releases/tag/v0.0.9
