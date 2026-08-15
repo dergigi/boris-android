@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-15
+
+### Added
+
+- Feed can filter highlights by nostrverse, friends, and me
+- Logged-in Home shows recently highlighted by friends between you and others
+
+### Changed
+
+- You settings gear lives in a top app bar, with room for more actions later
+
 ## [0.5.0] - 2026-08-15
 
 ### Added
@@ -156,7 +167,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/dergigi/boris-android/releases/tag/v0.6.0
 [0.5.0]: https://github.com/dergigi/boris-android/releases/tag/v0.5.0
 [0.4.0]: https://github.com/dergigi/boris-android/releases/tag/v0.4.0
 [0.3.0]: https://github.com/dergigi/boris-android/releases/tag/v0.3.0
