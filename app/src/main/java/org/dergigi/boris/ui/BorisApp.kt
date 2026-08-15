@@ -26,6 +26,7 @@ import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
+import org.dergigi.boris.ui.settings.SettingsScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
 import org.dergigi.boris.ui.shell.StubScreen
@@ -38,6 +39,7 @@ object Routes {
     const val FEED = "feed"
     const val SEARCH = "search"
     const val YOU = "you"
+    const val SETTINGS = "settings"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
 
     fun reader(url: String): String {
@@ -124,6 +126,18 @@ fun BorisApp(
                     AccountScreen(
                         incomingBunker = incomingBunker,
                         viewModel = authViewModel,
+                        onOpenSettings = {
+                            navController.navigate(Routes.SETTINGS) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                    )
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        onBack = { navController.popBackStack() },
+                        authViewModel = authViewModel,
                     )
                 }
                 composable(

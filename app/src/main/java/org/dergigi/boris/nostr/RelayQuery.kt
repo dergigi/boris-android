@@ -39,7 +39,7 @@ object RelayQuery {
             .maxByOrNull { it.createdAt }
     }
 
-    fun fetchProfilePicture(pubkeyHex: String): String? {
+    fun fetchProfile(pubkeyHex: String): Profile? {
         val relays = fetchRelayList(pubkeyHex).read
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_METADATA))
@@ -51,8 +51,10 @@ object RelayQuery {
                     event.pubkey.equals(pubkeyHex, ignoreCase = true)
             }
             .maxByOrNull { it.createdAt } ?: return null
-        return Profile.parse(newest.content).picture
+        return Profile.parse(newest.content)
     }
+
+    fun fetchProfilePicture(pubkeyHex: String): String? = fetchProfile(pubkeyHex)?.picture
 
     fun discoverContentRelays(
         seed: List<String> = RelayList.FALLBACK,
@@ -71,15 +73,21 @@ object RelayQuery {
     fun fetchRecentHighlights(
         readRelays: List<String>,
         limit: Int = 80,
+        pubkeyHex: String? = null,
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
             .put("limit", limit)
+        if (!pubkeyHex.isNullOrBlank()) {
+            filter.put("authors", JSONArray().put(pubkeyHex))
+        }
         return query(urls, listOf(filter))
             .filter { event ->
-                event.kind == Nip01Event.KIND_HIGHLIGHT && event.content.isNotBlank()
+                event.kind == Nip01Event.KIND_HIGHLIGHT &&
+                    event.content.isNotBlank() &&
+                    (pubkeyHex.isNullOrBlank() || event.pubkey.equals(pubkeyHex, ignoreCase = true))
             }
             .sortedByDescending { it.createdAt }
     }

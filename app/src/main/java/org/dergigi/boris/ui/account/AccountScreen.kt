@@ -1,10 +1,8 @@
 package org.dergigi.boris.ui.account
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +29,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -52,17 +49,16 @@ import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
 import org.dergigi.boris.ui.reader.HighlightMarks
-import org.dergigi.boris.ui.settings.ReadingDisplaySection
-import org.dergigi.boris.ui.settings.SettingsViewModel
-import org.dergigi.boris.ui.settings.ThemeSection
 import org.dergigi.boris.ui.theme.HighlightMine
+import org.dergigi.boris.ui.you.YouHighlights
 
 @Composable
 fun AccountScreen(
+    onOpenSettings: () -> Unit,
+    onOpenArticle: (String) -> Unit,
     incomingBunker: String? = null,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
-    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     var bunkerUri by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(incomingBunker) {
@@ -72,81 +68,58 @@ fun AccountScreen(
     }
     val authState by viewModel.state.collectAsStateWithLifecycle()
     val authMessage by viewModel.message.collectAsStateWithLifecycle()
-    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
-    val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
-    val signIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
     val authLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         viewModel.onSignerResult(result.resultCode, result.data)
     }
-    val settingsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        settingsViewModel.onSignerResult(result.resultCode, result.data)
-    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
-    LaunchedEffect(signIntent) {
-        val intent = signIntent ?: return@LaunchedEffect
-        settingsViewModel.consumeSignIntent()
-        settingsLauncher.launch(intent)
-    }
-    LaunchedEffect(settingsMessage) {
-        val text = settingsMessage ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        settingsViewModel.consumeMessage()
-    }
 
-    val loggedIn = authState is AuthUiState.LoggedIn
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .imePadding(),
-    ) {
-        Column(
-            modifier = Modifier
-                .align(if (loggedIn) Alignment.TopCenter else Alignment.Center)
-                .widthIn(max = if (loggedIn) 720.dp else 420.dp)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = if (loggedIn) Alignment.Start else Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            if (loggedIn) {
-                ThemeSection(
-                    settings = settings,
-                    onUpdate = { next -> settingsViewModel.update { next } },
-                )
-                ReadingDisplaySection(
-                    settings = settings,
-                    darkTheme = settings.isDark(isSystemInDarkTheme()),
-                    onUpdate = { next -> settingsViewModel.update { next } },
-                )
-            } else {
-                LoginCopy()
-            }
-            AuthBar(
-                state = authState,
-                message = authMessage,
-                bunkerUri = bunkerUri,
-                onBunkerUriChange = { bunkerUri = it },
-                onConnect = {
-                    viewModel.connectIntent()?.let(authLauncher::launch)
-                },
-                onConnectBunker = { viewModel.connectBunker(bunkerUri) },
-                onSignOut = {
-                    settingsViewModel.cancelPending()
-                    viewModel.signOut()
-                },
+    when (val current = authState) {
+        is AuthUiState.LoggedIn -> {
+            YouHighlights(
+                npub = current.npub,
+                profile = profile,
+                onOpenSettings = onOpenSettings,
+                onOpenArticle = onOpenArticle,
+                modifier = modifier,
             )
-            if (!loggedIn) {
-                NstartFooter()
+        }
+        else -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .imePadding(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .widthIn(max = 420.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                ) {
+                    LoginCopy()
+                    AuthBar(
+                        state = authState,
+                        message = authMessage,
+                        bunkerUri = bunkerUri,
+                        onBunkerUriChange = { bunkerUri = it },
+                        onConnect = {
+                            viewModel.connectIntent()?.let(authLauncher::launch)
+                        },
+                        onConnectBunker = { viewModel.connectBunker(bunkerUri) },
+                        onSignOut = viewModel::signOut,
+                    )
+                    NstartFooter()
+                }
             }
         }
     }

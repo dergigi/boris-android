@@ -22,6 +22,7 @@ import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerResult
 import org.dergigi.boris.nostr.BunkerUri
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
@@ -38,6 +39,9 @@ class AuthViewModel(
 
     private val _pictureUrl = MutableStateFlow<String?>(null)
     val pictureUrl: StateFlow<String?> = _pictureUrl.asStateFlow()
+
+    private val _profile = MutableStateFlow<Profile?>(null)
+    val profile: StateFlow<Profile?> = _profile.asStateFlow()
 
     private var pairJob: Job? = null
     private var pictureJob: Job? = null
@@ -121,6 +125,7 @@ class AuthViewModel(
         SessionStore.clear(app)
         pictureJob?.cancel()
         _pictureUrl.value = null
+        _profile.value = null
         _message.value = null
         SettingsSync.reset()
         _state.value = readState()
@@ -177,16 +182,18 @@ class AuthViewModel(
     private fun loadPicture() {
         val session = SessionStore.load(getApplication()) ?: run {
             _pictureUrl.value = null
+            _profile.value = null
             return
         }
         if (pictureJob?.isActive == true) return
         pictureJob = viewModelScope.launch(Dispatchers.IO) {
-            val url = try {
-                RelayQuery.fetchProfilePicture(session.pubkeyHex)
+            val parsed = try {
+                RelayQuery.fetchProfile(session.pubkeyHex)
             } catch (_: Exception) {
                 null
             }
-            _pictureUrl.value = url
+            _profile.value = parsed
+            _pictureUrl.value = parsed?.picture
         }
     }
 

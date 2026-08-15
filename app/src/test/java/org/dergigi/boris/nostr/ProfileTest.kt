@@ -12,6 +12,16 @@ class ProfileTest {
         )
         assertEquals("Long Name", profile.name)
         assertEquals("https://cdn.example/a.png", profile.picture)
+        assertNull(profile.about)
+    }
+
+    @Test
+    fun parseReadsAbout() {
+        val profile = Profile.parse(
+            """{"name":"Gigi","about":"Not doing DMs. Aspiring Saunameister."}""",
+        )
+        assertEquals("Gigi", profile.name)
+        assertEquals("Not doing DMs. Aspiring Saunameister.", profile.about)
     }
 
     @Test

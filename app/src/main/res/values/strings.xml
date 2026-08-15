@@ -71,4 +71,8 @@
     <string name="settings_rejected">Settings were not signed.</string>
     <string name="settings_cancelled">Settings save cancelled.</string>
     <string name="settings_not_published">Settings were not published.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back</string>
+    <string name="you_highlights_empty">No highlights yet.</string>
+    <string name="you_highlight_source">— %1$s</string>
 </resources>
