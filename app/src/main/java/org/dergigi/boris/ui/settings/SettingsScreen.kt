@@ -131,15 +131,15 @@ fun SettingsScreen(
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
                 SectionDivider()
+                ScrollBehaviourSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
+                SectionDivider()
                 AirplaneModeSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                     onOpenArticle = onOpenArticle,
-                )
-                SectionDivider()
-                ScrollBehaviourSection(
-                    settings = settings,
-                    onUpdate = { next -> settingsViewModel.update { next } },
                 )
                 SettingsVersionFooter()
             }
