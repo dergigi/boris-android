@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader paints swarm highlights: yours in yellow, friends in orange, others in purple
+
 ## [0.23.1] - 2026-08-15
 
 ### Fixed
