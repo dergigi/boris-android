@@ -44,6 +44,7 @@ class UserSettings internal constructor(
     val markerStyle: Boolean get() = highlightStyle != "underline"
     val justifyParagraphs: Boolean get() = paragraphAlignment != "left"
     val fullWidthImages: Boolean get() = bool("fullWidthImages", true)
+    val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)

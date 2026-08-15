@@ -427,14 +427,14 @@ private fun ArticleBody(
     val published = content.publishedAt?.let { PublishedTime.label(it) }
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
-    val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler) {
+    val openLinksInReader = settings.openLinksInReader
+    val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler, openLinksInReader) {
         object : UriHandler {
             override fun openUri(uri: String) {
-                val article = UrlExtractor.articleUrl(uri, content.url)
-                if (article != null && article != content.url) {
-                    onOpenArticle(article)
-                } else if (article == null) {
-                    defaultUriHandler.openUri(uri)
+                when (val action = readerLinkAction(uri, content.url, openLinksInReader)) {
+                    ReaderLinkAction.Ignore -> Unit
+                    is ReaderLinkAction.OpenInReader -> onOpenArticle(action.url)
+                    is ReaderLinkAction.OpenExternal -> defaultUriHandler.openUri(action.url)
                 }
             }
         }

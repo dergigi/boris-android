@@ -29,6 +29,7 @@ class UserSettingsTest {
         assertTrue(settings.defaultExploreScopeFriends)
         assertFalse(settings.defaultExploreScopeMine)
         assertTrue(settings.fullWidthImages)
+        assertTrue(settings.openLinksInReader)
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
     }
@@ -36,7 +37,7 @@ class UserSettingsTest {
     @Test
     fun parseReadsKnownKeys() {
         val settings = UserSettings.parse(
-            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","fullWidthImages":false}""",
+            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","fullWidthImages":false,"openLinksInReader":false}""",
         )
         assertEquals(24, settings.fontSize)
         assertEquals("underline", settings.highlightStyle)
@@ -44,6 +45,7 @@ class UserSettingsTest {
         assertEquals("left", settings.paragraphAlignment)
         assertEquals("source-serif-4", settings.readingFont)
         assertFalse(settings.fullWidthImages)
+        assertFalse(settings.openLinksInReader)
     }
 
     @Test
