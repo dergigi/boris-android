@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-08-15
+
 ### Added
 
 - Reader shows a thin progress bar and percentage at the bottom
@@ -284,7 +286,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/dergigi/boris-android/releases/tag/v0.19.0
 [0.18.0]: https://github.com/dergigi/boris-android/releases/tag/v0.18.0
 [0.17.0]: https://github.com/dergigi/boris-android/releases/tag/v0.17.0
 [0.16.0]: https://github.com/dergigi/boris-android/releases/tag/v0.16.0
