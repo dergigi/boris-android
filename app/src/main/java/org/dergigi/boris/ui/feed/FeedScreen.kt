@@ -19,6 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -53,7 +57,6 @@ import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.settings.hexColor
-import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -110,6 +113,7 @@ fun FeedScreenContent(
                 title = { Text(stringResource(R.string.feed_title)) },
                 actions = {
                     ScopeToggle(
+                        icon = Icons.Outlined.Hub,
                         on = scope.nostrverse,
                         enabled = true,
                         tint = nostrverseColor,
@@ -117,6 +121,7 @@ fun FeedScreenContent(
                         onClick = { onToggle(FeedLevel.Nostrverse) },
                     )
                     ScopeToggle(
+                        icon = Icons.Outlined.Group,
                         on = scope.friends,
                         enabled = loggedIn,
                         tint = friendsColor,
@@ -126,6 +131,7 @@ fun FeedScreenContent(
                         onClick = { onToggle(FeedLevel.Friends) },
                     )
                     ScopeToggle(
+                        icon = Icons.Outlined.Person,
                         on = scope.mine,
                         enabled = loggedIn,
                         tint = mineColor,
@@ -211,6 +217,7 @@ fun FeedScreenContent(
 
 @Composable
 private fun ScopeToggle(
+    icon: ImageVector,
     on: Boolean,
     enabled: Boolean,
     tint: Color,
@@ -227,7 +234,7 @@ private fun ScopeToggle(
         enabled = enabled,
     ) {
         Icon(
-            imageVector = BorisIcons.Highlighter,
+            imageVector = icon,
             contentDescription = contentDescription,
             tint = tint.copy(alpha = alpha),
         )
