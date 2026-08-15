@@ -2,6 +2,7 @@ package org.dergigi.boris.data
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.RelayQuery
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -10,8 +11,11 @@ class ReaderRepository(
     private val client: OkHttpClient = defaultClient,
 ) {
     fun fetch(url: String): ReadableContent {
-        val article = NostrArticle.parse(url)
-        if (article != null) return fetchNostr(article)
+        when (val target = NostrLink.parse(url)) {
+            is NostrTarget.Article -> return fetchArticle(target.ref)
+            is NostrTarget.Note -> return fetchNote(target)
+            null -> Unit
+        }
         val targetUrl = UrlExtractor.normalize(url)
         val request = Request.Builder()
             .url(toProxyUrl(targetUrl))
@@ -28,7 +32,7 @@ class ReaderRepository(
         }
     }
 
-    private fun fetchNostr(article: NostrArticleRef): ReadableContent {
+    private fun fetchArticle(article: NostrArticleRef): ReadableContent {
         val event = RelayQuery.fetchArticle(article.pointer)
             ?: throw IOException("Article not found")
         val published = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt
@@ -42,6 +46,41 @@ class ReaderRepository(
             authorPubkey = event.pubkey,
         )
     }
+
+    private fun fetchNote(note: NostrTarget.Note): ReadableContent {
+        val event = RelayQuery.fetchEvent(note.eventId, note.relays)
+            ?: throw IOException("Note not found")
+        if (event.kind == Nip01Event.KIND_LONG_FORM) {
+            val identifier = event.tagValue("d")
+            val article = identifier
+                ?.let { NostrArticle.fromCoordinate("${event.kind}:${event.pubkey}:$it", note.relays) }
+            return ReadableContent(
+                url = article?.uri ?: note.uri,
+                title = event.tagValue("title")?.ifBlank { null },
+                markdown = event.content,
+                publishedAt = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt,
+                articleCoordinate = article?.coordinate,
+                eventId = event.id,
+                authorPubkey = event.pubkey,
+            )
+        }
+        if (event.kind != Nip01Event.KIND_TEXT_NOTE) {
+            throw IOException("This nostr event is not a note or article")
+        }
+        val title = event.content.lineSequence().firstOrNull { it.isNotBlank() }?.let { line ->
+            if (line.length <= 80) line else line.take(79).trimEnd() + "…"
+        } ?: "Note"
+        return ReadableContent(
+            url = note.uri,
+            title = title,
+            markdown = noteMarkdown(event.content),
+            publishedAt = event.createdAt,
+            eventId = event.id,
+            authorPubkey = event.pubkey,
+        )
+    }
+
+    private fun noteMarkdown(content: String): String = content.replace("\n", "  \n")
 
     internal fun parse(targetUrl: String, text: String): ReadableContent {
         val hasMarkdownBlock = markdownBlockRegex.containsMatchIn(text)

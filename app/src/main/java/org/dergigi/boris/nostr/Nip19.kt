@@ -9,6 +9,13 @@ data class NaddrPointer(
     val coordinate: String get() = "$kind:${pubkey.lowercase()}:$identifier"
 }
 
+data class NeventPointer(
+    val eventId: String,
+    val relays: List<String> = emptyList(),
+    val author: String? = null,
+    val kind: Int? = null,
+)
+
 object Nip19 {
     private const val CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
     private val charsetRev = IntArray(128) { -1 }.also { table ->
@@ -35,6 +42,40 @@ object Nip19 {
             add(tlv(3, uint32be(pointer.kind)))
         }.fold(ByteArray(0)) { acc, chunk -> acc + chunk }
         return bech32Encode("naddr", payload)
+    }
+
+    fun noteEncode(eventIdHex: String): String =
+        bech32Encode("note", eventIdHex.hexToByteArray())
+
+    fun noteDecode(note: String): String {
+        val (hrp, data) = bech32Decode(note)
+        require(hrp == "note") { "Expected note, got $hrp" }
+        require(data.size == 32) { "Invalid note length" }
+        return data.toHex()
+    }
+
+    fun neventEncode(pointer: NeventPointer): String {
+        val payload = buildList {
+            add(tlv(0, pointer.eventId.hexToByteArray()))
+            for (relay in pointer.relays) {
+                add(tlv(1, relay.toByteArray(Charsets.UTF_8)))
+            }
+            pointer.author?.let { add(tlv(2, it.hexToByteArray())) }
+            pointer.kind?.let { add(tlv(3, uint32be(it))) }
+        }.fold(ByteArray(0)) { acc, chunk -> acc + chunk }
+        return bech32Encode("nevent", payload)
+    }
+
+    fun neventDecode(nevent: String): NeventPointer {
+        val (hrp, data) = bech32Decode(nevent)
+        require(hrp == "nevent") { "Expected nevent, got $hrp" }
+        val fields = parseTlv(data)
+        val eventId = fields[0]?.firstOrNull()?.toHex()
+        require(eventId != null && eventId.length == 64) { "nevent missing id" }
+        val relays = fields[1].orEmpty().map { it.toString(Charsets.UTF_8) }
+        val author = fields[2]?.firstOrNull()?.toHex()?.takeIf { it.length == 64 }
+        val kind = fields[3]?.firstOrNull()?.let { be32(it) }
+        return NeventPointer(eventId, relays, author, kind)
     }
 
     fun naddrDecode(naddr: String): NaddrPointer {

@@ -97,4 +97,14 @@ class UrlExtractorTest {
             UrlExtractor.articleUrl("/a/$naddr", "https://readwithboris.com/article"),
         )
     }
+
+    @Test
+    fun extractsNostrUriWithSlashesAndNotes() {
+        val naddr =
+            "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
+        assertEquals("nostr:$naddr", UrlExtractor.extract("nostr://$naddr"))
+        val id = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
+        val note = org.dergigi.boris.nostr.Nip19.noteEncode(id)
+        assertEquals("nostr:$note", UrlExtractor.extract("Share this nostr:$note please"))
+    }
 }

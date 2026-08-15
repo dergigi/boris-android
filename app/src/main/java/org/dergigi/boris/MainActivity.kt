@@ -8,7 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import org.dergigi.boris.data.NostrArticle
+import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -60,12 +60,22 @@ class MainActivity : ComponentActivity() {
 
     private fun urlFrom(intent: Intent): String? {
         return when (intent.action) {
-            Intent.ACTION_SEND -> UrlExtractor.extract(intent.getStringExtra(Intent.EXTRA_TEXT))
+            Intent.ACTION_SEND, Intent.ACTION_PROCESS_TEXT -> UrlExtractor.extract(textFrom(intent))
             Intent.ACTION_VIEW -> {
-                val raw = intent.dataString
-                NostrArticle.parse(raw)?.uri ?: raw
+                val raw = intent.dataString ?: textFrom(intent)
+                NostrLink.parse(raw)?.uri ?: UrlExtractor.extract(raw) ?: raw?.trim()?.ifEmpty { null }
             }
-            else -> null
+            else -> UrlExtractor.extract(textFrom(intent))
         }
+    }
+
+    private fun textFrom(intent: Intent): String? {
+        intent.getStringExtra(Intent.EXTRA_TEXT)?.let { return it }
+        intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT)?.let { return it }
+        intent.dataString?.let { return it }
+        val clip = intent.clipData ?: return null
+        if (clip.itemCount == 0) return null
+        val item = clip.getItemAt(0)
+        return item.text?.toString() ?: item.uri?.toString()
     }
 }

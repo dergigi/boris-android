@@ -40,6 +40,18 @@ class HighlightedArticlesTest {
     }
 
     @Test
+    fun includesNotesFromETags() {
+        val eventId = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
+        val articles = HighlightedArticles.fromEvents(
+            listOf(highlight("ignored", createdAt = 5, tags = listOf(listOf("e", eventId)))),
+            limit = 12,
+        )
+        assertEquals(1, articles.size)
+        assertEquals("nostr", articles[0].host)
+        assertEquals("nostr:${org.dergigi.boris.nostr.Nip19.noteEncode(eventId)}", articles[0].url)
+    }
+
+    @Test
     fun uniqueRecentHonorsLimit() {
         val events = (1..5).map { i ->
             highlight("https://example.com/p$i", createdAt = i.toLong())

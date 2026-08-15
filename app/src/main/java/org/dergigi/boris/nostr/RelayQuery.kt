@@ -194,20 +194,36 @@ object RelayQuery {
             .maxByOrNull { it.createdAt }
     }
 
+    fun fetchEvent(eventId: String, relays: List<String> = emptyList()): Nip01Event? {
+        val id = eventId.lowercase()
+        if (id.length != 64) return null
+        val urls = buildList {
+            addAll(relays)
+            addAll(RelayList.FALLBACK)
+        }.mapNotNull { Nip66.normalize(it) }.distinct()
+        val filter = JSONObject()
+            .put("ids", JSONArray().put(id))
+            .put("limit", 1)
+        return query(urls, listOf(filter))
+            .firstOrNull { it.id.equals(id, ignoreCase = true) }
+    }
+
     fun fetchHighlightsForArticle(
         readRelays: List<String>,
-        coordinate: String,
+        coordinate: String? = null,
         eventId: String? = null,
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
         val filters = buildList {
-            add(
-                JSONObject()
-                    .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
-                    .put("#a", JSONArray().put(coordinate))
-                    .put("limit", 200),
-            )
+            if (!coordinate.isNullOrBlank()) {
+                add(
+                    JSONObject()
+                        .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+                        .put("#a", JSONArray().put(coordinate))
+                        .put("limit", 200),
+                )
+            }
             if (!eventId.isNullOrBlank()) {
                 add(
                     JSONObject()
@@ -217,6 +233,7 @@ object RelayQuery {
                 )
             }
         }
+        if (filters.isEmpty()) return emptyList()
         return query(urls, filters)
             .filter { it.kind == Nip01Event.KIND_HIGHLIGHT && it.content.isNotBlank() }
             .distinctBy { it.id }

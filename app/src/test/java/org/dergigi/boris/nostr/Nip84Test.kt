@@ -108,6 +108,36 @@ class Nip84Test {
     }
 
     @Test
+    fun tagsForNotesUseEventPointer() {
+        val eventId = "ab".repeat(32)
+        val author = "cd".repeat(32)
+        val tags = Nip84.tags(
+            url = "nostr:note1qq",
+            context = null,
+            eventId = eventId,
+            authorPubkey = author,
+        )
+        assertEquals(listOf("e", eventId), tags[0])
+        assertEquals(listOf("p", author), tags[1])
+        assertFalse(tags.any { it[0] == "r" || it[0] == "a" })
+    }
+
+    @Test
+    fun articleUrlReadsNoteETag() {
+        val eventId = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
+        val event = Nip01Event(
+            id = "4".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(listOf("e", eventId)),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertEquals("nostr:${Nip19.noteEncode(eventId)}", Nip84.articleUrl(event))
+    }
+
+    @Test
     fun extractContextReturnsNullForSingleSentence() {
         assertNull(Nip84.extractContext("only one", "This is only one sentence."))
     }

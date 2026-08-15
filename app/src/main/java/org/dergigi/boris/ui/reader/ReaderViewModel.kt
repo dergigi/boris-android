@@ -267,14 +267,15 @@ class ReaderViewModel(
                     addAll(RelayList.FALLBACK)
                     if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
                 }.distinct()
-                val events = if (!content.articleCoordinate.isNullOrBlank()) {
-                    RelayQuery.fetchHighlightsForArticle(
-                        relays,
-                        content.articleCoordinate,
-                        content.eventId,
-                    )
-                } else {
-                    RelayQuery.fetchHighlights(relays, content.url)
+                val events = when {
+                    !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
+                        RelayQuery.fetchHighlightsForArticle(
+                            relays,
+                            content.articleCoordinate,
+                            content.eventId,
+                        )
+                    }
+                    else -> RelayQuery.fetchHighlights(relays, content.url)
                 }
                 _highlightCount.value = events.size
                 _highlights.value = events.map { event ->

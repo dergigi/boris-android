@@ -2,7 +2,11 @@ package org.dergigi.boris.data
 
 object ArticleUrl {
     fun host(url: String): String? {
-        NostrArticle.parse(url)?.pointer?.identifier?.ifBlank { null }?.let { return it }
+        when (val target = NostrLink.parse(url)) {
+            is NostrTarget.Article -> return target.ref.pointer.identifier.ifBlank { null }
+            is NostrTarget.Note -> return "nostr"
+            null -> Unit
+        }
         return try {
             val raw = if (url.contains("://")) url.trim() else "https://${url.trim()}"
             java.net.URI(raw).host?.lowercase()?.removePrefix("www.")?.ifEmpty { null }

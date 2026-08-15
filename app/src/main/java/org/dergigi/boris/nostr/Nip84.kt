@@ -15,8 +15,16 @@ object Nip84 {
         if (http != null) return http
         val coordinate = event.tags.firstOrNull { tag ->
             tag.size >= 2 && tag[0] == "a" && tag[1].startsWith("30023:")
+        }?.get(1)
+        if (coordinate != null) return NostrArticle.fromCoordinate(coordinate)?.uri
+        val eventId = event.tags.firstOrNull { tag ->
+            tag.size >= 2 && tag[0] == "e" && tag[1].length == 64
         }?.get(1) ?: return null
-        return NostrArticle.fromCoordinate(coordinate)?.uri
+        return try {
+            "nostr:${Nip19.noteEncode(eventId)}"
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun tags(
@@ -29,6 +37,9 @@ object Nip84 {
         if (!coordinate.isNullOrBlank()) {
             add(listOf("a", coordinate))
             if (!eventId.isNullOrBlank()) add(listOf("e", eventId))
+            if (!authorPubkey.isNullOrBlank()) add(listOf("p", authorPubkey))
+        } else if (!eventId.isNullOrBlank()) {
+            add(listOf("e", eventId))
             if (!authorPubkey.isNullOrBlank()) add(listOf("p", authorPubkey))
         } else {
             add(listOf("r", url))
