@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Link color, font size, and highlight color pickers sit on the same line as their labels again
+
 ## [0.27.0] - 2026-08-15
 
 ### Added
