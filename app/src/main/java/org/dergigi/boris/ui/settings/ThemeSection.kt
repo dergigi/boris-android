@@ -45,12 +45,12 @@ fun ThemeSection(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = stringResource(R.string.settings_theme),
+            text = stringResource(R.string.settings_appearance),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        SettingRow(stringResource(R.string.settings_appearance)) {
+        SettingRow(stringResource(R.string.settings_theme)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconToggle(
                     icon = Icons.Outlined.LightMode,

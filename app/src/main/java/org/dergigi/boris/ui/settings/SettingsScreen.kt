@@ -108,12 +108,12 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
-                ReadingDisplaySection(
+                ReadingSection(
                     settings = settings,
                     darkTheme = settings.isDark(isSystemInDarkTheme()),
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
-                MediaDisplaySection(
+                HighlightsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )

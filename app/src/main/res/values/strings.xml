@@ -91,7 +91,8 @@
     <string name="feed_scope_mine">You</string>
     <string name="feed_scope_friends_login">Connect to see friends content</string>
     <string name="feed_scope_mine_login">Connect to see your content</string>
-    <string name="settings_reading_display">Reading &amp; Display</string>
+    <string name="settings_reading">Reading</string>
+    <string name="settings_highlights">Highlights</string>
     <string name="settings_highlight_style">Highlight Style</string>
     <string name="settings_style_marker">Text marker style</string>
     <string name="settings_style_underline">Underline style</string>
@@ -110,7 +111,6 @@
     <string name="settings_color_nostrverse">Nostrverse Highlights</string>
     <string name="settings_show_highlights">Show highlights</string>
     <string name="settings_preview">Preview</string>
-    <string name="settings_media_display">Media Display</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
     <string name="settings_open_links_in_reader">Open links in Reader</string>
     <string name="settings_feed_scope">Default Feed Scope</string>

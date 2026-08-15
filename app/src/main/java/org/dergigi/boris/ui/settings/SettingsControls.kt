@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.dergigi.boris.data.HexColor
 
 internal val SettingChipSize = 40.dp
 internal val SettingChipShape = RoundedCornerShape(8.dp)
@@ -133,7 +135,7 @@ fun ColorChip(
     }
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(SettingChipSize)
             .clip(SettingChipShape)
             .background(color)
             .border(if (selected) 2.dp else 1.dp, border, SettingChipShape)
@@ -146,8 +148,42 @@ fun ColorChip(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
                 tint = check,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(18.dp),
             )
         }
     }
+}
+
+@Composable
+fun ColorSwatches(
+    colors: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        colors.forEach { hex ->
+            val color = hexColor(hex, Color.Gray)
+            val isSelected = hex.equals(selected, ignoreCase = true)
+            Box(
+                modifier = Modifier
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                        } else {
+                            Modifier.border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), CircleShape)
+                        },
+                    )
+                    .clickable { onSelect(hex) }
+                    .semantics { contentDescription = hex },
+            )
+        }
+    }
+}
+
+internal fun hexColor(hex: String, fallback: Color): Color {
+    val argb = HexColor.argb(hex) ?: return fallback
+    return Color(argb)
 }
