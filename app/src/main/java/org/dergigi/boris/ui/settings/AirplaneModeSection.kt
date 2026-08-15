@@ -126,6 +126,7 @@ private fun RelaysLearnMore(
             append(stringResource(R.string.settings_relays_prefix))
             RELAY_LINKS.forEachIndexed { index, url ->
                 when (index) {
+                    0 -> append(" ")
                     1 -> append(", ")
                     2 -> append(", and ")
                 }

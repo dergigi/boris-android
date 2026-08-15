@@ -154,7 +154,7 @@
     <string name="settings_citrine_connected">Citrine is running on this device</string>
     <string name="settings_citrine_missing">Citrine is not running (ws://127.0.0.1:4869)</string>
     <string name="settings_airplane_note">Note: Boris works best with a local relay. Citrine is the Android option. Events created while offline are rebroadcast to your other relays when you are back online.</string>
-    <string name="settings_relays_prefix">Don\'t know what relays are? Learn more </string>
+    <string name="settings_relays_prefix">Don\'t know what relays are? Learn more</string>
     <string name="settings_relays_here">here</string>
     <string name="settings_scroll_behaviour">Scroll Behaviour</string>
     <string name="settings_volume_scroll">Use volume buttons to scroll</string>
