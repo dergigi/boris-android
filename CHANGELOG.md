@@ -9,6 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Settings include an App & Airplane Mode section with Citrine detection at `ws://127.0.0.1:4869`
+- Highlights, library saves, and settings created offline stay on device and rebroadcast to remote relays when the network returns
+
 ## [0.26.1] - 2026-08-15
 
 ### Changed
