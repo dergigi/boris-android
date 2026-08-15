@@ -6,6 +6,7 @@ import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.dergigi.boris.data.ArticleUrl
@@ -13,11 +14,25 @@ import org.dergigi.boris.data.ReadableContent
 
 object RelayQuery {
     fun fetchRelayList(pubkeyHex: String): RelayList {
+        val cached = EventCache.latest(Nip01Event.KIND_RELAY_LIST, pubkeyHex)
+        if (cached != null) {
+            refreshOnce("relaylist:${pubkeyHex.lowercase()}") { fetchRelayListRemote(pubkeyHex) }
+            return RelayList.parse(listOf(cached))
+        }
+        return fetchRelayListRemote(pubkeyHex)
+    }
+
+    private fun fetchRelayListRemote(pubkeyHex: String): RelayList {
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_RELAY_LIST))
             .put("authors", JSONArray().put(pubkeyHex))
             .put("limit", 10)
         val events = query(RelayList.FALLBACK, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_RELAY_LIST &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+        EventCache.putAll(events)
         return RelayList.parse(events)
     }
 
@@ -31,16 +46,28 @@ object RelayQuery {
             .put("authors", JSONArray().put(pubkeyHex))
             .put("#d", JSONArray().put(Nip78.SETTINGS_D))
             .put("limit", 5)
-        return query(relays, listOf(filter))
+        val remote = query(relays, listOf(filter))
             .filter { event ->
                 event.kind == Nip01Event.KIND_APP_DATA &&
                     event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
                     Nip78.hasSettingsD(event)
             }
             .maxByOrNull { it.createdAt }
+        remote?.let { EventCache.put(it) }
+        val cached = EventCache.latest(Nip01Event.KIND_APP_DATA, pubkeyHex, Nip78.SETTINGS_D)
+        return listOfNotNull(remote, cached).maxByOrNull { it.createdAt }
     }
 
     fun fetchProfile(pubkeyHex: String): Profile? {
+        val cached = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex)
+        if (cached != null) {
+            refreshOnce("profile:${pubkeyHex.lowercase()}") { fetchProfileRemote(pubkeyHex) }
+            return Profile.parse(cached.content)
+        }
+        return fetchProfileRemote(pubkeyHex)?.let { Profile.parse(it.content) }
+    }
+
+    private fun fetchProfileRemote(pubkeyHex: String): Nip01Event? {
         val relays = fetchRelayList(pubkeyHex).read
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_METADATA))
@@ -52,7 +79,8 @@ object RelayQuery {
                     event.pubkey.equals(pubkeyHex, ignoreCase = true)
             }
             .maxByOrNull { it.createdAt } ?: return null
-        return Profile.parse(newest.content)
+        EventCache.put(newest)
+        return newest
     }
 
     fun fetchProfilePicture(pubkeyHex: String): String? = fetchProfile(pubkeyHex)?.picture
@@ -119,7 +147,29 @@ object RelayQuery {
     ): Map<String, Profile> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         val keys = pubkeys.map { it.lowercase() }.distinct()
-        if (urls.isEmpty() || keys.isEmpty()) return emptyMap()
+        if (keys.isEmpty()) return emptyMap()
+        val cached = keys.mapNotNull { key ->
+            EventCache.latest(Nip01Event.KIND_METADATA, key)?.let { key to it }
+        }.toMap()
+        val missing = keys.filterNot { it in cached }
+        val fetched = if (urls.isEmpty() || missing.isEmpty()) {
+            emptyMap()
+        } else {
+            fetchProfileEvents(urls, missing)
+        }
+        if (urls.isNotEmpty()) {
+            val stale = cached.keys.filter { refreshed.add("profile:$it") }
+            if (stale.isNotEmpty()) {
+                refreshPool.execute { runCatching { fetchProfileEvents(urls, stale) } }
+            }
+        }
+        return (cached + fetched).mapValues { Profile.parse(it.value.content) }
+    }
+
+    private fun fetchProfileEvents(
+        urls: List<String>,
+        keys: List<String>,
+    ): Map<String, Nip01Event> {
         val newest = mutableMapOf<String, Nip01Event>()
         for (chunk in keys.chunked(PROFILE_CHUNK)) {
             val filter = JSONObject()
@@ -135,76 +185,103 @@ object RelayQuery {
                 }
             }
         }
-        return newest.mapValues { Profile.parse(it.value.content) }
+        EventCache.putAll(newest.values)
+        return newest
     }
 
     fun fetchBookmarkList(pubkeyHex: String, readRelays: List<String>): Nip01Event? {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return null
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_BOOKMARKS))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("limit", 5)
-        return query(urls, listOf(filter))
-            .filter { event ->
-                event.kind == Nip01Event.KIND_BOOKMARKS &&
-                    event.pubkey.equals(pubkeyHex, ignoreCase = true)
-            }
-            .maxByOrNull { it.createdAt }
+        if (urls.isNotEmpty()) {
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_BOOKMARKS))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("limit", 5)
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_BOOKMARKS &&
+                        event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+                .maxByOrNull { it.createdAt }
+            remote?.let { EventCache.put(it) }
+        }
+        return EventCache.latest(Nip01Event.KIND_BOOKMARKS, pubkeyHex)
     }
 
     fun fetchWebBookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_WEB_BOOKMARK))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("limit", 200)
-        return query(urls, listOf(filter))
-            .filter { event ->
-                event.kind == Nip01Event.KIND_WEB_BOOKMARK &&
-                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
-                    !event.tagValue("d").isNullOrBlank()
-            }
+        if (urls.isNotEmpty()) {
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_WEB_BOOKMARK))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("limit", 200)
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_WEB_BOOKMARK &&
+                        event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                        !event.tagValue("d").isNullOrBlank()
+                }
+            EventCache.putAll(remote)
+        }
+        return cachedWebBookmarks(pubkeyHex)
+    }
+
+    fun cachedWebBookmarks(pubkeyHex: String): List<Nip01Event> =
+        EventCache.byKindAndAuthor(setOf(Nip01Event.KIND_WEB_BOOKMARK), pubkeyHex)
+            .filter { !it.tagValue("d").isNullOrBlank() }
             .groupBy { it.tagValue("d")!!.lowercase() }
             .mapNotNull { (_, events) -> events.maxByOrNull { it.createdAt } }
             .sortedByDescending { NipB0.publishedAt(it) }
-    }
 
     fun fetchLookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("limit", 200)
-        return query(urls, listOf(filter))
-            .filter { event ->
-                Lookmarks.isLook(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
-            }
-            .sortedByDescending { it.createdAt }
+        if (urls.isNotEmpty()) {
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("limit", 200)
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    Lookmarks.isLook(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+            EventCache.putAll(remote)
+        }
+        return cachedLookmarks(pubkeyHex)
     }
+
+    fun cachedLookmarks(pubkeyHex: String): List<Nip01Event> =
+        EventCache.byKindAndAuthor(setOf(Nip01Event.KIND_REACTION), pubkeyHex)
+            .filter { Lookmarks.isLook(it) }
+            .sortedByDescending { it.createdAt }
 
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
-        val filters = listOf(
-            JSONObject()
-                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-                .put("authors", JSONArray().put(pubkeyHex))
-                .put("limit", 200),
-            JSONObject()
-                .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
-                .put("authors", JSONArray().put(pubkeyHex))
-                .put("limit", 200),
-        )
-        return query(urls, filters)
-            .filter { event ->
-                Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
-            }
-            .sortedByDescending { it.createdAt }
-            .distinctBy { it.id }
+        if (urls.isNotEmpty()) {
+            val filters = listOf(
+                JSONObject()
+                    .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                    .put("authors", JSONArray().put(pubkeyHex))
+                    .put("limit", 200),
+                JSONObject()
+                    .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
+                    .put("authors", JSONArray().put(pubkeyHex))
+                    .put("limit", 200),
+            )
+            val remote = query(urls, filters)
+                .filter { event ->
+                    Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+            EventCache.putAll(remote)
+        }
+        return cachedArchiveReactions(pubkeyHex)
     }
+
+    fun cachedArchiveReactions(pubkeyHex: String): List<Nip01Event> =
+        EventCache.byKindAndAuthor(
+            setOf(Nip01Event.KIND_REACTION, Nip01Event.KIND_URL_REACTION),
+            pubkeyHex,
+        )
+            .filter { Archive.isArchive(it) }
+            .sortedByDescending { it.createdAt }
 
     fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> =
         fetchRecentWritings(readRelays, limit = 200, pubkeyHex = pubkeyHex)
@@ -236,6 +313,17 @@ object RelayQuery {
     }
 
     fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
+        val cached = EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
+        if (cached != null) {
+            refreshOnce("article:${pointer.kind}:${pointer.pubkey.lowercase()}:${pointer.identifier}") {
+                fetchArticleRemote(pointer)
+            }
+            return cached
+        }
+        return fetchArticleRemote(pointer)
+    }
+
+    private fun fetchArticleRemote(pointer: NaddrPointer): Nip01Event? {
         val relays = buildList {
             addAll(pointer.relays)
             addAll(RelayList.FALLBACK)
@@ -245,13 +333,15 @@ object RelayQuery {
             .put("authors", JSONArray().put(pointer.pubkey))
             .put("#d", JSONArray().put(pointer.identifier))
             .put("limit", 5)
-        return query(relays, listOf(filter))
+        val newest = query(relays, listOf(filter))
             .filter { event ->
                 event.kind == pointer.kind &&
                     event.pubkey.equals(pointer.pubkey, ignoreCase = true) &&
                     event.tagValue("d") == pointer.identifier
             }
-            .maxByOrNull { it.createdAt }
+            .maxByOrNull { it.createdAt } ?: return null
+        EventCache.put(newest)
+        return newest
     }
 
     fun fetchEvent(eventId: String, relays: List<String> = emptyList()): Nip01Event? =
@@ -260,20 +350,29 @@ object RelayQuery {
     fun fetchEvents(eventIds: Collection<String>, relays: List<String> = emptyList()): Map<String, Nip01Event> {
         val ids = eventIds.map { it.lowercase() }.filter { it.length == 64 }.distinct()
         if (ids.isEmpty()) return emptyMap()
+        val found = mutableMapOf<String, Nip01Event>()
+        val missing = mutableListOf<String>()
+        for (id in ids) {
+            val cached = EventCache.event(id)
+            if (cached != null) found[id] = cached else missing.add(id)
+        }
+        if (missing.isEmpty()) return found
         val urls = buildList {
             addAll(relays)
             addAll(RelayList.FALLBACK)
         }.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyMap()
-        val found = mutableMapOf<String, Nip01Event>()
-        for (chunk in ids.chunked(EVENT_CHUNK)) {
+        if (urls.isEmpty()) return found
+        val fetched = mutableListOf<Nip01Event>()
+        for (chunk in missing.chunked(EVENT_CHUNK)) {
             val filter = JSONObject()
                 .put("ids", JSONArray().apply { chunk.forEach { put(it) } })
                 .put("limit", chunk.size)
             for (event in query(urls, listOf(filter))) {
                 found[event.id.lowercase()] = event
+                fetched.add(event)
             }
         }
+        EventCache.putAll(fetched)
         return found
     }
 
@@ -344,9 +443,8 @@ object RelayQuery {
         pubkeyHex: String,
         content: ReadableContent,
     ): List<Nip01Event> {
-        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
-        val filter = when (Archive.kind(content)) {
+        val kind = Archive.kind(content)
+        val filter = when (kind) {
             Nip01Event.KIND_REACTION -> {
                 val eventId = content.eventId?.trim()?.takeIf { it.length == 64 } ?: return emptyList()
                 JSONObject()
@@ -364,12 +462,32 @@ object RelayQuery {
             }
             else -> return emptyList()
         }
-        return query(urls, listOf(filter))
-            .filter { event ->
-                Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
-            }
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isNotEmpty()) {
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+            EventCache.putAll(remote)
+        }
+        return EventCache.byKindAndAuthor(setOf(kind), pubkeyHex)
+            .filter { Archive.isArchive(it) && archiveMatches(it, kind, content) }
             .distinctBy { it.id }
     }
+
+    private fun archiveMatches(event: Nip01Event, kind: Int, content: ReadableContent): Boolean =
+        when (kind) {
+            Nip01Event.KIND_REACTION -> {
+                val target = content.eventId?.trim()?.lowercase()
+                target != null &&
+                    event.tags.any { it.size >= 2 && it[0] == "e" && it[1].lowercase() == target }
+            }
+            Nip01Event.KIND_URL_REACTION -> {
+                val target = Archive.normalizeUrl(content.url)
+                event.tags.any { it.size >= 2 && it[0] == "r" && Archive.normalizeUrl(it[1]) == target }
+            }
+            else -> false
+        }
 
     fun publish(writeRelays: List<String>, event: Nip01Event): Boolean {
         if (writeRelays.isEmpty()) return false
@@ -410,12 +528,19 @@ object RelayQuery {
                 }
             }
             responses.await(PUBLISH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            return okTrue.get()
         } catch (_: Exception) {
-            return okTrue.get()
         } finally {
             sockets.forEach { it.close() }
         }
+        val ok = okTrue.get()
+        if (ok) {
+            if (event.kind == Nip01Event.KIND_DELETION) {
+                EventCache.applyDeletion(event)
+            } else {
+                EventCache.put(event)
+            }
+        }
+        return ok
     }
 
     private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> {
@@ -490,6 +615,18 @@ object RelayQuery {
     }.distinct()
 
     private fun newId(): String = UUID.randomUUID().toString().take(12)
+
+    /** Runs a stale-while-revalidate refresh at most once per key per app session. */
+    private fun refreshOnce(key: String, action: () -> Unit) {
+        if (refreshed.add(key)) {
+            refreshPool.execute { runCatching { action() } }
+        }
+    }
+
+    private val refreshed = ConcurrentHashMap.newKeySet<String>()
+    private val refreshPool = Executors.newFixedThreadPool(2) { runnable ->
+        Thread(runnable, "relay-refresh").apply { isDaemon = true }
+    }
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
