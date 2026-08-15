@@ -7,9 +7,6 @@
     <string name="nav_search">Search</string>
     <string name="nav_you">You</string>
     <string name="home_hello">Hi! I\'m Boris.</string>
-    <string name="home_copy">Connect your npub to see your bookmarks, explore long-form articles, and create your own highlights.</string>
-    <string name="home_mark_npub">Connect your npub</string>
-    <string name="home_mark_highlights">your own highlights.</string>
     <string name="home_read">Read</string>
     <string name="home_recently_highlighted">Recently highlighted</string>
     <string name="auth_connect">Amber</string>
@@ -74,6 +71,9 @@
     <string name="settings_not_published">Settings were not published.</string>
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>
+    <string name="you_logged_out_title">Your highlights</string>
+    <string name="you_logged_out_sample">the passages you care about</string>
+    <string name="you_logged_out_body">Connect, and they show up here.</string>
     <string name="you_highlights_empty">No highlights yet.</string>
     <string name="you_highlight_source">— %1$s</string>
 </resources>
