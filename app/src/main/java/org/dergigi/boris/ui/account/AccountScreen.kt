@@ -107,7 +107,7 @@ fun AccountScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.nav_you)) },
+                title = {},
                 actions = {
                     if (loggedIn) {
                         IconButton(onClick = { confirmSignOut = true }) {
