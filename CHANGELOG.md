@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader shows a Move to Archive button at the end of each article when logged in
+
 ## [0.21.0] - 2026-08-15
 
 ### Changed

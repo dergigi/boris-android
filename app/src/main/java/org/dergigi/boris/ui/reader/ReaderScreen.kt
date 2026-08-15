@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,7 +35,9 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -135,6 +139,7 @@ fun ReaderScreen(
     val highlightCount by viewModel.highlightCount.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val canSave by viewModel.canSave.collectAsStateWithLifecycle()
+    val archived by viewModel.archived.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
@@ -161,6 +166,7 @@ fun ReaderScreen(
         highlightCount = highlightCount,
         loggedIn = loggedIn,
         canSave = canSave,
+        archived = archived,
         settings = settings,
         onBack = onBack,
         onRetry = viewModel::load,
@@ -174,6 +180,9 @@ fun ReaderScreen(
         onSave = {
             viewModel.saveToLibrary()?.let(launcher::launch)
         },
+        onArchive = {
+            viewModel.archive()?.let(launcher::launch)
+        },
     )
 }
 
@@ -186,6 +195,7 @@ fun ReaderScreenContent(
     highlightCount: Int,
     loggedIn: Boolean,
     canSave: Boolean,
+    archived: Boolean,
     settings: UserSettings,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -195,6 +205,7 @@ fun ReaderScreenContent(
     onGalleryPage: (Int) -> Unit,
     onHighlight: (String) -> Unit,
     onSave: () -> Unit,
+    onArchive: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -352,11 +363,13 @@ fun ReaderScreenContent(
                     highlights = highlights,
                     highlightCount = highlightCount,
                     loggedIn = loggedIn,
+                    archived = archived,
                     settings = settings,
                     volumeScroll = gallery == null,
                     onOpenArticle = onOpenArticle,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
+                    onArchive = onArchive,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -378,10 +391,12 @@ private fun ArticleBody(
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
     loggedIn: Boolean,
+    archived: Boolean,
     settings: UserSettings,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
+    onArchive: () -> Unit,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -606,6 +621,19 @@ private fun ArticleBody(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+                if (loggedIn) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ArchiveButton(
+                            archived = archived,
+                            onClick = onArchive,
+                        )
+                    }
+                }
             }
         }
         ReadingProgressBar(
@@ -689,6 +717,31 @@ private fun HighlightedMarkdownNode(
             ),
         onTextLayout = { result, _ -> layout = result },
     )
+}
+
+@Composable
+private fun ArchiveButton(
+    archived: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = if (archived) Icons.Outlined.CheckCircle else Icons.AutoMirrored.Outlined.LibraryBooks,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = stringResource(
+                if (archived) R.string.reader_archived else R.string.reader_archive,
+            ),
+        )
+    }
 }
 
 private fun readingColor(hex: String, fallback: Color): Color {

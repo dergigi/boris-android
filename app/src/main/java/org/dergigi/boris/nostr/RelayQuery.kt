@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.ReadableContent
 
 object RelayQuery {
     fun fetchRelayList(pubkeyHex: String): RelayList {
@@ -315,6 +316,38 @@ object RelayQuery {
                         ArticleUrl.normalize(tag[1]) == articleNorm
                 }
         }
+    }
+
+    fun fetchArchives(
+        readRelays: List<String>,
+        pubkeyHex: String,
+        content: ReadableContent,
+    ): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filter = when (Archive.kind(content)) {
+            Nip01Event.KIND_REACTION -> {
+                val eventId = content.eventId?.trim()?.takeIf { it.length == 64 } ?: return emptyList()
+                JSONObject()
+                    .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                    .put("authors", JSONArray().put(pubkeyHex))
+                    .put("#e", JSONArray().put(eventId.lowercase()))
+                    .put("limit", 20)
+            }
+            Nip01Event.KIND_URL_REACTION -> {
+                JSONObject()
+                    .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
+                    .put("authors", JSONArray().put(pubkeyHex))
+                    .put("#r", JSONArray().put(Archive.normalizeUrl(content.url)))
+                    .put("limit", 20)
+            }
+            else -> return emptyList()
+        }
+        return query(urls, listOf(filter))
+            .filter { event ->
+                Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .distinctBy { it.id }
     }
 
     fun publish(writeRelays: List<String>, event: Nip01Event): Boolean {

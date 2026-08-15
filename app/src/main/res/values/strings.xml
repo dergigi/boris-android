@@ -67,6 +67,11 @@
     <string name="reader_save_cancelled">Save cancelled.</string>
     <string name="reader_save_rejected">Save rejected.</string>
     <string name="reader_save_failed">Could not save to library.</string>
+    <string name="reader_archive">Move to Archive</string>
+    <string name="reader_archived">Archived</string>
+    <string name="reader_archive_cancelled">Archive cancelled.</string>
+    <string name="reader_archive_rejected">Archive rejected.</string>
+    <string name="reader_archive_failed">Could not update archive.</string>
     <string name="feed_empty">No highlights yet.</string>
     <string name="feed_writings_empty">No writings yet.</string>
     <string name="feed_empty_filtered">Nothing matches these filters.</string>

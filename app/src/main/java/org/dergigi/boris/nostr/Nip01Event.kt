@@ -57,7 +57,9 @@ data class Nip01Event(
     companion object {
         const val KIND_METADATA = 0
         const val KIND_TEXT_NOTE = 1
+        const val KIND_DELETION = 5
         const val KIND_REACTION = 7
+        const val KIND_URL_REACTION = 17
         const val KIND_CONTACTS = 3
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242

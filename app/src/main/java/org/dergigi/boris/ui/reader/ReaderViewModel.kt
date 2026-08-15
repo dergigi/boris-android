@@ -20,6 +20,7 @@ import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerDecryptResult
 import org.dergigi.boris.nostr.BunkerEncryptResult
@@ -68,6 +69,9 @@ class ReaderViewModel(
     private val _canSave = MutableStateFlow(false)
     val canSave: StateFlow<Boolean> = _canSave.asStateFlow()
 
+    private val _archived = MutableStateFlow(false)
+    val archived: StateFlow<Boolean> = _archived.asStateFlow()
+
     private val _signIntent = MutableStateFlow<Intent?>(null)
     val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
 
@@ -76,10 +80,14 @@ class ReaderViewModel(
 
     private var highlightJob: Job? = null
     private var membershipJob: Job? = null
+    private var archiveJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
     private var inLibrary = false
     private var saving = false
+    private var archiving = false
+    private var pendingArchive = false
+    private var archiveIds = emptyList<String>()
 
     init {
         load()
@@ -118,6 +126,7 @@ class ReaderViewModel(
             _highlights.value = emptyList()
             _highlightCount.value = 0
             inLibrary = false
+            resetArchive()
             publishSaveState()
             return
         }
@@ -126,15 +135,18 @@ class ReaderViewModel(
             _highlights.value = emptyList()
             _highlightCount.value = 0
             inLibrary = false
+            resetArchive()
             publishSaveState()
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url) }
                 _state.value = ReaderUiState.Ready(content)
                 startHighlightFetch(content)
                 startMembershipCheck(content)
+                startArchiveCheck(content)
             } catch (e: Exception) {
                 highlightJob?.cancel()
                 membershipJob?.cancel()
+                archiveJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
                 _state.value = ReaderUiState.Error(
@@ -208,6 +220,20 @@ class ReaderViewModel(
         }
     }
 
+    fun archive(): Intent? {
+        val app = getApplication<Application>()
+        if (archiving) return null
+        val session = SessionStore.load(app) ?: return null
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
+        archiving = true
+        pendingArchive = true
+        return if (_archived.value) {
+            requestUnarchive(session)
+        } else {
+            requestArchive(session, content)
+        }
+    }
+
     fun saveToLibrary(): Intent? {
         val app = getApplication<Application>()
         if (saving || inLibrary) return null
@@ -247,16 +273,28 @@ class ReaderViewModel(
             null -> {
                 val pending = pendingUnsigned
                 pendingUnsigned = null
-                val librarySave = pending != null && pending.kind != Nip01Event.KIND_HIGHLIGHT
+                val archiveOp = pendingArchive ||
+                    pending?.kind == Nip01Event.KIND_DELETION ||
+                    (pending != null && Archive.isArchiveKind(pending.kind))
+                pendingArchive = false
+                val librarySave = pending != null &&
+                    !archiveOp &&
+                    pending.kind != Nip01Event.KIND_HIGHLIGHT
                 when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
                     is SignerResult.Signed -> onSignedEvent(result.event)
                     SignerResult.Rejected -> {
-                        if (librarySave) failSave(app.getString(R.string.reader_save_rejected))
-                        else _message.value = app.getString(R.string.highlight_rejected)
+                        when {
+                            archiveOp -> failArchive(app.getString(R.string.reader_archive_rejected))
+                            librarySave -> failSave(app.getString(R.string.reader_save_rejected))
+                            else -> _message.value = app.getString(R.string.highlight_rejected)
+                        }
                     }
                     SignerResult.Cancelled, is SignerResult.Success -> {
-                        if (librarySave) failSave(app.getString(R.string.reader_save_cancelled))
-                        else _message.value = app.getString(R.string.highlight_cancelled)
+                        when {
+                            archiveOp -> failArchive(app.getString(R.string.reader_archive_cancelled))
+                            librarySave -> failSave(app.getString(R.string.reader_save_cancelled))
+                            else -> _message.value = app.getString(R.string.highlight_cancelled)
+                        }
                     }
                 }
             }
@@ -268,9 +306,13 @@ class ReaderViewModel(
         val session = SessionStore.load(app) ?: return
         if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
         if (!event.verify()) return
-        when (event.kind) {
-            Nip01Event.KIND_HIGHLIGHT -> onSignedHighlight(session, event)
-            Nip01Event.KIND_WEB_BOOKMARK, Nip01Event.KIND_BOOKMARKS -> onSignedLibrary(session, event)
+        when {
+            event.kind == Nip01Event.KIND_HIGHLIGHT -> onSignedHighlight(session, event)
+            event.kind == Nip01Event.KIND_WEB_BOOKMARK || event.kind == Nip01Event.KIND_BOOKMARKS -> {
+                onSignedLibrary(session, event)
+            }
+            Archive.isArchive(event) -> onSignedArchive(session, event)
+            event.kind == Nip01Event.KIND_DELETION -> onSignedUnarchive(session, event)
         }
     }
 
@@ -302,6 +344,146 @@ class ReaderViewModel(
             }
             publishSaveState()
         }
+    }
+
+    private fun requestArchive(session: Session, content: ReadableContent): Intent? {
+        val createdAt = System.currentTimeMillis() / 1000
+        val kind = Archive.kind(content)
+        val tags = Archive.tags(content)
+        if (kind == null || tags == null) {
+            failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                pendingUnsigned = PendingUnsignedEvent(
+                    pubkey = session.pubkeyHex,
+                    createdAt = createdAt,
+                    kind = kind,
+                    tags = tags,
+                    content = Archive.EMOJI,
+                )
+                val unsigned = Archive.unsignedJson(content, session.pubkeyHex, createdAt)
+                if (unsigned == null) {
+                    failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
+                    return null
+                }
+                RemoteSignerBridge.buildSignEventIntent(unsigned, session.signerPackage, session.pubkeyHex)
+            }
+            is Session.Bunker -> {
+                pendingUnsigned = null
+                val unsigned = Archive.unsignedJson(content, pubkeyHex = null, createdAt)
+                if (unsigned == null) {
+                    failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
+                    return null
+                }
+                viewModelScope.launch { signWithBunker(session, unsigned, SignOp.Archive) }
+                null
+            }
+        }
+    }
+
+    private fun requestUnarchive(session: Session): Intent? {
+        val createdAt = System.currentTimeMillis() / 1000
+        val unsignedAmber = Archive.deleteUnsignedJson(archiveIds, session.pubkeyHex, createdAt)
+        if (unsignedAmber == null) {
+            failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
+            return null
+        }
+        val tags = Archive.deleteTags(archiveIds)
+        return when (session) {
+            is Session.Amber -> {
+                pendingUnsigned = PendingUnsignedEvent(
+                    pubkey = session.pubkeyHex,
+                    createdAt = createdAt,
+                    kind = Nip01Event.KIND_DELETION,
+                    tags = tags,
+                    content = "unarchive",
+                )
+                RemoteSignerBridge.buildSignEventIntent(unsignedAmber, session.signerPackage, session.pubkeyHex)
+            }
+            is Session.Bunker -> {
+                pendingUnsigned = null
+                val unsigned = Archive.deleteUnsignedJson(archiveIds, pubkeyHex = null, createdAt)
+                    ?: run {
+                        failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
+                        return null
+                    }
+                viewModelScope.launch { signWithBunker(session, unsigned, SignOp.Archive) }
+                null
+            }
+        }
+    }
+
+    private fun onSignedArchive(session: Session, event: Nip01Event) {
+        val previousIds = archiveIds
+        archiveIds = listOf(event.id)
+        _archived.value = true
+        archiving = false
+        pendingArchive = false
+        viewModelScope.launch(Dispatchers.IO) {
+            val published = publish(session, event)
+            if (!published) {
+                archiveIds = previousIds
+                _archived.value = previousIds.isNotEmpty()
+                _message.value = getApplication<Application>().getString(R.string.reader_archive_failed)
+            }
+        }
+    }
+
+    private fun onSignedUnarchive(session: Session, event: Nip01Event) {
+        val previousIds = archiveIds
+        archiveIds = emptyList()
+        _archived.value = false
+        archiving = false
+        pendingArchive = false
+        viewModelScope.launch(Dispatchers.IO) {
+            val published = publish(session, event)
+            if (!published) {
+                archiveIds = previousIds
+                _archived.value = previousIds.isNotEmpty()
+                _message.value = getApplication<Application>().getString(R.string.reader_archive_failed)
+            }
+        }
+    }
+
+    private fun startArchiveCheck(content: ReadableContent) {
+        archiveJob?.cancel()
+        val session = SessionStore.load(getApplication())
+        _loggedIn.value = session != null
+        if (session == null || Archive.kind(content) == null) {
+            resetArchive()
+            return
+        }
+        archiveJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val relays = buildList {
+                    addAll(RelayList.FALLBACK)
+                    addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
+                }.distinct()
+                val events = RelayQuery.fetchArchives(relays, session.pubkeyHex, content)
+                archiveIds = events.map { it.id }
+                _archived.value = events.isNotEmpty()
+            } catch (_: Exception) {
+                archiveIds = emptyList()
+                _archived.value = false
+            }
+        }
+    }
+
+    private fun resetArchive() {
+        archiveJob?.cancel()
+        archiveIds = emptyList()
+        _archived.value = false
+        archiving = false
+        pendingArchive = false
+    }
+
+    private fun failArchive(message: String) {
+        archiving = false
+        pendingArchive = false
+        pendingUnsigned = null
+        _message.value = message
     }
 
     private fun requestWebBookmark(session: Session, content: ReadableContent): Intent? {
@@ -589,15 +771,26 @@ class ReaderViewModel(
     }
 
     private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String) {
-        signWithBunker(session, unsignedJson, library = false)
+        signWithBunker(session, unsignedJson, SignOp.Highlight)
     }
 
-    private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String, library: Boolean) {
+    private suspend fun signWithBunker(
+        session: Session.Bunker,
+        unsignedJson: String,
+        library: Boolean,
+    ) {
+        signWithBunker(session, unsignedJson, if (library) SignOp.Library else SignOp.Highlight)
+    }
+
+    private suspend fun signWithBunker(
+        session: Session.Bunker,
+        unsignedJson: String,
+        op: SignOp,
+    ) {
         val app = getApplication<Application>()
         val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
         if (privkey == null) {
-            if (library) failSave(app.getString(R.string.reader_save_cancelled))
-            else _message.value = app.getString(R.string.highlight_cancelled)
+            bunkerFailure(op, rejected = false)
             return
         }
         try {
@@ -611,17 +804,28 @@ class ReaderViewModel(
             }
             when (result) {
                 is BunkerSignResult.Signed -> onSignedEvent(result.event)
-                BunkerSignResult.Rejected -> {
-                    if (library) failSave(app.getString(R.string.reader_save_rejected))
-                    else _message.value = app.getString(R.string.highlight_rejected)
-                }
-                BunkerSignResult.RelayTimeout -> {
-                    if (library) failSave(app.getString(R.string.reader_save_cancelled))
-                    else _message.value = app.getString(R.string.highlight_cancelled)
-                }
+                BunkerSignResult.Rejected -> bunkerFailure(op, rejected = true)
+                BunkerSignResult.RelayTimeout -> bunkerFailure(op, rejected = false)
             }
         } finally {
             privkey.fill(0)
+        }
+    }
+
+    private fun bunkerFailure(op: SignOp, rejected: Boolean) {
+        val app = getApplication<Application>()
+        when (op) {
+            SignOp.Archive -> failArchive(
+                app.getString(if (rejected) R.string.reader_archive_rejected else R.string.reader_archive_cancelled),
+            )
+            SignOp.Library -> failSave(
+                app.getString(if (rejected) R.string.reader_save_rejected else R.string.reader_save_cancelled),
+            )
+            SignOp.Highlight -> {
+                _message.value = app.getString(
+                    if (rejected) R.string.highlight_rejected else R.string.highlight_cancelled,
+                )
+            }
         }
     }
 
@@ -686,3 +890,5 @@ private sealed class PendingLibrary {
     data class Decrypt(val list: Nip01Event, val newTag: List<String>) : PendingLibrary()
     data class Encrypt(val list: Nip01Event, val hiddenTags: List<List<String>>) : PendingLibrary()
 }
+
+private enum class SignOp { Highlight, Library, Archive }
