@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.26.1] - 2026-08-15
+
 ### Changed
 
 - Settings color and font-size pickers are the same 40dp rounded squares as highlight style and alignment
@@ -359,7 +361,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.26.1...HEAD
+[0.26.1]: https://github.com/dergigi/boris-android/releases/tag/v0.26.1
 [0.26.0]: https://github.com/dergigi/boris-android/releases/tag/v0.26.0
 [0.25.1]: https://github.com/dergigi/boris-android/releases/tag/v0.25.1
 [0.25.0]: https://github.com/dergigi/boris-android/releases/tag/v0.25.0
