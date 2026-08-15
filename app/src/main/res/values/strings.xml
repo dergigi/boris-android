@@ -117,4 +117,6 @@
     <string name="you_tab_highlights">Highlights</string>
     <string name="you_tab_writings">Writings</string>
     <string name="you_highlight_source">— %1$s</string>
+    <string name="reader_progress">%1$d%%</string>
+    <string name="reader_progress_done">✓</string>
 </resources>

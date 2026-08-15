@@ -1,0 +1,97 @@
+package org.dergigi.boris.ui.reader
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import org.dergigi.boris.R
+import kotlin.math.roundToInt
+
+object ReadingProgress {
+    const val COMPLETE_PERCENT = 95
+
+    fun percent(scrollValue: Int, scrollMax: Int): Int {
+        if (scrollMax <= 0) return 0
+        return ((scrollValue.toFloat() / scrollMax) * 100f).roundToInt().coerceIn(0, 100)
+    }
+
+    fun isComplete(percent: Int): Boolean = percent >= COMPLETE_PERCENT
+
+    fun isStarted(percent: Int): Boolean = percent in 1..10
+}
+
+private val CompleteGreen = Color(0xFF22C55E)
+
+@Composable
+fun ReadingProgressBar(
+    percent: Int,
+    modifier: Modifier = Modifier,
+) {
+    val clamped = percent.coerceIn(0, 100)
+    val complete = ReadingProgress.isComplete(clamped)
+    val started = ReadingProgress.isStarted(clamped)
+    val barColor = when {
+        complete -> CompleteGreen
+        started -> MaterialTheme.colorScheme.onBackground
+        else -> MaterialTheme.colorScheme.primary
+    }
+    val labelColor = when {
+        complete -> CompleteGreen
+        started -> MaterialTheme.colorScheme.onBackground
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(2.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(clamped / 100f)
+                    .background(barColor),
+            )
+        }
+        Text(
+            text = if (complete) {
+                stringResource(R.string.reader_progress_done)
+            } else {
+                stringResource(R.string.reader_progress, clamped)
+            },
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                fontFeatureSettings = "tnum",
+            ),
+            color = labelColor,
+            textAlign = TextAlign.End,
+            modifier = Modifier.widthIn(min = 32.dp),
+        )
+    }
+}

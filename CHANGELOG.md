@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader shows a thin progress bar and percentage at the bottom
+
 ## [0.18.0] - 2026-08-15
 
 ### Added

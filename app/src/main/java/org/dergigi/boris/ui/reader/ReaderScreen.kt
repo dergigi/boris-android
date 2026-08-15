@@ -549,6 +549,10 @@ private fun ArticleBody(
                 }
             }
         }
+        ReadingProgressBar(
+            percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
         HighlightTextToolbar(
             selection = selection,
             showHighlight = loggedIn,
