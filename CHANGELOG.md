@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it
+
 ## [0.29.0] - 2026-08-15
 
 ### Changed

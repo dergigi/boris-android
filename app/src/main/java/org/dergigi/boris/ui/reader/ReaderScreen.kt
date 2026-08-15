@@ -423,7 +423,8 @@ private fun ArticleBody(
     val colors = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
     val readingTime = readingTimeLabel(content.body)
-    val domain = ArticleUrl.host(content.url)
+    val rootUrl = ArticleUrl.root(content.url)
+    val domain = rootUrl?.let { ArticleUrl.host(content.url) }
     val published = content.publishedAt?.let { PublishedTime.label(it) }
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
@@ -644,6 +645,7 @@ private fun ArticleBody(
                     highlightsLabel = highlightsLabel,
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
                     published = if (coverUrl == null) published else null,
+                    onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
                     onHighlightsClick = { paneOpen = true },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
@@ -959,6 +961,7 @@ private fun ArticleMetaRow(
     highlightsLabel: String?,
     highlightsColor: Color,
     published: String?,
+    onDomainClick: (() -> Unit)? = null,
     onHighlightsClick: (() -> Unit)? = null,
 ) {
     if (domain == null && readingTime == null && highlightsLabel == null && published == null) return
@@ -970,7 +973,7 @@ private fun ArticleMetaRow(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (domain != null) {
-            MetaChip(text = domain, icon = Icons.Outlined.Language)
+            MetaChip(text = domain, icon = Icons.Outlined.Language, onClick = onDomainClick)
         }
         if (readingTime != null) {
             MetaChip(text = readingTime, icon = Icons.Outlined.Schedule)

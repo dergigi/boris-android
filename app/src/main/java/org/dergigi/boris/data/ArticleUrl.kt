@@ -15,6 +15,21 @@ object ArticleUrl {
         }
     }
 
+    /** Root website of a web article ("https://example.com"), null for nostr-native content. */
+    fun root(url: String): String? {
+        if (NostrLink.parse(url) != null) return null
+        return try {
+            val raw = if (url.contains("://")) url.trim() else "https://${url.trim()}"
+            java.net.URI(raw).host
+                ?.lowercase()
+                ?.removePrefix("www.")
+                ?.ifEmpty { null }
+                ?.let { "https://$it" }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun normalize(url: String): String {
         val trimmed = url.trim()
         return try {
