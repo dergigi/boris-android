@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-08-15
+
 ### Added
 
 - Library has an Archive shelf for articles and pages marked with 📚
@@ -320,7 +322,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/dergigi/boris-android/releases/tag/v0.23.0
 [0.22.0]: https://github.com/dergigi/boris-android/releases/tag/v0.22.0
 [0.21.0]: https://github.com/dergigi/boris-android/releases/tag/v0.21.0
 [0.20.0]: https://github.com/dergigi/boris-android/releases/tag/v0.20.0
