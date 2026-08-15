@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
@@ -43,6 +44,7 @@ object Routes {
     const val SEARCH = "search"
     const val YOU = "you"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
@@ -116,6 +118,11 @@ fun BorisApp(
                 composable(Routes.HOME) {
                     HomeScreen(
                         onRead = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenAbout = {
+                            navController.navigate(Routes.ABOUT) {
+                                launchSingleTop = true
+                            }
+                        },
                         authViewModel = authViewModel,
                     )
                 }
@@ -149,6 +156,11 @@ fun BorisApp(
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
                         authViewModel = authViewModel,
+                    )
+                }
+                composable(Routes.ABOUT) {
+                    AboutScreen(
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable(

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Home has a header bar like the other screens, with a help button that opens an About page listing all Boris features with the illustrations from readwithboris.com
+
 ### Changed
 
 - The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,8 +28,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,9 +70,11 @@ import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onRead: (String) -> Unit,
+    onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
@@ -88,32 +95,60 @@ fun HomeScreen(
             if (focused) clipboardUrl = ClipboardLink.read(context)
         }
     }
-    Column(modifier = modifier.fillMaxSize()) {
-        clipboardUrl?.let { url ->
-            ClipboardBanner(
-                url = url,
-                onOpen = {
-                    ClipboardLink.markHandled(url)
-                    clipboardUrl = null
-                    onRead(url)
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.home_title)) },
+                actions = {
+                    IconButton(onClick = onOpenAbout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                            contentDescription = stringResource(R.string.home_about),
+                        )
+                    }
                 },
-                onDismiss = {
-                    ClipboardLink.markHandled(url)
-                    clipboardUrl = null
-                },
+                windowInsets = WindowInsets(0),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
+                ),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0),
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            clipboardUrl?.let { url ->
+                ClipboardBanner(
+                    url = url,
+                    onOpen = {
+                        ClipboardLink.markHandled(url)
+                        clipboardUrl = null
+                        onRead(url)
+                    },
+                    onDismiss = {
+                        ClipboardLink.markHandled(url)
+                        clipboardUrl = null
+                    },
+                )
+            }
+            HomeScreenContent(
+                highlights = highlights,
+                refreshing = refreshing,
+                loggedIn = loggedIn,
+                mineColor = hexColor(settings.highlightColorMine, HighlightMine),
+                friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
+                nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
+                onRefresh = viewModel::refresh,
+                onRead = onRead,
+                modifier = Modifier.weight(1f),
             )
         }
-        HomeScreenContent(
-            highlights = highlights,
-            refreshing = refreshing,
-            loggedIn = loggedIn,
-            mineColor = hexColor(settings.highlightColorMine, HighlightMine),
-            friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
-            nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
-            onRefresh = viewModel::refresh,
-            onRead = onRead,
-            modifier = Modifier.weight(1f),
-        )
     }
 }
 
