@@ -50,11 +50,12 @@ object SignerResults {
         rejected: Boolean,
         event: Nip01Event?,
         sessionHex: String,
+        expectedKind: Int = Nip01Event.KIND_HIGHLIGHT,
     ): SignerResult {
         if (rejected) return SignerResult.Rejected
         if (resultCode != Activity.RESULT_OK) return SignerResult.Cancelled
         if (event == null) return SignerResult.Cancelled
-        if (event.kind != Nip01Event.KIND_HIGHLIGHT) return SignerResult.Cancelled
+        if (event.kind != expectedKind) return SignerResult.Cancelled
         if (!event.pubkey.equals(sessionHex, ignoreCase = true)) return SignerResult.Cancelled
         if (!event.verify()) return SignerResult.Cancelled
         return SignerResult.Signed(event)
@@ -77,7 +78,13 @@ object SignerResults {
             signature = signature,
             pending = pending,
         )
-        return parseSignedEvent(resultCode, rejected = false, event = event, sessionHex = sessionHex)
+        return parseSignedEvent(
+            resultCode,
+            rejected = false,
+            event = event,
+            sessionHex = sessionHex,
+            expectedKind = pending?.kind ?: Nip01Event.KIND_HIGHLIGHT,
+        )
     }
 
     fun parseSignedEvent(

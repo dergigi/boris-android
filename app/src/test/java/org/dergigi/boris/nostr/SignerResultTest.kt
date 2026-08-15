@@ -105,6 +105,28 @@ class SignerResultTest {
     }
 
     @Test
+    fun parseSignedEventAcceptsAppDataWhenExpected() {
+        val key = ClientKeypair.generate()
+        val event = Nip01Event.sign(
+            privkey = key.privkey,
+            pubkeyHex = key.pubkeyHex,
+            kind = Nip01Event.KIND_APP_DATA,
+            tags = Nip78.tags(),
+            content = """{"fontSize":21}""",
+        )
+        val result = SignerResults.parseSignedEvent(
+            resultCode = Activity.RESULT_OK,
+            rejected = false,
+            event = event,
+            sessionHex = key.pubkeyHex,
+            expectedKind = Nip01Event.KIND_APP_DATA,
+        )
+        val signed = result as SignerResult.Signed
+        assertEquals(event.id, signed.event.id)
+        assertEquals(Nip01Event.KIND_APP_DATA, signed.event.kind)
+    }
+
+    @Test
     fun parseSignedEventWrongKindIsCancelled() {
         val key = ClientKeypair.generate()
         val event = Nip01Event.sign(

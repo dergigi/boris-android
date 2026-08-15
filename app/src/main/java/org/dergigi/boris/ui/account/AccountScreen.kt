@@ -1,8 +1,10 @@
 package org.dergigi.boris.ui.account
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -49,6 +52,8 @@ import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
 import org.dergigi.boris.ui.reader.HighlightMarks
+import org.dergigi.boris.ui.settings.ReadingDisplaySection
+import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.theme.HighlightMine
 
 @Composable
@@ -56,6 +61,7 @@ fun AccountScreen(
     incomingBunker: String? = null,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     var bunkerUri by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(incomingBunker) {
@@ -65,16 +71,36 @@ fun AccountScreen(
     }
     val authState by viewModel.state.collectAsStateWithLifecycle()
     val authMessage by viewModel.message.collectAsStateWithLifecycle()
-    val launcher = rememberLauncherForActivityResult(
+    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
+    val signIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val authLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         viewModel.onSignerResult(result.resultCode, result.data)
+    }
+    val settingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        settingsViewModel.onSignerResult(result.resultCode, result.data)
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
+    LaunchedEffect(signIntent) {
+        val intent = signIntent ?: return@LaunchedEffect
+        settingsViewModel.consumeSignIntent()
+        settingsLauncher.launch(intent)
+    }
+    LaunchedEffect(settingsMessage) {
+        val text = settingsMessage ?: return@LaunchedEffect
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        settingsViewModel.consumeMessage()
+    }
 
+    val loggedIn = authState is AuthUiState.LoggedIn
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -83,15 +109,21 @@ fun AccountScreen(
     ) {
         Column(
             modifier = Modifier
-                .align(Alignment.Center)
-                .widthIn(max = 420.dp)
+                .align(if (loggedIn) Alignment.TopCenter else Alignment.Center)
+                .widthIn(max = if (loggedIn) 720.dp else 420.dp)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = if (loggedIn) Alignment.Start else Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            if (authState !is AuthUiState.LoggedIn) {
+            if (loggedIn) {
+                ReadingDisplaySection(
+                    settings = settings,
+                    darkTheme = isSystemInDarkTheme(),
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
+            } else {
                 LoginCopy()
             }
             AuthBar(
@@ -100,12 +132,15 @@ fun AccountScreen(
                 bunkerUri = bunkerUri,
                 onBunkerUriChange = { bunkerUri = it },
                 onConnect = {
-                    viewModel.connectIntent()?.let(launcher::launch)
+                    viewModel.connectIntent()?.let(authLauncher::launch)
                 },
                 onConnectBunker = { viewModel.connectBunker(bunkerUri) },
-                onSignOut = viewModel::signOut,
+                onSignOut = {
+                    settingsViewModel.cancelPending()
+                    viewModel.signOut()
+                },
             )
-            if (authState !is AuthUiState.LoggedIn) {
+            if (!loggedIn) {
                 NstartFooter()
             }
         }

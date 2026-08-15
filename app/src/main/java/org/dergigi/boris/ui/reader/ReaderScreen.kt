@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -83,11 +85,15 @@ import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.markdownPadding
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.SourceSerif
+import org.dergigi.boris.ui.theme.HighlightOther
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -103,6 +109,7 @@ fun ReaderScreen(
     val highlightCount by viewModel.highlightCount.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -120,6 +127,7 @@ fun ReaderScreen(
         highlights = highlights,
         highlightCount = highlightCount,
         loggedIn = loggedIn,
+        settings = settings,
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
@@ -140,6 +148,7 @@ fun ReaderScreenContent(
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
     loggedIn: Boolean,
+    settings: UserSettings,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
@@ -252,6 +261,7 @@ fun ReaderScreenContent(
                     highlights = highlights,
                     highlightCount = highlightCount,
                     loggedIn = loggedIn,
+                    settings = settings,
                     onOpenArticle = onOpenArticle,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
@@ -276,6 +286,7 @@ private fun ArticleBody(
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
     loggedIn: Boolean,
+    settings: UserSettings,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
@@ -306,16 +317,36 @@ private fun ArticleBody(
         if (opened !in urls) urls.add(0, opened)
         onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
     }
-    val highlightedComponents = remember(highlights) {
+    val painted = highlights.visibleFor(settings)
+    val family = ReadingFonts.family(settings.readingFont)
+    val bodySize = settings.fontSize.sp
+    val bodyLine = (settings.fontSize * 36f / 21f).sp
+    val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
+    val mineColor = readingColor(settings.highlightColorMine, HighlightMine)
+    val otherColor = readingColor(settings.highlightColorNostrverse, HighlightOther)
+    val underline = !settings.markerStyle
+    val dark = isSystemInDarkTheme()
+    val linkColor = readingColor(
+        if (dark) settings.linkColorDark else settings.linkColorLight,
+        colors.secondary,
+    )
+    val body = typography.bodyLarge.copy(
+        fontFamily = family,
+        fontSize = bodySize,
+        lineHeight = bodyLine,
+        textAlign = align,
+    )
+    val headingFamily = typography.headlineLarge.copy(fontFamily = family)
+    val highlightedComponents = remember(painted, mineColor, otherColor, underline) {
         markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, highlights) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, highlights) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, highlights) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, highlights) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, highlights) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, highlights) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, highlights) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, highlights) },
+            text = { HighlightedMarkdownNode(it, it.typography.text, painted, mineColor, otherColor, underline) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, painted, mineColor, otherColor, underline) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, painted, mineColor, otherColor, underline) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, painted, mineColor, otherColor, underline) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, painted, mineColor, otherColor, underline) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, painted, mineColor, otherColor, underline) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, painted, mineColor, otherColor, underline) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, painted, mineColor, otherColor, underline) },
         )
     }
     val view = LocalView.current
@@ -348,12 +379,19 @@ private fun ArticleBody(
                     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                     Text(
                         text = content.title,
-                        style = typography.headlineLarge,
+                        style = headingFamily,
                         color = colors.onBackground,
                         onTextLayout = { titleLayout = it },
                         modifier = Modifier
                             .padding(top = 8.dp, bottom = 12.dp)
-                            .drawHighlightMarks(titleLayout, content.title, highlights),
+                            .drawHighlightMarks(
+                                titleLayout,
+                                content.title,
+                                painted,
+                                mineColor,
+                                otherColor,
+                                underline,
+                            ),
                     )
                 }
                 ArticleMetaRow(
@@ -373,23 +411,23 @@ private fun ArticleBody(
                             tableBackground = colors.surfaceVariant.copy(alpha = 0.4f),
                         ),
                         typography = markdownTypography(
-                            h1 = typography.headlineLarge,
-                            h2 = typography.headlineMedium,
-                            h3 = typography.headlineSmall,
-                            h4 = typography.titleLarge,
-                            h5 = typography.titleLarge.copy(fontSize = 18.sp),
-                            h6 = typography.titleLarge.copy(fontSize = 16.sp),
-                            text = typography.bodyLarge,
-                            paragraph = typography.bodyLarge,
-                            quote = typography.bodyLarge.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                            ordered = typography.bodyLarge,
-                            bullet = typography.bodyLarge,
-                            list = typography.bodyLarge,
+                            h1 = headingFamily,
+                            h2 = typography.headlineMedium.copy(fontFamily = family),
+                            h3 = typography.headlineSmall.copy(fontFamily = family),
+                            h4 = typography.titleLarge.copy(fontFamily = family),
+                            h5 = typography.titleLarge.copy(fontFamily = family, fontSize = 18.sp),
+                            h6 = typography.titleLarge.copy(fontFamily = family, fontSize = 16.sp),
+                            text = body,
+                            paragraph = body,
+                            quote = body.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                            ordered = body,
+                            bullet = body,
+                            list = body,
                             code = typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, textAlign = TextAlign.Left),
-                            inlineCode = typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-                            table = typography.bodyMedium.copy(fontFamily = SourceSerif, textAlign = TextAlign.Left),
+                            inlineCode = body.copy(fontFamily = FontFamily.Monospace),
+                            table = typography.bodyMedium.copy(fontFamily = family, textAlign = TextAlign.Left),
                             textLink = TextLinkStyles(
-                                style = typography.bodyLarge.copy(color = colors.secondary).toSpanStyle(),
+                                style = body.copy(color = linkColor).toSpanStyle(),
                             ),
                         ),
                         padding = markdownPadding(
@@ -416,6 +454,9 @@ private fun HighlightedMarkdownNode(
     model: MarkdownComponentModel,
     style: TextStyle,
     highlights: List<PaintedHighlight>,
+    mineColor: Color,
+    otherColor: Color,
+    underline: Boolean,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -426,9 +467,21 @@ private fun HighlightedMarkdownNode(
     MarkdownText(
         content = styledText,
         style = style,
-        modifier = Modifier.drawHighlightMarks(layout, styledText.text, highlights),
+        modifier = Modifier.drawHighlightMarks(
+            layout,
+            styledText.text,
+            highlights,
+            mineColor,
+            otherColor,
+            underline,
+        ),
         onTextLayout = { result, _ -> layout = result },
     )
+}
+
+private fun readingColor(hex: String, fallback: Color): Color {
+    val argb = HexColor.argb(hex) ?: return fallback
+    return Color(argb)
 }
 
 internal fun readingTimeLabel(text: String): String? {

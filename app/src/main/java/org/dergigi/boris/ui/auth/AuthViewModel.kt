@@ -17,6 +17,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerResult
 import org.dergigi.boris.nostr.BunkerUri
@@ -43,12 +44,14 @@ class AuthViewModel(
 
     init {
         loadPicture()
+        loadSettings()
     }
 
     fun refresh() {
         if (pairJob?.isActive == true) return
         _state.value = readState()
         loadPicture()
+        loadSettings()
     }
 
     fun connectIntent(): Intent? {
@@ -95,6 +98,7 @@ class AuthViewModel(
                 _message.value = null
                 _state.value = AuthUiState.LoggedIn(Nip19.npubEncode(result.pubkeyHex))
                 loadPicture()
+                loadSettings()
             }
             SignerResult.Rejected -> {
                 _message.value = app.getString(R.string.auth_rejected)
@@ -118,6 +122,7 @@ class AuthViewModel(
         pictureJob?.cancel()
         _pictureUrl.value = null
         _message.value = null
+        SettingsSync.reset()
         _state.value = readState()
         if (privkey != null && remote != null && relays.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -148,6 +153,7 @@ class AuthViewModel(
             _message.value = null
             _state.value = AuthUiState.LoggedIn(Nip19.npubEncode(result.userHex))
             loadPicture()
+            loadSettings()
         } catch (_: Exception) {
             failPair(app, R.string.auth_bunker_rejected)
         }
@@ -156,6 +162,16 @@ class AuthViewModel(
     private fun failPair(app: Application, messageRes: Int) {
         _state.value = readState()
         _message.value = app.getString(messageRes)
+    }
+
+    private fun loadSettings() {
+        val session = SessionStore.load(getApplication()) ?: run {
+            SettingsSync.reset()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            SettingsSync.load(session.pubkeyHex)
+        }
     }
 
     private fun loadPicture() {

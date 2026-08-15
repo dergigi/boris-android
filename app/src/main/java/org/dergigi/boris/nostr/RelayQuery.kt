@@ -20,6 +20,25 @@ object RelayQuery {
         return RelayList.parse(events)
     }
 
+    fun fetchAppData(pubkeyHex: String): Nip01Event? {
+        val relays = buildList {
+            addAll(RelayList.FALLBACK)
+            addAll(fetchRelayList(pubkeyHex).read)
+        }.distinct()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_APP_DATA))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("#d", JSONArray().put(Nip78.SETTINGS_D))
+            .put("limit", 5)
+        return query(relays, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_APP_DATA &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                    Nip78.hasSettingsD(event)
+            }
+            .maxByOrNull { it.createdAt }
+    }
+
     fun fetchProfilePicture(pubkeyHex: String): String? {
         val relays = fetchRelayList(pubkeyHex).read
         val filter = JSONObject()
