@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-08-15
+
 ### Fixed
 
 - Full-width images in the reader now span the article column instead of staying at their intrinsic size
@@ -346,7 +348,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.25.1...HEAD
+[0.25.1]: https://github.com/dergigi/boris-android/releases/tag/v0.25.1
 [0.25.0]: https://github.com/dergigi/boris-android/releases/tag/v0.25.0
 [0.24.0]: https://github.com/dergigi/boris-android/releases/tag/v0.24.0
 [0.23.1]: https://github.com/dergigi/boris-android/releases/tag/v0.23.1
