@@ -3,7 +3,6 @@ package org.dergigi.boris.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,12 +32,17 @@ import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.LocalRelays
 
 private const val CITRINE_URL = "https://zapstore.dev/apps/com.greenart7c3.citrine"
-private const val RELAYS_URL = "https://nostr.com"
+private val RELAY_LINKS = listOf(
+    "https://nostr.how/en/relays",
+    "https://davidebtc186.substack.com/p/the-importance-of-hosting-your-own",
+    "nostr:naddr1qvzqqqr4gupzq3svyhng9ld8sv44950j957j9vchdktj7cxumsep9mvvjthc2pjuqq9hyetvv9uj6um9w36hq9mgjg8",
+)
 
 @Composable
 fun AirplaneModeSection(
     settings: UserSettings,
     onUpdate: (UserSettings) -> Unit,
+    onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -84,24 +93,54 @@ fun AirplaneModeSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp),
         )
-        Row(
+        Text(
+            text = stringResource(R.string.settings_citrine),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .clickable { uriHandler.openUri(CITRINE_URL) },
+        )
+        RelaysLearnMore(
+            onOpenArticle = onOpenArticle,
             modifier = Modifier.padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.settings_citrine),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { uriHandler.openUri(CITRINE_URL) },
-            )
-            Text(
-                text = stringResource(R.string.settings_airplane_learn_more),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { uriHandler.openUri(RELAYS_URL) },
-            )
-        }
+        )
     }
+}
+
+@Composable
+private fun RelaysLearnMore(
+    onOpenArticle: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val linkStyle = TextLinkStyles(
+        style = SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+        ),
+    )
+    val here = stringResource(R.string.settings_relays_here)
+    Text(
+        text = buildAnnotatedString {
+            append(stringResource(R.string.settings_relays_prefix))
+            RELAY_LINKS.forEachIndexed { index, url ->
+                when (index) {
+                    1 -> append(", ")
+                    2 -> append(", and ")
+                }
+                withLink(
+                    LinkAnnotation.Clickable(tag = "relay$index", styles = linkStyle) {
+                        onOpenArticle(url)
+                    },
+                ) {
+                    append(here)
+                }
+            }
+            append(".")
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }

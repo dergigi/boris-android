@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it
+- The airplane mode section uses the webapp's relay copy ("Don't know what relays are? Learn more here, here, and here") with the same three links, opened in the reader
 
 ### Fixed
 

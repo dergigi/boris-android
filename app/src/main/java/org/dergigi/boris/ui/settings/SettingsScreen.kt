@@ -45,6 +45,7 @@ import org.dergigi.boris.ui.auth.AuthViewModel
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenArticle: (String) -> Unit,
     authViewModel: AuthViewModel,
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
@@ -124,6 +125,7 @@ fun SettingsScreen(
                 AirplaneModeSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
+                    onOpenArticle = onOpenArticle,
                 )
                 ScrollBehaviourSection(
                     settings = settings,

@@ -155,6 +155,7 @@ fun BorisApp(
                 composable(Routes.SETTINGS) {
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
                         authViewModel = authViewModel,
                     )
                 }
