@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-15
+
 ### Added
 
 - Tap a highlight in the article, or the highlight-count chip, to jump between quotes
@@ -246,7 +248,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/dergigi/boris-android/releases/tag/v0.14.0
 [0.13.0]: https://github.com/dergigi/boris-android/releases/tag/v0.13.0
 [0.12.0]: https://github.com/dergigi/boris-android/releases/tag/v0.12.0
 [0.11.0]: https://github.com/dergigi/boris-android/releases/tag/v0.11.0

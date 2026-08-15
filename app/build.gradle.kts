@@ -23,8 +23,8 @@ android {
         applicationId = "org.dergigi.boris"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "0.13.0"
+        versionCode = 24
+        versionName = "0.14.0"
     }
 
     val storeFilePath = localProp("OEM_STORE_FILE")
