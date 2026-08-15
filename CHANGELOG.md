@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Reader share, copy, and open sit behind a 3-dot menu
+
 ## [0.19.0] - 2026-08-15
 
 ### Added

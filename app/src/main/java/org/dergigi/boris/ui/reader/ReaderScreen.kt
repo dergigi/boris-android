@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -35,6 +36,8 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -231,14 +234,46 @@ fun ReaderScreenContent(
                 },
                 actions = {
                     if (articleUrl != null) {
-                        IconButton(onClick = ::shareArticle) {
-                            Icon(Icons.Filled.Share, contentDescription = "Share article")
-                        }
-                        IconButton(onClick = ::copyLink) {
-                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copy link")
-                        }
-                        IconButton(onClick = ::openOriginal) {
-                            Icon(Icons.Filled.OpenInBrowser, contentDescription = "Open original")
+                        var menuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                            }
+                            DropdownMenu(
+                                expanded = menuOpen,
+                                onDismissRequest = { menuOpen = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Share") },
+                                    leadingIcon = {
+                                        Icon(Icons.Filled.Share, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuOpen = false
+                                        shareArticle()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Copy link") },
+                                    leadingIcon = {
+                                        Icon(Icons.Filled.ContentCopy, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuOpen = false
+                                        copyLink()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Open original") },
+                                    leadingIcon = {
+                                        Icon(Icons.Filled.OpenInBrowser, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuOpen = false
+                                        openOriginal()
+                                    },
+                                )
+                            }
                         }
                     }
                 },
