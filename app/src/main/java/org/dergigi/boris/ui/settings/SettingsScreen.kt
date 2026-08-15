@@ -143,7 +143,7 @@ private fun SettingsVersionFooter() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = version,
+            text = stringResource(R.string.settings_version, version),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable {

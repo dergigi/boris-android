@@ -118,6 +118,7 @@
     <string name="settings_cancelled">Settings save cancelled.</string>
     <string name="settings_not_published">Settings were not published.</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_version">Version %1$s</string>
     <string name="settings_back">Back</string>
     <string name="you_logged_out_title">Your highlights</string>
     <string name="you_logged_out_sample">the passages you care about</string>
