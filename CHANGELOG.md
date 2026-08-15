@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Highlights, writings, and contact lists now load from the event cache first, so previously seen marks show immediately
+
 ## [0.23.0] - 2026-08-15
 
 ### Added
