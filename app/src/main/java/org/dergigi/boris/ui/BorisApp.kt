@@ -109,6 +109,7 @@ fun BorisApp(
                 composable(Routes.HOME) {
                     HomeScreen(
                         onRead = { url -> navController.navigate(Routes.reader(url)) },
+                        authViewModel = authViewModel,
                     )
                 }
                 composable(Routes.LIBRARY) {

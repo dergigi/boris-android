@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,23 +38,34 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.ui.auth.AuthUiState
+import org.dergigi.boris.ui.auth.AuthViewModel
 
 @Composable
 fun HomeScreen(
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
 ) {
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val loggedIn = authState is AuthUiState.LoggedIn
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+    }
     HomeScreenContent(
         highlights = highlights,
         refreshing = refreshing,
+        loggedIn = loggedIn,
         onRefresh = viewModel::refresh,
         onRead = onRead,
         modifier = modifier,
@@ -64,6 +77,7 @@ fun HomeScreen(
 fun HomeScreenContent(
     highlights: HomeHighlightsState,
     refreshing: Boolean,
+    loggedIn: Boolean,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -97,20 +111,34 @@ fun HomeScreenContent(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    RecentlyHighlightedSection {
-                        LazyRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(232.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            items(highlights.items, key = { it.url }) { article ->
-                                HighlightedArticleCard(
-                                    article = article,
-                                    onOpen = { onRead(article.url) },
-                                )
-                            }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(top = 20.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(28.dp),
+                    ) {
+                        if (highlights.yours.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_highlighted_by_you),
+                                items = highlights.yours,
+                                rowKey = "you",
+                                onRead = onRead,
+                            )
+                        }
+                        if (highlights.others.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(
+                                    if (loggedIn || highlights.yours.isNotEmpty()) {
+                                        R.string.home_recently_highlighted_by_others
+                                    } else {
+                                        R.string.home_recently_highlighted
+                                    },
+                                ),
+                                items = highlights.others,
+                                rowKey = "others",
+                                onRead = onRead,
+                            )
                         }
                     }
                 }
@@ -120,13 +148,14 @@ fun HomeScreenContent(
 }
 
 @Composable
-private fun RecentlyHighlightedSection(
-    content: @Composable () -> Unit,
+private fun HighlightedRow(
+    title: String,
+    items: List<HighlightedArticle>,
+    rowKey: String,
+    onRead: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
@@ -141,7 +170,7 @@ private fun RecentlyHighlightedSection(
                 modifier = Modifier.size(20.dp),
             )
             Text(
-                text = stringResource(R.string.home_recently_highlighted),
+                text = title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.SemiBold,
@@ -149,7 +178,20 @@ private fun RecentlyHighlightedSection(
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
-        content()
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(232.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(items, key = { "$rowKey:${it.url}" }) { article ->
+                HighlightedArticleCard(
+                    article = article,
+                    onOpen = { onRead(article.url) },
+                )
+            }
+        }
     }
 }
 

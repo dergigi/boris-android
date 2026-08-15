@@ -7,6 +7,8 @@
     <string name="nav_search">Search</string>
     <string name="nav_you">You</string>
     <string name="home_recently_highlighted">Recently highlighted</string>
+    <string name="home_recently_highlighted_by_you">Recently highlighted by you</string>
+    <string name="home_recently_highlighted_by_others">Recently highlighted by others</string>
     <string name="auth_connect">Amber</string>
     <string name="auth_bunker">Bunker</string>
     <string name="auth_sign_out">Sign out</string>
