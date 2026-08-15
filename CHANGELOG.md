@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Library has an info icon that explains Private, Public, and Web
 - Settings can turn volume-button scrolling on or off, and set how far each press moves
+- Share and Open original for notes and long-form articles use njump.to
 
 ### Changed
 

@@ -13,6 +13,7 @@ class NostrArticleTest {
         val article = NostrArticle.parse(naddr)!!
         assertEquals(naddr, article.naddr)
         assertEquals("nostr:$naddr", article.uri)
+        assertEquals("https://njump.to/$naddr", article.publicUrl)
         assertEquals("my-article", article.pointer.identifier)
     }
 

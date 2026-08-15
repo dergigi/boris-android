@@ -22,11 +22,15 @@ sealed class NostrTarget {
         val kind: Int? = null,
     ) : NostrTarget() {
         override val uri get() = "nostr:$encoded"
-        override val publicUrl get() = "https://readwithboris.com/e/$eventId"
+        override val publicUrl get() = NostrLink.gatewayUrl(encoded)
     }
 }
 
 object NostrLink {
+    const val GATEWAY = "https://njump.to"
+
+    fun gatewayUrl(identifier: String): String = "$GATEWAY/$identifier"
+
     fun parse(raw: String?): NostrTarget? {
         if (raw.isNullOrBlank()) return null
         val trimmed = raw.trim()

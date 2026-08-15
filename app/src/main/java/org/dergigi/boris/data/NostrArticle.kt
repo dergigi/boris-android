@@ -9,7 +9,7 @@ data class NostrArticleRef(
     val pointer: NaddrPointer,
 ) {
     val uri: String get() = "nostr:$naddr"
-    val publicUrl: String get() = "https://readwithboris.com/a/$naddr"
+    val publicUrl: String get() = NostrLink.gatewayUrl(naddr)
     val coordinate: String get() = pointer.coordinate
 }
 

@@ -29,6 +29,7 @@ class NostrLinkTest {
         val fromNote = NostrLink.parse("nostr:$note") as NostrTarget.Note
         assertEquals(id, fromNote.eventId)
         assertEquals("nostr:$note", fromNote.uri)
+        assertEquals("https://njump.to/$note", fromNote.publicUrl)
 
         val nevent = Nip19.neventEncode(
             org.dergigi.boris.nostr.NeventPointer(id, listOf("wss://nos.lol"), kind = 1),
@@ -36,6 +37,7 @@ class NostrLinkTest {
         val fromEvent = NostrLink.parse(nevent) as NostrTarget.Note
         assertEquals(id, fromEvent.eventId)
         assertEquals(listOf("wss://nos.lol"), fromEvent.relays)
+        assertEquals("https://njump.to/$nevent", fromEvent.publicUrl)
     }
 
     @Test
