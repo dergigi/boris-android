@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatAlignLeft
@@ -148,7 +147,7 @@ fun ReadingDisplaySection(
                 onSelect = { onUpdate(settings.withString("readingFont", it)) },
             )
         }
-        SettingRow(stringResource(R.string.settings_link_color)) {
+        SettingPicker(stringResource(R.string.settings_link_color)) {
             ColorSwatches(
                 colors = linkColors,
                 selected = linkColor,
@@ -158,8 +157,11 @@ fun ReadingDisplaySection(
                 },
             )
         }
-        SettingRow(stringResource(R.string.settings_font_size)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        SettingPicker(stringResource(R.string.settings_font_size)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
                 ReadingFonts.SIZES.forEach { size ->
                     FontSizeButton(
                         size = size,
@@ -169,21 +171,21 @@ fun ReadingDisplaySection(
                 }
             }
         }
-        SettingRow(stringResource(R.string.settings_color_mine)) {
+        SettingPicker(stringResource(R.string.settings_color_mine)) {
             ColorSwatches(
                 colors = ReadingFonts.HIGHLIGHT_COLORS,
                 selected = settings.highlightColorMine,
                 onSelect = { onUpdate(settings.withString("highlightColorMine", it)) },
             )
         }
-        SettingRow(stringResource(R.string.settings_color_friends)) {
+        SettingPicker(stringResource(R.string.settings_color_friends)) {
             ColorSwatches(
                 colors = ReadingFonts.HIGHLIGHT_COLORS,
                 selected = settings.highlightColorFriends,
                 onSelect = { onUpdate(settings.withString("highlightColorFriends", it)) },
             )
         }
-        SettingRow(stringResource(R.string.settings_color_nostrverse)) {
+        SettingPicker(stringResource(R.string.settings_color_nostrverse)) {
             ColorSwatches(
                 colors = ReadingFonts.HIGHLIGHT_COLORS,
                 selected = settings.highlightColorNostrverse,
@@ -210,11 +212,11 @@ private fun VisibilityToggle(
     contentDescription: String,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = Modifier
-            .size(40.dp)
-            .clip(shape)
+            .size(SettingChipSize)
+            .clip(SettingChipShape)
+            .border(1.dp, MaterialTheme.colorScheme.outline, SettingChipShape)
             .clickable(onClick = onClick)
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
@@ -281,23 +283,16 @@ private fun ColorSwatches(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         colors.forEach { hex ->
-            val color = hexColor(hex, Color.Gray)
-            val isSelected = hex.equals(selected, ignoreCase = true)
-            Box(
-                modifier = Modifier
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .then(
-                        if (isSelected) {
-                            Modifier.border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
-                        } else {
-                            Modifier.border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), CircleShape)
-                        },
-                    )
-                    .clickable { onSelect(hex) },
+            ColorChip(
+                color = hexColor(hex, Color.Gray),
+                selected = hex.equals(selected, ignoreCase = true),
+                contentDescription = hex,
+                onClick = { onSelect(hex) },
             )
         }
     }
@@ -309,18 +304,19 @@ private fun FontSizeButton(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(8.dp)
     val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
     val fg = if (selected) {
         MaterialTheme.colorScheme.onPrimary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val border = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline
     Box(
         modifier = Modifier
-            .size(32.dp)
-            .clip(shape)
+            .size(SettingChipSize)
+            .clip(SettingChipShape)
             .background(bg)
+            .border(1.dp, border, SettingChipShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

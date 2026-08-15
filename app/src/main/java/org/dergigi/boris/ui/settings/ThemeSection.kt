@@ -1,32 +1,20 @@
 package org.dergigi.boris.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
@@ -35,7 +23,6 @@ import org.dergigi.boris.ui.theme.Charcoal
 import org.dergigi.boris.ui.theme.Ivory
 import org.dergigi.boris.ui.theme.Paper
 import org.dergigi.boris.ui.theme.Sepia
-import org.dergigi.boris.ui.theme.Zinc200
 import org.dergigi.boris.ui.theme.Zinc900
 
 private data class ThemeSwatch(
@@ -89,10 +76,9 @@ fun ThemeSection(
             SettingRow(stringResource(R.string.settings_dark_theme)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     darkSwatches().forEach { swatch ->
-                        PaletteSwatch(
+                        ColorChip(
                             color = swatch.color,
                             selected = settings.darkColorTheme == swatch.id,
-                            lightCheck = false,
                             contentDescription = swatch.label,
                             onClick = { onUpdate(settings.withString("darkColorTheme", swatch.id)) },
                         )
@@ -104,10 +90,9 @@ fun ThemeSection(
             SettingRow(stringResource(R.string.settings_light_theme)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     lightSwatches().forEach { swatch ->
-                        PaletteSwatch(
+                        ColorChip(
                             color = swatch.color,
                             selected = settings.lightColorTheme == swatch.id,
-                            lightCheck = true,
                             outlined = swatch.id == "paper-white",
                             contentDescription = swatch.label,
                             onClick = { onUpdate(settings.withString("lightColorTheme", swatch.id)) },
@@ -115,43 +100,6 @@ fun ThemeSection(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PaletteSwatch(
-    color: Color,
-    selected: Boolean,
-    lightCheck: Boolean,
-    contentDescription: String,
-    onClick: () -> Unit,
-    outlined: Boolean = false,
-) {
-    val shape = RoundedCornerShape(8.dp)
-    val border = when {
-        selected -> MaterialTheme.colorScheme.primary
-        outlined -> MaterialTheme.colorScheme.outline
-        else -> Color.Transparent
-    }
-    val check = if (lightCheck) Zinc900 else Zinc200
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(shape)
-            .background(color)
-            .border(if (selected) 2.dp else 1.dp, border, shape)
-            .clickable(onClick = onClick)
-            .semantics { this.contentDescription = contentDescription },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (selected) {
-            Icon(
-                imageVector = Icons.Outlined.Check,
-                contentDescription = null,
-                tint = check,
-                modifier = Modifier.size(16.dp),
-            )
         }
     }
 }
