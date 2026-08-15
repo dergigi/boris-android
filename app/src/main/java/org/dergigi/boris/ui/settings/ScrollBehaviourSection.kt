@@ -26,7 +26,7 @@ import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.reader.VolumeKeys
 
 @Composable
-fun VolumeButtonsSection(
+fun ScrollBehaviourSection(
     settings: UserSettings,
     onUpdate: (UserSettings) -> Unit,
     modifier: Modifier = Modifier,
@@ -36,7 +36,7 @@ fun VolumeButtonsSection(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = stringResource(R.string.settings_volume_buttons),
+            text = stringResource(R.string.settings_scroll_behaviour),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 8.dp),

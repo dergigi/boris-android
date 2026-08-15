@@ -125,7 +125,7 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
-                VolumeButtonsSection(
+                ScrollBehaviourSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
