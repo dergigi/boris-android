@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Full-width images in the reader now span the article column instead of staying at their intrinsic size
+- Profile header sits below the system status bar
 
 ## [0.25.0] - 2026-08-15
 
