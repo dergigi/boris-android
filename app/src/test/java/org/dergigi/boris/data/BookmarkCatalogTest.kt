@@ -51,13 +51,40 @@ class BookmarkCatalogTest {
         assertEquals("example.com", shelves.private[0].host)
         assertEquals("https://example.com/secret", shelves.private[0].url)
         assertEquals(BookmarkBucket.Private, shelves.private[0].bucket)
-        assertEquals(2, shelves.public.size)
+        assertEquals(3, shelves.public.size)
         assertEquals("My Article", shelves.public[0].title)
         assertTrue(shelves.public[0].url!!.startsWith("nostr:naddr1"))
         assertEquals("citadel21.com", shelves.public[1].host)
+        assertEquals("Note", shelves.public[2].title)
+        assertTrue(shelves.public[2].url!!.startsWith("nostr:note1"))
+        assertEquals("nostr", shelves.public[2].host)
         assertEquals("Alice", shelves.web[0].title)
         assertEquals("https://alice.blog/post", shelves.web[0].url)
         assertFalse(shelves.privateLocked)
+    }
+
+    @Test
+    fun publicNotesUseFetchedContentAsTitle() {
+        val eventId = "aa".repeat(32)
+        val list = event(
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = listOf(listOf("e", eventId)),
+        )
+        val note = event(
+            kind = Nip01Event.KIND_TEXT_NOTE,
+            tags = emptyList(),
+            content = "A short note about reading.\nSecond line.",
+            createdAt = 9,
+        ).copy(id = eventId)
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            notes = mapOf(eventId to note),
+        )
+        assertEquals(1, shelves.public.size)
+        assertEquals("A short note about reading.", shelves.public[0].title)
+        assertTrue(shelves.public[0].url!!.startsWith("nostr:note1"))
     }
 
     @Test

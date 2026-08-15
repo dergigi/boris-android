@@ -63,6 +63,7 @@ class LibraryViewModel(
     private var listEvent: Nip01Event? = null
     private var webEvents: List<Nip01Event> = emptyList()
     private var articles: Map<String, Nip01Event> = emptyMap()
+    private var notes: Map<String, Nip01Event> = emptyMap()
     private var previews: Map<String, OgPreview?> = emptyMap()
     private var hiddenTags: List<List<String>>? = null
 
@@ -72,6 +73,9 @@ class LibraryViewModel(
             loadJob?.cancel()
             listEvent = null
             webEvents = emptyList()
+            articles = emptyMap()
+            notes = emptyMap()
+            previews = emptyMap()
             hiddenTags = null
             _state.value = LibraryUiState.LoggedOut
             _refreshing.value = false
@@ -92,6 +96,7 @@ class LibraryViewModel(
                 listEvent = loaded.list
                 webEvents = loaded.web
                 articles = loaded.articles
+                notes = loaded.notes
                 previews = loaded.previews
                 hiddenTags = if (loaded.list?.id == previousListId) previousHidden else null
                 publish()
@@ -166,6 +171,7 @@ class LibraryViewModel(
                     hydrate(Nip51.parseTags(tags), webEvents)
                 }
                 articles = articles + extra.articles
+                notes = notes + extra.notes
                 previews = previews + extra.previews
             } catch (_: Exception) {
             }
@@ -180,6 +186,7 @@ class LibraryViewModel(
                 hiddenTags = hiddenTags,
                 webEvents = webEvents,
                 articles = articles,
+                notes = notes,
                 previews = previews,
             ),
         )
@@ -225,7 +232,7 @@ class LibraryViewModel(
             if (list != null) addAll(Nip51.publicRefs(list))
         }
         val hydrated = hydrate(refs, web)
-        return Loaded(list, web, hydrated.articles, hydrated.previews)
+        return Loaded(list, web, hydrated.articles, hydrated.notes, hydrated.previews)
     }
 
     private suspend fun hydrate(
@@ -239,6 +246,8 @@ class LibraryViewModel(
                 ref.value to RelayQuery.fetchArticle(article.pointer)
             }
         }
+        val noteIds = refs.filter { it.kind == BookmarkRefKind.Note }.map { it.value }.take(NOTE_LIMIT)
+        val notesJob = async { RelayQuery.fetchEvents(noteIds) }
         val httpUrls = buildList {
             refs.filter { it.kind == BookmarkRefKind.Url }.forEach { add(it.value) }
             web.forEach { event -> NipB0.url(event)?.let(::add) }
@@ -252,7 +261,7 @@ class LibraryViewModel(
                 event?.let { coordinate to it }
             }
             .toMap()
-        Hydrated(fetchedArticles, previewJobs.awaitAll().toMap())
+        Hydrated(fetchedArticles, notesJob.await(), previewJobs.awaitAll().toMap())
     }
 
     private fun openAuthUrl(url: String) {
@@ -268,16 +277,19 @@ class LibraryViewModel(
         val list: Nip01Event?,
         val web: List<Nip01Event>,
         val articles: Map<String, Nip01Event>,
+        val notes: Map<String, Nip01Event>,
         val previews: Map<String, OgPreview?>,
     )
 
     private data class Hydrated(
         val articles: Map<String, Nip01Event>,
+        val notes: Map<String, Nip01Event>,
         val previews: Map<String, OgPreview?>,
     )
 
     companion object {
         private const val ARTICLE_LIMIT = 24
+        private const val NOTE_LIMIT = 24
         private const val PREVIEW_LIMIT = 20
     }
 }

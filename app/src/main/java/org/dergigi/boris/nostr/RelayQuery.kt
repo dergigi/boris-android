@@ -194,18 +194,27 @@ object RelayQuery {
             .maxByOrNull { it.createdAt }
     }
 
-    fun fetchEvent(eventId: String, relays: List<String> = emptyList()): Nip01Event? {
-        val id = eventId.lowercase()
-        if (id.length != 64) return null
+    fun fetchEvent(eventId: String, relays: List<String> = emptyList()): Nip01Event? =
+        fetchEvents(listOf(eventId), relays)[eventId.lowercase()]
+
+    fun fetchEvents(eventIds: Collection<String>, relays: List<String> = emptyList()): Map<String, Nip01Event> {
+        val ids = eventIds.map { it.lowercase() }.filter { it.length == 64 }.distinct()
+        if (ids.isEmpty()) return emptyMap()
         val urls = buildList {
             addAll(relays)
             addAll(RelayList.FALLBACK)
         }.mapNotNull { Nip66.normalize(it) }.distinct()
-        val filter = JSONObject()
-            .put("ids", JSONArray().put(id))
-            .put("limit", 1)
-        return query(urls, listOf(filter))
-            .firstOrNull { it.id.equals(id, ignoreCase = true) }
+        if (urls.isEmpty()) return emptyMap()
+        val found = mutableMapOf<String, Nip01Event>()
+        for (chunk in ids.chunked(EVENT_CHUNK)) {
+            val filter = JSONObject()
+                .put("ids", JSONArray().apply { chunk.forEach { put(it) } })
+                .put("limit", chunk.size)
+            for (event in query(urls, listOf(filter))) {
+                found[event.id.lowercase()] = event
+            }
+        }
+        return found
     }
 
     fun fetchHighlightsForArticle(
@@ -381,6 +390,7 @@ object RelayQuery {
     private const val PUBLISH_TIMEOUT_MS = 8_000L
     private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
     private const val PROFILE_CHUNK = 25
+    private const val EVENT_CHUNK = 25
     private const val AUTHOR_CHUNK = 50
 
     private val client: OkHttpClient = OkHttpClient.Builder()

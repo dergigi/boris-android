@@ -3,6 +3,7 @@ package org.dergigi.boris.data
 import org.dergigi.boris.nostr.BookmarkRef
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
 
@@ -41,18 +42,19 @@ object BookmarkCatalog {
         hiddenTags: List<List<String>>?,
         webEvents: List<Nip01Event>,
         articles: Map<String, Nip01Event> = emptyMap(),
+        notes: Map<String, Nip01Event> = emptyMap(),
         previews: Map<String, OgPreview?> = emptyMap(),
     ): BookmarkShelves {
         val listUpdatedAt = listEvent?.createdAt ?: 0L
         val publicItems = listEvent
             ?.let { Nip51.publicRefs(it) }
             .orEmpty()
-            .mapNotNull { ref -> itemFromRef(ref, BookmarkBucket.Public, listUpdatedAt, articles, previews) }
+            .mapNotNull { ref -> itemFromRef(ref, BookmarkBucket.Public, listUpdatedAt, articles, notes, previews) }
             .dedupe()
         val privateItems = hiddenTags
             ?.let { Nip51.parseTags(it) }
             .orEmpty()
-            .mapNotNull { ref -> itemFromRef(ref, BookmarkBucket.Private, listUpdatedAt, articles, previews) }
+            .mapNotNull { ref -> itemFromRef(ref, BookmarkBucket.Private, listUpdatedAt, articles, notes, previews) }
             .dedupe()
         val webItems = webEvents
             .sortedByDescending { NipB0.publishedAt(it) }
@@ -71,6 +73,7 @@ object BookmarkCatalog {
         bucket: BookmarkBucket,
         createdAt: Long,
         articles: Map<String, Nip01Event>,
+        notes: Map<String, Nip01Event>,
         previews: Map<String, OgPreview?>,
     ): BookmarkItem? {
         return when (ref.kind) {
@@ -103,8 +106,30 @@ object BookmarkCatalog {
                     bucket = bucket,
                 )
             }
-            BookmarkRefKind.Note -> null
+            BookmarkRefKind.Note -> {
+                val eventId = ref.value.lowercase()
+                val encoded = try {
+                    Nip19.noteEncode(eventId)
+                } catch (_: Exception) {
+                    return null
+                }
+                val event = notes[eventId]
+                BookmarkItem(
+                    id = "e:$eventId",
+                    title = noteTitle(event),
+                    url = "nostr:$encoded",
+                    host = "nostr",
+                    imageUrl = null,
+                    createdAt = event?.createdAt ?: createdAt,
+                    bucket = bucket,
+                )
+            }
         }
+    }
+
+    private fun noteTitle(event: Nip01Event?): String {
+        val line = event?.content?.lineSequence()?.firstOrNull { it.isNotBlank() } ?: return "Note"
+        return if (line.length <= 80) line else line.take(79).trimEnd() + "…"
     }
 
     private fun itemFromWeb(
