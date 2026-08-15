@@ -16,7 +16,7 @@
     <string name="library_logged_out_title">Your bookmarks</string>
     <string name="library_logged_out_body">Connect, and they show up here.</string>
     <string name="nav_feed">Feed</string>
-    <string name="feed_title">Highlights feed</string>
+    <string name="feed_title">Highlights Feed</string>
     <string name="nav_search">Search</string>
     <string name="nav_you">You</string>
     <string name="home_recently_highlighted">Recently highlighted</string>
