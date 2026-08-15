@@ -19,7 +19,6 @@ import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.SessionStore
-import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 
@@ -29,6 +28,7 @@ sealed interface HomeHighlightsState {
     data object Error : HomeHighlightsState
     data class Ready(
         val yours: List<HighlightedArticle>,
+        val friends: List<HighlightedArticle>,
         val others: List<HighlightedArticle>,
         val loggedIn: Boolean,
     ) : HomeHighlightsState
@@ -56,22 +56,45 @@ class HomeViewModel(
             }
             try {
                 val pubkey = SessionStore.load(getApplication())?.pubkeyHex
-                val (yours, others) = withContext(Dispatchers.IO) {
+                val (yours, friends, others) = withContext(Dispatchers.IO) {
                     coroutineScope {
-                        val yoursDeferred = async {
-                            if (pubkey == null) emptyList() else loadYours(pubkey)
+                        val friendKeysDeferred = async {
+                            if (pubkey == null) {
+                                emptySet()
+                            } else {
+                                RelayQuery.fetchContactPubkeys(pubkey) - pubkey.lowercase()
+                            }
                         }
-                        val othersDeferred = async { loadOthers(pubkey) }
+                        val relaysDeferred = async {
+                            buildList {
+                                addAll(RelayList.FALLBACK)
+                                if (pubkey != null) addAll(RelayQuery.fetchRelayList(pubkey).read)
+                            }.distinct()
+                        }
+                        val friendKeys = friendKeysDeferred.await()
+                        val relays = relaysDeferred.await()
+                        val yoursDeferred = async {
+                            if (pubkey == null) emptyList() else loadYours(relays, pubkey)
+                        }
+                        val friendsDeferred = async { loadFriends(relays, friendKeys) }
+                        val othersDeferred = async { loadOthers(pubkey, friendKeys) }
                         val rawYours = yoursDeferred.await()
+                        val rawFriends = friendsDeferred.await()
                         val rawOthers = othersDeferred.await()
-                        val previews = loadPreviews((rawYours + rawOthers).map { it.url }.distinct())
-                        applyPreviews(rawYours, previews) to applyPreviews(rawOthers, previews)
+                        val previews = loadPreviews(
+                            (rawYours + rawFriends + rawOthers).map { it.url }.distinct(),
+                        )
+                        Triple(
+                            applyPreviews(rawYours, previews),
+                            applyPreviews(rawFriends, previews),
+                            applyPreviews(rawOthers, previews),
+                        )
                     }
                 }
-                _highlights.value = if (yours.isEmpty() && others.isEmpty()) {
+                _highlights.value = if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) {
                     HomeHighlightsState.Empty
                 } else {
-                    HomeHighlightsState.Ready(yours, others, loggedIn = pubkey != null)
+                    HomeHighlightsState.Ready(yours, friends, others, loggedIn = pubkey != null)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -85,20 +108,24 @@ class HomeViewModel(
         }
     }
 
-    private fun loadYours(pubkeyHex: String): List<HighlightedArticle> {
-        val relays = buildList {
-            addAll(RelayList.FALLBACK)
-            addAll(RelayQuery.fetchRelayList(pubkeyHex).read)
-        }.distinct()
+    private fun loadYours(relays: List<String>, pubkeyHex: String): List<HighlightedArticle> {
         return HighlightedArticles.fromEvents(
             RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, pubkeyHex),
             ARTICLE_LIMIT,
         )
     }
 
-    private fun loadOthers(excludeHex: String?): List<HighlightedArticle> {
+    private fun loadFriends(relays: List<String>, friendPubkeys: Set<String>): List<HighlightedArticle> {
+        if (friendPubkeys.isEmpty()) return emptyList()
+        return HighlightedArticles.fromEvents(
+            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, authors = friendPubkeys),
+            ARTICLE_LIMIT,
+        )
+    }
+
+    private fun loadOthers(excludeHex: String?, friendPubkeys: Set<String>): List<HighlightedArticle> {
         val events = RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
-            .filter { event -> excludeHex == null || !sameAuthor(event, excludeHex) }
+            .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys) }
         return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
     }
 
@@ -120,11 +147,18 @@ class HomeViewModel(
         )
     }
 
-    private fun sameAuthor(event: Nip01Event, pubkeyHex: String): Boolean =
-        event.pubkey.equals(pubkeyHex, ignoreCase = true)
-
     companion object {
         private const val HIGHLIGHT_LIMIT = 80
         private const val ARTICLE_LIMIT = 12
     }
+}
+
+internal fun isNetworkHighlight(
+    authorHex: String,
+    sessionHex: String?,
+    friendPubkeys: Set<String>,
+): Boolean {
+    val author = authorHex.lowercase()
+    if (sessionHex != null && author == sessionHex.lowercase()) return false
+    return author !in friendPubkeys
 }

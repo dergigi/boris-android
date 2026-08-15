@@ -126,10 +126,18 @@ fun HomeScreenContent(
                                 onRead = onRead,
                             )
                         }
+                        if (highlights.friends.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_highlighted_by_friends),
+                                items = highlights.friends,
+                                rowKey = "friends",
+                                onRead = onRead,
+                            )
+                        }
                         if (highlights.others.isNotEmpty()) {
                             HighlightedRow(
                                 title = stringResource(
-                                    if (loggedIn || highlights.yours.isNotEmpty()) {
+                                    if (loggedIn || highlights.yours.isNotEmpty() || highlights.friends.isNotEmpty()) {
                                         R.string.home_recently_highlighted_by_others
                                     } else {
                                         R.string.home_recently_highlighted
