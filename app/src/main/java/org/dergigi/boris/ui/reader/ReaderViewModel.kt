@@ -24,7 +24,6 @@ import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.PendingUnsignedEvent
-import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
@@ -36,6 +35,7 @@ import java.nio.charset.StandardCharsets
 data class PaintedHighlight(
     val id: String,
     val quote: String,
+    val mine: Boolean,
 )
 
 class ReaderViewModel(
@@ -190,7 +190,7 @@ class ReaderViewModel(
         if (event.kind != Nip01Event.KIND_HIGHLIGHT) return
         if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
         if (!event.verify()) return
-        val painted = PaintedHighlight(event.id, event.content)
+        val painted = PaintedHighlight(event.id, event.content, mine = true)
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
             _highlightCount.value = _highlightCount.value + 1
@@ -252,25 +252,16 @@ class ReaderViewModel(
                 }.distinct()
                 val events = RelayQuery.fetchHighlights(relays, content.url)
                 _highlightCount.value = events.size
-                val painted = if (session == null) {
-                    emptyList()
-                } else {
-                    events.mapNotNull { event ->
-                        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return@mapNotNull null
-                        if (!canPaint(content, event.content)) return@mapNotNull null
-                        PaintedHighlight(event.id, event.content)
-                    }
+                _highlights.value = events.map { event ->
+                    PaintedHighlight(
+                        id = event.id,
+                        quote = event.content,
+                        mine = session != null && event.pubkey.equals(session.pubkeyHex, ignoreCase = true),
+                    )
                 }
-                _highlights.value = painted
             } catch (_: Exception) {
             }
         }
-    }
-
-    private fun canPaint(content: ReadableContent, quote: String): Boolean {
-        val inTitle = content.title?.let { QuoteMatch.occurrences(it, quote).isNotEmpty() } == true
-        val inBody = QuoteMatch.occurrences(content.body, quote).isNotEmpty()
-        return inTitle || inBody
     }
 
     private fun openAuthUrl(url: String) {

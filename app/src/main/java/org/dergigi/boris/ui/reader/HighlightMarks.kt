@@ -6,10 +6,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.ui.theme.HighlightMine
+import org.dergigi.boris.ui.theme.HighlightOther
 
 object HighlightMarks {
     const val HighlightMarkAlpha = 0.45f
@@ -38,24 +40,29 @@ object HighlightMarks {
 fun Modifier.drawHighlightMarks(
     layout: TextLayoutResult?,
     displayed: String,
-    quotes: List<String>,
+    highlights: List<PaintedHighlight>,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
-    if (quotes.isEmpty() || displayed.isEmpty()) return@drawBehind
+    if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
     val padXPx = 5.dp.toPx()
     val padYPx = 3.dp.toPx()
     val corner = CornerRadius(3.dp.toPx())
-    val fill = HighlightMine.copy(alpha = HighlightMarks.HighlightMarkAlpha)
-    quotes.forEach { quote ->
-        QuoteMatch.occurrences(displayed, quote).forEach { range ->
-            HighlightMarks.highlightRects(result, range.first, range.last + 1).forEach { box ->
-                drawRoundRect(
-                    color = fill,
-                    topLeft = Offset(box.left - padXPx, box.top - padYPx),
-                    size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
-                    cornerRadius = corner,
-                )
+    fun paint(items: List<PaintedHighlight>, fill: Color) {
+        items.forEach { item ->
+            QuoteMatch.occurrences(displayed, item.quote).forEach { range ->
+                HighlightMarks.highlightRects(result, range.first, range.last + 1).forEach { box ->
+                    drawRoundRect(
+                        color = fill,
+                        topLeft = Offset(box.left - padXPx, box.top - padYPx),
+                        size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
+                        cornerRadius = corner,
+                    )
+                }
             }
         }
     }
+    val others = highlights.filter { !it.mine }
+    val mine = highlights.filter { it.mine }
+    paint(others, HighlightOther.copy(alpha = HighlightMarks.HighlightMarkAlpha))
+    paint(mine, HighlightMine.copy(alpha = HighlightMarks.HighlightMarkAlpha))
 }

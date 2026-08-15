@@ -306,7 +306,18 @@ private fun ArticleBody(
         if (opened !in urls) urls.add(0, opened)
         onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
     }
-    val quotes = remember(highlights) { highlights.map { it.quote } }
+    val highlightedComponents = remember(highlights) {
+        markdownComponents(
+            text = { HighlightedMarkdownNode(it, it.typography.text, highlights) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, highlights) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, highlights) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, highlights) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, highlights) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, highlights) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, highlights) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, highlights) },
+        )
+    }
     val view = LocalView.current
     val clipboard = LocalClipboardManager.current
     val toolbar = remember(view, clipboard, loggedIn, onHighlight) {
@@ -315,18 +326,6 @@ private fun ArticleBody(
             showHighlight = loggedIn,
             clipboard = clipboard,
             onHighlight = onHighlight,
-        )
-    }
-    val highlightedComponents = remember(quotes) {
-        markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, quotes) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, quotes) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, quotes) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, quotes) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, quotes) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, quotes) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, quotes) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, quotes) },
         )
     }
 
@@ -354,7 +353,7 @@ private fun ArticleBody(
                         onTextLayout = { titleLayout = it },
                         modifier = Modifier
                             .padding(top = 8.dp, bottom = 12.dp)
-                            .drawHighlightMarks(titleLayout, content.title, quotes),
+                            .drawHighlightMarks(titleLayout, content.title, highlights),
                     )
                 }
                 ArticleMetaRow(
@@ -416,7 +415,7 @@ private fun ArticleBody(
 private fun HighlightedMarkdownNode(
     model: MarkdownComponentModel,
     style: TextStyle,
-    quotes: List<String>,
+    highlights: List<PaintedHighlight>,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -427,7 +426,7 @@ private fun HighlightedMarkdownNode(
     MarkdownText(
         content = styledText,
         style = style,
-        modifier = Modifier.drawHighlightMarks(layout, styledText.text, quotes),
+        modifier = Modifier.drawHighlightMarks(layout, styledText.text, highlights),
         onTextLayout = { result, _ -> layout = result },
     )
 }
