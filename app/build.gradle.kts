@@ -6,6 +6,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+fun gitCommit(): String {
+    return runCatching {
+        ProcessBuilder("git", "rev-parse", "HEAD")
+            .directory(rootProject.projectDir)
+            .start()
+            .inputStream
+            .bufferedReader()
+            .readText()
+            .trim()
+    }.getOrNull()?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) } ?: "unknown"
+}
+
 fun localProp(name: String): String? {
     val file = rootProject.file("local.properties")
     if (!file.exists()) return System.getenv(name)
@@ -25,6 +37,7 @@ android {
         targetSdk = 35
         versionCode = 29
         versionName = "0.19.0"
+        buildConfigField("String", "GIT_COMMIT", "\"${gitCommit()}\"")
     }
 
     val storeFilePath = localProp("OEM_STORE_FILE")
@@ -73,6 +86,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     lint {

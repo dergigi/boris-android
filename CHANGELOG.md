@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Reader can save the current article to the library with a plus button
+- Settings shows the version and git commit, with links to GitHub
 
 ### Changed
 
