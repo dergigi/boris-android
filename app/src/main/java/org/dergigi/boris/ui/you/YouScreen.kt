@@ -21,11 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,7 +58,6 @@ import org.dergigi.boris.ui.theme.SourceSerif
 fun YouHighlights(
     npub: String,
     profile: Profile?,
-    onOpenSettings: () -> Unit,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: YouViewModel = viewModel(),
@@ -81,7 +78,6 @@ fun YouHighlights(
         pictureUrl = profile?.picture,
         mineColor = mineColor,
         onRefresh = viewModel::refresh,
-        onOpenSettings = onOpenSettings,
         onOpenArticle = onOpenArticle,
         modifier = modifier,
     )
@@ -97,88 +93,71 @@ fun YouHighlightsContent(
     pictureUrl: String?,
     mineColor: Color,
     onRefresh: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = onRefresh,
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        PullToRefreshBox(
-            isRefreshing = refreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize(),
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxSize()
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .widthIn(max = 720.dp)
-                    .fillMaxSize()
-                    .align(Alignment.TopCenter),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item(key = "header") {
-                    YouHeader(
-                        displayName = displayName,
-                        about = about,
-                        pictureUrl = pictureUrl,
-                    )
+            item(key = "header") {
+                YouHeader(
+                    displayName = displayName,
+                    about = about,
+                    pictureUrl = pictureUrl,
+                )
+            }
+            when (state) {
+                YouUiState.Loading -> {
+                    item(key = "loading") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
-                when (state) {
-                    YouUiState.Loading -> {
-                        item(key = "loading") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 48.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
+                YouUiState.Empty -> {
+                    item(key = "empty") {
+                        StatusMessage(
+                            text = stringResource(R.string.you_highlights_empty),
+                            onRetry = onRefresh,
+                        )
                     }
-                    YouUiState.Empty -> {
-                        item(key = "empty") {
-                            StatusMessage(
-                                text = stringResource(R.string.you_highlights_empty),
-                                onRetry = onRefresh,
-                            )
-                        }
+                }
+                YouUiState.Error -> {
+                    item(key = "error") {
+                        StatusMessage(
+                            text = stringResource(R.string.feed_error),
+                            onRetry = onRefresh,
+                        )
                     }
-                    YouUiState.Error -> {
-                        item(key = "error") {
-                            StatusMessage(
-                                text = stringResource(R.string.feed_error),
-                                onRetry = onRefresh,
-                            )
-                        }
-                    }
-                    is YouUiState.Ready -> {
-                        items(state.items, key = { it.id }) { item ->
-                            YouHighlightCard(
-                                item = item,
-                                displayName = displayName,
-                                mineColor = mineColor,
-                                onOpenArticle = onOpenArticle,
-                            )
-                        }
+                }
+                is YouUiState.Ready -> {
+                    items(state.items, key = { it.id }) { item ->
+                        YouHighlightCard(
+                            item = item,
+                            displayName = displayName,
+                            mineColor = mineColor,
+                            onOpenArticle = onOpenArticle,
+                        )
                     }
                 }
             }
-        }
-        IconButton(
-            onClick = onOpenSettings,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(4.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = stringResource(R.string.settings_title),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
@@ -192,7 +171,6 @@ private fun YouHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(end = 40.dp)
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
