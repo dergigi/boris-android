@@ -20,7 +20,6 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -198,25 +197,11 @@ fun ReadingDisplaySection(
                 onSelect = { onUpdate(settings.withString("highlightColorNostrverse", it)) },
             )
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    onUpdate(settings.withBoolean("showHighlights", !settings.showHighlights))
-                }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = settings.showHighlights,
-                onCheckedChange = { onUpdate(settings.withBoolean("showHighlights", it)) },
-            )
-            Text(
-                text = stringResource(R.string.settings_show_highlights),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        SettingCheckbox(
+            label = stringResource(R.string.settings_show_highlights),
+            checked = settings.showHighlights,
+            onCheckedChange = { onUpdate(settings.withBoolean("showHighlights", it)) },
+        )
         ReadingPreview(
             settings = settings,
             darkTheme = darkTheme,

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -52,11 +53,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalUriHandler
@@ -68,6 +72,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -311,7 +316,10 @@ private fun ArticleBody(
             }
         }
     }
-    val imageTransformer = ClickableCoilImageTransformer { link ->
+    val imageTransformer = ClickableCoilImageTransformer(
+        fullWidth = settings.fullWidthImages,
+        maxHeight = (LocalConfiguration.current.screenHeightDp * 0.7f).dp,
+    ) { link ->
         val opened = UrlExtractor.articleUrl(link, content.url) ?: return@ClickableCoilImageTransformer
         val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
         if (opened !in urls) urls.add(0, opened)
@@ -572,13 +580,26 @@ private fun MetaChip(
 }
 
 private class ClickableCoilImageTransformer(
+    private val fullWidth: Boolean,
+    private val maxHeight: Dp,
     private val onImageClick: (String) -> Unit,
 ) : ImageTransformer {
     @Composable
     override fun transform(link: String): ImageData {
         val data = Coil3ImageTransformerImpl.transform(link)
+        val sized = if (fullWidth) {
+            Modifier.fillMaxWidth()
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxHeight)
+        }
         return data.copy(
-            modifier = data.modifier.clickable { onImageClick(link) },
+            modifier = sized
+                .clip(RoundedCornerShape(6.dp))
+                .clickable { onImageClick(link) },
+            contentScale = if (fullWidth) ContentScale.FillWidth else ContentScale.Fit,
+            alignment = Alignment.Center,
         )
     }
 

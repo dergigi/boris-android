@@ -43,6 +43,7 @@ class UserSettings internal constructor(
 
     val markerStyle: Boolean get() = highlightStyle != "underline"
     val justifyParagraphs: Boolean get() = paragraphAlignment != "left"
+    val fullWidthImages: Boolean get() = bool("fullWidthImages", true)
 
     fun isDark(systemDark: Boolean): Boolean = when (theme) {
         "light" -> false

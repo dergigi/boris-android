@@ -28,18 +28,20 @@ class UserSettingsTest {
         assertFalse(settings.defaultExploreScopeNostrverse)
         assertTrue(settings.defaultExploreScopeFriends)
         assertFalse(settings.defaultExploreScopeMine)
+        assertTrue(settings.fullWidthImages)
     }
 
     @Test
     fun parseReadsKnownKeys() {
         val settings = UserSettings.parse(
-            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left"}""",
+            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","fullWidthImages":false}""",
         )
         assertEquals(24, settings.fontSize)
         assertEquals("underline", settings.highlightStyle)
         assertFalse(settings.showHighlights)
         assertEquals("left", settings.paragraphAlignment)
         assertEquals("source-serif-4", settings.readingFont)
+        assertFalse(settings.fullWidthImages)
     }
 
     @Test

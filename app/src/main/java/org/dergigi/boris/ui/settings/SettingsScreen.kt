@@ -110,6 +110,10 @@ fun SettingsScreen(
                     darkTheme = settings.isDark(isSystemInDarkTheme()),
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                MediaDisplaySection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
                 AuthBar(
                     state = authState,
                     message = authMessage,
