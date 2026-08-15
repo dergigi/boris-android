@@ -18,11 +18,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,10 +34,14 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -51,6 +58,7 @@ import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.SourceSerif
 
@@ -96,6 +104,7 @@ fun YouHighlightsContent(
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var tab by rememberSaveable { mutableStateOf(YouTab.Highlights) }
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = onRefresh,
@@ -118,6 +127,9 @@ fun YouHighlightsContent(
                     pictureUrl = pictureUrl,
                 )
             }
+            item(key = "tabs") {
+                YouTabs(tab = tab, onSelect = { tab = it })
+            }
             when (state) {
                 YouUiState.Loading -> {
                     item(key = "loading") {
@@ -131,14 +143,6 @@ fun YouHighlightsContent(
                         }
                     }
                 }
-                YouUiState.Empty -> {
-                    item(key = "empty") {
-                        StatusMessage(
-                            text = stringResource(R.string.you_highlights_empty),
-                            onRetry = onRefresh,
-                        )
-                    }
-                }
                 YouUiState.Error -> {
                     item(key = "error") {
                         StatusMessage(
@@ -148,18 +152,96 @@ fun YouHighlightsContent(
                     }
                 }
                 is YouUiState.Ready -> {
-                    items(state.items, key = { it.id }) { item ->
-                        YouHighlightCard(
-                            item = item,
-                            displayName = displayName,
-                            mineColor = mineColor,
-                            onOpenArticle = onOpenArticle,
-                        )
+                    when (tab) {
+                        YouTab.Highlights -> {
+                            if (state.highlights.isEmpty()) {
+                                item(key = "empty-highlights") {
+                                    StatusMessage(
+                                        text = stringResource(R.string.you_highlights_empty),
+                                        onRetry = onRefresh,
+                                    )
+                                }
+                            } else {
+                                items(state.highlights, key = { it.id }) { item ->
+                                    YouHighlightCard(
+                                        item = item,
+                                        displayName = displayName,
+                                        mineColor = mineColor,
+                                        onOpenArticle = onOpenArticle,
+                                    )
+                                }
+                            }
+                        }
+                        YouTab.Writings -> {
+                            if (state.writings.isEmpty()) {
+                                item(key = "empty-writings") {
+                                    StatusMessage(
+                                        text = stringResource(R.string.you_writings_empty),
+                                        onRetry = onRefresh,
+                                    )
+                                }
+                            } else {
+                                items(state.writings, key = { it.id }) { item ->
+                                    YouWritingCard(
+                                        item = item,
+                                        onOpenArticle = onOpenArticle,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun YouTabs(
+    tab: YouTab,
+    onSelect: (YouTab) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        YouTabChip(
+            selected = tab == YouTab.Highlights,
+            label = stringResource(R.string.you_tab_highlights),
+            icon = BorisIcons.Highlighter,
+            onClick = { onSelect(YouTab.Highlights) },
+        )
+        YouTabChip(
+            selected = tab == YouTab.Writings,
+            label = stringResource(R.string.you_tab_writings),
+            icon = Icons.Outlined.Edit,
+            onClick = { onSelect(YouTab.Writings) },
+        )
+    }
+}
+
+@Composable
+private fun YouTabChip(
+    selected: Boolean,
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    )
 }
 
 @Composable
@@ -285,6 +367,76 @@ private fun YouHighlightCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun YouWritingCard(
+    item: YouWriting,
+    onOpenArticle: (String) -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable { onOpenArticle(item.url) }
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (item.imageUrl.isNullOrBlank()) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Article,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            } else {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!item.summary.isNullOrBlank()) {
+                Text(
+                    text = item.summary,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = RelativeTime.label(item.publishedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

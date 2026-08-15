@@ -175,6 +175,24 @@ object RelayQuery {
             .sortedByDescending { NipB0.publishedAt(it) }
     }
 
+    fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_LONG_FORM))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 200)
+        return query(urls, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_LONG_FORM &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                    !Nip23.identifier(event).isNullOrBlank()
+            }
+            .groupBy { Nip23.identifier(it)!!.lowercase() }
+            .mapNotNull { (_, events) -> events.maxByOrNull { it.createdAt } }
+            .sortedByDescending { Nip23.publishedAt(it) }
+    }
+
     fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
         val relays = buildList {
             addAll(pointer.relays)
