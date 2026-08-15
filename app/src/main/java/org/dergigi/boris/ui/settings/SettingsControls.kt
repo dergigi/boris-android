@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -52,26 +51,6 @@ fun SettingRow(
                 .padding(end = 12.dp),
         )
         control()
-    }
-}
-
-@Composable
-fun SettingPicker(
-    label: String,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        content()
     }
 }
 
@@ -154,7 +133,7 @@ fun ColorChip(
     }
     Box(
         modifier = Modifier
-            .size(SettingChipSize)
+            .size(36.dp)
             .clip(SettingChipShape)
             .background(color)
             .border(if (selected) 2.dp else 1.dp, border, SettingChipShape)
@@ -167,7 +146,7 @@ fun ColorChip(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
                 tint = check,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
     }
