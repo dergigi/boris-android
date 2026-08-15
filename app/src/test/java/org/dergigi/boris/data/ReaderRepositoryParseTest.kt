@@ -46,4 +46,10 @@ class ReaderRepositoryParseTest {
         assertEquals(raw, content.html)
         assertNull(content.markdown)
     }
+
+    @Test
+    fun noteMarkdownEmbedsImageLinksAndKeepsLineBreaks() {
+        val out = repository.noteMarkdown("hello\nhttps://cdn.example.com/shot.jpg")
+        assertEquals("hello  \n![](https://cdn.example.com/shot.jpg)", out)
+    }
 }

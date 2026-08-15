@@ -86,6 +86,43 @@ class UrlExtractorTest {
     }
 
     @Test
+    fun detectsImageUrlsByExtension() {
+        assertEquals(true, UrlExtractor.isImageUrl("https://cdn.example.com/photo.JPG?w=800"))
+        assertEquals(true, UrlExtractor.isImageUrl("https://cdn.example.com/a.webp"))
+        assertEquals(false, UrlExtractor.isImageUrl("https://example.com/article"))
+        assertEquals(false, UrlExtractor.isImageUrl("https://example.com/file.pdf"))
+    }
+
+    @Test
+    fun embedImageLinksTurnsBareAndLinkedImagesIntoMarkdown() {
+        val src = """
+            photo https://cdn.example.com/a.jpg.
+            already ![keep](https://cdn.example.com/b.png)
+            [caption](https://cdn.example.com/c.webp)
+            see https://example.com/post
+        """.trimIndent()
+        val out = UrlExtractor.embedImageLinks(src)
+        assertEquals(true, out.contains("![](https://cdn.example.com/a.jpg)."))
+        assertEquals(true, out.contains("![keep](https://cdn.example.com/b.png)"))
+        assertEquals(true, out.contains("![caption](https://cdn.example.com/c.webp)"))
+        assertEquals(true, out.contains("see https://example.com/post"))
+        assertEquals(false, out.contains("![](https://example.com/post)"))
+    }
+
+    @Test
+    fun imageUrlsIncludeBareImageLinks() {
+        assertEquals(
+            listOf(
+                "https://cdn.example.com/a.jpg",
+                "https://cdn.example.com/b.png",
+            ),
+            UrlExtractor.imageUrls(
+                "shot https://cdn.example.com/a.jpg and ![x](https://cdn.example.com/b.png)",
+            ),
+        )
+    }
+
+    @Test
     fun extractsNaddrFromShareTextAndGateways() {
         val naddr =
             "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"

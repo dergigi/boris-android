@@ -67,9 +67,12 @@ class ReaderRepository(
         if (event.kind != Nip01Event.KIND_TEXT_NOTE) {
             throw IOException("This nostr event is not a note or article")
         }
-        val title = event.content.lineSequence().firstOrNull { it.isNotBlank() }?.let { line ->
-            if (line.length <= 80) line else line.take(79).trimEnd() + "…"
-        } ?: "Note"
+        val title = event.content.lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.isNotBlank() && !UrlExtractor.isImageUrl(it.trimEnd('.', ',', ';')) }
+            ?.let { line ->
+                if (line.length <= 80) line else line.take(79).trimEnd() + "…"
+            } ?: "Note"
         return ReadableContent(
             url = note.uri,
             title = title,
@@ -80,7 +83,8 @@ class ReaderRepository(
         )
     }
 
-    private fun noteMarkdown(content: String): String = content.replace("\n", "  \n")
+    internal fun noteMarkdown(content: String): String =
+        UrlExtractor.embedImageLinks(content.replace("\n", "  \n"))
 
     internal fun parse(targetUrl: String, text: String): ReadableContent {
         val hasMarkdownBlock = markdownBlockRegex.containsMatchIn(text)

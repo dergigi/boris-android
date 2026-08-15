@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Reader turns markdown footnotes into superscripts and a notes list at the end
+- Kind 1 notes show linked images inline, and a tap opens the gallery
 
 ## [0.15.0] - 2026-08-15
 
