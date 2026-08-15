@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Settings color and font-size pickers are the same 40dp rounded squares as highlight style and alignment
+
 ## [0.26.0] - 2026-08-15
 
 ### Added
