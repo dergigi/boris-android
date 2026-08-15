@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Library shows private, public, and web bookmarks, the same three shelves as Amethyst
+
 ### Changed
 
 - Feed screen title is Highlights feed

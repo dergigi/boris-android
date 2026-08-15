@@ -3,6 +3,17 @@
     <string name="app_name">Boris</string>
     <string name="nav_home">Home</string>
     <string name="nav_library">Library</string>
+    <string name="library_private">Private</string>
+    <string name="library_public">Public</string>
+    <string name="library_web">Web</string>
+    <string name="library_empty">No bookmarks here yet.</string>
+    <string name="library_error">Could not load bookmarks.</string>
+    <string name="library_private_locked">Private bookmarks are encrypted. Unlock them with your signer.</string>
+    <string name="library_unlock">Unlock</string>
+    <string name="library_unlock_cancelled">Unlock cancelled.</string>
+    <string name="library_unlock_failed">Could not unlock private bookmarks.</string>
+    <string name="library_logged_out_title">Your bookmarks</string>
+    <string name="library_logged_out_body">Connect, and they show up here.</string>
     <string name="nav_feed">Feed</string>
     <string name="feed_title">Highlights feed</string>
     <string name="nav_search">Search</string>

@@ -142,6 +142,39 @@ object RelayQuery {
         return newest.mapValues { Profile.parse(it.value.content) }
     }
 
+    fun fetchBookmarkList(pubkeyHex: String, readRelays: List<String>): Nip01Event? {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return null
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_BOOKMARKS))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 5)
+        return query(urls, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_BOOKMARKS &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .maxByOrNull { it.createdAt }
+    }
+
+    fun fetchWebBookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_WEB_BOOKMARK))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 200)
+        return query(urls, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_WEB_BOOKMARK &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                    !event.tagValue("d").isNullOrBlank()
+            }
+            .groupBy { it.tagValue("d")!!.lowercase() }
+            .mapNotNull { (_, events) -> events.maxByOrNull { it.createdAt } }
+            .sortedByDescending { NipB0.publishedAt(it) }
+    }
+
     fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
         val relays = buildList {
             addAll(pointer.relays)

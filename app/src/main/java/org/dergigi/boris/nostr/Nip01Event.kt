@@ -60,7 +60,9 @@ data class Nip01Event(
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242
         const val KIND_HIGHLIGHT = 9802
+        const val KIND_BOOKMARKS = 10003
         const val KIND_LONG_FORM = 30023
+        const val KIND_WEB_BOOKMARK = 39701
         const val KIND_RELAY_LIST = 10002
         const val KIND_APP_DATA = 30078
         const val KIND_RELAY_DISCOVERY = 30166

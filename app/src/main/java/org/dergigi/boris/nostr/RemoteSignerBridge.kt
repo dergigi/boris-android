@@ -40,4 +40,21 @@ object RemoteSignerBridge {
             putExtra("current_user", currentUserHex)
         }
     }
+
+    fun buildDecryptIntent(
+        ciphertext: String,
+        signerPackage: String,
+        currentUserHex: String,
+        peerPubkeyHex: String,
+        nip44: Boolean,
+    ): Intent {
+        val encoded = if (ciphertext.contains('?')) Uri.encode(ciphertext) else ciphertext
+        return Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:$encoded")).apply {
+            `package` = signerPackage
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("type", if (nip44) "nip44_decrypt" else "nip04_decrypt")
+            putExtra("current_user", currentUserHex)
+            putExtra("pubkey", peerPubkeyHex)
+        }
+    }
 }

@@ -45,6 +45,12 @@ object SignerResults {
         )
     }
 
+    fun parsePlaintext(resultCode: Int, data: Intent?): String? {
+        if (data?.getBooleanExtra("rejected", false) == true) return null
+        if (resultCode != Activity.RESULT_OK) return null
+        return data?.getStringExtra("result")?.takeIf { it.isNotBlank() }
+    }
+
     fun parseSignedEvent(
         resultCode: Int,
         rejected: Boolean,

@@ -1,0 +1,458 @@
+package org.dergigi.boris.ui.library
+
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import org.dergigi.boris.R
+import org.dergigi.boris.data.BookmarkBucket
+import org.dergigi.boris.data.BookmarkItem
+import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.ui.auth.AuthBar
+import org.dergigi.boris.ui.auth.AuthUiState
+import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.auth.NstartFooter
+
+@Composable
+fun LibraryScreen(
+    onOpenArticle: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LibraryViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
+    val bucket by viewModel.bucket.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val authMessage by authViewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var bunkerUri by rememberSaveable { mutableStateOf("") }
+    val decryptLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        viewModel.onDecryptResult(result.resultCode, result.data)
+    }
+    val authLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        authViewModel.onSignerResult(result.resultCode, result.data)
+    }
+    LaunchedEffect(message) {
+        val text = message ?: return@LaunchedEffect
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        viewModel.consumeMessage()
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+        authViewModel.refresh()
+    }
+    LibraryScreenContent(
+        state = state,
+        refreshing = refreshing,
+        bucket = bucket,
+        authState = authState,
+        authMessage = authMessage,
+        bunkerUri = bunkerUri,
+        onBunkerUriChange = { bunkerUri = it },
+        onSelect = viewModel::select,
+        onRefresh = viewModel::refresh,
+        onUnlock = { viewModel.unlockPrivate()?.let(decryptLauncher::launch) },
+        onOpenArticle = onOpenArticle,
+        onConnect = { authViewModel.connectIntent()?.let(authLauncher::launch) },
+        onConnectBunker = { authViewModel.connectBunker(bunkerUri) },
+        onSignOut = authViewModel::signOut,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LibraryScreenContent(
+    state: LibraryUiState,
+    refreshing: Boolean,
+    bucket: BookmarkBucket,
+    authState: AuthUiState,
+    authMessage: String?,
+    bunkerUri: String,
+    onBunkerUriChange: (String) -> Unit,
+    onSelect: (BookmarkBucket) -> Unit,
+    onRefresh: () -> Unit,
+    onUnlock: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+    onConnect: () -> Unit,
+    onConnectBunker: () -> Unit,
+    onSignOut: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.nav_library)) },
+                windowInsets = WindowInsets(0),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
+                ),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0),
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background),
+        ) {
+            when (state) {
+                LibraryUiState.LoggedOut -> {
+                    LoggedOutLibrary(
+                        authState = authState,
+                        authMessage = authMessage,
+                        bunkerUri = bunkerUri,
+                        onBunkerUriChange = onBunkerUriChange,
+                        onConnect = onConnect,
+                        onConnectBunker = onConnectBunker,
+                        onSignOut = onSignOut,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                LibraryUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                LibraryUiState.Error -> {
+                    StatusMessage(
+                        text = stringResource(R.string.library_error),
+                        onRetry = onRefresh,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                is LibraryUiState.Ready -> {
+                    ReadyLibrary(
+                        shelves = state.shelves,
+                        bucket = bucket,
+                        refreshing = refreshing,
+                        onSelect = onSelect,
+                        onRefresh = onRefresh,
+                        onUnlock = onUnlock,
+                        onOpenArticle = onOpenArticle,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReadyLibrary(
+    shelves: BookmarkShelves,
+    bucket: BookmarkBucket,
+    refreshing: Boolean,
+    onSelect: (BookmarkBucket) -> Unit,
+    onRefresh: () -> Unit,
+    onUnlock: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ShelfChip(
+                selected = bucket == BookmarkBucket.Private,
+                label = stringResource(R.string.library_private),
+                icon = Icons.Outlined.Lock,
+                onClick = { onSelect(BookmarkBucket.Private) },
+            )
+            ShelfChip(
+                selected = bucket == BookmarkBucket.Public,
+                label = stringResource(R.string.library_public),
+                icon = Icons.Outlined.Public,
+                onClick = { onSelect(BookmarkBucket.Public) },
+            )
+            ShelfChip(
+                selected = bucket == BookmarkBucket.Web,
+                label = stringResource(R.string.library_web),
+                icon = Icons.Outlined.Language,
+                onClick = { onSelect(BookmarkBucket.Web) },
+            )
+        }
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            val items = shelves.items(bucket)
+            when {
+                bucket == BookmarkBucket.Private && shelves.privateLocked -> {
+                    StatusMessage(
+                        text = stringResource(R.string.library_private_locked),
+                        action = stringResource(R.string.library_unlock),
+                        onRetry = onUnlock,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                items.isEmpty() -> {
+                    StatusMessage(
+                        text = stringResource(R.string.library_empty),
+                        onRetry = onRefresh,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .widthIn(max = 720.dp)
+                            .fillMaxSize()
+                            .align(Alignment.TopCenter),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(items, key = { it.id }) { item ->
+                            BookmarkRow(item = item, onOpenArticle = onOpenArticle)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShelfChip(
+    selected: Boolean,
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    )
+}
+
+@Composable
+private fun BookmarkRow(
+    item: BookmarkItem,
+    onOpenArticle: (String) -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable(enabled = item.url != null) {
+                item.url?.let(onOpenArticle)
+            }
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (item.imageUrl.isNullOrBlank()) {
+                Icon(
+                    imageVector = Icons.Outlined.Bookmark,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            } else {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!item.host.isNullOrBlank()) {
+                Text(
+                    text = item.host,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoggedOutLibrary(
+    authState: AuthUiState,
+    authMessage: String?,
+    bunkerUri: String,
+    onBunkerUriChange: (String) -> Unit,
+    onConnect: () -> Unit,
+    onConnectBunker: () -> Unit,
+    onSignOut: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .imePadding()
+            .widthIn(max = 420.dp)
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(28.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.library_logged_out_title),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = stringResource(R.string.library_logged_out_body),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    textAlign = TextAlign.Center,
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AuthBar(
+            state = authState,
+            message = authMessage,
+            bunkerUri = bunkerUri,
+            onBunkerUriChange = onBunkerUriChange,
+            onConnect = onConnect,
+            onConnectBunker = onConnectBunker,
+            onSignOut = onSignOut,
+        )
+        NstartFooter()
+    }
+}
+
+@Composable
+private fun StatusMessage(
+    text: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+    action: String = stringResource(R.string.feed_retry),
+) {
+    Column(
+        modifier = modifier
+            .widthIn(max = 420.dp)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        TextButton(
+            onClick = onRetry,
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Text(action)
+        }
+    }
+}

@@ -15,6 +15,12 @@ sealed class BunkerSignResult {
     data object Rejected : BunkerSignResult()
 }
 
+sealed class BunkerDecryptResult {
+    data class Plaintext(val value: String) : BunkerDecryptResult()
+    data object RelayTimeout : BunkerDecryptResult()
+    data object Rejected : BunkerDecryptResult()
+}
+
 sealed class BunkerResult {
     data class Success(val userHex: String, val clientPrivkey: ByteArray) : BunkerResult() {
         override fun equals(other: Any?): Boolean {
@@ -149,6 +155,50 @@ class BunkerClient(
             return BunkerSignResult.Signed(event)
         } catch (_: Exception) {
             return BunkerSignResult.Rejected
+        } finally {
+            sockets.forEach { it.close() }
+        }
+    }
+
+    fun decrypt(
+        relays: List<String>,
+        remoteSignerPubkey: String,
+        clientPrivkey: ByteArray,
+        peerPubkeyHex: String,
+        ciphertext: String,
+        nip44: Boolean,
+    ): BunkerDecryptResult {
+        val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerDecryptResult.Rejected
+        val sockets = mutableListOf<RelaySocket>()
+        val inbox = LinkedBlockingQueue<Nip01Event>()
+        val seenAuthUrls = mutableSetOf<String>()
+        val subId = newId()
+        try {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+                return BunkerDecryptResult.RelayTimeout
+            }
+            val id = newId()
+            val method = if (nip44) "nip44_decrypt" else "nip04_decrypt"
+            publish(
+                sockets,
+                keypair,
+                remoteSignerPubkey,
+                rpcJson(id, method, JSONArray().put(peerPubkeyHex).put(ciphertext)),
+            )
+            val outcome = awaitRpc(
+                inbox,
+                id,
+                keypair,
+                remoteSignerPubkey,
+                seenAuthUrls,
+                firstTimeoutMs = RPC_TIMEOUT_MS,
+            ) ?: return BunkerDecryptResult.RelayTimeout
+            if (outcome.rejected) return BunkerDecryptResult.Rejected
+            val plaintext = outcome.result?.takeIf { it.isNotEmpty() }
+                ?: return BunkerDecryptResult.Rejected
+            return BunkerDecryptResult.Plaintext(plaintext)
+        } catch (_: Exception) {
+            return BunkerDecryptResult.Rejected
         } finally {
             sockets.forEach { it.close() }
         }

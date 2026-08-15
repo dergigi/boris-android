@@ -24,6 +24,7 @@ import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
+import org.dergigi.boris.ui.library.LibraryScreen
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
 import org.dergigi.boris.ui.settings.SettingsScreen
@@ -113,7 +114,10 @@ fun BorisApp(
                     )
                 }
                 composable(Routes.LIBRARY) {
-                    StubScreen(stringResource(MainTab.Library.labelRes))
+                    LibraryScreen(
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        authViewModel = authViewModel,
+                    )
                 }
                 composable(Routes.FEED) {
                     FeedScreen(
