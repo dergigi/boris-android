@@ -1,14 +1,18 @@
 # Boris (Android)
 
-A calm native reader for web articles. Paste a URL, share one from the browser, or open an `http`/`https` link with Boris.
+A nostr-native app for reading and highlighting. Paste a URL, share one from the browser, or open an `http`/`https` link. Boris gives you a distraction-free article view with clean type, your marks, and swarm highlights from friends and the rest of the nostrverse.
+
+No ads, no trackers, no paywalls, no subscriptions. Nostr is the backend, so your highlights travel with your npub. Pair a local relay like [Citrine](https://github.com/greenart7c3/Citrine) and keep reading in airplane mode.
+
+Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec`.
+
+Companion webapp: [readwithboris.com](https://readwithboris.com/).
 
 Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and stay in `0.x.y` until 1.0.0. Notable changes are listed in [`CHANGELOG.md`](CHANGELOG.md) using [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ```bash
 ./gradlew :app:assembleDebug
 ```
-
-Companion webapp: [readwithboris.com](https://readwithboris.com/).
 
 ## Release build
 
