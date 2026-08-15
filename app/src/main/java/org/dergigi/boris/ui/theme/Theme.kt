@@ -1,51 +1,28 @@
 package org.dergigi.boris.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-
-private val DarkColors = darkColorScheme(
-    primary = Indigo500,
-    onPrimary = Color.White,
-    secondary = Sky400,
-    onSecondary = Zinc900,
-    background = Zinc900,
-    onBackground = Zinc200,
-    surface = Zinc900,
-    onSurface = Zinc200,
-    surfaceVariant = Zinc800,
-    onSurfaceVariant = Zinc400,
-    outline = Zinc700,
-    outlineVariant = Zinc700,
-)
-
-private val LightColors = lightColorScheme(
-    primary = Indigo600,
-    onPrimary = Color.White,
-    secondary = Blue500,
-    onSecondary = Color.White,
-    background = Paper,
-    onBackground = Gray900,
-    surface = Paper,
-    onSurface = Gray900,
-    surfaceVariant = Gray100,
-    onSurfaceVariant = Gray700,
-    outline = Gray200,
-    outlineVariant = Gray200,
-)
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.data.UserSettings
 
 @Composable
 fun BorisTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colors = if (darkTheme) DarkColors else LightColors
+    val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = settings.isDark(systemDark)
+    val colors = borisColorScheme(settings, darkTheme)
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -58,5 +35,95 @@ fun BorisTheme(
         colorScheme = colors,
         typography = BorisTypography,
         content = content,
+    )
+}
+
+fun borisColorScheme(settings: UserSettings, darkTheme: Boolean): ColorScheme {
+    return if (darkTheme) darkScheme(settings.darkColorTheme) else lightScheme(settings.lightColorTheme)
+}
+
+private fun darkScheme(variant: String): ColorScheme {
+    val background: Color
+    val surface: Color
+    val outline: Color
+    val outlineVariant: Color
+    when (variant) {
+        "black" -> {
+            background = Black
+            surface = BlackElevated
+            outline = BlackBorder
+            outlineVariant = BlackBorderSubtle
+        }
+        "charcoal" -> {
+            background = Charcoal
+            surface = CharcoalElevated
+            outline = CharcoalBorder
+            outlineVariant = CharcoalBorderSubtle
+        }
+        else -> {
+            background = Zinc900
+            surface = Zinc800
+            outline = Zinc700
+            outlineVariant = Zinc700
+        }
+    }
+    return darkColorScheme(
+        primary = Indigo500,
+        onPrimary = Color.White,
+        secondary = Sky400,
+        onSecondary = Zinc900,
+        background = background,
+        onBackground = Zinc200,
+        surface = background,
+        onSurface = Zinc200,
+        surfaceVariant = surface,
+        onSurfaceVariant = Zinc400,
+        outline = outline,
+        outlineVariant = outlineVariant,
+    )
+}
+
+private fun lightScheme(variant: String): ColorScheme {
+    val background: Color
+    val surface: Color
+    val outline: Color
+    val onBackground: Color
+    val onSurfaceVariant: Color
+    when (variant) {
+        "paper-white" -> {
+            background = Paper
+            surface = Gray100
+            outline = Gray200
+            onBackground = Gray900
+            onSurfaceVariant = Gray700
+        }
+        "ivory" -> {
+            background = Ivory
+            surface = IvoryElevated
+            outline = IvoryBorder
+            onBackground = IvoryText
+            onSurfaceVariant = IvorySecondary
+        }
+        else -> {
+            background = Sepia
+            surface = SepiaElevated
+            outline = SepiaBorder
+            onBackground = SepiaText
+            onSurfaceVariant = SepiaSecondary
+        }
+    }
+    return lightColorScheme(
+        primary = Indigo600,
+        onPrimary = Color.White,
+        secondary = Blue500,
+        onSecondary = Color.White,
+        background = background,
+        onBackground = onBackground,
+        surface = background,
+        onSurface = onBackground,
+        surfaceVariant = surface,
+        onSurfaceVariant = onSurfaceVariant,
+        outline = outline,
+        outlineVariant = outline,
     )
 }

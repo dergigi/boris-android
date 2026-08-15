@@ -325,7 +325,7 @@ private fun ArticleBody(
     val mineColor = readingColor(settings.highlightColorMine, HighlightMine)
     val otherColor = readingColor(settings.highlightColorNostrverse, HighlightOther)
     val underline = !settings.markerStyle
-    val dark = isSystemInDarkTheme()
+    val dark = settings.isDark(isSystemInDarkTheme())
     val linkColor = readingColor(
         if (dark) settings.linkColorDark else settings.linkColorLight,
         colors.secondary,

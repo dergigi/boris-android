@@ -22,6 +22,9 @@ class UserSettingsTest {
         assertEquals("justify", settings.paragraphAlignment)
         assertEquals("#38bdf8", settings.linkColorDark)
         assertEquals("#3b82f6", settings.linkColorLight)
+        assertEquals("system", settings.theme)
+        assertEquals("midnight", settings.darkColorTheme)
+        assertEquals("sepia", settings.lightColorTheme)
     }
 
     @Test
@@ -67,5 +70,25 @@ class UserSettingsTest {
         val settings = UserSettings.parse("""{"showHighlights":false}""")
         assertFalse(settings.visibleMine())
         assertFalse(settings.visibleNostrverse())
+    }
+
+    @Test
+    fun themeKeysMatchWebappDefaultsAndIds() {
+        val loaded = UserSettings.parse(
+            """{"theme":"dark","darkColorTheme":"black","lightColorTheme":"ivory"}""",
+        )
+        assertEquals("dark", loaded.theme)
+        assertEquals("black", loaded.darkColorTheme)
+        assertEquals("ivory", loaded.lightColorTheme)
+        assertTrue(loaded.isDark(systemDark = false))
+        val light = UserSettings.parse("""{"theme":"light"}""")
+        assertFalse(light.isDark(systemDark = true))
+        val system = UserSettings.parse("""{}""")
+        assertEquals("system", system.theme)
+        assertTrue(system.isDark(systemDark = true))
+        assertFalse(system.isDark(systemDark = false))
+        val unknown = UserSettings.parse("""{"theme":"neon","darkColorTheme":"navy"}""")
+        assertEquals("system", unknown.theme)
+        assertEquals("midnight", unknown.darkColorTheme)
     }
 }

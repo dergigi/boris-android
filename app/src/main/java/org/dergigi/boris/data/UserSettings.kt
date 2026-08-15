@@ -19,9 +19,30 @@ class UserSettings internal constructor(
     val paragraphAlignment: String get() = string("paragraphAlignment", "justify")
     val linkColorDark: String get() = string("linkColorDark", "#38bdf8")
     val linkColorLight: String get() = string("linkColorLight", "#3b82f6")
+    val theme: String
+        get() = when (val value = string("theme", "system")) {
+            "light", "dark" -> value
+            else -> "system"
+        }
+    val darkColorTheme: String
+        get() = when (val value = string("darkColorTheme", "midnight")) {
+            "black", "charcoal" -> value
+            else -> "midnight"
+        }
+    val lightColorTheme: String
+        get() = when (val value = string("lightColorTheme", "sepia")) {
+            "paper-white", "ivory" -> value
+            else -> "sepia"
+        }
 
     val markerStyle: Boolean get() = highlightStyle != "underline"
     val justifyParagraphs: Boolean get() = paragraphAlignment != "left"
+
+    fun isDark(systemDark: Boolean): Boolean = when (theme) {
+        "light" -> false
+        "dark" -> true
+        else -> systemDark
+    }
 
     fun withString(key: String, value: String): UserSettings = overlay(key, JsonValue.Str(value))
 

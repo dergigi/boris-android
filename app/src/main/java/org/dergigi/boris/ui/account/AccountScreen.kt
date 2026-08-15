@@ -54,6 +54,7 @@ import org.dergigi.boris.ui.auth.NstartFooter
 import org.dergigi.boris.ui.reader.HighlightMarks
 import org.dergigi.boris.ui.settings.ReadingDisplaySection
 import org.dergigi.boris.ui.settings.SettingsViewModel
+import org.dergigi.boris.ui.settings.ThemeSection
 import org.dergigi.boris.ui.theme.HighlightMine
 
 @Composable
@@ -118,9 +119,13 @@ fun AccountScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             if (loggedIn) {
+                ThemeSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
                 ReadingDisplaySection(
                     settings = settings,
-                    darkTheme = isSystemInDarkTheme(),
+                    darkTheme = settings.isDark(isSystemInDarkTheme()),
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
             } else {
