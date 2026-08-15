@@ -90,23 +90,29 @@ object RelayQuery {
         return newest.mapValues { Profile.parse(it.value.content) }
     }
 
-    fun fetchHighlights(readRelays: List<String>, pubkeyHex: String, url: String): List<Nip01Event> {
+    fun fetchHighlights(
+        readRelays: List<String>,
+        url: String,
+        pubkeyHex: String? = null,
+    ): List<Nip01Event> {
         val opened = url
         val normalized = ArticleUrl.normalize(url)
-        val filterOpened = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("#r", JSONArray().put(opened))
-        val filterNormalized = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("#r", JSONArray().put(normalized))
-        val events = query(readRelays, listOf(filterOpened, filterNormalized))
+        val filters = listOf(opened, normalized).distinct().map { tagged ->
+            JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+                .put("#r", JSONArray().put(tagged))
+                .put("limit", 200)
+                .also { filter ->
+                    if (!pubkeyHex.isNullOrBlank()) {
+                        filter.put("authors", JSONArray().put(pubkeyHex))
+                    }
+                }
+        }
         val articleNorm = ArticleUrl.normalize(url)
-        return events.filter { event ->
+        return query(readRelays, filters).filter { event ->
             event.kind == Nip01Event.KIND_HIGHLIGHT &&
-                event.verify() &&
-                event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                event.content.isNotBlank() &&
+                (pubkeyHex.isNullOrBlank() || event.pubkey.equals(pubkeyHex, ignoreCase = true)) &&
                 event.tags.any { tag ->
                     tag.size >= 2 &&
                         tag[0] == "r" &&

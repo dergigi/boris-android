@@ -5,22 +5,32 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Highlight
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalTextToolbar
@@ -71,8 +82,11 @@ import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.markdownPadding
+import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.SourceSerif
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -86,6 +100,7 @@ fun ReaderScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gallery by viewModel.gallery.collectAsStateWithLifecycle()
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
+    val highlightCount by viewModel.highlightCount.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -103,6 +118,7 @@ fun ReaderScreen(
         state = state,
         gallery = gallery,
         highlights = highlights,
+        highlightCount = highlightCount,
         loggedIn = loggedIn,
         onBack = onBack,
         onRetry = viewModel::load,
@@ -122,6 +138,7 @@ fun ReaderScreenContent(
     state: ReaderUiState,
     gallery: ImageGalleryState?,
     highlights: List<PaintedHighlight>,
+    highlightCount: Int,
     loggedIn: Boolean,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -233,6 +250,7 @@ fun ReaderScreenContent(
                 ArticleBody(
                     content = state.content,
                     highlights = highlights,
+                    highlightCount = highlightCount,
                     loggedIn = loggedIn,
                     onOpenArticle = onOpenArticle,
                     onOpenGallery = onOpenGallery,
@@ -256,6 +274,7 @@ fun ReaderScreenContent(
 private fun ArticleBody(
     content: ReadableContent,
     highlights: List<PaintedHighlight>,
+    highlightCount: Int,
     loggedIn: Boolean,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
@@ -265,6 +284,9 @@ private fun ArticleBody(
     val colors = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
     val readingTime = readingTimeLabel(content.body)
+    val domain = ArticleUrl.host(content.url)
+    val published = content.publishedAt?.let { PublishedTime.label(it) }
+    val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
     val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler) {
         object : UriHandler {
@@ -335,14 +357,12 @@ private fun ArticleBody(
                             .drawHighlightMarks(titleLayout, content.title, quotes),
                     )
                 }
-                if (readingTime != null) {
-                    Text(
-                        text = readingTime,
-                        style = typography.bodySmall,
-                        color = colors.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 24.dp),
-                    )
-                }
+                ArticleMetaRow(
+                    domain = domain,
+                    readingTime = readingTime,
+                    highlightsLabel = highlightsLabel,
+                    published = published,
+                )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
                     Markdown(
                         content = content.body,
@@ -417,6 +437,86 @@ internal fun readingTimeLabel(text: String): String? {
     if (words == 0) return null
     val minutes = max(1, (words / 200.0).roundToInt())
     return if (minutes == 1) "1 min read" else "$minutes min read"
+}
+
+internal fun highlightCountLabel(count: Int): String? {
+    if (count <= 0) return null
+    return if (count == 1) "1 highlight" else "$count highlights"
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ArticleMetaRow(
+    domain: String?,
+    readingTime: String?,
+    highlightsLabel: String?,
+    published: String?,
+) {
+    if (domain == null && readingTime == null && highlightsLabel == null && published == null) return
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (domain != null) {
+            MetaChip(text = domain, icon = Icons.Outlined.Language)
+        }
+        if (readingTime != null) {
+            MetaChip(text = readingTime, icon = Icons.Outlined.Schedule)
+        }
+        if (highlightsLabel != null) {
+            MetaChip(
+                text = highlightsLabel,
+                icon = Icons.Outlined.Highlight,
+                highlight = true,
+            )
+        }
+        if (published != null) {
+            MetaChip(text = published, icon = Icons.Outlined.CalendarMonth)
+        }
+    }
+}
+
+@Composable
+private fun MetaChip(
+    text: String,
+    icon: ImageVector,
+    highlight: Boolean = false,
+) {
+    val border = if (highlight) {
+        HighlightMine.copy(alpha = 0.55f)
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+    val fg = if (highlight) {
+        MaterialTheme.colorScheme.onBackground
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val iconTint = if (highlight) HighlightMine else fg
+    Row(
+        modifier = Modifier
+            .border(1.dp, border, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+            color = fg,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 private class ClickableCoilImageTransformer(

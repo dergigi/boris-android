@@ -22,6 +22,20 @@ class ReaderRepositoryParseTest {
         assertEquals("Hello World", content.title)
         assertEquals("# Hello\n\nBody text.", content.markdown)
         assertNull(content.html)
+        assertNull(content.publishedAt)
+    }
+
+    @Test
+    fun parsesPublishedTimeFromJinaHeader() {
+        val raw = """
+            Title: Hello World
+            URL Source: https://example.com/hello
+            Published Time: 2024-01-15T10:00:00Z
+            Markdown Content:
+            # Hello
+        """.trimIndent()
+        val content = repository.parse("https://example.com/hello", raw)
+        assertEquals(1_705_312_800L, content.publishedAt)
     }
 
     @Test

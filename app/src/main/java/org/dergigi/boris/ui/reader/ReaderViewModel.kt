@@ -25,6 +25,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.QuoteMatch
+import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
@@ -52,6 +53,9 @@ class ReaderViewModel(
 
     private val _highlights = MutableStateFlow<List<PaintedHighlight>>(emptyList())
     val highlights: StateFlow<List<PaintedHighlight>> = _highlights.asStateFlow()
+
+    private val _highlightCount = MutableStateFlow(0)
+    val highlightCount: StateFlow<Int> = _highlightCount.asStateFlow()
 
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
@@ -93,10 +97,13 @@ class ReaderViewModel(
         if (url.isBlank()) {
             _state.value = ReaderUiState.Error("No URL to read.", url)
             _highlights.value = emptyList()
+            _highlightCount.value = 0
             return
         }
         viewModelScope.launch {
             _state.value = ReaderUiState.Loading
+            _highlights.value = emptyList()
+            _highlightCount.value = 0
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url) }
                 _state.value = ReaderUiState.Ready(content)
@@ -104,6 +111,7 @@ class ReaderViewModel(
             } catch (e: Exception) {
                 highlightJob?.cancel()
                 _highlights.value = emptyList()
+                _highlightCount.value = 0
                 _state.value = ReaderUiState.Error(
                     e.message ?: "Failed to load this article.",
                     url,
@@ -185,6 +193,7 @@ class ReaderViewModel(
         val painted = PaintedHighlight(event.id, event.content)
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
+            _highlightCount.value = _highlightCount.value + 1
         }
         viewModelScope.launch(Dispatchers.IO) {
             val published = try {
@@ -195,6 +204,7 @@ class ReaderViewModel(
             }
             if (!published) {
                 _highlights.value = _highlights.value.filterNot { it.id == event.id }
+                _highlightCount.value = (_highlightCount.value - 1).coerceAtLeast(0)
                 _message.value = app.getString(R.string.highlight_not_published)
             }
         }
@@ -234,17 +244,22 @@ class ReaderViewModel(
         highlightJob?.cancel()
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
-        if (session == null) {
-            _highlights.value = emptyList()
-            return
-        }
         highlightJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                val relays = RelayQuery.fetchRelayList(session.pubkeyHex)
-                val events = RelayQuery.fetchHighlights(relays.read, session.pubkeyHex, content.url)
-                val painted = events.mapNotNull { event ->
-                    if (!canPaint(content, event.content)) return@mapNotNull null
-                    PaintedHighlight(event.id, event.content)
+                val relays = buildList {
+                    addAll(RelayList.FALLBACK)
+                    if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
+                }.distinct()
+                val events = RelayQuery.fetchHighlights(relays, content.url)
+                _highlightCount.value = events.size
+                val painted = if (session == null) {
+                    emptyList()
+                } else {
+                    events.mapNotNull { event ->
+                        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return@mapNotNull null
+                        if (!canPaint(content, event.content)) return@mapNotNull null
+                        PaintedHighlight(event.id, event.content)
+                    }
                 }
                 _highlights.value = painted
             } catch (_: Exception) {

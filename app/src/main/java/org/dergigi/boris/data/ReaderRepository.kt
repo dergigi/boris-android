@@ -34,6 +34,7 @@ class ReaderRepository(
                 url = targetUrl,
                 title = title,
                 markdown = markdown,
+                publishedAt = PublishedTime.fromJinaHeader(text),
             )
         } else {
             val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
@@ -41,6 +42,7 @@ class ReaderRepository(
                 url = targetUrl,
                 title = title,
                 html = text,
+                publishedAt = PublishedTime.fromHtml(text),
             )
         }
     }
