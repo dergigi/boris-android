@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-08-15
+
 ### Changed
 
 - Link color, font size, highlight color, and scroll amount pickers sit on the same line as their labels again
@@ -373,7 +375,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.27.1...HEAD
+[0.27.1]: https://github.com/dergigi/boris-android/releases/tag/v0.27.1
 [0.27.0]: https://github.com/dergigi/boris-android/releases/tag/v0.27.0
 [0.26.1]: https://github.com/dergigi/boris-android/releases/tag/v0.26.1
 [0.26.0]: https://github.com/dergigi/boris-android/releases/tag/v0.26.0
