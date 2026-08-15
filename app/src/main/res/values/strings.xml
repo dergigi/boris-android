@@ -111,6 +111,7 @@
     <string name="settings_media_display">Media Display</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
     <string name="settings_open_links_in_reader">Open links in Reader</string>
+    <string name="settings_feed_scope">Default Feed Scope</string>
     <string name="settings_volume_buttons">Volume buttons</string>
     <string name="settings_volume_scroll">Scroll the article with volume buttons</string>
     <string name="settings_volume_scroll_amount">Scroll amount</string>

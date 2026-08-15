@@ -37,6 +37,20 @@ class FeedScopeTest {
     }
 
     @Test
+    fun withExploreScopeWritesTheSameKeysAsTheWebapp() {
+        val next = UserSettings.defaults().withExploreScope(
+            FeedScope(nostrverse = true, friends = false, mine = true),
+        )
+        assertTrue(next.defaultExploreScopeNostrverse)
+        assertFalse(next.defaultExploreScopeFriends)
+        assertTrue(next.defaultExploreScopeMine)
+        assertEquals(
+            FeedScope(nostrverse = true, friends = false, mine = true),
+            FeedScope.fromSettings(next),
+        )
+    }
+
+    @Test
     fun classifyPrefersMineOverFriends() {
         val me = "aa".repeat(32)
         val friend = "bb".repeat(32)

@@ -117,6 +117,10 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                FeedSettingsSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
                 VolumeButtonsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },

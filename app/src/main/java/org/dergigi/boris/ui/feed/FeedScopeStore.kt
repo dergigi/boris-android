@@ -28,4 +28,8 @@ object FeedScopeStore {
             .putBoolean(KEY_MINE, scope.mine)
             .apply()
     }
+
+    fun clear(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+    }
 }

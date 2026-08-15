@@ -81,13 +81,31 @@ class FeedViewModel(
     private var failed = false
     private var loadJob: Job? = null
 
+    init {
+        viewModelScope.launch {
+            var last = FeedScope.fromSettings(SettingsSync.settings.value)
+            SettingsSync.settings.collect { settings ->
+                val next = FeedScope.fromSettings(settings)
+                if (next == last) return@collect
+                last = next
+                if (_loggedIn.value) {
+                    _scope.value = next
+                    publish()
+                }
+            }
+        }
+    }
+
     fun refresh() {
         val keepItems = highlights.isNotEmpty() || writings.isNotEmpty()
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val session = SessionStore.load(getApplication())
-            _loggedIn.value = session != null
-            _scope.value = resolveScope(session != null)
+            val loggedIn = session != null
+            if (loggedIn != _loggedIn.value) {
+                _loggedIn.value = loggedIn
+                _scope.value = resolveScope(loggedIn)
+            }
             var showing = keepItems
             if (!keepItems) {
                 val cached = withContext(Dispatchers.IO) { loadCatalogFromCache(session?.pubkeyHex) }
@@ -130,9 +148,6 @@ class FeedViewModel(
         val next = _scope.value.toggle(level)
         if (next == _scope.value) return
         _scope.value = next
-        if (_loggedIn.value) {
-            FeedScopeStore.save(getApplication(), next)
-        }
         publish()
     }
 
@@ -157,8 +172,7 @@ class FeedViewModel(
 
     private fun resolveScope(loggedIn: Boolean): FeedScope {
         if (!loggedIn) return FeedScope.LOGGED_OUT
-        return FeedScopeStore.load(getApplication())
-            ?: FeedScope.fromSettings(SettingsSync.settings.value)
+        return FeedScope.fromSettings(SettingsSync.settings.value)
     }
 
     private fun initialScope(): FeedScope {

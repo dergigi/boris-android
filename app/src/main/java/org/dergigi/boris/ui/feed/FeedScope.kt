@@ -39,6 +39,11 @@ data class FeedScope(
     }
 }
 
+fun UserSettings.withExploreScope(scope: FeedScope): UserSettings =
+    withBoolean("defaultExploreScopeNostrverse", scope.nostrverse)
+        .withBoolean("defaultExploreScopeFriends", scope.friends)
+        .withBoolean("defaultExploreScopeMine", scope.mine)
+
 fun classifyFeedLevel(
     authorHex: String,
     sessionHex: String?,
