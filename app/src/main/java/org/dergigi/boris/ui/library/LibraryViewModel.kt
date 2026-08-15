@@ -31,6 +31,7 @@ import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.BunkerDecryptResult
+import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
@@ -90,24 +91,22 @@ class LibraryViewModel(
         val keep = _state.value is LibraryUiState.Ready
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            if (keep) {
+            var showingContent = keep
+            if (!keep) {
+                val cached = withContext(Dispatchers.IO) { loadCached(session) }
+                if (cached != null) {
+                    apply(cached)
+                    showingContent = true
+                }
+            }
+            if (showingContent) {
                 _refreshing.value = true
             } else {
                 _state.value = LibraryUiState.Loading
             }
             try {
-                val previousListId = listEvent?.id
-                val previousHidden = hiddenTags
                 val loaded = withContext(Dispatchers.IO) { load(session) }
-                listEvent = loaded.list
-                webEvents = loaded.web
-                lookEvents = loaded.look
-                archiveEvents = loaded.archive
-                articles = loaded.articles
-                notes = loaded.notes
-                previews = loaded.previews
-                hiddenTags = if (loaded.list?.id == previousListId) previousHidden else null
-                publish()
+                apply(loaded)
                 val ciphertext = loaded.list?.content.orEmpty()
                 if (hiddenTags == null &&
                     session is Session.Bunker &&
@@ -187,6 +186,20 @@ class LibraryViewModel(
         }
     }
 
+    private fun apply(loaded: Loaded) {
+        val previousListId = listEvent?.id
+        val previousHidden = hiddenTags
+        listEvent = loaded.list
+        webEvents = loaded.web
+        lookEvents = loaded.look
+        archiveEvents = loaded.archive
+        articles = loaded.articles
+        notes = loaded.notes
+        previews = loaded.previews
+        hiddenTags = if (loaded.list?.id == previousListId) previousHidden else null
+        publish()
+    }
+
     private fun publish() {
         _state.value = LibraryUiState.Ready(
             BookmarkCatalog.build(
@@ -229,6 +242,35 @@ class LibraryViewModel(
         } finally {
             privkey.fill(0)
         }
+    }
+
+    /** Builds shelves purely from the local event cache; no sockets are opened. */
+    private fun loadCached(session: Session): Loaded? {
+        val pubkey = session.pubkeyHex
+        val list = EventCache.latest(Nip01Event.KIND_BOOKMARKS, pubkey)
+        val web = RelayQuery.cachedWebBookmarks(pubkey)
+        val look = RelayQuery.cachedLookmarks(pubkey)
+        val archive = RelayQuery.cachedArchiveReactions(pubkey)
+        if (list == null && web.isEmpty() && look.isEmpty() && archive.isEmpty()) return null
+        val refs = buildList {
+            if (list != null) addAll(Nip51.publicRefs(list))
+            addAll(look.mapNotNull(Lookmarks::targetRef))
+            addAll(archive.mapNotNull(Archive::targetRef))
+        }
+        val cachedArticles = refs.filter { it.kind == BookmarkRefKind.Article }
+            .distinctBy { it.value }
+            .mapNotNull { ref ->
+                val article = NostrArticle.fromCoordinate(ref.value) ?: return@mapNotNull null
+                EventCache.latest(article.pointer.kind, article.pointer.pubkey, article.pointer.identifier)
+                    ?.let { ref.value to it }
+            }
+            .toMap()
+        val cachedNotes = refs.filter { it.kind == BookmarkRefKind.Note }
+            .map { it.value.lowercase() }
+            .distinct()
+            .mapNotNull { id -> EventCache.event(id)?.let { id to it } }
+            .toMap()
+        return Loaded(list, web, look, archive, cachedArticles, cachedNotes, emptyMap())
     }
 
     private suspend fun load(session: Session): Loaded {
