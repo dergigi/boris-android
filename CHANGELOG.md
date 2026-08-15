@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-08-15
+
 ### Fixed
 
 - Highlights, writings, and contact lists now load from the event cache first, so previously seen marks show immediately
@@ -326,7 +328,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.23.1...HEAD
+[0.23.1]: https://github.com/dergigi/boris-android/releases/tag/v0.23.1
 [0.23.0]: https://github.com/dergigi/boris-android/releases/tag/v0.23.0
 [0.22.0]: https://github.com/dergigi/boris-android/releases/tag/v0.22.0
 [0.21.0]: https://github.com/dergigi/boris-android/releases/tag/v0.21.0
