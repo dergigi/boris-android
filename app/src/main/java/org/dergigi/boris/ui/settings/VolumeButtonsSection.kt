@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,23 +47,15 @@ fun VolumeButtonsSection(
             onCheckedChange = { onUpdate(settings.withBoolean("volumeButtonScroll", it)) },
         )
         if (settings.volumeButtonScroll) {
-            Text(
-                text = stringResource(R.string.settings_volume_scroll_amount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                VolumeKeys.AMOUNTS.forEach { amount ->
-                    AmountButton(
-                        amount = amount,
-                        selected = settings.volumeButtonScrollPercent == amount,
-                        onClick = { onUpdate(settings.withInt("volumeButtonScrollPercent", amount)) },
-                        modifier = Modifier.weight(1f),
-                    )
+            SettingRow(stringResource(R.string.settings_volume_scroll_amount)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    VolumeKeys.AMOUNTS.forEach { amount ->
+                        AmountButton(
+                            amount = amount,
+                            selected = settings.volumeButtonScrollPercent == amount,
+                            onClick = { onUpdate(settings.withInt("volumeButtonScrollPercent", amount)) },
+                        )
+                    }
                 }
             }
         }
@@ -74,7 +67,6 @@ private fun AmountButton(
     amount: Int,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(8.dp)
     val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -85,17 +77,19 @@ private fun AmountButton(
     }
     val border = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline
     Box(
-        modifier = modifier
-            .height(36.dp)
+        modifier = Modifier
+            .height(32.dp)
+            .widthIn(min = 36.dp)
             .clip(shape)
             .background(bg)
             .border(1.dp, border, shape)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "$amount%",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
             color = fg,
         )
     }
