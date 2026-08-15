@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Library has an info icon that explains Private, Public, and Web
+
 ### Changed
 
 - Settings sits to the left of sign out on You
