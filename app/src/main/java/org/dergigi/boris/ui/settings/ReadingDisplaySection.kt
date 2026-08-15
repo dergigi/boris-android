@@ -217,6 +217,11 @@ fun ReadingDisplaySection(
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
+        ReadingPreview(
+            settings = settings,
+            darkTheme = darkTheme,
+            modifier = Modifier.padding(top = 12.dp),
+        )
     }
 }
 

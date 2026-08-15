@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UserSettings
@@ -57,31 +58,10 @@ fun Modifier.drawHighlightMarks(
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
-    val padXPx = 5.dp.toPx()
-    val padYPx = 3.dp.toPx()
-    val corner = CornerRadius(3.dp.toPx())
-    val stroke = 2.dp.toPx()
     fun paint(items: List<PaintedHighlight>, fill: Color) {
         items.forEach { item ->
             QuoteMatch.occurrences(displayed, item.quote).forEach { range ->
-                HighlightMarks.highlightRects(result, range.first, range.last + 1).forEach { box ->
-                    if (underline) {
-                        drawLine(
-                            color = fill.copy(alpha = 0.85f),
-                            start = Offset(box.left, box.bottom - stroke / 2),
-                            end = Offset(box.right, box.bottom - stroke / 2),
-                            strokeWidth = stroke,
-                            cap = StrokeCap.Round,
-                        )
-                    } else {
-                        drawRoundRect(
-                            color = fill.copy(alpha = HighlightMarks.HighlightMarkAlpha),
-                            topLeft = Offset(box.left - padXPx, box.top - padYPx),
-                            size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
-                            cornerRadius = corner,
-                        )
-                    }
-                }
+                paintHighlight(result, range.first, range.last + 1, fill, underline)
             }
         }
     }
@@ -89,4 +69,35 @@ fun Modifier.drawHighlightMarks(
     val mine = highlights.filter { it.mine }
     paint(others, otherColor)
     paint(mine, mineColor)
+}
+
+fun DrawScope.paintHighlight(
+    layout: TextLayoutResult,
+    start: Int,
+    end: Int,
+    fill: Color,
+    underline: Boolean,
+) {
+    val padXPx = 5.dp.toPx()
+    val padYPx = 3.dp.toPx()
+    val corner = CornerRadius(3.dp.toPx())
+    val stroke = 2.dp.toPx()
+    HighlightMarks.highlightRects(layout, start, end).forEach { box ->
+        if (underline) {
+            drawLine(
+                color = fill.copy(alpha = 0.85f),
+                start = Offset(box.left, box.bottom - stroke / 2),
+                end = Offset(box.right, box.bottom - stroke / 2),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+        } else {
+            drawRoundRect(
+                color = fill.copy(alpha = HighlightMarks.HighlightMarkAlpha),
+                topLeft = Offset(box.left - padXPx, box.top - padYPx),
+                size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
+                cornerRadius = corner,
+            )
+        }
+    }
 }

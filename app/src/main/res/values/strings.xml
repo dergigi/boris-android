@@ -57,6 +57,7 @@
     <string name="settings_color_friends">Friends Highlights</string>
     <string name="settings_color_nostrverse">Nostrverse Highlights</string>
     <string name="settings_show_highlights">Show highlights</string>
+    <string name="settings_preview">Preview</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_light">Light theme</string>
