@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Settings sits to the left of sign out on You
+
 ## [0.14.0] - 2026-08-15
 
 ### Added

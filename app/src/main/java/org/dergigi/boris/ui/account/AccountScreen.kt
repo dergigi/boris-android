@@ -110,16 +110,16 @@ fun AccountScreen(
                 title = {},
                 actions = {
                     if (loggedIn) {
-                        IconButton(onClick = { confirmSignOut = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Logout,
-                                contentDescription = stringResource(R.string.auth_sign_out),
-                            )
-                        }
                         IconButton(onClick = onOpenSettings) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = stringResource(R.string.settings_title),
+                            )
+                        }
+                        IconButton(onClick = { confirmSignOut = true }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = stringResource(R.string.auth_sign_out),
                             )
                         }
                     }
