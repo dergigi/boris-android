@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.30.2] - 2026-08-16
+
+### Changed
+
+- Full-width images lives in its own Media settings section
+- The airplane-mode note now says Citrine is a great option for Android, and Citrine itself is the Zapstore link
+
+### Fixed
+
+- A missing space before the first "here" in the relays learn-more sentence
+
 ## [0.30.1] - 2026-08-16
 
 ### Changed
@@ -421,7 +432,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.30.1...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.30.2...HEAD
+[0.30.2]: https://github.com/dergigi/boris-android/releases/tag/v0.30.2
 [0.30.1]: https://github.com/dergigi/boris-android/releases/tag/v0.30.1
 [0.30.0]: https://github.com/dergigi/boris-android/releases/tag/v0.30.0
 [0.29.0]: https://github.com/dergigi/boris-android/releases/tag/v0.29.0
