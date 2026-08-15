@@ -41,6 +41,21 @@ object RemoteSignerBridge {
         }
     }
 
+    fun buildEncryptIntent(
+        plaintext: String,
+        signerPackage: String,
+        currentUserHex: String,
+        peerPubkeyHex: String,
+    ): Intent {
+        return Intent(Intent.ACTION_VIEW, Uri.parse("nostrsigner:${Uri.encode(plaintext)}")).apply {
+            `package` = signerPackage
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("type", "nip44_encrypt")
+            putExtra("current_user", currentUserHex)
+            putExtra("pubkey", peerPubkeyHex)
+        }
+    }
+
     fun buildDecryptIntent(
         ciphertext: String,
         signerPackage: String,

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader can save the current article to the library with a plus button
+
 ### Changed
 
 - Reader share, copy, and open sit behind a 3-dot menu

@@ -69,6 +69,24 @@ data class Nip01Event(
         const val KIND_APP_DATA = 30078
         const val KIND_RELAY_DISCOVERY = 30166
 
+        fun unsignedJson(
+            kind: Int,
+            content: String,
+            tags: List<List<String>>,
+            pubkeyHex: String? = null,
+            createdAt: Long = System.currentTimeMillis() / 1000,
+        ): String {
+            val obj = JSONObject()
+                .put("kind", kind)
+                .put("content", content)
+                .put("tags", tagsToJson(tags))
+                .put("created_at", createdAt)
+            if (!pubkeyHex.isNullOrBlank()) {
+                obj.put("pubkey", pubkeyHex)
+            }
+            return obj.toString()
+        }
+
         fun complete(
             pubkey: String,
             createdAt: Long,

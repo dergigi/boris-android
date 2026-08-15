@@ -14,15 +14,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.BunkerClient
+import org.dergigi.boris.nostr.BunkerDecryptResult
+import org.dergigi.boris.nostr.BunkerEncryptResult
 import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.Nip84
+import org.dergigi.boris.nostr.NipB0
 import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
@@ -60,11 +65,21 @@ class ReaderViewModel(
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
 
+    private val _canSave = MutableStateFlow(false)
+    val canSave: StateFlow<Boolean> = _canSave.asStateFlow()
+
+    private val _signIntent = MutableStateFlow<Intent?>(null)
+    val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
     private var highlightJob: Job? = null
+    private var membershipJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
+    private var pendingLibrary: PendingLibrary? = null
+    private var inLibrary = false
+    private var saving = false
 
     init {
         load()
@@ -93,29 +108,40 @@ class ReaderViewModel(
         _message.value = null
     }
 
+    fun consumeSignIntent() {
+        _signIntent.value = null
+    }
+
     fun load() {
         if (url.isBlank()) {
             _state.value = ReaderUiState.Error("No URL to read.", url)
             _highlights.value = emptyList()
             _highlightCount.value = 0
+            inLibrary = false
+            publishSaveState()
             return
         }
         viewModelScope.launch {
             _state.value = ReaderUiState.Loading
             _highlights.value = emptyList()
             _highlightCount.value = 0
+            inLibrary = false
+            publishSaveState()
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url) }
                 _state.value = ReaderUiState.Ready(content)
                 startHighlightFetch(content)
+                startMembershipCheck(content)
             } catch (e: Exception) {
                 highlightJob?.cancel()
+                membershipJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
                 _state.value = ReaderUiState.Error(
                     e.message ?: "Failed to load this article.",
                     url,
                 )
+                publishSaveState()
             }
         }
     }
@@ -182,21 +208,57 @@ class ReaderViewModel(
         }
     }
 
+    fun saveToLibrary(): Intent? {
+        val app = getApplication<Application>()
+        if (saving || inLibrary) return null
+        val session = SessionStore.load(app) ?: return null
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
+        saving = true
+        publishSaveState()
+        return if (LibrarySave.isWeb(content)) {
+            requestWebBookmark(session, content)
+        } else {
+            requestPrivateBookmark(session, content)
+        }
+    }
+
     fun onSignerResult(resultCode: Int, data: Intent?) {
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return
-        val pending = pendingUnsigned
-        pendingUnsigned = null
-        when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
-            is SignerResult.Signed -> onSignedEvent(result.event)
-            SignerResult.Rejected -> {
-                _message.value = app.getString(R.string.highlight_rejected)
+        when (val step = pendingLibrary) {
+            is PendingLibrary.Decrypt -> {
+                pendingLibrary = null
+                val plaintext = SignerResults.parsePlaintext(resultCode, data)
+                if (plaintext == null) {
+                    failSave(app.getString(R.string.reader_save_cancelled))
+                    return
+                }
+                continuePrivateAfterDecrypt(session, step.list, step.newTag, plaintext)
             }
-            SignerResult.Cancelled -> {
-                _message.value = app.getString(R.string.highlight_cancelled)
+            is PendingLibrary.Encrypt -> {
+                pendingLibrary = null
+                val ciphertext = SignerResults.parsePlaintext(resultCode, data)
+                if (ciphertext == null) {
+                    failSave(app.getString(R.string.reader_save_cancelled))
+                    return
+                }
+                requestPrivateSign(session, step.list, ciphertext)
             }
-            is SignerResult.Success -> {
-                _message.value = app.getString(R.string.highlight_cancelled)
+            null -> {
+                val pending = pendingUnsigned
+                pendingUnsigned = null
+                val librarySave = pending != null && pending.kind != Nip01Event.KIND_HIGHLIGHT
+                when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
+                    is SignerResult.Signed -> onSignedEvent(result.event)
+                    SignerResult.Rejected -> {
+                        if (librarySave) failSave(app.getString(R.string.reader_save_rejected))
+                        else _message.value = app.getString(R.string.highlight_rejected)
+                    }
+                    SignerResult.Cancelled, is SignerResult.Success -> {
+                        if (librarySave) failSave(app.getString(R.string.reader_save_cancelled))
+                        else _message.value = app.getString(R.string.highlight_cancelled)
+                    }
+                }
             }
         }
     }
@@ -204,34 +266,338 @@ class ReaderViewModel(
     fun onSignedEvent(event: Nip01Event) {
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return
-        if (event.kind != Nip01Event.KIND_HIGHLIGHT) return
         if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
         if (!event.verify()) return
+        when (event.kind) {
+            Nip01Event.KIND_HIGHLIGHT -> onSignedHighlight(session, event)
+            Nip01Event.KIND_WEB_BOOKMARK, Nip01Event.KIND_BOOKMARKS -> onSignedLibrary(session, event)
+        }
+    }
+
+    private fun onSignedHighlight(session: Session, event: Nip01Event) {
         val painted = PaintedHighlight(event.id, event.content, mine = true)
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
             _highlightCount.value = _highlightCount.value + 1
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val published = try {
-                val relays = RelayQuery.fetchRelayList(session.pubkeyHex)
-                RelayQuery.publish(relays.write, event)
-            } catch (_: Exception) {
-                false
-            }
+            val published = publish(session, event)
             if (!published) {
                 _highlights.value = _highlights.value.filterNot { it.id == event.id }
                 _highlightCount.value = (_highlightCount.value - 1).coerceAtLeast(0)
-                _message.value = app.getString(R.string.highlight_not_published)
+                _message.value = getApplication<Application>().getString(R.string.highlight_not_published)
             }
         }
     }
 
-    private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String) {
+    private fun onSignedLibrary(session: Session, event: Nip01Event) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val published = publish(session, event)
+            if (published) {
+                inLibrary = true
+                saving = false
+                _message.value = getApplication<Application>().getString(R.string.reader_saved)
+            } else {
+                failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+            }
+            publishSaveState()
+        }
+    }
+
+    private fun requestWebBookmark(session: Session, content: ReadableContent): Intent? {
+        val createdAt = System.currentTimeMillis() / 1000
+        val tags = NipB0.tags(content.url, content.title, createdAt)
+        if (tags.isEmpty()) {
+            failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                pendingUnsigned = PendingUnsignedEvent(
+                    pubkey = session.pubkeyHex,
+                    createdAt = createdAt,
+                    kind = Nip01Event.KIND_WEB_BOOKMARK,
+                    tags = tags,
+                    content = "",
+                )
+                NipB0.unsignedJson(content.url, content.title, session.pubkeyHex, createdAt)?.let { unsigned ->
+                    RemoteSignerBridge.buildSignEventIntent(unsigned, session.signerPackage, session.pubkeyHex)
+                } ?: run {
+                    failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+                    null
+                }
+            }
+            is Session.Bunker -> {
+                pendingUnsigned = null
+                val unsigned = NipB0.unsignedJson(content.url, content.title, pubkeyHex = null, createdAt)
+                if (unsigned == null) {
+                    failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+                    return null
+                }
+                viewModelScope.launch { signWithBunker(session, unsigned, library = true) }
+                null
+            }
+        }
+    }
+
+    private fun requestPrivateBookmark(session: Session, content: ReadableContent): Intent? {
+        val newTag = LibrarySave.hiddenTag(content)
+        if (newTag == null) {
+            failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                viewModelScope.launch {
+                    val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+                    beginPrivateAmber(session, list, newTag)
+                }
+                null
+            }
+            is Session.Bunker -> {
+                viewModelScope.launch { savePrivateWithBunker(session, newTag) }
+                null
+            }
+        }
+    }
+
+    private fun beginPrivateAmber(
+        session: Session.Amber,
+        list: Nip01Event?,
+        newTag: List<String>,
+    ) {
+        val ciphertext = list?.content.orEmpty()
+        if (list != null && Nip51.looksEncrypted(ciphertext)) {
+            pendingLibrary = PendingLibrary.Decrypt(list, newTag)
+            _signIntent.value = RemoteSignerBridge.buildDecryptIntent(
+                ciphertext = ciphertext,
+                signerPackage = session.signerPackage,
+                currentUserHex = session.pubkeyHex,
+                peerPubkeyHex = session.pubkeyHex,
+                nip44 = !Nip51.isNip04(ciphertext),
+            )
+            return
+        }
+        requestPrivateEncrypt(session, list, listOf(newTag))
+    }
+
+    private fun continuePrivateAfterDecrypt(
+        session: Session,
+        list: Nip01Event,
+        newTag: List<String>,
+        plaintext: String,
+    ) {
+        val tags = Nip51.parseTagArray(plaintext)
+        if (tags == null) {
+            failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+            return
+        }
+        if (Nip51.containsTag(tags, newTag)) {
+            inLibrary = true
+            saving = false
+            _message.value = getApplication<Application>().getString(R.string.reader_already_saved)
+            publishSaveState()
+            return
+        }
+        when (session) {
+            is Session.Amber -> requestPrivateEncrypt(session, list, tags + listOf(newTag))
+            is Session.Bunker -> Unit
+        }
+    }
+
+    private fun requestPrivateEncrypt(
+        session: Session.Amber,
+        list: Nip01Event?,
+        hiddenTags: List<List<String>>,
+    ) {
+        pendingLibrary = PendingLibrary.Encrypt(list ?: emptyBookmarkList(session.pubkeyHex), hiddenTags)
+        _signIntent.value = RemoteSignerBridge.buildEncryptIntent(
+            plaintext = Nip51.encodeTagArray(hiddenTags),
+            signerPackage = session.signerPackage,
+            currentUserHex = session.pubkeyHex,
+            peerPubkeyHex = session.pubkeyHex,
+        )
+    }
+
+    private fun requestPrivateSign(
+        session: Session,
+        list: Nip01Event,
+        ciphertext: String,
+    ) {
+        val createdAt = System.currentTimeMillis() / 1000
+        val tags = list.tags
+        when (session) {
+            is Session.Amber -> {
+                pendingUnsigned = PendingUnsignedEvent(
+                    pubkey = session.pubkeyHex,
+                    createdAt = createdAt,
+                    kind = Nip01Event.KIND_BOOKMARKS,
+                    tags = tags,
+                    content = ciphertext,
+                )
+                _signIntent.value = RemoteSignerBridge.buildSignEventIntent(
+                    Nip51.unsignedJson(tags, ciphertext, session.pubkeyHex, createdAt),
+                    session.signerPackage,
+                    session.pubkeyHex,
+                )
+            }
+            is Session.Bunker -> {
+                viewModelScope.launch {
+                    signWithBunker(
+                        session,
+                        Nip51.unsignedJson(tags, ciphertext, pubkeyHex = null, createdAt),
+                        library = true,
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun savePrivateWithBunker(session: Session.Bunker, newTag: List<String>) {
         val app = getApplication<Application>()
         val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
         if (privkey == null) {
-            _message.value = app.getString(R.string.highlight_cancelled)
+            failSave(app.getString(R.string.reader_save_cancelled))
+            return
+        }
+        try {
+            val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+            val hidden = if (list != null && Nip51.looksEncrypted(list.content)) {
+                val decrypted = withContext(Dispatchers.IO) {
+                    BunkerClient(onAuthUrl = ::openAuthUrl).decrypt(
+                        session.relays,
+                        session.remoteSignerPubkey,
+                        privkey,
+                        session.pubkeyHex,
+                        list.content,
+                        nip44 = !Nip51.isNip04(list.content),
+                    )
+                }
+                when (decrypted) {
+                    is BunkerDecryptResult.Plaintext -> Nip51.parseTagArray(decrypted.value)
+                    else -> null
+                }
+            } else {
+                emptyList()
+            }
+            if (hidden == null) {
+                failSave(app.getString(R.string.reader_save_failed))
+                return
+            }
+            if (Nip51.containsTag(hidden, newTag)) {
+                inLibrary = true
+                saving = false
+                _message.value = app.getString(R.string.reader_already_saved)
+                publishSaveState()
+                return
+            }
+            val encrypted = withContext(Dispatchers.IO) {
+                BunkerClient(onAuthUrl = ::openAuthUrl).encrypt(
+                    session.relays,
+                    session.remoteSignerPubkey,
+                    privkey,
+                    session.pubkeyHex,
+                    Nip51.encodeTagArray(hidden + listOf(newTag)),
+                )
+            }
+            val ciphertext = when (encrypted) {
+                is BunkerEncryptResult.Ciphertext -> encrypted.value
+                else -> null
+            }
+            if (ciphertext == null) {
+                failSave(app.getString(R.string.reader_save_rejected))
+                return
+            }
+            val createdAt = System.currentTimeMillis() / 1000
+            val tags = list?.tags.orEmpty()
+            signWithBunker(
+                session,
+                Nip51.unsignedJson(tags, ciphertext, pubkeyHex = null, createdAt),
+                library = true,
+            )
+        } finally {
+            privkey.fill(0)
+        }
+    }
+
+    private fun startMembershipCheck(content: ReadableContent) {
+        membershipJob?.cancel()
+        val session = SessionStore.load(getApplication())
+        _loggedIn.value = session != null
+        if (session == null) {
+            inLibrary = false
+            publishSaveState()
+            return
+        }
+        membershipJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val relays = buildList {
+                    addAll(RelayList.FALLBACK)
+                    addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
+                }.distinct()
+                val list = RelayQuery.fetchBookmarkList(session.pubkeyHex, relays)
+                val web = RelayQuery.fetchWebBookmarks(session.pubkeyHex, relays)
+                inLibrary = LibrarySave.isSaved(content, list, web)
+            } catch (_: Exception) {
+                inLibrary = false
+            }
+            publishSaveState()
+        }
+    }
+
+    private suspend fun fetchBookmarkList(pubkeyHex: String): Nip01Event? {
+        val relays = buildList {
+            addAll(RelayList.FALLBACK)
+            addAll(RelayQuery.fetchRelayList(pubkeyHex).read)
+        }.distinct()
+        return RelayQuery.fetchBookmarkList(pubkeyHex, relays)
+    }
+
+    private fun emptyBookmarkList(pubkeyHex: String): Nip01Event =
+        Nip01Event(
+            id = "0".repeat(64),
+            pubkey = pubkeyHex,
+            createdAt = 0,
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = emptyList(),
+            content = "",
+            sig = "0".repeat(128),
+        )
+
+    private fun publish(session: Session, event: Nip01Event): Boolean {
+        return try {
+            val relays = RelayQuery.fetchRelayList(session.pubkeyHex)
+            RelayQuery.publish(relays.write, event)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun failSave(message: String) {
+        saving = false
+        pendingLibrary = null
+        pendingUnsigned = null
+        _message.value = message
+        publishSaveState()
+    }
+
+    private fun publishSaveState() {
+        _canSave.value = _loggedIn.value &&
+            !inLibrary &&
+            !saving &&
+            _state.value is ReaderUiState.Ready
+    }
+
+    private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String) {
+        signWithBunker(session, unsignedJson, library = false)
+    }
+
+    private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String, library: Boolean) {
+        val app = getApplication<Application>()
+        val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
+        if (privkey == null) {
+            if (library) failSave(app.getString(R.string.reader_save_cancelled))
+            else _message.value = app.getString(R.string.highlight_cancelled)
             return
         }
         try {
@@ -246,10 +612,12 @@ class ReaderViewModel(
             when (result) {
                 is BunkerSignResult.Signed -> onSignedEvent(result.event)
                 BunkerSignResult.Rejected -> {
-                    _message.value = app.getString(R.string.highlight_rejected)
+                    if (library) failSave(app.getString(R.string.reader_save_rejected))
+                    else _message.value = app.getString(R.string.highlight_rejected)
                 }
                 BunkerSignResult.RelayTimeout -> {
-                    _message.value = app.getString(R.string.highlight_cancelled)
+                    if (library) failSave(app.getString(R.string.reader_save_cancelled))
+                    else _message.value = app.getString(R.string.highlight_cancelled)
                 }
             }
         } finally {
@@ -261,6 +629,7 @@ class ReaderViewModel(
         highlightJob?.cancel()
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
+        publishSaveState()
         highlightJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 val relays = buildList {
@@ -311,4 +680,9 @@ sealed interface ReaderUiState {
     data object Loading : ReaderUiState
     data class Ready(val content: ReadableContent) : ReaderUiState
     data class Error(val message: String, val url: String) : ReaderUiState
+}
+
+private sealed class PendingLibrary {
+    data class Decrypt(val list: Nip01Event, val newTag: List<String>) : PendingLibrary()
+    data class Encrypt(val list: Nip01Event, val hiddenTags: List<List<String>>) : PendingLibrary()
 }

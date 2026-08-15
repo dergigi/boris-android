@@ -21,6 +21,12 @@ sealed class BunkerDecryptResult {
     data object Rejected : BunkerDecryptResult()
 }
 
+sealed class BunkerEncryptResult {
+    data class Ciphertext(val value: String) : BunkerEncryptResult()
+    data object RelayTimeout : BunkerEncryptResult()
+    data object Rejected : BunkerEncryptResult()
+}
+
 sealed class BunkerResult {
     data class Success(val userHex: String, val clientPrivkey: ByteArray) : BunkerResult() {
         override fun equals(other: Any?): Boolean {
@@ -199,6 +205,48 @@ class BunkerClient(
             return BunkerDecryptResult.Plaintext(plaintext)
         } catch (_: Exception) {
             return BunkerDecryptResult.Rejected
+        } finally {
+            sockets.forEach { it.close() }
+        }
+    }
+
+    fun encrypt(
+        relays: List<String>,
+        remoteSignerPubkey: String,
+        clientPrivkey: ByteArray,
+        peerPubkeyHex: String,
+        plaintext: String,
+    ): BunkerEncryptResult {
+        val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerEncryptResult.Rejected
+        val sockets = mutableListOf<RelaySocket>()
+        val inbox = LinkedBlockingQueue<Nip01Event>()
+        val seenAuthUrls = mutableSetOf<String>()
+        val subId = newId()
+        try {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+                return BunkerEncryptResult.RelayTimeout
+            }
+            val id = newId()
+            publish(
+                sockets,
+                keypair,
+                remoteSignerPubkey,
+                rpcJson(id, "nip44_encrypt", JSONArray().put(peerPubkeyHex).put(plaintext)),
+            )
+            val outcome = awaitRpc(
+                inbox,
+                id,
+                keypair,
+                remoteSignerPubkey,
+                seenAuthUrls,
+                firstTimeoutMs = RPC_TIMEOUT_MS,
+            ) ?: return BunkerEncryptResult.RelayTimeout
+            if (outcome.rejected) return BunkerEncryptResult.Rejected
+            val ciphertext = outcome.result?.takeIf { it.isNotEmpty() }
+                ?: return BunkerEncryptResult.Rejected
+            return BunkerEncryptResult.Ciphertext(ciphertext)
+        } catch (_: Exception) {
+            return BunkerEncryptResult.Rejected
         } finally {
             sockets.forEach { it.close() }
         }

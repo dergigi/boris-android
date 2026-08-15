@@ -5,6 +5,12 @@ import org.junit.Test
 
 class NipB0Test {
     @Test
+    fun dTagDropsTheScheme() {
+        assertEquals("alice.blog/post?x=1", NipB0.dTag("https://Alice.blog/post?x=1"))
+        assertEquals("example.com/a", NipB0.dTag("http://example.com/a"))
+    }
+
+    @Test
     fun urlFromDTagAddsHttpsWhenSchemeIsOmitted() {
         val event = webBookmark(d = "alice.blog/post", title = "Blog insights by Alice")
         assertEquals("https://alice.blog/post", NipB0.url(event))

@@ -57,6 +57,12 @@
     <string name="highlight_cancelled">Highlight cancelled.</string>
     <string name="highlight_rejected">Highlight rejected.</string>
     <string name="highlight_not_published">Highlight not published.</string>
+    <string name="reader_save_library">Save to library</string>
+    <string name="reader_saved">Saved to library.</string>
+    <string name="reader_already_saved">Already in your library.</string>
+    <string name="reader_save_cancelled">Save cancelled.</string>
+    <string name="reader_save_rejected">Save rejected.</string>
+    <string name="reader_save_failed">Could not save to library.</string>
     <string name="feed_empty">No highlights yet.</string>
     <string name="feed_writings_empty">No writings yet.</string>
     <string name="feed_empty_filtered">Nothing matches these filters.</string>

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Schedule
@@ -75,6 +76,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
@@ -101,6 +103,7 @@ import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.ReferenceLinkHandlerImpl
 import com.mikepenz.markdown.model.markdownPadding
 import com.mikepenz.markdown.model.rememberMarkdownState
+import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
@@ -131,6 +134,8 @@ fun ReaderScreen(
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val highlightCount by viewModel.highlightCount.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
+    val canSave by viewModel.canSave.collectAsStateWithLifecycle()
+    val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -144,12 +149,18 @@ fun ReaderScreen(
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
     }
+    LaunchedEffect(signIntent) {
+        val intent = signIntent ?: return@LaunchedEffect
+        viewModel.consumeSignIntent()
+        launcher.launch(intent)
+    }
     ReaderScreenContent(
         state = state,
         gallery = gallery,
         highlights = highlights,
         highlightCount = highlightCount,
         loggedIn = loggedIn,
+        canSave = canSave,
         settings = settings,
         onBack = onBack,
         onRetry = viewModel::load,
@@ -159,6 +170,9 @@ fun ReaderScreen(
         onGalleryPage = viewModel::setGalleryIndex,
         onHighlight = { quote ->
             viewModel.highlight(quote)?.let(launcher::launch)
+        },
+        onSave = {
+            viewModel.saveToLibrary()?.let(launcher::launch)
         },
     )
 }
@@ -171,6 +185,7 @@ fun ReaderScreenContent(
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
     loggedIn: Boolean,
+    canSave: Boolean,
     settings: UserSettings,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -179,6 +194,7 @@ fun ReaderScreenContent(
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
     onHighlight: (String) -> Unit,
+    onSave: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -233,6 +249,14 @@ fun ReaderScreenContent(
                     }
                 },
                 actions = {
+                    if (canSave) {
+                        IconButton(onClick = onSave) {
+                            Icon(
+                                Icons.Outlined.AddCircle,
+                                contentDescription = stringResource(R.string.reader_save_library),
+                            )
+                        }
+                    }
                     if (articleUrl != null) {
                         var menuOpen by remember { mutableStateOf(false) }
                         Box {

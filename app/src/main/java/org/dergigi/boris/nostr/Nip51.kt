@@ -120,6 +120,50 @@ object Nip51 {
         }
     }
 
+    fun encodeTagArray(tags: List<List<String>>): String = buildString {
+        append('[')
+        tags.forEachIndexed { i, tag ->
+            if (i > 0) append(',')
+            append('[')
+            tag.forEachIndexed { j, value ->
+                if (j > 0) append(',')
+                append('"')
+                append(jsonEscape(value))
+                append('"')
+            }
+            append(']')
+        }
+        append(']')
+    }
+
+    private fun jsonEscape(value: String): String = buildString(value.length) {
+        for (c in value) {
+            when (c) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> append(c)
+            }
+        }
+    }
+
+    fun containsTag(tags: List<List<String>>, tag: List<String>): Boolean {
+        val name = tag.getOrNull(0) ?: return false
+        val value = tag.getOrNull(1) ?: return false
+        return tags.any { row ->
+            row.getOrNull(0) == name && row.getOrNull(1).equals(value, ignoreCase = true)
+        }
+    }
+
+    fun unsignedJson(
+        publicTags: List<List<String>>,
+        encryptedContent: String,
+        pubkeyHex: String? = null,
+        createdAt: Long = System.currentTimeMillis() / 1000,
+    ): String = Nip01Event.unsignedJson(KIND, encryptedContent, publicTags, pubkeyHex, createdAt)
+
     fun looksEncrypted(content: String): Boolean = content.isNotBlank()
 
     fun isNip04(content: String): Boolean = content.contains("?iv=")
