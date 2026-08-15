@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-15
+
+### Added
+
+- Library shelves show bookmarked notes, not only articles and web bookmarks
+
+### Changed
+
+- Highlights feed filters are Hub / Group / Person again
+
 ### Fixed
 
 - Text selection works: the article no longer jumps to the top, the selected words stay selected, and the Copy / Highlight menu follows the selection
@@ -213,7 +223,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/dergigi/boris-android/releases/tag/v0.11.0
 [0.10.0]: https://github.com/dergigi/boris-android/releases/tag/v0.10.0
 [0.9.0]: https://github.com/dergigi/boris-android/releases/tag/v0.9.0
 [0.8.0]: https://github.com/dergigi/boris-android/releases/tag/v0.8.0
