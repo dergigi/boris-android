@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Settings can turn off opening article links in the reader, so they go to the system browser instead
+
 ## [0.25.1] - 2026-08-15
 
 ### Fixed
