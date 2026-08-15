@@ -29,6 +29,8 @@ class UserSettingsTest {
         assertTrue(settings.defaultExploreScopeFriends)
         assertFalse(settings.defaultExploreScopeMine)
         assertTrue(settings.fullWidthImages)
+        assertTrue(settings.volumeButtonScroll)
+        assertEquals(90, settings.volumeButtonScrollPercent)
     }
 
     @Test
@@ -95,5 +97,16 @@ class UserSettingsTest {
         val unknown = UserSettings.parse("""{"theme":"neon","darkColorTheme":"navy"}""")
         assertEquals("system", unknown.theme)
         assertEquals("midnight", unknown.darkColorTheme)
+    }
+
+    @Test
+    fun volumeButtonScrollReadsAndClamps() {
+        val off = UserSettings.parse("""{"volumeButtonScroll":false,"volumeButtonScrollPercent":50}""")
+        assertFalse(off.volumeButtonScroll)
+        assertEquals(50, off.volumeButtonScrollPercent)
+        val high = UserSettings.parse("""{"volumeButtonScrollPercent":140}""")
+        assertEquals(100, high.volumeButtonScrollPercent)
+        val low = UserSettings.parse("""{"volumeButtonScrollPercent":10}""")
+        assertEquals(25, low.volumeButtonScrollPercent)
     }
 }

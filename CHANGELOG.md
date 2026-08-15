@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Library has an info icon that explains Private, Public, and Web
+- Settings can turn volume-button scrolling on or off, and set how far each press moves
 
 ### Changed
 

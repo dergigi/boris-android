@@ -6,8 +6,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberUpdatedState
 
 object VolumeKeys {
+    val AMOUNTS = listOf(25, 50, 75, 90, 100)
+
     @Volatile
     private var listener: ((Boolean) -> Boolean)? = null
+
+    fun pageSize(viewportHeight: Int, percent: Int): Int {
+        val amount = percent.coerceIn(AMOUNTS.first(), AMOUNTS.last())
+        return (viewportHeight * amount / 100).coerceAtLeast(1)
+    }
 
     fun handle(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {

@@ -82,6 +82,9 @@
     <string name="settings_preview">Preview</string>
     <string name="settings_media_display">Media Display</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
+    <string name="settings_volume_buttons">Volume buttons</string>
+    <string name="settings_volume_scroll">Scroll the article with volume buttons</string>
+    <string name="settings_volume_scroll_amount">Scroll amount</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_light">Light theme</string>

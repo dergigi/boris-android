@@ -397,8 +397,8 @@ private fun ArticleBody(
             heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
         )
     }
-    VolumeKeys.Handle(enabled = volumeScroll) { up ->
-        val page = (viewportHeight * 9 / 10).coerceAtLeast(1)
+    VolumeKeys.Handle(enabled = volumeScroll && settings.volumeButtonScroll) { up ->
+        val page = VolumeKeys.pageSize(viewportHeight, settings.volumeButtonScrollPercent)
         val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
         if (target != scrollState.value) {
             scope.launch { scrollState.animateScrollTo(target) }

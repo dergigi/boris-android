@@ -1,0 +1,102 @@
+package org.dergigi.boris.ui.settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import org.dergigi.boris.R
+import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.reader.VolumeKeys
+
+@Composable
+fun VolumeButtonsSection(
+    settings: UserSettings,
+    onUpdate: (UserSettings) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_volume_buttons),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_volume_scroll),
+            checked = settings.volumeButtonScroll,
+            onCheckedChange = { onUpdate(settings.withBoolean("volumeButtonScroll", it)) },
+        )
+        if (settings.volumeButtonScroll) {
+            Text(
+                text = stringResource(R.string.settings_volume_scroll_amount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                VolumeKeys.AMOUNTS.forEach { amount ->
+                    AmountButton(
+                        amount = amount,
+                        selected = settings.volumeButtonScrollPercent == amount,
+                        onClick = { onUpdate(settings.withInt("volumeButtonScrollPercent", amount)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AmountButton(
+    amount: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val fg = if (selected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val border = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline
+    Box(
+        modifier = modifier
+            .height(36.dp)
+            .clip(shape)
+            .background(bg)
+            .border(1.dp, border, shape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "$amount%",
+            style = MaterialTheme.typography.labelMedium,
+            color = fg,
+        )
+    }
+}
