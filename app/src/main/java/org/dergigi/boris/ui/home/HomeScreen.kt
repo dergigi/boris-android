@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UrlExtractor
 
-const val DEFAULT_ARTICLE_URL = "https://www.citadel21.com/the-paranoid-wallet"
+const val DEFAULT_ARTICLE_URL = "https://dergigi.com/2023/04/04/purple-text-orange-highlights/"
 
 @Composable
 fun HomeScreen(
