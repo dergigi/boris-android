@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-08-15
+
 ### Changed
 
 - Library sources explainer names Private, Public, and Web bookmarks, and says lookmarks are public
@@ -303,7 +305,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/dergigi/boris-android/releases/tag/v0.21.0
 [0.20.0]: https://github.com/dergigi/boris-android/releases/tag/v0.20.0
 [0.19.0]: https://github.com/dergigi/boris-android/releases/tag/v0.19.0
 [0.18.0]: https://github.com/dergigi/boris-android/releases/tag/v0.18.0
