@@ -1,14 +1,14 @@
 package org.dergigi.boris.ui.reader
 
 import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.gestures.awaitEachGesture
+import android.view.View
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -18,12 +18,16 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
@@ -44,6 +48,8 @@ class ReaderSelectionState {
     private var frozenMax = 0
 
     val hasSelection: Boolean get() = owner != null && range.min != range.max
+    val toolbarReady: Boolean
+        get() = hasSelection && (toolbarRect.width > 1f || toolbarRect.height > 1f)
     val selectedText: String
         get() {
             if (!hasSelection) return ""
@@ -60,6 +66,7 @@ class ReaderSelectionState {
         range = word
         frozenMin = word.min
         frozenMax = word.max
+        toolbarRect = Rect.Zero
     }
 
     fun extendTo(offset: Int) {
@@ -82,6 +89,8 @@ class ReaderSelectionState {
         owner = id
         text = value
         range = TextRange(0, value.length)
+        frozenMin = 0
+        frozenMax = value.length
     }
 
     fun clear() {
@@ -115,75 +124,141 @@ fun Modifier.readerSelectable(
     val colors = LocalTextSelectionColors.current
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
+    val viewConfig = LocalViewConfiguration.current
+    val layoutRef = rememberUpdatedState(layout)
+    val coordsRef = rememberUpdatedState(coordinates)
+    val textRef = rememberUpdatedState(text)
+
+    SideEffect {
+        val laid = layout
+        val coords = coordinates
+        if (laid != null && coords != null && state.owns(owner)) {
+            state.updateToolbar(laid, coords)
+        }
+    }
+
     onGloballyPositioned { coords ->
         onCoordinates(coords)
-        if (state.owns(owner) && layout != null) state.updateToolbar(layout, coords)
+        val current = layoutRef.value
+        if (state.owns(owner) && current != null) state.updateToolbar(current, coords)
     }
         .drawWithContent {
-            if (state.owns(owner) && layout != null) {
-                drawSelection(layout, state.range, colors.backgroundColor)
+            val current = layoutRef.value
+            if (state.owns(owner) && current != null) {
+                drawSelection(current, state.range, colors.backgroundColor)
             }
             drawContent()
-            if (state.owns(owner) && layout != null) {
-                drawHandles(layout, state.range, colors.handleColor)
+            if (state.owns(owner) && current != null) {
+                drawHandles(current, state.range, colors.handleColor)
             }
         }
-        .pointerInput(owner, text, layout, state.hasSelection && state.owner === owner) {
-            if (layout == null) return@pointerInput
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                if (!state.owns(owner)) return@awaitEachGesture
-                val slop = 24.dp.toPx()
-                val startHandle = handleCenter(layout, state.range.min, start = true)
-                val endHandle = handleCenter(layout, state.range.max, start = false)
-                val movingMin = (down.position - startHandle).getDistance() <= slop
-                val movingMax = (down.position - endHandle).getDistance() <= slop
-                if (!movingMin && !movingMax) return@awaitEachGesture
-                down.consume()
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val change = event.changes.firstOrNull() ?: break
-                    if (!change.pressed) break
-                    change.consume()
-                    state.moveBound(movingMin, JustifiedLayout.offsetAt(layout, change.position))
-                    coordinates?.let { state.updateToolbar(layout, it) }
+        .pointerInput(owner) {
+            val touchSlop = viewConfig.touchSlop
+            val longPressTimeout = viewConfig.longPressTimeoutMillis
+            val handleSlop = 24.dp.toPx()
+            while (true) {
+                awaitPointerEventScope {
+                    handleReaderGesture(
+                        owner = owner,
+                        text = { textRef.value },
+                        state = state,
+                        layout = { layoutRef.value },
+                        coordinates = { coordsRef.value },
+                        view = view,
+                        haptic = haptic,
+                        touchSlop = touchSlop,
+                        longPressTimeout = longPressTimeout,
+                        handleSlop = handleSlop,
+                    )
                 }
             }
         }
-        .pointerInput(owner, text, layout) {
-            if (layout == null) return@pointerInput
-            detectDragGesturesAfterLongPress(
-                onDragStart = { offset ->
-                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    val index = JustifiedLayout.offsetAt(layout, offset)
-                    state.begin(owner, text, layout.getWordBoundary(index))
-                    coordinates?.let { state.updateToolbar(layout, it) }
-                },
-                onDrag = { change, _ ->
-                    change.consume()
-                    state.extendTo(JustifiedLayout.offsetAt(layout, change.position))
-                    coordinates?.let { state.updateToolbar(layout, it) }
-                },
-            )
+}
+
+private suspend fun AwaitPointerEventScope.handleReaderGesture(
+    owner: Any,
+    text: () -> String,
+    state: ReaderSelectionState,
+    layout: () -> TextLayoutResult?,
+    coordinates: () -> LayoutCoordinates?,
+    view: View,
+    haptic: HapticFeedback,
+    touchSlop: Float,
+    longPressTimeout: Long,
+    handleSlop: Float,
+) {
+    val down = awaitFirstDown(requireUnconsumed = false)
+    val currentLayout = layout() ?: return
+
+    if (state.owns(owner)) {
+        val startHandle = handleCenter(currentLayout, state.range.min, start = true)
+        val endHandle = handleCenter(currentLayout, state.range.max, start = false)
+        val movingMin = (down.position - startHandle).getDistance() <= handleSlop
+        val movingMax = (down.position - endHandle).getDistance() <= handleSlop
+        if (movingMin || movingMax) {
+            down.consume()
+            dragSelectionBound(down.id, movingMin, state, layout, coordinates)
+            return
         }
-        .pointerInput(owner, state.hasSelection && state.owner === owner) {
-            if (!state.owns(owner)) return@pointerInput
-            awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
-                val slop = 24.dp.toPx()
-                if (layout != null) {
-                    val startHandle = handleCenter(layout, state.range.min, start = true)
-                    val endHandle = handleCenter(layout, state.range.max, start = false)
-                    if ((down.position - startHandle).getDistance() <= slop) return@awaitEachGesture
-                    if ((down.position - endHandle).getDistance() <= slop) return@awaitEachGesture
-                }
-                val up = waitForUpOrCancellation() ?: return@awaitEachGesture
-                if ((up.position - down.position).getDistance() < slop) {
-                    state.clear()
-                }
+    }
+
+    val reachedLongPress = withTimeoutOrNull(longPressTimeout) {
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull { it.id == down.id } ?: return@withTimeoutOrNull false
+            if (!change.pressed) return@withTimeoutOrNull false
+            if ((change.position - down.position).getDistance() > touchSlop) {
+                return@withTimeoutOrNull false
             }
         }
+        @Suppress("UNREACHABLE_CODE")
+        true
+    }
+
+    if (reachedLongPress == null) {
+        val laid = layout() ?: return
+        val change = currentEvent.changes.firstOrNull { it.id == down.id } ?: return
+        if (!change.pressed) return
+        change.consume()
+        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        val index = JustifiedLayout.offsetAt(laid, change.position)
+        state.begin(owner, text(), laid.getWordBoundary(index))
+        coordinates()?.let { state.updateToolbar(laid, it) }
+        while (true) {
+            val event = awaitPointerEvent()
+            val drag = event.changes.firstOrNull { it.id == down.id } ?: break
+            if (!drag.pressed) break
+            drag.consume()
+            val next = layout() ?: break
+            state.extendTo(JustifiedLayout.offsetAt(next, drag.position))
+            coordinates()?.let { state.updateToolbar(next, it) }
+        }
+        return
+    }
+
+    val change = currentEvent.changes.firstOrNull { it.id == down.id } ?: return
+    if (!change.pressed && (change.position - down.position).getDistance() <= touchSlop && state.hasSelection) {
+        state.clear()
+    }
+}
+
+private suspend fun AwaitPointerEventScope.dragSelectionBound(
+    pointerId: PointerId,
+    movingMin: Boolean,
+    state: ReaderSelectionState,
+    layout: () -> TextLayoutResult?,
+    coordinates: () -> LayoutCoordinates?,
+) {
+    while (true) {
+        val event = awaitPointerEvent()
+        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+        if (!change.pressed) break
+        change.consume()
+        val current = layout() ?: break
+        state.moveBound(movingMin, JustifiedLayout.offsetAt(current, change.position))
+        coordinates()?.let { state.updateToolbar(current, it) }
+    }
 }
 
 private fun DrawScope.drawSelection(

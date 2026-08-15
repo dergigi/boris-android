@@ -39,6 +39,7 @@ class HighlightTextToolbar(
         onCutRequested: (() -> Unit)?,
         onSelectAllRequested: (() -> Unit)?,
     ) {
+        if (rect.width <= 1f && rect.height <= 1f) return
         copyAction = onCopyRequested
         selectAllAction = onSelectAllRequested
         contentRect.set(

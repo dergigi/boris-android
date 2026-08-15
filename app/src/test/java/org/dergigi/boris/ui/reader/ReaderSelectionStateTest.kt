@@ -39,4 +39,12 @@ class ReaderSelectionStateTest {
         assertFalse(state.hasSelection)
         assertEquals("", state.selectedText)
     }
+
+    @Test
+    fun beginLeavesToolbarUnreadyUntilLayout() {
+        val state = ReaderSelectionState()
+        state.begin(Any(), "hello", TextRange(0, 5))
+        assertTrue(state.hasSelection)
+        assertFalse(state.toolbarReady)
+    }
 }

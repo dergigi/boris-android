@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -352,16 +353,18 @@ private fun ArticleBody(
     val view = LocalView.current
     val clipboard = LocalClipboardManager.current
     val selection = remember { ReaderSelectionState() }
-    val highlightedComponents = remember(painted, mineColor, otherColor, underline, selection) {
+    val paintedHolder = remember { mutableStateOf(painted) }
+    paintedHolder.value = painted
+    val highlightedComponents = remember(mineColor, otherColor, underline, selection) {
         markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, painted, mineColor, otherColor, underline, selection) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, painted, mineColor, otherColor, underline, selection) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, painted, mineColor, otherColor, underline, selection) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, painted, mineColor, otherColor, underline, selection) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, painted, mineColor, otherColor, underline, selection) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, painted, mineColor, otherColor, underline, selection) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, painted, mineColor, otherColor, underline, selection) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, painted, mineColor, otherColor, underline, selection) },
+            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, otherColor, underline, selection) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection) },
         )
     }
     val toolbar = remember(view, clipboard, loggedIn, onHighlight) {
@@ -375,23 +378,29 @@ private fun ArticleBody(
             },
         )
     }
-    LaunchedEffect(selection.hasSelection, selection.toolbarRect, selection.selectedText) {
+    LaunchedEffect(selection.hasSelection, toolbar) {
         if (!selection.hasSelection) {
             toolbar.hide()
             return@LaunchedEffect
         }
-        val quote = selection.selectedText
-        val owner = selection.owner
-        val bodyText = selection.text
-        toolbar.showMenu(
-            rect = selection.toolbarRect,
-            onCopyRequested = { clipboard.setText(AnnotatedString(quote)) },
-            onPasteRequested = null,
-            onCutRequested = null,
-            onSelectAllRequested = {
-                if (owner != null) selection.selectAll(owner, bodyText)
-            },
-        )
+        snapshotFlow { Triple(selection.toolbarRect, selection.selectedText, selection.owner) }
+            .collect { (rect, quote, owner) ->
+                if (!selection.hasSelection) {
+                    toolbar.hide()
+                    return@collect
+                }
+                if (rect.width <= 1f && rect.height <= 1f) return@collect
+                val bodyText = selection.text
+                toolbar.showMenu(
+                    rect = rect,
+                    onCopyRequested = { clipboard.setText(AnnotatedString(quote)) },
+                    onPasteRequested = null,
+                    onCutRequested = null,
+                    onSelectAllRequested = {
+                        if (owner != null) selection.selectAll(owner, bodyText)
+                    },
+                )
+            }
     }
 
     Column(
