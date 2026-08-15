@@ -6,11 +6,8 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.BringIntoViewSpec
-import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,7 +87,9 @@ import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
+import com.mikepenz.markdown.model.ReferenceLinkHandlerImpl
 import com.mikepenz.markdown.model.markdownPadding
+import com.mikepenz.markdown.model.rememberMarkdownState
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.NostrLink
@@ -103,6 +102,8 @@ import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
+import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.parser.MarkdownParser
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -291,7 +292,6 @@ fun ReaderScreenContent(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ArticleBody(
     content: ReadableContent,
@@ -370,22 +370,28 @@ private fun ArticleBody(
         )
     }
     val scrollState = rememberScrollState()
-    val noBringIntoView = remember {
-        object : BringIntoViewSpec {
-            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float) = 0f
-        }
-    }
+    // The markdown parse state must survive recomposition. Fresh parser inputs would
+    // re-parse asynchronously, collapse the article to an empty box, clamp the scroll
+    // to zero, and remount every paragraph, killing the active selection.
+    val flavour = remember { GFMFlavourDescriptor() }
+    val parser = remember(flavour) { MarkdownParser(flavour) }
+    val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
+    val markdownState = rememberMarkdownState(
+        content = content.body,
+        flavour = flavour,
+        parser = parser,
+        referenceLinkHandler = referenceLinkHandler,
+    )
     BackHandler(enabled = selection.hasSelection) { selection.clear() }
 
     Box(modifier = modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalBringIntoViewSpec provides noBringIntoView) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
         Column(
             modifier = Modifier
                 .widthIn(max = 720.dp)
@@ -429,7 +435,7 @@ private fun ArticleBody(
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
                     Markdown(
-                        content = content.body,
+                        markdownState = markdownState,
                         colors = markdownColor(
                             text = colors.onBackground,
                             codeBackground = colors.surfaceVariant,
@@ -471,7 +477,6 @@ private fun ArticleBody(
                     )
                 }
             }
-        }
         }
         HighlightTextToolbar(
             selection = selection,

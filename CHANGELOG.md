@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Text selection works: the article no longer jumps to the top, the selected words stay selected, and the Copy / Highlight menu follows the selection
+
 ## [0.10.0] - 2026-08-15
 
 ### Added
