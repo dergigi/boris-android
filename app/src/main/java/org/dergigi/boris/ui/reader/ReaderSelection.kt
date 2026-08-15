@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -105,10 +106,11 @@ class ReaderSelectionState {
             toolbarRect = Rect.Zero
             return
         }
+        if (!coords.isAttached) return
         val boxes = HighlightMarks.highlightRects(layout, range.min, range.max)
         val box = boxes.firstOrNull() ?: return
-        val topLeft = coords.localToRoot(Offset(box.left, box.top))
-        val bottomRight = coords.localToRoot(Offset(box.right, box.bottom))
+        val topLeft = coords.localToWindow(Offset(box.left, box.top))
+        val bottomRight = coords.localToWindow(Offset(box.right, box.bottom))
         toolbarRect = Rect(topLeft, bottomRight)
     }
 }
@@ -187,7 +189,8 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     longPressTimeout: Long,
     handleSlop: Float,
 ) {
-    val down = awaitFirstDown(requireUnconsumed = false)
+    val pass = PointerEventPass.Initial
+    val down = awaitFirstDown(requireUnconsumed = false, pass = pass)
     val currentLayout = layout() ?: return
 
     if (state.owns(owner)) {
@@ -197,14 +200,14 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         val movingMax = (down.position - endHandle).getDistance() <= handleSlop
         if (movingMin || movingMax) {
             down.consume()
-            dragSelectionBound(down.id, movingMin, state, layout, coordinates)
+            dragSelectionBound(down.id, movingMin, state, layout, coordinates, pass)
             return
         }
     }
 
     val reachedLongPress = withTimeoutOrNull(longPressTimeout) {
         while (true) {
-            val event = awaitPointerEvent()
+            val event = awaitPointerEvent(pass)
             val change = event.changes.firstOrNull { it.id == down.id } ?: return@withTimeoutOrNull false
             if (!change.pressed) return@withTimeoutOrNull false
             if ((change.position - down.position).getDistance() > touchSlop) {
@@ -226,7 +229,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         state.begin(owner, text(), laid.getWordBoundary(index))
         coordinates()?.let { state.updateToolbar(laid, it) }
         while (true) {
-            val event = awaitPointerEvent()
+            val event = awaitPointerEvent(pass)
             val drag = event.changes.firstOrNull { it.id == down.id } ?: break
             if (!drag.pressed) break
             drag.consume()
@@ -249,9 +252,10 @@ private suspend fun AwaitPointerEventScope.dragSelectionBound(
     state: ReaderSelectionState,
     layout: () -> TextLayoutResult?,
     coordinates: () -> LayoutCoordinates?,
+    pass: PointerEventPass,
 ) {
     while (true) {
-        val event = awaitPointerEvent()
+        val event = awaitPointerEvent(pass)
         val change = event.changes.firstOrNull { it.id == pointerId } ?: break
         if (!change.pressed) break
         change.consume()

@@ -1,112 +1,110 @@
 package org.dergigi.boris.ui.reader
 
-import android.view.ActionMode
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.TextToolbar
-import androidx.compose.ui.platform.TextToolbarStatus
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import org.dergigi.boris.R
-import kotlin.math.roundToInt
 
-class HighlightTextToolbar(
-    private val view: View,
-    private val showHighlight: Boolean,
-    private val clipboard: ClipboardManager,
-    private val onHighlight: (String) -> Unit,
-) : TextToolbar {
-    private var actionMode: ActionMode? = null
-    private val contentRect = android.graphics.Rect()
-    private var copyAction: (() -> Unit)? = null
-    private var selectAllAction: (() -> Unit)? = null
-
-    override var status: TextToolbarStatus = TextToolbarStatus.Hidden
-        private set
-
-    override fun hide() {
-        status = TextToolbarStatus.Hidden
-        actionMode?.finish()
-        actionMode = null
-    }
-
-    override fun showMenu(
-        rect: Rect,
-        onCopyRequested: (() -> Unit)?,
-        onPasteRequested: (() -> Unit)?,
-        onCutRequested: (() -> Unit)?,
-        onSelectAllRequested: (() -> Unit)?,
+@Composable
+fun HighlightTextToolbar(
+    selection: ReaderSelectionState,
+    showHighlight: Boolean,
+    onCopy: () -> Unit,
+    onHighlight: () -> Unit,
+    onSelectAll: () -> Unit,
+) {
+    if (!selection.toolbarReady) return
+    val rect = selection.toolbarRect
+    val position = remember(rect) { SelectionMenuPosition(rect) }
+    Popup(
+        popupPositionProvider = position,
+        properties = PopupProperties(
+            focusable = false,
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            clippingEnabled = false,
+        ),
     ) {
-        if (rect.width <= 1f && rect.height <= 1f) return
-        copyAction = onCopyRequested
-        selectAllAction = onSelectAllRequested
-        contentRect.set(
-            rect.left.roundToInt(),
-            rect.top.roundToInt(),
-            rect.right.roundToInt().coerceAtLeast(rect.left.roundToInt() + 1),
-            rect.bottom.roundToInt().coerceAtLeast(rect.top.roundToInt() + 1),
-        )
-        if (actionMode != null) {
-            actionMode?.invalidateContentRect()
-            return
-        }
-        val callback = object : ActionMode.Callback2() {
-            override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                if (copyAction != null) {
-                    menu.add(0, MENU_COPY, 0, android.R.string.copy)
-                }
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.inverseSurface,
+            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+            shadowElevation = 6.dp,
+        ) {
+            Row(modifier = Modifier.padding(horizontal = 4.dp)) {
+                ToolbarAction(
+                    label = stringResource(android.R.string.copy),
+                    onClick = onCopy,
+                )
                 if (showHighlight) {
-                    menu.add(0, MENU_HIGHLIGHT, 1, view.context.getString(R.string.highlight_action))
+                    ToolbarAction(
+                        label = stringResource(R.string.highlight_action),
+                        onClick = onHighlight,
+                    )
                 }
-                if (selectAllAction != null) {
-                    menu.add(0, MENU_SELECT_ALL, 2, android.R.string.selectAll)
-                }
-                return true
-            }
-
-            override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
-
-            override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-                when (item.itemId) {
-                    MENU_COPY -> {
-                        copyAction?.invoke()
-                        mode.finish()
-                    }
-                    MENU_HIGHLIGHT -> {
-                        val prior = clipboard.getText()
-                        copyAction?.invoke()
-                        val quote = clipboard.getText()?.text.orEmpty()
-                        if (prior != null) {
-                            clipboard.setText(prior)
-                        } else {
-                            clipboard.setText(AnnotatedString(""))
-                        }
-                        onHighlight(quote)
-                        mode.finish()
-                    }
-                    MENU_SELECT_ALL -> selectAllAction?.invoke()
-                }
-                return true
-            }
-
-            override fun onDestroyActionMode(mode: ActionMode) {
-                actionMode = null
-                status = TextToolbarStatus.Hidden
-            }
-
-            override fun onGetContentRect(mode: ActionMode, view: View?, outRect: android.graphics.Rect) {
-                outRect.set(contentRect)
+                ToolbarAction(
+                    label = stringResource(android.R.string.selectAll),
+                    onClick = onSelectAll,
+                )
             }
         }
-        actionMode = view.startActionMode(callback, ActionMode.TYPE_FLOATING)
-        status = if (actionMode != null) TextToolbarStatus.Shown else TextToolbarStatus.Hidden
     }
+}
 
-    private companion object {
-        const val MENU_COPY = 1
-        const val MENU_HIGHLIGHT = 2
-        const val MENU_SELECT_ALL = 3
+@Composable
+private fun ToolbarAction(
+    label: String,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(label)
+    }
+}
+
+private class SelectionMenuPosition(
+    private val selection: Rect,
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val margin = 8
+        val maxX = (windowSize.width - popupContentSize.width - margin).coerceAtLeast(margin)
+        val x = (selection.center.x - popupContentSize.width / 2f).toInt().coerceIn(margin, maxX)
+        val above = (selection.top - popupContentSize.height - 8).toInt()
+        val y = if (above >= margin) {
+            above
+        } else {
+            val maxY = (windowSize.height - popupContentSize.height - margin).coerceAtLeast(margin)
+            (selection.bottom + 8).toInt().coerceIn(margin, maxY)
+        }
+        return IntOffset(x, y)
     }
 }

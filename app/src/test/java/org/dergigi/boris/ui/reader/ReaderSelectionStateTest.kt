@@ -47,4 +47,14 @@ class ReaderSelectionStateTest {
         assertTrue(state.hasSelection)
         assertFalse(state.toolbarReady)
     }
+
+    @Test
+    fun selectAllKeepsTheWholeParagraph() {
+        val state = ReaderSelectionState()
+        val owner = Any()
+        state.begin(owner, "hello world", TextRange(0, 5))
+        state.selectAll(owner, "hello world")
+        assertEquals("hello world", state.selectedText)
+        assertTrue(state.hasSelection)
+    }
 }

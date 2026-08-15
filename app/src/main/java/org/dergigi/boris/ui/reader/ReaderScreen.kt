@@ -3,10 +3,14 @@ package org.dergigi.boris.ui.reader
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,7 +53,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,7 +66,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -289,6 +291,7 @@ fun ReaderScreenContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ArticleBody(
     content: ReadableContent,
@@ -350,7 +353,6 @@ private fun ArticleBody(
         letterSpacing = 0.sp,
     )
     val headingFamily = typography.headlineLarge.copy(fontFamily = family)
-    val view = LocalView.current
     val clipboard = LocalClipboardManager.current
     val selection = remember { ReaderSelectionState() }
     val paintedHolder = remember { mutableStateOf(painted) }
@@ -367,49 +369,23 @@ private fun ArticleBody(
             heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection) },
         )
     }
-    val toolbar = remember(view, clipboard, loggedIn, onHighlight) {
-        HighlightTextToolbar(
-            view = view,
-            showHighlight = loggedIn,
-            clipboard = clipboard,
-            onHighlight = { quote ->
-                selection.clear()
-                onHighlight(quote)
-            },
-        )
-    }
-    LaunchedEffect(selection.hasSelection, toolbar) {
-        if (!selection.hasSelection) {
-            toolbar.hide()
-            return@LaunchedEffect
+    val scrollState = rememberScrollState()
+    val noBringIntoView = remember {
+        object : BringIntoViewSpec {
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float) = 0f
         }
-        snapshotFlow { Triple(selection.toolbarRect, selection.selectedText, selection.owner) }
-            .collect { (rect, quote, owner) ->
-                if (!selection.hasSelection) {
-                    toolbar.hide()
-                    return@collect
-                }
-                if (rect.width <= 1f && rect.height <= 1f) return@collect
-                val bodyText = selection.text
-                toolbar.showMenu(
-                    rect = rect,
-                    onCopyRequested = { clipboard.setText(AnnotatedString(quote)) },
-                    onPasteRequested = null,
-                    onCutRequested = null,
-                    onSelectAllRequested = {
-                        if (owner != null) selection.selectAll(owner, bodyText)
-                    },
-                )
-            }
     }
+    BackHandler(enabled = selection.hasSelection) { selection.clear() }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides noBringIntoView) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
         Column(
             modifier = Modifier
                 .widthIn(max = 720.dp)
@@ -494,7 +470,26 @@ private fun ArticleBody(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+            }
         }
+        }
+        HighlightTextToolbar(
+            selection = selection,
+            showHighlight = loggedIn,
+            onCopy = {
+                clipboard.setText(AnnotatedString(selection.selectedText))
+                selection.clear()
+            },
+            onHighlight = {
+                val quote = selection.selectedText
+                selection.clear()
+                onHighlight(quote)
+            },
+            onSelectAll = {
+                val owner = selection.owner ?: return@HighlightTextToolbar
+                selection.selectAll(owner, selection.text)
+            },
+        )
     }
 }
 
