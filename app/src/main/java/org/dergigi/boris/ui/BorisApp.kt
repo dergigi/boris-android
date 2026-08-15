@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
@@ -112,7 +113,9 @@ fun BorisApp(
                     StubScreen(stringResource(MainTab.Library.labelRes))
                 }
                 composable(Routes.FEED) {
-                    StubScreen(stringResource(MainTab.Feed.labelRes))
+                    FeedScreen(
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                    )
                 }
                 composable(Routes.SEARCH) {
                     StubScreen(stringResource(MainTab.Search.labelRes))

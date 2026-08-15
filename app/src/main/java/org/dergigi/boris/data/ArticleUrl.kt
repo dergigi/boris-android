@@ -1,6 +1,15 @@
 package org.dergigi.boris.data
 
 object ArticleUrl {
+    fun host(url: String): String? {
+        return try {
+            val raw = if (url.contains("://")) url.trim() else "https://${url.trim()}"
+            java.net.URI(raw).host?.lowercase()?.removePrefix("www.")?.ifEmpty { null }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun normalize(url: String): String {
         val trimmed = url.trim()
         return try {

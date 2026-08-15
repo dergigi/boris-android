@@ -5,6 +5,11 @@ import org.junit.Test
 
 class ArticleUrlTest {
     @Test
+    fun hostDropsWww() {
+        assertEquals("example.com", ArticleUrl.host("https://www.example.com/path"))
+    }
+
+    @Test
     fun normalizeDropsWww() {
         assertEquals(
             "https://example.com/path",

@@ -7,6 +7,11 @@ object Nip84 {
     const val KIND = 9802
     const val ALT = "Highlight created by Boris Android. readwithboris.com"
 
+    fun articleUrl(event: Nip01Event): String? =
+        event.tags.firstOrNull { tag ->
+            tag.size >= 2 && tag[0] == "r" && tag[1].startsWith("http")
+        }?.get(1)
+
     fun tags(url: String, context: String?): List<List<String>> = buildList {
         add(listOf("r", url))
         if (!context.isNullOrBlank()) add(listOf("context", context))

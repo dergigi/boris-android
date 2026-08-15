@@ -34,4 +34,7 @@
     <string name="highlight_cancelled">Highlight cancelled.</string>
     <string name="highlight_rejected">Highlight rejected.</string>
     <string name="highlight_not_published">Highlight not published.</string>
+    <string name="feed_empty">No highlights yet.</string>
+    <string name="feed_error">Could not load highlights.</string>
+    <string name="feed_retry">Try again</string>
 </resources>

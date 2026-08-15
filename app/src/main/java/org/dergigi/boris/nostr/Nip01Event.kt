@@ -51,6 +51,7 @@ data class Nip01Event(
         const val KIND_AUTH = 22242
         const val KIND_HIGHLIGHT = 9802
         const val KIND_RELAY_LIST = 10002
+        const val KIND_RELAY_DISCOVERY = 30166
 
         fun complete(
             pubkey: String,

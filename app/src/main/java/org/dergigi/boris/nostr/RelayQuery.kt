@@ -32,7 +32,62 @@ object RelayQuery {
                     event.pubkey.equals(pubkeyHex, ignoreCase = true)
             }
             .maxByOrNull { it.createdAt } ?: return null
-        return pictureUrl(newest.content)
+        return Profile.parse(newest.content).picture
+    }
+
+    fun discoverContentRelays(
+        seed: List<String> = RelayList.FALLBACK,
+        limit: Int = 12,
+    ): List<String> {
+        val since = System.currentTimeMillis() / 1000 - DISCOVERY_WINDOW_SECONDS
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_RELAY_DISCOVERY))
+            .put("since", since)
+            .put("limit", 200)
+        val bootstrap = (Nip66.MONITOR_RELAYS + seed).mapNotNull { Nip66.normalize(it) }.distinct()
+        val events = query(bootstrap, listOf(filter))
+        return Nip66.select(events, seed, limit)
+    }
+
+    fun fetchRecentHighlights(
+        readRelays: List<String>,
+        limit: Int = 80,
+    ): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+            .put("limit", limit)
+        return query(urls, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_HIGHLIGHT && event.content.isNotBlank()
+            }
+            .sortedByDescending { it.createdAt }
+    }
+
+    fun fetchProfiles(
+        readRelays: List<String>,
+        pubkeys: List<String>,
+    ): Map<String, Profile> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        val keys = pubkeys.map { it.lowercase() }.distinct()
+        if (urls.isEmpty() || keys.isEmpty()) return emptyMap()
+        val newest = mutableMapOf<String, Nip01Event>()
+        for (chunk in keys.chunked(PROFILE_CHUNK)) {
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_METADATA))
+                .put("authors", JSONArray().apply { chunk.forEach { put(it) } })
+                .put("limit", chunk.size)
+            for (event in query(urls, listOf(filter))) {
+                if (event.kind != Nip01Event.KIND_METADATA) continue
+                val key = event.pubkey.lowercase()
+                val existing = newest[key]
+                if (existing == null || event.createdAt > existing.createdAt) {
+                    newest[key] = event
+                }
+            }
+        }
+        return newest.mapValues { Profile.parse(it.value.content) }
     }
 
     fun fetchHighlights(readRelays: List<String>, pubkeyHex: String, url: String): List<Nip01Event> {
@@ -155,19 +210,12 @@ object RelayQuery {
         }
     }
 
-    private fun pictureUrl(content: String): String? {
-        return try {
-            val url = JSONObject(content).optString("picture").trim()
-            if (url.startsWith("http://") || url.startsWith("https://")) url else null
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     private fun newId(): String = UUID.randomUUID().toString().take(12)
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
+    private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
+    private const val PROFILE_CHUNK = 25
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

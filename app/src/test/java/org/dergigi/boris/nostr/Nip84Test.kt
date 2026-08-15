@@ -40,6 +40,37 @@ class Nip84Test {
     }
 
     @Test
+    fun articleUrlReadsHttpRTag() {
+        val event = Nip01Event(
+            id = "1".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(
+                listOf("r", "wss://not-an-article"),
+                listOf("r", "https://example.com/article"),
+            ),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertEquals("https://example.com/article", Nip84.articleUrl(event))
+    }
+
+    @Test
+    fun articleUrlMissingWhenNoHttpRTag() {
+        val event = Nip01Event(
+            id = "2".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(listOf("alt", "x")),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertNull(Nip84.articleUrl(event))
+    }
+
+    @Test
     fun extractContextReturnsNullForSingleSentence() {
         assertNull(Nip84.extractContext("only one", "This is only one sentence."))
     }
