@@ -18,20 +18,31 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
@@ -68,17 +80,89 @@ fun HomeScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
-    HomeScreenContent(
-        highlights = highlights,
-        refreshing = refreshing,
-        loggedIn = loggedIn,
-        mineColor = hexColor(settings.highlightColorMine, HighlightMine),
-        friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
-        nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
-        onRefresh = viewModel::refresh,
-        onRead = onRead,
-        modifier = modifier,
-    )
+    val context = LocalContext.current
+    val windowInfo = LocalWindowInfo.current
+    var clipboardUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
+            if (focused) clipboardUrl = ClipboardLink.read(context)
+        }
+    }
+    Column(modifier = modifier.fillMaxSize()) {
+        clipboardUrl?.let { url ->
+            ClipboardBanner(
+                url = url,
+                onOpen = {
+                    ClipboardLink.markHandled(url)
+                    clipboardUrl = null
+                    onRead(url)
+                },
+                onDismiss = {
+                    ClipboardLink.markHandled(url)
+                    clipboardUrl = null
+                },
+            )
+        }
+        HomeScreenContent(
+            highlights = highlights,
+            refreshing = refreshing,
+            loggedIn = loggedIn,
+            mineColor = hexColor(settings.highlightColorMine, HighlightMine),
+            friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
+            nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
+            onRefresh = viewModel::refresh,
+            onRead = onRead,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ClipboardBanner(
+    url: String,
+    onOpen: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onOpen)
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ContentPaste,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.home_clipboard_open),
+                style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = url.removePrefix("https://").removePrefix("http://"),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = stringResource(R.string.home_clipboard_dismiss),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
