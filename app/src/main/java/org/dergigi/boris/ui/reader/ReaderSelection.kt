@@ -122,6 +122,7 @@ fun Modifier.readerSelectable(
     coordinates: LayoutCoordinates?,
     state: ReaderSelectionState,
     onCoordinates: (LayoutCoordinates) -> Unit,
+    onTap: ((Offset) -> Boolean)? = null,
 ): Modifier = composed {
     val colors = LocalTextSelectionColors.current
     val haptic = LocalHapticFeedback.current
@@ -130,6 +131,7 @@ fun Modifier.readerSelectable(
     val layoutRef = rememberUpdatedState(layout)
     val coordsRef = rememberUpdatedState(coordinates)
     val textRef = rememberUpdatedState(text)
+    val onTapRef = rememberUpdatedState(onTap)
 
     SideEffect {
         val laid = layout
@@ -171,6 +173,7 @@ fun Modifier.readerSelectable(
                         touchSlop = touchSlop,
                         longPressTimeout = longPressTimeout,
                         handleSlop = handleSlop,
+                        onTap = { onTapRef.value?.invoke(it) == true },
                     )
                 }
             }
@@ -188,6 +191,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     touchSlop: Float,
     longPressTimeout: Long,
     handleSlop: Float,
+    onTap: (Offset) -> Boolean,
 ) {
     val pass = PointerEventPass.Initial
     val down = awaitFirstDown(requireUnconsumed = false, pass = pass)
@@ -241,8 +245,12 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     }
 
     val change = currentEvent.changes.firstOrNull { it.id == down.id } ?: return
-    if (!change.pressed && (change.position - down.position).getDistance() <= touchSlop && state.hasSelection) {
-        state.clear()
+    if (!change.pressed && (change.position - down.position).getDistance() <= touchSlop) {
+        if (state.hasSelection) {
+            state.clear()
+        } else if (onTap(down.position)) {
+            change.consume()
+        }
     }
 }
 

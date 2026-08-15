@@ -51,10 +51,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -65,6 +68,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.text.AnnotatedString
@@ -360,24 +364,39 @@ private fun ArticleBody(
     )
     val headingFamily = typography.headlineLarge.copy(fontFamily = family)
     val clipboard = LocalClipboardManager.current
+    val density = LocalDensity.current
     val selection = remember { ReaderSelectionState() }
+    val navigator = remember { HighlightNavigator() }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
-    val highlightedComponents = remember(mineColor, otherColor, underline, selection) {
-        markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, otherColor, underline, selection) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection) },
-        )
-    }
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     var viewportHeight by remember { mutableIntStateOf(0) }
+    var scrollViewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val jumpState = rememberUpdatedState<(HighlightStop) -> Unit> { stop ->
+        val coords = navigator.coordinates(stop.owner) ?: return@rememberUpdatedState
+        val viewport = scrollViewport ?: return@rememberUpdatedState
+        if (!coords.isAttached || !viewport.isAttached) return@rememberUpdatedState
+        val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+        val pad = with(density) { 48.dp.toPx() }
+        val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
+        if (target != scrollState.value) {
+            scope.launch { scrollState.animateScrollTo(target) }
+        }
+    }
+    val onJump = remember<(HighlightStop) -> Unit> { { stop -> jumpState.value(stop) } }
+    val highlightedComponents = remember(mineColor, otherColor, underline, selection, navigator, onJump) {
+        markdownComponents(
+            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+        )
+    }
     VolumeKeys.Handle(enabled = volumeScroll) { up ->
         val page = (viewportHeight * 9 / 10).coerceAtLeast(1)
         val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
@@ -400,7 +419,11 @@ private fun ArticleBody(
     )
     BackHandler(enabled = selection.hasSelection) { selection.clear() }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { scrollViewport = it },
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -434,6 +457,14 @@ private fun ArticleBody(
                             otherColor,
                             underline,
                         )
+                        .highlightAnchors(
+                            owner = titleOwner,
+                            text = content.title,
+                            layout = titleLayout,
+                            coordinates = titleCoords,
+                            highlights = painted,
+                            navigator = navigator,
+                        )
                         .readerSelectable(
                             owner = titleOwner,
                             text = content.title,
@@ -441,6 +472,12 @@ private fun ArticleBody(
                             coordinates = titleCoords,
                             state = selection,
                             onCoordinates = { titleCoords = it },
+                            onTap = { offset ->
+                                val laid = titleLayout ?: return@readerSelectable false
+                                val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
+                                onJump(navigator.select(stop))
+                                true
+                            },
                         ),
                 )
             }
@@ -449,6 +486,10 @@ private fun ArticleBody(
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
                     published = published,
+                    onHighlightsClick = {
+                        val stop = navigator.next() ?: return@ArticleMetaRow
+                        onJump(stop)
+                    },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
                     Markdown(
@@ -524,6 +565,8 @@ private fun HighlightedMarkdownNode(
     otherColor: Color,
     underline: Boolean,
     selection: ReaderSelectionState,
+    navigator: HighlightNavigator,
+    onJump: (HighlightStop) -> Unit,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -546,6 +589,14 @@ private fun HighlightedMarkdownNode(
                 otherColor,
                 underline,
             )
+            .highlightAnchors(
+                owner = owner,
+                text = styledText.text,
+                layout = layout,
+                coordinates = coords,
+                highlights = highlights,
+                navigator = navigator,
+            )
             .readerSelectable(
                 owner = owner,
                 text = styledText.text,
@@ -553,6 +604,12 @@ private fun HighlightedMarkdownNode(
                 coordinates = coords,
                 state = selection,
                 onCoordinates = { coords = it },
+                onTap = { offset ->
+                    val laid = layout ?: return@readerSelectable false
+                    val stop = navigator.hit(owner, laid, offset) ?: return@readerSelectable false
+                    onJump(navigator.select(stop))
+                    true
+                },
             ),
         onTextLayout = { result, _ -> layout = result },
     )
@@ -582,6 +639,7 @@ private fun ArticleMetaRow(
     readingTime: String?,
     highlightsLabel: String?,
     published: String?,
+    onHighlightsClick: (() -> Unit)? = null,
 ) {
     if (domain == null && readingTime == null && highlightsLabel == null && published == null) return
     FlowRow(
@@ -602,6 +660,7 @@ private fun ArticleMetaRow(
                 text = highlightsLabel,
                 icon = BorisIcons.Highlighter,
                 highlight = true,
+                onClick = onHighlightsClick,
             )
         }
         if (published != null) {
@@ -615,6 +674,7 @@ private fun MetaChip(
     text: String,
     icon: ImageVector,
     highlight: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
     val border = if (highlight) {
         HighlightMine.copy(alpha = 0.55f)
@@ -627,9 +687,12 @@ private fun MetaChip(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     val iconTint = if (highlight) HighlightMine else fg
+    val shape = RoundedCornerShape(8.dp)
     Row(
         modifier = Modifier
-            .border(1.dp, border, RoundedCornerShape(8.dp))
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .border(1.dp, border, shape)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Tap a highlight in the article, or the highlight-count chip, to jump between quotes
+
 ## [0.13.0] - 2026-08-15
 
 ### Added
