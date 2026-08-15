@@ -49,6 +49,7 @@ data class PaintedHighlight(
     val createdAt: Long = 0L,
     val context: String? = null,
     val authorName: String = "",
+    val authorPicture: String? = null,
 )
 
 class ReaderViewModel(
@@ -873,6 +874,7 @@ class ReaderViewModel(
                 createdAt = event.createdAt,
                 context = event.tagValue("context"),
                 authorName = Profile.displayName(event.pubkey, profiles[key]),
+                authorPicture = profiles[key]?.picture,
             )
         }
     }

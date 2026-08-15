@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
@@ -60,6 +59,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.HighlightAuthor
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.FeedScope
 import org.dergigi.boris.ui.theme.SourceSerif
@@ -340,22 +340,11 @@ private fun HighlightPaneCard(
             ),
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        HighlightAuthor(
+            name = name,
+            color = color,
+            picture = item.authorPicture,
             modifier = Modifier.clickable(onClick = onOpenProfile),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = name,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        )
     }
 }

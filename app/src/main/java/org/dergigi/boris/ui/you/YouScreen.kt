@@ -165,6 +165,7 @@ fun YouHighlightsContent(
                                         createdAt = item.createdAt,
                                         authorName = displayName,
                                         host = item.host,
+                                        authorPicture = pictureUrl,
                                         onClick = item.url?.let { url -> { onOpenArticle(url) } },
                                     )
                                 }

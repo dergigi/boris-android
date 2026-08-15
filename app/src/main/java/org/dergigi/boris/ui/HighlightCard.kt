@@ -97,38 +97,53 @@ fun HighlightCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (authorPicture != null) {
-                val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
-                AsyncImage(
-                    model = authorPicture,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    placeholder = fallback,
-                    error = fallback,
-                    fallback = fallback,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(CircleShape),
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-            Text(
-                text = authorName,
-                style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+        HighlightAuthor(
+            name = authorName,
+            color = color,
+            picture = authorPicture,
+        )
+    }
+}
+
+@Composable
+fun HighlightAuthor(
+    name: String,
+    color: Color,
+    picture: String?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (picture != null) {
+            val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
+            AsyncImage(
+                model = picture,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                placeholder = fallback,
+                error = fallback,
+                fallback = fallback,
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape),
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(14.dp),
             )
         }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
