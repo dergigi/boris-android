@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- The Feed now shows highlights as the same bordered highlight cards used on profile pages, colored by who made them (you, friends, nostrverse)
+
 ## [0.28.1] - 2026-08-15
 
 ### Changed

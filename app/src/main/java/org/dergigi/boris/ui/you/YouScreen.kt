@@ -1,7 +1,6 @@
 package org.dergigi.boris.ui.you
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,7 +40,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -55,9 +51,9 @@ import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
+import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.SourceSerif
 
 @Composable
 fun YouHighlights(
@@ -163,11 +159,13 @@ fun YouHighlightsContent(
                                 }
                             } else {
                                 items(state.highlights, key = { it.id }) { item ->
-                                    YouHighlightCard(
-                                        item = item,
-                                        displayName = displayName,
-                                        mineColor = mineColor,
-                                        onOpenArticle = onOpenArticle,
+                                    HighlightCard(
+                                        quote = item.quote,
+                                        color = mineColor,
+                                        createdAt = item.createdAt,
+                                        authorName = displayName,
+                                        host = item.host,
+                                        onClick = item.url?.let { url -> { onOpenArticle(url) } },
                                     )
                                 }
                             }
@@ -192,83 +190,6 @@ fun YouHighlightsContent(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun YouHighlightCard(
-    item: YouHighlight,
-    displayName: String,
-    mineColor: Color,
-    onOpenArticle: (String) -> Unit,
-) {
-    val shape = RoundedCornerShape(8.dp)
-    val border = mineColor.copy(alpha = 0.55f)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, border, shape)
-            .clip(shape)
-            .clickable(enabled = item.url != null) {
-                item.url?.let(onOpenArticle)
-            }
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.FormatQuote,
-                contentDescription = null,
-                tint = mineColor,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                text = RelativeTime.label(item.createdAt),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Text(
-            text = item.quote,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = SourceSerif,
-                fontSize = 18.sp,
-                lineHeight = 28.sp,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .background(mineColor.copy(alpha = 0.45f), RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        )
-        if (!item.host.isNullOrBlank()) {
-            Text(
-                text = stringResource(R.string.you_highlight_source, item.host),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = null,
-                tint = mineColor,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
