@@ -5,29 +5,12 @@ release_notes: ./CHANGELOG.md
 name: Boris
 summary: Distraction-free social reader with swarm highlights, on nostr
 description: |
-  Hello! I'm Boris. I like to read.
+  A nostr-native reader. Clean articles, swarm highlights, optional login.
 
-  Boris is a nostr-native reader: paste a URL, share one from the browser,
-  or open a link. You get a calm article view with clean typography and
-  none of the usual junk. No ads, no trackers, no paywalls, no
-  subscriptions. Ever.
+  No ads, no trackers, no paywalls. Your key stays in Amber or a bunker.
+  Settings follow your npub, same as the webapp.
 
-  Highlights live on nostr. Yours, your friends', and the rest of the
-  nostrverse paint on the article as swarm highlights, so the good
-  passages show up on their own. Login is optional. Amber or a bunker
-  can show your npub. Boris never holds an nsec.
-
-  Boris is built to work offline. Run a local relay like Citrine on your
-  phone and you can keep reading and highlighting without a network.
-  Changes wait locally and sync when you are back.
-
-  Pick a light or dark theme, fonts, sizes, and highlight colors. Your
-  reading settings follow your npub, same as the webapp.
-
-  No signups, no lock-in. Your data lives on nostr. Boris is free and
-  open source, and it always will be.
-
-  Companion webapp: https://readwithboris.com/
+  https://readwithboris.com/
 
 tags:
   - reading
