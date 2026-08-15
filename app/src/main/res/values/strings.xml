@@ -3,6 +3,7 @@
     <string name="app_name">Boris</string>
     <string name="nav_home">Home</string>
     <string name="nav_library">Library</string>
+    <string name="library_title">Your Library</string>
     <string name="library_private">Private</string>
     <string name="library_public">Public</string>
     <string name="library_web">Web</string>
