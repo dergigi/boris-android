@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-15
+
 ### Added
 
 - Reader turns markdown footnotes into superscripts and a notes list at the end
@@ -266,7 +268,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/dergigi/boris-android/releases/tag/v0.16.0
 [0.15.0]: https://github.com/dergigi/boris-android/releases/tag/v0.15.0
 [0.14.0]: https://github.com/dergigi/boris-android/releases/tag/v0.14.0
 [0.13.0]: https://github.com/dergigi/boris-android/releases/tag/v0.13.0
