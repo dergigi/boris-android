@@ -4,6 +4,7 @@ data class OgPreview(
     val title: String?,
     val imageUrl: String?,
     val siteName: String?,
+    val description: String? = null,
 )
 
 object OgMeta {
@@ -15,10 +16,14 @@ object OgMeta {
             ?: meta(html, "og:image:url")
             ?: meta(html, "twitter:image")
         val siteName = meta(html, "og:site_name")
+        val description = meta(html, "og:description")
+            ?: meta(html, "twitter:description")
+            ?: meta(html, "description")
         return OgPreview(
             title = unescape(title),
             imageUrl = image?.let { absoluteUrl(it, baseUrl) },
             siteName = unescape(siteName),
+            description = unescape(description),
         )
     }
 

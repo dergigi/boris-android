@@ -12,6 +12,7 @@ class OgMetaTest {
             <title>Tab title</title>
             <meta property="og:title" content="Understanding is the new bottleneck">
             <meta property="og:image" content="https://cdn.example/cover.jpg">
+            <meta property="og:description" content="A lede from the page">
             <meta property="og:site_name" content="geoffreylitt.com">
             </head></html>
         """.trimIndent()
@@ -19,6 +20,7 @@ class OgMetaTest {
         assertEquals("Understanding is the new bottleneck", preview.title)
         assertEquals("https://cdn.example/cover.jpg", preview.imageUrl)
         assertEquals("geoffreylitt.com", preview.siteName)
+        assertEquals("A lede from the page", preview.description)
     }
 
     @Test

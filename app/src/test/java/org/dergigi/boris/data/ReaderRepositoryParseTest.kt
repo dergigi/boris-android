@@ -23,6 +23,7 @@ class ReaderRepositoryParseTest {
         assertEquals("# Hello\n\nBody text.", content.markdown)
         assertNull(content.html)
         assertNull(content.publishedAt)
+        assertNull(content.imageUrl)
     }
 
     @Test
@@ -45,6 +46,25 @@ class ReaderRepositoryParseTest {
         assertEquals("Page Title", content.title)
         assertEquals(raw, content.html)
         assertNull(content.markdown)
+        assertNull(content.imageUrl)
+    }
+
+    @Test
+    fun parsesCoverFromJinaHeaderAndStripsTheLeadImage() {
+        val raw = """
+            Title: Hello World
+            URL Source: https://example.com/hello
+            Image URL: https://cdn.example.com/cover.jpg
+            Description: A short lede
+            Markdown Content:
+            ![](https://cdn.example.com/cover.jpg)
+
+            Body text.
+        """.trimIndent()
+        val content = repository.parse("https://example.com/hello", raw)
+        assertEquals("https://cdn.example.com/cover.jpg", content.imageUrl)
+        assertEquals("A short lede", content.summary)
+        assertEquals("Body text.", content.markdown)
     }
 
     @Test

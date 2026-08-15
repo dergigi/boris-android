@@ -5,6 +5,7 @@ import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.RelayQuery
 import java.io.File
 import java.io.IOException
@@ -31,7 +32,7 @@ class ReaderRepository(
         } catch (e: IOException) {
             executeFromCache(request) ?: throw e
         }
-        return parse(targetUrl, text)
+        return withCover(parse(targetUrl, text))
     }
 
     private fun execute(request: Request): String =
@@ -57,14 +58,18 @@ class ReaderRepository(
         val event = RelayQuery.fetchArticle(article.pointer)
             ?: throw IOException("Article not found")
         val published = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt
+        val image = Nip23.image(event)
+        val markdown = image?.let { ArticleCover.stripLeadingImage(event.content, it) } ?: event.content
         return ReadableContent(
             url = article.uri,
             title = event.tagValue("title")?.ifBlank { null },
-            markdown = event.content,
+            markdown = markdown,
             publishedAt = published,
             articleCoordinate = article.coordinate,
             eventId = event.id,
             authorPubkey = event.pubkey,
+            imageUrl = image,
+            summary = Nip23.summary(event),
         )
     }
 
@@ -75,14 +80,18 @@ class ReaderRepository(
             val identifier = event.tagValue("d")
             val article = identifier
                 ?.let { NostrArticle.fromCoordinate("${event.kind}:${event.pubkey}:$it", note.relays) }
+            val image = Nip23.image(event)
+            val markdown = image?.let { ArticleCover.stripLeadingImage(event.content, it) } ?: event.content
             return ReadableContent(
                 url = article?.uri ?: note.uri,
                 title = event.tagValue("title")?.ifBlank { null },
-                markdown = event.content,
+                markdown = markdown,
                 publishedAt = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt,
                 articleCoordinate = article?.coordinate,
                 eventId = event.id,
                 authorPubkey = event.pubkey,
+                imageUrl = image,
+                summary = Nip23.summary(event),
             )
         }
         if (event.kind != Nip01Event.KIND_TEXT_NOTE) {
@@ -111,22 +120,49 @@ class ReaderRepository(
         val hasMarkdownBlock = markdownBlockRegex.containsMatchIn(text)
         return if (hasMarkdownBlock) {
             val title = titleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-            val markdown = markdownRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+            val rawMarkdown = markdownRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+            val image = ArticleCover.imageFromJina(text)
+            val markdown = if (rawMarkdown != null && image != null) {
+                ArticleCover.stripLeadingImage(rawMarkdown, image)
+            } else {
+                rawMarkdown
+            }
             ReadableContent(
                 url = targetUrl,
                 title = title,
                 markdown = markdown,
                 publishedAt = PublishedTime.fromJinaHeader(text),
+                imageUrl = image,
+                summary = ArticleCover.descriptionFromJina(text),
             )
         } else {
+            val preview = OgMeta.parse(text, targetUrl)
             val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
             ReadableContent(
                 url = targetUrl,
-                title = title,
+                title = preview.title ?: title,
                 html = text,
                 publishedAt = PublishedTime.fromHtml(text),
+                imageUrl = preview.imageUrl,
+                summary = preview.description,
             )
         }
+    }
+
+    private fun withCover(content: ReadableContent): ReadableContent {
+        if (!content.imageUrl.isNullOrBlank() && !content.summary.isNullOrBlank()) return content
+        val preview = runCatching { OgMetaClient.fetch(content.url) }.getOrNull() ?: return content
+        val image = content.imageUrl ?: preview.imageUrl
+        val markdown = if (content.markdown != null && image != null) {
+            ArticleCover.stripLeadingImage(content.markdown, image)
+        } else {
+            content.markdown
+        }
+        return content.copy(
+            imageUrl = image,
+            summary = content.summary ?: preview.description,
+            markdown = markdown,
+        )
     }
 
     private fun toProxyUrl(url: String): String = "https://r.jina.ai/$url"
