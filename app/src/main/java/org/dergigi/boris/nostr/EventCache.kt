@@ -74,6 +74,11 @@ object EventCache {
         return byId.values.filter { it.kind in kinds && it.pubkey.lowercase() == key }
     }
 
+    fun byKind(kind: Int): List<Nip01Event> {
+        awaitLoaded()
+        return byId.values.filter { it.kind == kind }
+    }
+
     /** Removes events referenced by a NIP-09 deletion (e and a tags). */
     fun applyDeletion(deletion: Nip01Event) {
         awaitLoaded()
@@ -193,15 +198,18 @@ object EventCache {
 
     private fun cap(kind: Int): Int = when (kind) {
         Nip01Event.KIND_METADATA -> 500
-        Nip01Event.KIND_LONG_FORM -> 100
+        Nip01Event.KIND_HIGHLIGHT -> 400
+        Nip01Event.KIND_LONG_FORM -> 200
         else -> 300
     }
 
     private val PERSIST_KINDS = setOf(
         Nip01Event.KIND_METADATA,
         Nip01Event.KIND_TEXT_NOTE,
+        Nip01Event.KIND_CONTACTS,
         Nip01Event.KIND_REACTION,
         Nip01Event.KIND_URL_REACTION,
+        Nip01Event.KIND_HIGHLIGHT,
         Nip01Event.KIND_RELAY_LIST,
         Nip01Event.KIND_BOOKMARKS,
         Nip01Event.KIND_LONG_FORM,

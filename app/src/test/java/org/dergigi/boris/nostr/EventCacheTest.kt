@@ -59,6 +59,14 @@ class EventCacheTest {
     }
 
     @Test
+    fun byKindReturnsAllOfThatKind() {
+        val highlight = event(id = "h001", kind = Nip01Event.KIND_HIGHLIGHT)
+        val note = event(id = "n001", kind = Nip01Event.KIND_TEXT_NOTE)
+        EventCache.putAll(listOf(highlight, note))
+        assertEquals(listOf(highlight), EventCache.byKind(Nip01Event.KIND_HIGHLIGHT))
+    }
+
+    @Test
     fun byKindAndAuthorFiltersBoth() {
         val mine = event(id = "e001", kind = Nip01Event.KIND_REACTION)
         val otherKind = event(id = "e002", kind = Nip01Event.KIND_TEXT_NOTE)

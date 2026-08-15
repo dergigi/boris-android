@@ -100,6 +100,18 @@ object RelayQuery {
     }
 
     fun fetchContactPubkeys(pubkeyHex: String): Set<String> {
+        val cached = EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)
+        if (cached != null) {
+            refreshOnce("contacts:${pubkeyHex.lowercase()}") { fetchContactPubkeysRemote(pubkeyHex) }
+            return cached.pPubkeys()
+        }
+        return fetchContactPubkeysRemote(pubkeyHex)
+    }
+
+    fun cachedContactPubkeys(pubkeyHex: String): Set<String> =
+        EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)?.pPubkeys() ?: emptySet()
+
+    private fun fetchContactPubkeysRemote(pubkeyHex: String): Set<String> {
         val relays = buildList {
             addAll(RelayList.FALLBACK)
             addAll(fetchRelayList(pubkeyHex).read)
@@ -113,7 +125,8 @@ object RelayQuery {
                 event.kind == Nip01Event.KIND_CONTACTS &&
                     event.pubkey.equals(pubkeyHex, ignoreCase = true)
             }
-            .maxByOrNull { it.createdAt } ?: return emptySet()
+            .maxByOrNull { it.createdAt } ?: return cachedContactPubkeys(pubkeyHex)
+        EventCache.put(newest)
         return newest.pPubkeys()
     }
 
@@ -124,21 +137,38 @@ object RelayQuery {
         authors: Collection<String> = emptyList(),
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
         val keys = authorKeys(pubkeyHex, authors)
-        val filters = if (keys.isEmpty()) {
-            listOf(highlightFilter(limit, emptyList()))
-        } else {
-            keys.chunked(AUTHOR_CHUNK).map { chunk -> highlightFilter(limit, chunk) }
+        if (urls.isNotEmpty()) {
+            val filters = if (keys.isEmpty()) {
+                listOf(highlightFilter(limit, emptyList()))
+            } else {
+                keys.chunked(AUTHOR_CHUNK).map { chunk -> highlightFilter(limit, chunk) }
+            }
+            val allowed = keys.toSet()
+            val remote = query(urls, filters)
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_HIGHLIGHT &&
+                        event.content.isNotBlank() &&
+                        (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
+                }
+            EventCache.putAll(remote)
         }
-        val allowed = keys.toSet()
-        return query(urls, filters)
+        return cachedRecentHighlights(limit, pubkeyHex, authors)
+    }
+
+    fun cachedRecentHighlights(
+        limit: Int = 80,
+        pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
+    ): List<Nip01Event> {
+        val allowed = authorKeys(pubkeyHex, authors).toSet()
+        return EventCache.byKind(Nip01Event.KIND_HIGHLIGHT)
             .filter { event ->
-                event.kind == Nip01Event.KIND_HIGHLIGHT &&
-                    event.content.isNotBlank() &&
+                event.content.isNotBlank() &&
                     (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
             }
             .sortedByDescending { it.createdAt }
+            .take(limit)
     }
 
     fun fetchProfiles(
@@ -293,23 +323,40 @@ object RelayQuery {
         authors: Collection<String> = emptyList(),
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
         val keys = authorKeys(pubkeyHex, authors)
-        val filters = if (keys.isEmpty()) {
-            listOf(writingFilter(limit, emptyList()))
-        } else {
-            keys.chunked(AUTHOR_CHUNK).map { chunk -> writingFilter(limit, chunk) }
+        if (urls.isNotEmpty()) {
+            val filters = if (keys.isEmpty()) {
+                listOf(writingFilter(limit, emptyList()))
+            } else {
+                keys.chunked(AUTHOR_CHUNK).map { chunk -> writingFilter(limit, chunk) }
+            }
+            val allowed = keys.toSet()
+            val remote = query(urls, filters)
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_LONG_FORM &&
+                        !Nip23.identifier(event).isNullOrBlank() &&
+                        (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
+                }
+            EventCache.putAll(remote)
         }
-        val allowed = keys.toSet()
-        return query(urls, filters)
+        return cachedRecentWritings(limit, pubkeyHex, authors)
+    }
+
+    fun cachedRecentWritings(
+        limit: Int = 80,
+        pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
+    ): List<Nip01Event> {
+        val allowed = authorKeys(pubkeyHex, authors).toSet()
+        return EventCache.byKind(Nip01Event.KIND_LONG_FORM)
             .filter { event ->
-                event.kind == Nip01Event.KIND_LONG_FORM &&
-                    !Nip23.identifier(event).isNullOrBlank() &&
+                !Nip23.identifier(event).isNullOrBlank() &&
                     (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
             }
             .groupBy { "${it.pubkey.lowercase()}:${Nip23.identifier(it)!!.lowercase()}" }
             .mapNotNull { (_, events) -> events.maxByOrNull { it.createdAt } }
             .sortedByDescending { Nip23.publishedAt(it) }
+            .take(limit)
     }
 
     fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
@@ -382,7 +429,6 @@ object RelayQuery {
         eventId: String? = null,
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
-        if (urls.isEmpty()) return emptyList()
         val filters = buildList {
             if (!coordinate.isNullOrBlank()) {
                 add(
@@ -402,8 +448,32 @@ object RelayQuery {
             }
         }
         if (filters.isEmpty()) return emptyList()
-        return query(urls, filters)
-            .filter { it.kind == Nip01Event.KIND_HIGHLIGHT && it.content.isNotBlank() }
+        if (urls.isNotEmpty()) {
+            EventCache.putAll(
+                query(urls, filters)
+                    .filter { it.kind == Nip01Event.KIND_HIGHLIGHT && it.content.isNotBlank() },
+            )
+        }
+        return cachedHighlightsForArticle(coordinate, eventId)
+    }
+
+    fun cachedHighlightsForArticle(
+        coordinate: String? = null,
+        eventId: String? = null,
+    ): List<Nip01Event> {
+        val coord = coordinate?.takeIf { it.isNotBlank() }
+        val id = eventId?.trim()?.lowercase()?.takeIf { it.length == 64 }
+        if (coord == null && id == null) return emptyList()
+        return EventCache.byKind(Nip01Event.KIND_HIGHLIGHT)
+            .filter { event ->
+                event.content.isNotBlank() &&
+                    event.tags.any { tag ->
+                        tag.size >= 2 && (
+                            (coord != null && tag[0] == "a" && tag[1] == coord) ||
+                                (id != null && tag[0] == "e" && tag[1].lowercase() == id)
+                            )
+                    }
+            }
             .distinctBy { it.id }
     }
 
@@ -425,18 +495,35 @@ object RelayQuery {
                     }
                 }
         }
-        val articleNorm = ArticleUrl.normalize(url)
-        return query(readRelays, filters).filter { event ->
-            event.kind == Nip01Event.KIND_HIGHLIGHT &&
-                event.content.isNotBlank() &&
-                (pubkeyHex.isNullOrBlank() || event.pubkey.equals(pubkeyHex, ignoreCase = true)) &&
-                event.tags.any { tag ->
-                    tag.size >= 2 &&
-                        tag[0] == "r" &&
-                        ArticleUrl.normalize(tag[1]) == articleNorm
-                }
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isNotEmpty()) {
+            EventCache.putAll(
+                query(urls, filters).filter { event ->
+                    event.kind == Nip01Event.KIND_HIGHLIGHT && event.content.isNotBlank()
+                },
+            )
         }
+        return cachedHighlights(url, pubkeyHex)
     }
+
+    fun cachedHighlights(url: String, pubkeyHex: String? = null): List<Nip01Event> {
+        val articleNorm = ArticleUrl.normalize(url)
+        return EventCache.byKind(Nip01Event.KIND_HIGHLIGHT)
+            .filter { event ->
+                event.content.isNotBlank() &&
+                    (pubkeyHex.isNullOrBlank() || event.pubkey.equals(pubkeyHex, ignoreCase = true)) &&
+                    event.tags.any { tag ->
+                        tag.size >= 2 &&
+                            tag[0] == "r" &&
+                            ArticleUrl.normalize(tag[1]) == articleNorm
+                    }
+            }
+    }
+
+    fun cachedProfiles(pubkeys: List<String>): Map<String, Profile> =
+        pubkeys.map { it.lowercase() }.distinct().mapNotNull { key ->
+            EventCache.latest(Nip01Event.KIND_METADATA, key)?.let { key to Profile.parse(it.content) }
+        }.toMap()
 
     fun fetchArchives(
         readRelays: List<String>,
