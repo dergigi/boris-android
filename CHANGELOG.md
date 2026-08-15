@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Feed screen title is Highlights feed
+- Feed, Home, and Settings use the highlighter icon, tinted with me / friends / nostrverse colors
 
 ## [0.8.0] - 2026-08-15
 

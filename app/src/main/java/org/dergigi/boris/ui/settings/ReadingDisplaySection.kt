@@ -16,10 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatAlignLeft
 import androidx.compose.material.icons.outlined.FormatAlignJustify
 import androidx.compose.material.icons.outlined.FormatUnderlined
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.Highlight
-import androidx.compose.material.icons.outlined.Hub
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -38,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -48,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -74,7 +70,7 @@ fun ReadingDisplaySection(
         SettingRow(stringResource(R.string.settings_highlight_style)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconToggle(
-                    icon = Icons.Outlined.Highlight,
+                    icon = BorisIcons.Highlighter,
                     selected = settings.markerStyle,
                     contentDescription = stringResource(R.string.settings_style_marker),
                     onClick = { onUpdate(settings.withString("highlightStyle", "marker")) },
@@ -106,7 +102,6 @@ fun ReadingDisplaySection(
         SettingRow(stringResource(R.string.settings_highlight_visibility)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VisibilityToggle(
-                    icon = Icons.Outlined.Hub,
                     on = settings.defaultHighlightVisibilityNostrverse,
                     tint = hexColor(settings.highlightColorNostrverse, HighlightOther),
                     contentDescription = stringResource(R.string.settings_visibility_nostrverse),
@@ -120,7 +115,6 @@ fun ReadingDisplaySection(
                     },
                 )
                 VisibilityToggle(
-                    icon = Icons.Outlined.Group,
                     on = settings.defaultHighlightVisibilityFriends,
                     tint = hexColor(settings.highlightColorFriends, HighlightFriends),
                     contentDescription = stringResource(R.string.settings_visibility_friends),
@@ -134,7 +128,6 @@ fun ReadingDisplaySection(
                     },
                 )
                 VisibilityToggle(
-                    icon = Icons.Outlined.Person,
                     on = settings.defaultHighlightVisibilityMine,
                     tint = hexColor(settings.highlightColorMine, HighlightMine),
                     contentDescription = stringResource(R.string.settings_visibility_mine),
@@ -212,7 +205,6 @@ fun ReadingDisplaySection(
 
 @Composable
 private fun VisibilityToggle(
-    icon: ImageVector,
     on: Boolean,
     tint: Color,
     contentDescription: String,
@@ -228,7 +220,7 @@ private fun VisibilityToggle(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = icon,
+            imageVector = BorisIcons.Highlighter,
             contentDescription = null,
             tint = tint.copy(alpha = if (on) 1f else 0.4f),
             modifier = Modifier.size(20.dp),

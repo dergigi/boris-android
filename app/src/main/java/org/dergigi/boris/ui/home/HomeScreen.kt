@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -45,8 +44,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.theme.BorisIcons
+import org.dergigi.boris.ui.theme.HighlightFriends
+import org.dergigi.boris.ui.theme.HighlightMine
+import org.dergigi.boris.ui.theme.HighlightOther
 
 @Composable
 fun HomeScreen(
@@ -58,6 +63,7 @@ fun HomeScreen(
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val loggedIn = authState is AuthUiState.LoggedIn
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
@@ -66,6 +72,9 @@ fun HomeScreen(
         highlights = highlights,
         refreshing = refreshing,
         loggedIn = loggedIn,
+        mineColor = hexColor(settings.highlightColorMine, HighlightMine),
+        friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
+        nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
         onRefresh = viewModel::refresh,
         onRead = onRead,
         modifier = modifier,
@@ -78,6 +87,9 @@ fun HomeScreenContent(
     highlights: HomeHighlightsState,
     refreshing: Boolean,
     loggedIn: Boolean,
+    mineColor: Color,
+    friendsColor: Color,
+    nostrverseColor: Color,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -123,6 +135,7 @@ fun HomeScreenContent(
                                 title = stringResource(R.string.home_recently_highlighted_by_you),
                                 items = highlights.yours,
                                 rowKey = "you",
+                                tint = mineColor,
                                 onRead = onRead,
                             )
                         }
@@ -131,6 +144,7 @@ fun HomeScreenContent(
                                 title = stringResource(R.string.home_recently_highlighted_by_friends),
                                 items = highlights.friends,
                                 rowKey = "friends",
+                                tint = friendsColor,
                                 onRead = onRead,
                             )
                         }
@@ -145,6 +159,7 @@ fun HomeScreenContent(
                                 ),
                                 items = highlights.others,
                                 rowKey = "others",
+                                tint = nostrverseColor,
                                 onRead = onRead,
                             )
                         }
@@ -160,6 +175,7 @@ private fun HighlightedRow(
     title: String,
     items: List<HighlightedArticle>,
     rowKey: String,
+    tint: Color,
     onRead: (String) -> Unit,
 ) {
     Column(
@@ -172,9 +188,9 @@ private fun HighlightedRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
-                imageVector = Icons.Outlined.Highlight,
+                imageVector = BorisIcons.Highlighter,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = tint,
                 modifier = Modifier.size(20.dp),
             )
             Text(
@@ -196,6 +212,7 @@ private fun HighlightedRow(
             items(items, key = { "$rowKey:${it.url}" }) { article ->
                 HighlightedArticleCard(
                     article = article,
+                    fallbackTint = tint,
                     onOpen = { onRead(article.url) },
                 )
             }
@@ -206,6 +223,7 @@ private fun HighlightedRow(
 @Composable
 private fun HighlightedArticleCard(
     article: HighlightedArticle,
+    fallbackTint: Color,
     onOpen: () -> Unit,
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -224,9 +242,9 @@ private fun HighlightedArticleCard(
         ) {
             if (article.imageUrl.isNullOrBlank()) {
                 Icon(
-                    imageVector = Icons.Outlined.Highlight,
+                    imageVector = BorisIcons.Highlighter,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = fallbackTint,
                     modifier = Modifier.size(28.dp),
                 )
             } else {

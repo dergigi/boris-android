@@ -29,7 +29,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
@@ -98,6 +97,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.settings.ReadingFonts
+import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 import kotlin.math.max
@@ -574,7 +574,7 @@ private fun ArticleMetaRow(
         if (highlightsLabel != null) {
             MetaChip(
                 text = highlightsLabel,
-                icon = Icons.Outlined.Highlight,
+                icon = BorisIcons.Highlighter,
                 highlight = true,
             )
         }
