@@ -2,6 +2,7 @@ package org.dergigi.boris
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,6 +12,7 @@ import androidx.compose.runtime.setValue
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.BorisApp
+import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.theme.BorisTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +31,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (VolumeKeys.handle(keyCode, event)) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (VolumeKeys.handle(keyCode, event)) return true
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onNewIntent(intent: Intent) {

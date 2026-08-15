@@ -47,12 +47,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -106,6 +109,7 @@ import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReaderScreen(
@@ -274,6 +278,7 @@ fun ReaderScreenContent(
                     highlightCount = highlightCount,
                     loggedIn = loggedIn,
                     settings = settings,
+                    volumeScroll = gallery == null,
                     onOpenArticle = onOpenArticle,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
@@ -302,6 +307,7 @@ private fun ArticleBody(
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
+    volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -370,6 +376,16 @@ private fun ArticleBody(
         )
     }
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    var viewportHeight by remember { mutableIntStateOf(0) }
+    VolumeKeys.Handle(enabled = volumeScroll) { up ->
+        val page = (viewportHeight * 9 / 10).coerceAtLeast(1)
+        val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
+        if (target != scrollState.value) {
+            scope.launch { scrollState.animateScrollTo(target) }
+        }
+        true
+    }
     // The markdown parse state must survive recomposition. Fresh parser inputs would
     // re-parse asynchronously, collapse the article to an empty box, clamp the scroll
     // to zero, and remount every paragraph, killing the active selection.
@@ -388,6 +404,7 @@ private fun ArticleBody(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .onSizeChanged { viewportHeight = it.height }
                 .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
