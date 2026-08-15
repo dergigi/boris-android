@@ -13,6 +13,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.QuoteMatch
+import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 
@@ -26,8 +27,11 @@ object HighlightMarks {
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()
     return filter { item ->
-        if (item.mine) settings.defaultHighlightVisibilityMine
-        else settings.defaultHighlightVisibilityNostrverse
+        when {
+            item.mine -> settings.defaultHighlightVisibilityMine
+            item.friend -> settings.defaultHighlightVisibilityFriends
+            else -> settings.defaultHighlightVisibilityNostrverse
+        }
     }
 }
 
@@ -36,6 +40,7 @@ fun Modifier.drawHighlightMarks(
     displayed: String,
     highlights: List<PaintedHighlight>,
     mineColor: Color = HighlightMine,
+    friendsColor: Color = HighlightFriends,
     otherColor: Color = HighlightOther,
     underline: Boolean = false,
 ): Modifier = drawBehind {
@@ -48,10 +53,9 @@ fun Modifier.drawHighlightMarks(
             }
         }
     }
-    val others = highlights.filter { !it.mine }
-    val mine = highlights.filter { it.mine }
-    paint(others, otherColor)
-    paint(mine, mineColor)
+    paint(highlights.filter { !it.mine && !it.friend }, otherColor)
+    paint(highlights.filter { it.friend && !it.mine }, friendsColor)
+    paint(highlights.filter { it.mine }, mineColor)
 }
 
 fun DrawScope.paintHighlight(

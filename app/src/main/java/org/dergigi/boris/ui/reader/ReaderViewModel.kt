@@ -43,6 +43,7 @@ data class PaintedHighlight(
     val id: String,
     val quote: String,
     val mine: Boolean,
+    val friend: Boolean = false,
 )
 
 class ReaderViewModel(
@@ -867,13 +868,19 @@ class ReaderViewModel(
             else -> RelayQuery.cachedHighlights(content.url)
         }
 
-    private fun paintHighlights(events: List<Nip01Event>, pubkeyHex: String?) {
+    private fun paintHighlights(
+        events: List<Nip01Event>,
+        pubkeyHex: String?,
+        friends: Set<String>,
+    ) {
         _highlightCount.value = events.size
         _highlights.value = events.map { event ->
+            val mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true)
             PaintedHighlight(
                 id = event.id,
                 quote = event.content,
-                mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true),
+                mine = mine,
+                friend = !mine && event.pubkey.lowercase() in friends,
             )
         }
     }
@@ -885,12 +892,22 @@ class ReaderViewModel(
         publishSaveState()
         highlightJob = viewModelScope.launch(Dispatchers.IO) {
             try {
+                val friends = if (session != null) {
+                    RelayQuery.cachedContactPubkeys(session.pubkeyHex)
+                } else {
+                    emptySet()
+                }
                 val cached = cachedHighlightsFor(content)
-                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex)
+                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex, friends)
                 val relays = buildList {
                     addAll(RelayList.FALLBACK)
                     if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
                 }.distinct()
+                val contacts = if (session != null) {
+                    RelayQuery.fetchContactPubkeys(session.pubkeyHex)
+                } else {
+                    emptySet()
+                }
                 val events = when {
                     !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
                         RelayQuery.fetchHighlightsForArticle(
@@ -901,7 +918,7 @@ class ReaderViewModel(
                     }
                     else -> RelayQuery.fetchHighlights(relays, content.url)
                 }
-                paintHighlights(events, session?.pubkeyHex)
+                paintHighlights(events, session?.pubkeyHex, contacts)
             } catch (_: Exception) {
             }
         }

@@ -121,6 +121,7 @@ import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
+import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
@@ -446,6 +447,7 @@ private fun ArticleBody(
     val bodyLine = (settings.fontSize * 36f / 21f).sp
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
     val mineColor = readingColor(settings.highlightColorMine, HighlightMine)
+    val friendsColor = readingColor(settings.highlightColorFriends, HighlightFriends)
     val otherColor = readingColor(settings.highlightColorNostrverse, HighlightOther)
     val underline = !settings.markerStyle
     val dark = settings.isDark(isSystemInDarkTheme())
@@ -483,16 +485,16 @@ private fun ArticleBody(
         }
     }
     val onJump = remember<(HighlightStop) -> Unit> { { stop -> jumpState.value(stop) } }
-    val highlightedComponents = remember(mineColor, otherColor, underline, selection, navigator, onJump) {
+    val highlightedComponents = remember(mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) {
         markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, otherColor, underline, selection, navigator, onJump) },
+            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, onJump) },
         )
     }
     VolumeKeys.Handle(enabled = volumeScroll && settings.volumeButtonScroll) { up ->
@@ -553,6 +555,7 @@ private fun ArticleBody(
                             content.title,
                             painted,
                             mineColor,
+                            friendsColor,
                             otherColor,
                             underline,
                         )
@@ -688,6 +691,7 @@ private fun HighlightedMarkdownNode(
     style: TextStyle,
     highlights: List<PaintedHighlight>,
     mineColor: Color,
+    friendsColor: Color,
     otherColor: Color,
     underline: Boolean,
     selection: ReaderSelectionState,
@@ -712,6 +716,7 @@ private fun HighlightedMarkdownNode(
                 styledText.text,
                 highlights,
                 mineColor,
+                friendsColor,
                 otherColor,
                 underline,
             )

@@ -64,6 +64,8 @@ class UserSettings internal constructor(
 
     fun visibleMine(): Boolean = showHighlights && defaultHighlightVisibilityMine
 
+    fun visibleFriends(): Boolean = showHighlights && defaultHighlightVisibilityFriends
+
     fun visibleNostrverse(): Boolean = showHighlights && defaultHighlightVisibilityNostrverse
 
     private fun overlay(key: String, value: JsonValue): UserSettings {
