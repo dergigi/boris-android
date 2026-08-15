@@ -117,6 +117,11 @@ fun SettingsScreen(
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
                 SectionDivider()
+                MediaSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
+                SectionDivider()
                 HighlightsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },

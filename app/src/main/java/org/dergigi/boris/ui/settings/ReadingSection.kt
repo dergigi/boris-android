@@ -101,11 +101,6 @@ fun ReadingSection(
             )
         }
         SettingCheckbox(
-            label = stringResource(R.string.settings_full_width_images),
-            checked = settings.fullWidthImages,
-            onCheckedChange = { onUpdate(settings.withBoolean("fullWidthImages", it)) },
-        )
-        SettingCheckbox(
             label = stringResource(R.string.settings_open_links_in_reader),
             checked = settings.openLinksInReader,
             onCheckedChange = { onUpdate(settings.withBoolean("openLinksInReader", it)) },

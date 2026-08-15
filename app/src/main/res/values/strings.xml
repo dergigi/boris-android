@@ -143,6 +143,7 @@
     <string name="settings_color_nostrverse">Nostrverse Highlights</string>
     <string name="settings_show_highlights">Show highlights</string>
     <string name="settings_preview">Preview</string>
+    <string name="settings_media">Media</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
     <string name="settings_open_links_in_reader">Open links in Reader</string>
     <string name="settings_feed_scope">Default Feed Scope</string>
