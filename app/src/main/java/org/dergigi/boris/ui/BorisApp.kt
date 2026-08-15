@@ -37,7 +37,7 @@ object Routes {
     const val LIBRARY = "library"
     const val FEED = "feed"
     const val SEARCH = "search"
-    const val ACCOUNT = "account"
+    const val YOU = "you"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
 
     fun reader(url: String): String {
@@ -78,7 +78,7 @@ fun BorisApp(
     }
     LaunchedEffect(incomingBunker) {
         if (!incomingBunker.isNullOrBlank()) {
-            goToTab(MainTab.Account)
+            goToTab(MainTab.You)
         }
     }
 
@@ -120,7 +120,7 @@ fun BorisApp(
                 composable(Routes.SEARCH) {
                     StubScreen(stringResource(MainTab.Search.labelRes))
                 }
-                composable(Routes.ACCOUNT) {
+                composable(Routes.YOU) {
                     AccountScreen(
                         incomingBunker = incomingBunker,
                         viewModel = authViewModel,

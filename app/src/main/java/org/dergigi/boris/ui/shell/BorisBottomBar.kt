@@ -35,7 +35,7 @@ fun BorisBottomBar(
                 selected = isSelected,
                 onClick = { onSelect(tab) },
                 icon = {
-                    if (tab == MainTab.Account && !pictureUrl.isNullOrBlank()) {
+                    if (tab == MainTab.You && !pictureUrl.isNullOrBlank()) {
                         val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
                         AsyncImage(
                             model = pictureUrl,

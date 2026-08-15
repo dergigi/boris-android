@@ -45,9 +45,9 @@ enum class MainTab(
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     ),
-    Account(
-        route = Routes.ACCOUNT,
-        labelRes = R.string.nav_account,
+    You(
+        route = Routes.YOU,
+        labelRes = R.string.nav_you,
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle,
     ),
