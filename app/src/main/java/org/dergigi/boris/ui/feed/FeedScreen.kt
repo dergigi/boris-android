@@ -110,7 +110,7 @@ fun FeedScreenContent(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.nav_feed)) },
+                title = { Text(stringResource(R.string.feed_title)) },
                 actions = {
                     ScopeToggle(
                         icon = Icons.Outlined.Hub,

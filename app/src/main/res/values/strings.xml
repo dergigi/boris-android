@@ -4,6 +4,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_library">Library</string>
     <string name="nav_feed">Feed</string>
+    <string name="feed_title">Highlights feed</string>
     <string name="nav_search">Search</string>
     <string name="nav_you">You</string>
     <string name="home_recently_highlighted">Recently highlighted</string>

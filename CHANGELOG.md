@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Feed screen title is Highlights feed
+
 ## [0.8.0] - 2026-08-15
 
 ### Added
