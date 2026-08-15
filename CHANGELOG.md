@@ -9,6 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Settings are regrouped into Appearance, Reading, Highlights, Feed, App & Airplane Mode, and Scroll Behaviour, so all highlight options live in one place
+- Theme swatches are the same 40dp size as the appearance toggles, so the Appearance rows line up
+
 ## [0.28.0] - 2026-08-15
 
 ### Added
