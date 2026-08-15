@@ -27,7 +27,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.LocalRelays
 
-private const val CITRINE_URL = "https://github.com/greenart7c3/Citrine"
+private const val CITRINE_URL = "https://zapstore.dev/apps/com.greenart7c3.citrine"
 private const val RELAYS_URL = "https://nostr.com"
 
 @Composable
