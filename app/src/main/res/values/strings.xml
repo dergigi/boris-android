@@ -25,6 +25,9 @@
     <string name="auth_connect">Amber</string>
     <string name="auth_bunker">Bunker</string>
     <string name="auth_sign_out">Sign out</string>
+    <string name="auth_sign_out_confirm_title">Sign out?</string>
+    <string name="auth_sign_out_confirm_body">You can connect again anytime.</string>
+    <string name="auth_cancel">Cancel</string>
     <string name="auth_missing_amber">Amber is not installed. Install it, then come back to connect.</string>
     <string name="auth_install_zapstore">Install Amber on Zapstore</string>
     <string name="auth_install_fdroid">Install Amber on F-Droid</string>

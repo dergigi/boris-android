@@ -119,7 +119,6 @@ fun LibraryScreen(
         onOpenArticle = onOpenArticle,
         onConnect = { authViewModel.connectIntent()?.let(authLauncher::launch) },
         onConnectBunker = { authViewModel.connectBunker(bunkerUri) },
-        onSignOut = authViewModel::signOut,
         modifier = modifier,
     )
 }
@@ -140,7 +139,6 @@ fun LibraryScreenContent(
     onOpenArticle: (String) -> Unit,
     onConnect: () -> Unit,
     onConnectBunker: () -> Unit,
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -173,7 +171,6 @@ fun LibraryScreenContent(
                         onBunkerUriChange = onBunkerUriChange,
                         onConnect = onConnect,
                         onConnectBunker = onConnectBunker,
-                        onSignOut = onSignOut,
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
@@ -380,7 +377,6 @@ private fun LoggedOutLibrary(
     onBunkerUriChange: (String) -> Unit,
     onConnect: () -> Unit,
     onConnectBunker: () -> Unit,
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -422,7 +418,6 @@ private fun LoggedOutLibrary(
             onBunkerUriChange = onBunkerUriChange,
             onConnect = onConnect,
             onConnectBunker = onConnectBunker,
-            onSignOut = onSignOut,
         )
         NstartFooter()
     }

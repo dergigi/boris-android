@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Shield
@@ -28,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,7 +63,6 @@ fun AuthBar(
     onBunkerUriChange: (String) -> Unit,
     onConnect: () -> Unit,
     onConnectBunker: () -> Unit,
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val connecting = state is AuthUiState.Connecting
@@ -86,23 +83,7 @@ fun AuthBar(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        when (state) {
-            is AuthUiState.LoggedIn -> {
-                SelectionContainer {
-                    Text(
-                        text = state.npub,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            textAlign = TextAlign.Center,
-                            fontFamily = FontFamily.Monospace,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                TextButton(onClick = onSignOut) {
-                    Text(stringResource(R.string.auth_sign_out))
-                }
-            }
-            else -> {
+        if (state !is AuthUiState.LoggedIn) {
                 if (!showBunker) {
                     LoginButton(
                         label = stringResource(R.string.auth_connect),
@@ -142,10 +123,6 @@ fun AuthBar(
                 if (!message.isNullOrBlank()) {
                     NoticeCard(message)
                 }
-            }
-        }
-        if (state is AuthUiState.LoggedIn && !message.isNullOrBlank()) {
-            NoticeCard(message)
         }
     }
 }

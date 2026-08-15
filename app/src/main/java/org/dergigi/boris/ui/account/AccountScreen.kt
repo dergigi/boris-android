@@ -15,19 +15,23 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,9 +74,33 @@ fun AccountScreen(
         viewModel.onSignerResult(result.resultCode, result.data)
     }
     val loggedIn = authState is AuthUiState.LoggedIn
+    var confirmSignOut by remember { mutableStateOf(false) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
+    }
+
+    if (confirmSignOut) {
+        AlertDialog(
+            onDismissRequest = { confirmSignOut = false },
+            title = { Text(stringResource(R.string.auth_sign_out_confirm_title)) },
+            text = { Text(stringResource(R.string.auth_sign_out_confirm_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmSignOut = false
+                        viewModel.signOut()
+                    },
+                ) {
+                    Text(stringResource(R.string.auth_sign_out))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmSignOut = false }) {
+                    Text(stringResource(R.string.auth_cancel))
+                }
+            },
+        )
     }
 
     Scaffold(
@@ -82,6 +110,12 @@ fun AccountScreen(
                 title = { Text(stringResource(R.string.nav_you)) },
                 actions = {
                     if (loggedIn) {
+                        IconButton(onClick = { confirmSignOut = true }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = stringResource(R.string.auth_sign_out),
+                            )
+                        }
                         IconButton(onClick = onOpenSettings) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
@@ -137,7 +171,6 @@ fun AccountScreen(
                                 viewModel.connectIntent()?.let(authLauncher::launch)
                             },
                             onConnectBunker = { viewModel.connectBunker(bunkerUri) },
-                            onSignOut = viewModel::signOut,
                         )
                         NstartFooter()
                     }

@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
-import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 
@@ -45,7 +44,6 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
-    val authMessage by authViewModel.message.collectAsStateWithLifecycle()
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val signIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
@@ -113,18 +111,6 @@ fun SettingsScreen(
                 MediaDisplaySection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
-                )
-                AuthBar(
-                    state = authState,
-                    message = authMessage,
-                    bunkerUri = "",
-                    onBunkerUriChange = {},
-                    onConnect = {},
-                    onConnectBunker = {},
-                    onSignOut = {
-                        settingsViewModel.cancelPending()
-                        authViewModel.signOut()
-                    },
                 )
             }
         }
