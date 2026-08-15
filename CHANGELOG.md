@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Reader shows a full-bleed cover on articles that have a NIP-23 or Open Graph image, with the title overlaid like the webapp
+- Reader opens a right-side highlights pane from the count pill or a painted quote, with mine/friends/nostrverse filters and jump-to-quote cards
 
 ## [0.24.0] - 2026-08-15
 
