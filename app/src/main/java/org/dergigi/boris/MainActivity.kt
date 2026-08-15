@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         EventCache.init(File(filesDir, "event_cache"))
         ReaderRepository.init(File(filesDir, "reader_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
+        OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
         OfflineSync.bind(this)
         applyIntent(intent)
         enableEdgeToEdge()

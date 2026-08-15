@@ -16,6 +16,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it
+
+### Fixed
+
+- Home covers no longer go missing: link previews are cached on disk and shown instantly, nostr article covers come from the event cache, and a failed preview fetch falls back to the cached one
 - The cover image shows an author and publication date byline below the title, replacing the hard-to-read date in the top-right corner
 
 ## [0.29.0] - 2026-08-15

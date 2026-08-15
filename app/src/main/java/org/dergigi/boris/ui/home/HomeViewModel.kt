@@ -18,6 +18,7 @@ import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
+import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
@@ -144,7 +145,16 @@ class HomeViewModel(
             ARTICLE_LIMIT,
         )
         if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) return null
-        return HomeHighlightsState.Ready(yours, friends, others, loggedIn = pubkey != null)
+        val previews = (yours + friends + others)
+            .map { it.url }
+            .distinct()
+            .associateWith { OgPreviewCache.get(it) }
+        return HomeHighlightsState.Ready(
+            applyPreviews(yours, previews),
+            applyPreviews(friends, previews),
+            applyPreviews(others, previews),
+            loggedIn = pubkey != null,
+        )
     }
 
     private fun loadYours(relays: List<String>, pubkeyHex: String): List<HighlightedArticle> {
@@ -170,7 +180,10 @@ class HomeViewModel(
 
     private suspend fun loadPreviews(urls: List<String>): Map<String, OgPreview?> = coroutineScope {
         urls.map { url ->
-            async { url to runCatching { OgMetaClient.fetch(url) }.getOrNull() }
+            async {
+                val fetched = runCatching { OgMetaClient.fetch(url) }.getOrNull()
+                url to (fetched ?: OgPreviewCache.get(url))
+            }
         }.awaitAll().toMap()
     }
 

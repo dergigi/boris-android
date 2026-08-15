@@ -1,6 +1,8 @@
 package org.dergigi.boris.data
 
+import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
 
 data class HighlightedArticle(
@@ -26,12 +28,15 @@ object HighlightedArticles {
                 is NostrTarget.Note -> "nostr"
                 null -> ArticleUrl.host(url) ?: continue
             }
+            val article = (target as? NostrTarget.Article)?.ref?.pointer?.let { pointer ->
+                EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
+            }
             out.add(
                 HighlightedArticle(
                     url = url,
                     host = host,
-                    title = host,
-                    imageUrl = null,
+                    title = article?.let { Nip23.title(it) } ?: host,
+                    imageUrl = article?.let { Nip23.image(it) },
                     highlightedAt = event.createdAt,
                 ),
             )

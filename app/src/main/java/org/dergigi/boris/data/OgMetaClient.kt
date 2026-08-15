@@ -26,7 +26,7 @@ object OgMetaClient {
             val n = minOf(source.buffer.size, PREFIX_BYTES.toLong())
             if (n == 0L) return null
             OgMeta.parse(source.buffer.readUtf8(n), url)
-        }
+        }?.also { preview -> OgPreviewCache.put(url, preview) }
     }
 
     private const val PREFIX_BYTES = 80_000
