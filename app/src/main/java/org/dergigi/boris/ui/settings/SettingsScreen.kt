@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -109,11 +110,13 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                SectionDivider()
                 ReadingSection(
                     settings = settings,
                     darkTheme = settings.isDark(isSystemInDarkTheme()),
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                SectionDivider()
                 HighlightsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
@@ -122,15 +125,18 @@ fun SettingsScreen(
                     settings = settings,
                     darkTheme = settings.isDark(isSystemInDarkTheme()),
                 )
+                SectionDivider()
                 FeedSettingsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                SectionDivider()
                 AirplaneModeSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                     onOpenArticle = onOpenArticle,
                 )
+                SectionDivider()
                 ScrollBehaviourSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
@@ -139,6 +145,11 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun SectionDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 }
 
 private const val GITHUB_REPO = "https://github.com/dergigi/boris-android"
