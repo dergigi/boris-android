@@ -19,25 +19,8 @@ import org.dergigi.boris.ui.theme.HighlightOther
 object HighlightMarks {
     const val HighlightMarkAlpha = 0.45f
 
-    fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> {
-        if (start >= end) return emptyList()
-        val first = layout.getLineForOffset(start)
-        val last = layout.getLineForOffset(end - 1)
-        return (first..last).mapNotNull { line ->
-            val lineStart = maxOf(start, layout.getLineStart(line))
-            val lineEnd = minOf(end, layout.getLineEnd(line, visibleEnd = true))
-            if (lineEnd <= lineStart) return@mapNotNull null
-            val lastChar = (lineEnd - 1).coerceAtLeast(lineStart)
-            val firstBox = layout.getBoundingBox(lineStart)
-            val lastBox = layout.getBoundingBox(lastChar)
-            Rect(
-                left = firstBox.left,
-                top = minOf(firstBox.top, lastBox.top),
-                right = lastBox.right,
-                bottom = maxOf(firstBox.bottom, lastBox.bottom),
-            )
-        }
-    }
+    fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> =
+        JustifiedLayout.highlightRects(layout, start, end)
 }
 
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {

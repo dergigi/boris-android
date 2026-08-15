@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -59,13 +58,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
@@ -343,28 +343,51 @@ private fun ArticleBody(
         fontSize = bodySize,
         lineHeight = bodyLine,
         textAlign = align,
+        letterSpacing = 0.sp,
     )
     val headingFamily = typography.headlineLarge.copy(fontFamily = family)
-    val highlightedComponents = remember(painted, mineColor, otherColor, underline) {
-        markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, painted, mineColor, otherColor, underline) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, painted, mineColor, otherColor, underline) },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, painted, mineColor, otherColor, underline) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, painted, mineColor, otherColor, underline) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, painted, mineColor, otherColor, underline) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, painted, mineColor, otherColor, underline) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, painted, mineColor, otherColor, underline) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, painted, mineColor, otherColor, underline) },
-        )
-    }
     val view = LocalView.current
     val clipboard = LocalClipboardManager.current
+    val selection = remember { ReaderSelectionState() }
+    val highlightedComponents = remember(painted, mineColor, otherColor, underline, selection) {
+        markdownComponents(
+            text = { HighlightedMarkdownNode(it, it.typography.text, painted, mineColor, otherColor, underline, selection) },
+            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, painted, mineColor, otherColor, underline, selection) },
+            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, painted, mineColor, otherColor, underline, selection) },
+            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, painted, mineColor, otherColor, underline, selection) },
+            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, painted, mineColor, otherColor, underline, selection) },
+            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, painted, mineColor, otherColor, underline, selection) },
+            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, painted, mineColor, otherColor, underline, selection) },
+            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, painted, mineColor, otherColor, underline, selection) },
+        )
+    }
     val toolbar = remember(view, clipboard, loggedIn, onHighlight) {
         HighlightTextToolbar(
             view = view,
             showHighlight = loggedIn,
             clipboard = clipboard,
-            onHighlight = onHighlight,
+            onHighlight = { quote ->
+                selection.clear()
+                onHighlight(quote)
+            },
+        )
+    }
+    LaunchedEffect(selection.hasSelection, selection.toolbarRect, selection.selectedText) {
+        if (!selection.hasSelection) {
+            toolbar.hide()
+            return@LaunchedEffect
+        }
+        val quote = selection.selectedText
+        val owner = selection.owner
+        val bodyText = selection.text
+        toolbar.showMenu(
+            rect = selection.toolbarRect,
+            onCopyRequested = { clipboard.setText(AnnotatedString(quote)) },
+            onPasteRequested = null,
+            onCutRequested = null,
+            onSelectAllRequested = {
+                if (owner != null) selection.selectAll(owner, bodyText)
+            },
         )
     }
 
@@ -375,33 +398,41 @@ private fun ArticleBody(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CompositionLocalProvider(LocalTextToolbar provides toolbar) {
-        SelectionContainer(
+        Column(
             modifier = Modifier
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
                 .padding(bottom = 48.dp),
         ) {
-            Column {
-                if (!content.title.isNullOrBlank()) {
-                    var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-                    Text(
-                        text = content.title,
-                        style = headingFamily,
-                        color = colors.onBackground,
-                        onTextLayout = { titleLayout = it },
-                        modifier = Modifier
-                            .padding(top = 8.dp, bottom = 12.dp)
-                            .drawHighlightMarks(
-                                titleLayout,
-                                content.title,
-                                painted,
-                                mineColor,
-                                otherColor,
-                                underline,
-                            ),
-                    )
-                }
+            if (!content.title.isNullOrBlank()) {
+                var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+                var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+                val titleOwner = remember { Any() }
+                Text(
+                    text = content.title,
+                    style = headingFamily,
+                    color = colors.onBackground,
+                    onTextLayout = { titleLayout = it },
+                    modifier = Modifier
+                        .padding(top = 8.dp, bottom = 12.dp)
+                        .drawHighlightMarks(
+                            titleLayout,
+                            content.title,
+                            painted,
+                            mineColor,
+                            otherColor,
+                            underline,
+                        )
+                        .readerSelectable(
+                            owner = titleOwner,
+                            text = content.title,
+                            layout = titleLayout,
+                            coordinates = titleCoords,
+                            state = selection,
+                            onCoordinates = { titleCoords = it },
+                        ),
+                )
+            }
                 ArticleMetaRow(
                     domain = domain,
                     readingTime = readingTime,
@@ -451,8 +482,6 @@ private fun ArticleBody(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-            }
-        }
         }
     }
 }
@@ -465,6 +494,7 @@ private fun HighlightedMarkdownNode(
     mineColor: Color,
     otherColor: Color,
     underline: Boolean,
+    selection: ReaderSelectionState,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -472,17 +502,29 @@ private fun HighlightedMarkdownNode(
         annotatorSettings(),
     )
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val owner = remember { Any() }
     MarkdownText(
         content = styledText,
         style = style,
-        modifier = Modifier.drawHighlightMarks(
-            layout,
-            styledText.text,
-            highlights,
-            mineColor,
-            otherColor,
-            underline,
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawHighlightMarks(
+                layout,
+                styledText.text,
+                highlights,
+                mineColor,
+                otherColor,
+                underline,
+            )
+            .readerSelectable(
+                owner = owner,
+                text = styledText.text,
+                layout = layout,
+                coordinates = coords,
+                state = selection,
+                onCoordinates = { coords = it },
+            ),
         onTextLayout = { result, _ -> layout = result },
     )
 }

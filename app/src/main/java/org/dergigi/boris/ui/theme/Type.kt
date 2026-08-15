@@ -92,6 +92,7 @@ val BorisTypography = Typography(
         fontSize = 21.sp,
         lineHeight = 36.sp,
         textAlign = TextAlign.Justify,
+        letterSpacing = 0.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = SourceSerif,

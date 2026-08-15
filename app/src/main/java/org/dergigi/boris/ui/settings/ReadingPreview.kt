@@ -153,7 +153,9 @@ private fun PreviewParagraph(
     Text(
         text = annotated,
         onTextLayout = { layout = it },
-        modifier = Modifier.drawBehind {
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
             val result = layout ?: return@drawBehind
             if (!visible || quoteStart < 0) return@drawBehind
             paintHighlight(result, quoteStart, quoteStart + quote.length, color, underline)
@@ -163,6 +165,7 @@ private fun PreviewParagraph(
             fontSize = fontSize,
             lineHeight = lineHeight,
             textAlign = align,
+            letterSpacing = 0.sp,
         ),
         color = MaterialTheme.colorScheme.onBackground,
     )

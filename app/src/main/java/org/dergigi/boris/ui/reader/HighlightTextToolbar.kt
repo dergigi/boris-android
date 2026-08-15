@@ -20,6 +20,8 @@ class HighlightTextToolbar(
 ) : TextToolbar {
     private var actionMode: ActionMode? = null
     private val contentRect = android.graphics.Rect()
+    private var copyAction: (() -> Unit)? = null
+    private var selectAllAction: (() -> Unit)? = null
 
     override var status: TextToolbarStatus = TextToolbarStatus.Hidden
         private set
@@ -37,22 +39,27 @@ class HighlightTextToolbar(
         onCutRequested: (() -> Unit)?,
         onSelectAllRequested: (() -> Unit)?,
     ) {
-        hide()
+        copyAction = onCopyRequested
+        selectAllAction = onSelectAllRequested
         contentRect.set(
             rect.left.roundToInt(),
             rect.top.roundToInt(),
             rect.right.roundToInt().coerceAtLeast(rect.left.roundToInt() + 1),
             rect.bottom.roundToInt().coerceAtLeast(rect.top.roundToInt() + 1),
         )
+        if (actionMode != null) {
+            actionMode?.invalidateContentRect()
+            return
+        }
         val callback = object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                if (onCopyRequested != null) {
+                if (copyAction != null) {
                     menu.add(0, MENU_COPY, 0, android.R.string.copy)
                 }
                 if (showHighlight) {
                     menu.add(0, MENU_HIGHLIGHT, 1, view.context.getString(R.string.highlight_action))
                 }
-                if (onSelectAllRequested != null) {
+                if (selectAllAction != null) {
                     menu.add(0, MENU_SELECT_ALL, 2, android.R.string.selectAll)
                 }
                 return true
@@ -62,10 +69,13 @@ class HighlightTextToolbar(
 
             override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
                 when (item.itemId) {
-                    MENU_COPY -> onCopyRequested?.invoke()
+                    MENU_COPY -> {
+                        copyAction?.invoke()
+                        mode.finish()
+                    }
                     MENU_HIGHLIGHT -> {
                         val prior = clipboard.getText()
-                        onCopyRequested?.invoke()
+                        copyAction?.invoke()
                         val quote = clipboard.getText()?.text.orEmpty()
                         if (prior != null) {
                             clipboard.setText(prior)
@@ -73,10 +83,10 @@ class HighlightTextToolbar(
                             clipboard.setText(AnnotatedString(""))
                         }
                         onHighlight(quote)
+                        mode.finish()
                     }
-                    MENU_SELECT_ALL -> onSelectAllRequested?.invoke()
+                    MENU_SELECT_ALL -> selectAllAction?.invoke()
                 }
-                mode.finish()
                 return true
             }
 
