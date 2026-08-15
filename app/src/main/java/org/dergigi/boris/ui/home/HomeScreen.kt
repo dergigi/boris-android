@@ -10,32 +10,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Highlight
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,9 +34,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,9 +41,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HighlightedArticle
-import org.dergigi.boris.data.UrlExtractor
-
-const val DEFAULT_ARTICLE_URL = "https://dergigi.com/2023/04/04/purple-text-orange-highlights/"
 
 @Composable
 fun HomeScreen(
@@ -64,101 +49,54 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     HomeScreenContent(
         highlights = highlights,
+        refreshing = refreshing,
+        onRefresh = viewModel::refresh,
         onRead = onRead,
         modifier = modifier,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreenContent(
     highlights: HomeHighlightsState,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var url by rememberSaveable { mutableStateOf("") }
-    val extracted = UrlExtractor.extract(url.trim().ifEmpty { DEFAULT_ARTICLE_URL })
-    val canRead = extracted != null
-
-    fun submit() {
-        extracted?.let(onRead)
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .imePadding(),
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(28.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 420.dp)
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.home_hello),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(DEFAULT_ARTICLE_URL) },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
-                    shape = RoundedCornerShape(8.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Go,
-                    ),
-                    keyboardActions = KeyboardActions(onGo = { submit() }),
-                )
-                Button(
-                    onClick = ::submit,
-                    enabled = canRead,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 52.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.home_read),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
+        when (highlights) {
+            HomeHighlightsState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-            when (highlights) {
-                HomeHighlightsState.Hidden -> Unit
-                HomeHighlightsState.Loading -> {
-                    RecentlyHighlightedSection {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(CardImageSize + 72.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(28.dp))
-                        }
-                    }
-                }
-                is HomeHighlightsState.Ready -> {
+            HomeHighlightsState.Empty -> {
+                StatusMessage(
+                    text = stringResource(R.string.feed_empty),
+                    onRetry = onRefresh,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+            HomeHighlightsState.Error -> {
+                StatusMessage(
+                    text = stringResource(R.string.feed_error),
+                    onRetry = onRefresh,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+            is HomeHighlightsState.Ready -> {
+                PullToRefreshBox(
+                    isRefreshing = refreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     RecentlyHighlightedSection {
                         LazyRow(
                             modifier = Modifier
@@ -186,7 +124,9 @@ private fun RecentlyHighlightedSection(
     content: @Composable () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
@@ -265,6 +205,28 @@ private fun HighlightedArticleCard(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun StatusMessage(
+    text: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TextButton(onClick = onRetry, shape = RoundedCornerShape(8.dp)) {
+            Text(stringResource(R.string.feed_retry))
+        }
     }
 }
 

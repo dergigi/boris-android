@@ -20,13 +20,17 @@ import org.dergigi.boris.nostr.RelayQuery
 
 sealed interface HomeHighlightsState {
     data object Loading : HomeHighlightsState
-    data object Hidden : HomeHighlightsState
+    data object Empty : HomeHighlightsState
+    data object Error : HomeHighlightsState
     data class Ready(val items: List<HighlightedArticle>) : HomeHighlightsState
 }
 
 class HomeViewModel : ViewModel() {
     private val _highlights = MutableStateFlow<HomeHighlightsState>(HomeHighlightsState.Loading)
     val highlights: StateFlow<HomeHighlightsState> = _highlights.asStateFlow()
+
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
     private var loadJob: Job? = null
 
@@ -38,14 +42,18 @@ class HomeViewModel : ViewModel() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val keep = _highlights.value is HomeHighlightsState.Ready
-            if (!keep) _highlights.value = HomeHighlightsState.Loading
+            if (keep) {
+                _refreshing.value = true
+            } else {
+                _highlights.value = HomeHighlightsState.Loading
+            }
             try {
                 val items = withContext(Dispatchers.IO) {
                     val events = RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
                     HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
                 }
                 if (items.isEmpty()) {
-                    if (!keep) _highlights.value = HomeHighlightsState.Hidden
+                    _highlights.value = HomeHighlightsState.Empty
                     return@launch
                 }
                 _highlights.value = HomeHighlightsState.Ready(items)
@@ -68,8 +76,10 @@ class HomeViewModel : ViewModel() {
                 throw e
             } catch (_: Exception) {
                 if (_highlights.value !is HomeHighlightsState.Ready) {
-                    _highlights.value = HomeHighlightsState.Hidden
+                    _highlights.value = HomeHighlightsState.Error
                 }
+            } finally {
+                _refreshing.value = false
             }
         }
     }
