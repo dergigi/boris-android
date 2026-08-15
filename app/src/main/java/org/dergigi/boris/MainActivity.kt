@@ -10,10 +10,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.theme.BorisTheme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private var incomingUrl by mutableStateOf<String?>(null)
@@ -21,6 +24,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EventCache.init(File(filesDir, "event_cache"))
+        ReaderRepository.init(File(filesDir, "reader_http_cache"))
         applyIntent(intent)
         enableEdgeToEdge()
         setContent {

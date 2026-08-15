@@ -1,9 +1,12 @@
 package org.dergigi.boris.data
 
+import okhttp3.Cache
+import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.RelayQuery
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -23,13 +26,31 @@ class ReaderRepository(
             .get()
             .build()
 
+        val text = try {
+            execute(request)
+        } catch (e: IOException) {
+            executeFromCache(request) ?: throw e
+        }
+        return parse(targetUrl, text)
+    }
+
+    private fun execute(request: Request): String =
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IOException("Failed to fetch readable content (${response.code})")
             }
-            val text = response.body?.string().orEmpty()
-            return parse(targetUrl, text)
+            response.body?.string().orEmpty()
         }
+
+    private fun executeFromCache(request: Request): String? = try {
+        val cached = request.newBuilder()
+            .cacheControl(CacheControl.FORCE_CACHE)
+            .build()
+        client.newCall(cached).execute().use { response ->
+            if (response.isSuccessful) response.body?.string() else null
+        }
+    } catch (_: IOException) {
+        null
     }
 
     private fun fetchArticle(article: NostrArticleRef): ReadableContent {
@@ -111,10 +132,36 @@ class ReaderRepository(
     private fun toProxyUrl(url: String): String = "https://r.jina.ai/$url"
 
     companion object {
-        private val defaultClient: OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(45, TimeUnit.SECONDS)
-            .build()
+        @Volatile
+        private var httpCacheDir: File? = null
+
+        /** Must run before the first ReaderRepository is constructed. */
+        fun init(cacheDir: File) {
+            httpCacheDir = cacheDir
+        }
+
+        private val defaultClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(45, TimeUnit.SECONDS)
+                .apply {
+                    val dir = httpCacheDir ?: return@apply
+                    cache(Cache(dir, HTTP_CACHE_BYTES))
+                    // jina sends no cache headers; force responses into the cache
+                    // so previously opened articles render offline.
+                    addNetworkInterceptor { chain ->
+                        chain.proceed(chain.request()).newBuilder()
+                            .removeHeader("Pragma")
+                            .removeHeader("Cache-Control")
+                            .header("Cache-Control", "public, max-age=$FRESH_SECONDS")
+                            .build()
+                    }
+                }
+                .build()
+        }
+
+        private const val HTTP_CACHE_BYTES = 50L * 1024L * 1024L
+        private const val FRESH_SECONDS = 300
 
         private val markdownBlockRegex = Regex("""Markdown Content:\s""", RegexOption.IGNORE_CASE)
         private val titleRegex = Regex(
