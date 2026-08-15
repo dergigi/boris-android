@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -216,7 +218,7 @@ fun LibraryScreenContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ReadyLibrary(
     shelves: BookmarkShelves,
@@ -228,7 +230,7 @@ private fun ReadyLibrary(
     onOpenArticle: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -251,6 +253,11 @@ private fun ReadyLibrary(
                 label = stringResource(R.string.library_web),
                 icon = Icons.Outlined.Language,
                 onClick = { onSelect(BookmarkBucket.Web) },
+            )
+            ShelfChip(
+                selected = bucket == BookmarkBucket.Look,
+                label = stringResource(R.string.library_look),
+                onClick = { onSelect(BookmarkBucket.Look) },
             )
         }
         PullToRefreshBox(
@@ -298,19 +305,21 @@ private fun ReadyLibrary(
 private fun ShelfChip(
     selected: Boolean,
     label: String,
-    icon: ImageVector,
     onClick: () -> Unit,
+    icon: ImageVector? = null,
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label) },
-        leadingIcon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
+        leadingIcon = icon?.let {
+            {
+                Icon(
+                    imageVector = it,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         },
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -490,6 +499,10 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
                     title = stringResource(R.string.library_web),
                     body = stringResource(R.string.library_info_web),
                 )
+                LibraryInfoRow(
+                    title = stringResource(R.string.library_look),
+                    body = stringResource(R.string.library_info_look),
+                )
             }
         },
         confirmButton = {
@@ -502,22 +515,24 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
 
 @Composable
 private fun LibraryInfoRow(
-    icon: ImageVector,
     title: String,
     body: String,
+    icon: ImageVector? = null,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(20.dp),
-        )
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .size(20.dp),
+            )
+        }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = title,

@@ -4,6 +4,7 @@ import org.dergigi.boris.nostr.BookmarkRef
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
 
@@ -11,6 +12,7 @@ enum class BookmarkBucket {
     Private,
     Public,
     Web,
+    Look,
 }
 
 data class BookmarkItem(
@@ -27,12 +29,14 @@ data class BookmarkShelves(
     val private: List<BookmarkItem> = emptyList(),
     val public: List<BookmarkItem> = emptyList(),
     val web: List<BookmarkItem> = emptyList(),
+    val look: List<BookmarkItem> = emptyList(),
     val privateLocked: Boolean = false,
 ) {
     fun items(bucket: BookmarkBucket): List<BookmarkItem> = when (bucket) {
         BookmarkBucket.Private -> private
         BookmarkBucket.Public -> public
         BookmarkBucket.Web -> web
+        BookmarkBucket.Look -> look
     }
 }
 
@@ -41,6 +45,7 @@ object BookmarkCatalog {
         listEvent: Nip01Event?,
         hiddenTags: List<List<String>>?,
         webEvents: List<Nip01Event>,
+        lookEvents: List<Nip01Event> = emptyList(),
         articles: Map<String, Nip01Event> = emptyMap(),
         notes: Map<String, Nip01Event> = emptyMap(),
         previews: Map<String, OgPreview?> = emptyMap(),
@@ -60,10 +65,19 @@ object BookmarkCatalog {
             .sortedByDescending { NipB0.publishedAt(it) }
             .mapNotNull { event -> itemFromWeb(event, previews) }
             .dedupe()
+        val lookItems = lookEvents
+            .filter(Lookmarks::isLook)
+            .sortedByDescending { it.createdAt }
+            .mapNotNull { event ->
+                val ref = Lookmarks.targetRef(event) ?: return@mapNotNull null
+                itemFromRef(ref, BookmarkBucket.Look, event.createdAt, articles, notes, previews)
+            }
+            .dedupe()
         return BookmarkShelves(
             private = privateItems,
             public = publicItems,
             web = webItems,
+            look = lookItems,
             privateLocked = hiddenTags == null && Nip51.looksEncrypted(listEvent?.content.orEmpty()),
         )
     }

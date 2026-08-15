@@ -7,6 +7,7 @@
     <string name="library_private">Private</string>
     <string name="library_public">Public</string>
     <string name="library_web">Web</string>
+    <string name="library_look">👀</string>
     <string name="library_empty">No bookmarks here yet.</string>
     <string name="library_error">Could not load bookmarks.</string>
     <string name="library_private_locked">Private bookmarks are encrypted. Unlock them with your signer.</string>
@@ -20,6 +21,7 @@
     <string name="library_info_private">Encrypted notes and articles. Unlock them with your signer to read them.</string>
     <string name="library_info_public">Notes and articles on your public list. Anyone can see these.</string>
     <string name="library_info_web">Pages you saved as public web bookmarks.</string>
+    <string name="library_info_look">Notes and articles you reacted to with 👀. A lookmark is a kind 7 reaction, less official than a bookmark.</string>
     <string name="library_info_close">Got it</string>
     <string name="nav_feed">Feed</string>
     <string name="feed_title">Highlights Feed</string>

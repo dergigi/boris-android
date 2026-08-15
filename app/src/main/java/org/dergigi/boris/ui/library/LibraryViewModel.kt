@@ -28,6 +28,7 @@ import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.BunkerClient
+import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.BunkerDecryptResult
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
@@ -62,6 +63,7 @@ class LibraryViewModel(
     private var loadJob: Job? = null
     private var listEvent: Nip01Event? = null
     private var webEvents: List<Nip01Event> = emptyList()
+    private var lookEvents: List<Nip01Event> = emptyList()
     private var articles: Map<String, Nip01Event> = emptyMap()
     private var notes: Map<String, Nip01Event> = emptyMap()
     private var previews: Map<String, OgPreview?> = emptyMap()
@@ -73,6 +75,7 @@ class LibraryViewModel(
             loadJob?.cancel()
             listEvent = null
             webEvents = emptyList()
+            lookEvents = emptyList()
             articles = emptyMap()
             notes = emptyMap()
             previews = emptyMap()
@@ -95,6 +98,7 @@ class LibraryViewModel(
                 val loaded = withContext(Dispatchers.IO) { load(session) }
                 listEvent = loaded.list
                 webEvents = loaded.web
+                lookEvents = loaded.look
                 articles = loaded.articles
                 notes = loaded.notes
                 previews = loaded.previews
@@ -185,6 +189,7 @@ class LibraryViewModel(
                 listEvent = listEvent,
                 hiddenTags = hiddenTags,
                 webEvents = webEvents,
+                lookEvents = lookEvents,
                 articles = articles,
                 notes = notes,
                 previews = previews,
@@ -228,25 +233,32 @@ class LibraryViewModel(
         }.distinct()
         val list = RelayQuery.fetchBookmarkList(session.pubkeyHex, readRelays)
         val web = RelayQuery.fetchWebBookmarks(session.pubkeyHex, readRelays)
+        val look = RelayQuery.fetchLookmarks(session.pubkeyHex, readRelays)
         val refs = buildList {
             if (list != null) addAll(Nip51.publicRefs(list))
+            addAll(look.mapNotNull(Lookmarks::targetRef))
         }
         val hydrated = hydrate(refs, web)
-        return Loaded(list, web, hydrated.articles, hydrated.notes, hydrated.previews)
+        return Loaded(list, web, look, hydrated.articles, hydrated.notes, hydrated.previews)
     }
 
     private suspend fun hydrate(
         refs: List<org.dergigi.boris.nostr.BookmarkRef>,
         web: List<Nip01Event>,
     ): Hydrated = coroutineScope {
-        val articleRefs = refs.filter { it.kind == BookmarkRefKind.Article }.take(ARTICLE_LIMIT)
+        val articleRefs = refs.filter { it.kind == BookmarkRefKind.Article }
+            .distinctBy { it.value }
+            .take(ARTICLE_LIMIT)
         val articleJobs = articleRefs.map { ref ->
             async {
                 val article = NostrArticle.fromCoordinate(ref.value) ?: return@async null
                 ref.value to RelayQuery.fetchArticle(article.pointer)
             }
         }
-        val noteIds = refs.filter { it.kind == BookmarkRefKind.Note }.map { it.value }.take(NOTE_LIMIT)
+        val noteIds = refs.filter { it.kind == BookmarkRefKind.Note }
+            .map { it.value }
+            .distinct()
+            .take(NOTE_LIMIT)
         val notesJob = async { RelayQuery.fetchEvents(noteIds) }
         val httpUrls = buildList {
             refs.filter { it.kind == BookmarkRefKind.Url }.forEach { add(it.value) }
@@ -276,6 +288,7 @@ class LibraryViewModel(
     private data class Loaded(
         val list: Nip01Event?,
         val web: List<Nip01Event>,
+        val look: List<Nip01Event>,
         val articles: Map<String, Nip01Event>,
         val notes: Map<String, Nip01Event>,
         val previews: Map<String, OgPreview?>,
@@ -288,8 +301,8 @@ class LibraryViewModel(
     )
 
     companion object {
-        private const val ARTICLE_LIMIT = 24
-        private const val NOTE_LIMIT = 24
+        private const val ARTICLE_LIMIT = 48
+        private const val NOTE_LIMIT = 48
         private const val PREVIEW_LIMIT = 20
     }
 }

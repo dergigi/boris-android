@@ -99,6 +99,40 @@ class BookmarkCatalogTest {
         assertTrue(shelves.private.isEmpty())
     }
 
+    @Test
+    fun lookShelfUsesKind7EyesReactions() {
+        val eventId = "aa".repeat(32)
+        val note = event(
+            kind = Nip01Event.KIND_TEXT_NOTE,
+            tags = emptyList(),
+            content = "Worth a look",
+            createdAt = 9,
+        ).copy(id = eventId)
+        val look = event(
+            kind = Nip01Event.KIND_REACTION,
+            tags = listOf(listOf("e", eventId)),
+            content = "👀",
+            createdAt = 20,
+        )
+        val plus = event(
+            kind = Nip01Event.KIND_REACTION,
+            tags = listOf(listOf("e", "bb".repeat(32))),
+            content = "+",
+            createdAt = 21,
+        )
+        val shelves = BookmarkCatalog.build(
+            listEvent = null,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            lookEvents = listOf(look, plus),
+            notes = mapOf(eventId to note),
+        )
+        assertEquals(1, shelves.look.size)
+        assertEquals("Worth a look", shelves.look[0].title)
+        assertEquals(BookmarkBucket.Look, shelves.look[0].bucket)
+        assertTrue(shelves.look[0].url!!.startsWith("nostr:note1"))
+    }
+
     private fun event(
         kind: Int,
         tags: List<List<String>>,

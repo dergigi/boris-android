@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Library has a 👀 shelf for your kind 7 lookmarks
+
 ## [0.16.0] - 2026-08-15
 
 ### Added

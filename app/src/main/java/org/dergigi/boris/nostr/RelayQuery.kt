@@ -175,6 +175,20 @@ object RelayQuery {
             .sortedByDescending { NipB0.publishedAt(it) }
     }
 
+    fun fetchLookmarks(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 200)
+        return query(urls, listOf(filter))
+            .filter { event ->
+                Lookmarks.isLook(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .sortedByDescending { it.createdAt }
+    }
+
     fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
