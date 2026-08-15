@@ -68,9 +68,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -108,6 +109,7 @@ import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
+import com.mikepenz.markdown.model.PlaceholderConfig
 import com.mikepenz.markdown.model.ReferenceLinkHandlerImpl
 import com.mikepenz.markdown.model.markdownPadding
 import com.mikepenz.markdown.model.rememberMarkdownState
@@ -1029,9 +1031,7 @@ private class ClickableCoilImageTransformer(
         val sized = if (fullWidth) {
             Modifier.fillMaxWidth()
         } else {
-            Modifier
-                .fillMaxWidth()
-                .heightIn(max = maxHeight)
+            Modifier.heightIn(max = maxHeight)
         }
         return data.copy(
             modifier = sized
@@ -1039,6 +1039,22 @@ private class ClickableCoilImageTransformer(
                 .clickable { onImageClick(link) },
             contentScale = if (fullWidth) ContentScale.FillWidth else ContentScale.Fit,
             alignment = Alignment.Center,
+        )
+    }
+
+    override fun placeholderConfig(
+        density: Density,
+        containerSize: Size,
+        intrinsicImageSize: Size,
+    ): PlaceholderConfig {
+        val box = markdownImageBox(
+            container = containerSize,
+            intrinsic = intrinsicImageSize,
+            fullWidth = fullWidth,
+            maxHeightPx = with(density) { maxHeight.toPx() },
+        )
+        return PlaceholderConfig(
+            with(density) { Size(box.width.toSp().value, box.height.toSp().value) },
         )
     }
 
