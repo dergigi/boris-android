@@ -4,6 +4,7 @@ import org.dergigi.boris.nostr.BookmarkRef
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
@@ -13,6 +14,7 @@ enum class BookmarkBucket {
     Public,
     Web,
     Look,
+    Archive,
 }
 
 data class BookmarkItem(
@@ -30,6 +32,7 @@ data class BookmarkShelves(
     val public: List<BookmarkItem> = emptyList(),
     val web: List<BookmarkItem> = emptyList(),
     val look: List<BookmarkItem> = emptyList(),
+    val archive: List<BookmarkItem> = emptyList(),
     val privateLocked: Boolean = false,
 ) {
     fun items(bucket: BookmarkBucket): List<BookmarkItem> = when (bucket) {
@@ -37,6 +40,7 @@ data class BookmarkShelves(
         BookmarkBucket.Public -> public
         BookmarkBucket.Web -> web
         BookmarkBucket.Look -> look
+        BookmarkBucket.Archive -> archive
     }
 }
 
@@ -46,6 +50,7 @@ object BookmarkCatalog {
         hiddenTags: List<List<String>>?,
         webEvents: List<Nip01Event>,
         lookEvents: List<Nip01Event> = emptyList(),
+        archiveEvents: List<Nip01Event> = emptyList(),
         articles: Map<String, Nip01Event> = emptyMap(),
         notes: Map<String, Nip01Event> = emptyMap(),
         previews: Map<String, OgPreview?> = emptyMap(),
@@ -73,11 +78,20 @@ object BookmarkCatalog {
                 itemFromRef(ref, BookmarkBucket.Look, event.createdAt, articles, notes, previews)
             }
             .dedupe()
+        val archiveItems = archiveEvents
+            .filter(Archive::isArchive)
+            .sortedByDescending { it.createdAt }
+            .mapNotNull { event ->
+                val ref = Archive.targetRef(event) ?: return@mapNotNull null
+                itemFromRef(ref, BookmarkBucket.Archive, event.createdAt, articles, notes, previews)
+            }
+            .dedupe()
         return BookmarkShelves(
             private = privateItems,
             public = publicItems,
             web = webItems,
             look = lookItems,
+            archive = archiveItems,
             privateLocked = hiddenTags == null && Nip51.looksEncrypted(listEvent?.content.orEmpty()),
         )
     }

@@ -28,6 +28,7 @@ import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.BunkerClient
+import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.BunkerDecryptResult
 import org.dergigi.boris.nostr.Nip01Event
@@ -64,6 +65,7 @@ class LibraryViewModel(
     private var listEvent: Nip01Event? = null
     private var webEvents: List<Nip01Event> = emptyList()
     private var lookEvents: List<Nip01Event> = emptyList()
+    private var archiveEvents: List<Nip01Event> = emptyList()
     private var articles: Map<String, Nip01Event> = emptyMap()
     private var notes: Map<String, Nip01Event> = emptyMap()
     private var previews: Map<String, OgPreview?> = emptyMap()
@@ -76,6 +78,7 @@ class LibraryViewModel(
             listEvent = null
             webEvents = emptyList()
             lookEvents = emptyList()
+            archiveEvents = emptyList()
             articles = emptyMap()
             notes = emptyMap()
             previews = emptyMap()
@@ -99,6 +102,7 @@ class LibraryViewModel(
                 listEvent = loaded.list
                 webEvents = loaded.web
                 lookEvents = loaded.look
+                archiveEvents = loaded.archive
                 articles = loaded.articles
                 notes = loaded.notes
                 previews = loaded.previews
@@ -190,6 +194,7 @@ class LibraryViewModel(
                 hiddenTags = hiddenTags,
                 webEvents = webEvents,
                 lookEvents = lookEvents,
+                archiveEvents = archiveEvents,
                 articles = articles,
                 notes = notes,
                 previews = previews,
@@ -234,12 +239,14 @@ class LibraryViewModel(
         val list = RelayQuery.fetchBookmarkList(session.pubkeyHex, readRelays)
         val web = RelayQuery.fetchWebBookmarks(session.pubkeyHex, readRelays)
         val look = RelayQuery.fetchLookmarks(session.pubkeyHex, readRelays)
+        val archive = RelayQuery.fetchArchiveReactions(session.pubkeyHex, readRelays)
         val refs = buildList {
             if (list != null) addAll(Nip51.publicRefs(list))
             addAll(look.mapNotNull(Lookmarks::targetRef))
+            addAll(archive.mapNotNull(Archive::targetRef))
         }
         val hydrated = hydrate(refs, web)
-        return Loaded(list, web, look, hydrated.articles, hydrated.notes, hydrated.previews)
+        return Loaded(list, web, look, archive, hydrated.articles, hydrated.notes, hydrated.previews)
     }
 
     private suspend fun hydrate(
@@ -289,6 +296,7 @@ class LibraryViewModel(
         val list: Nip01Event?,
         val web: List<Nip01Event>,
         val look: List<Nip01Event>,
+        val archive: List<Nip01Event>,
         val articles: Map<String, Nip01Event>,
         val notes: Map<String, Nip01Event>,
         val previews: Map<String, OgPreview?>,

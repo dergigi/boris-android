@@ -8,6 +8,7 @@
     <string name="library_public">Public</string>
     <string name="library_web">Web</string>
     <string name="library_look">Lookmarks</string>
+    <string name="library_archive">Archive</string>
     <string name="library_empty">No bookmarks here yet.</string>
     <string name="library_error">Could not load bookmarks.</string>
     <string name="library_private_locked">Private bookmarks are encrypted. Unlock them with your signer.</string>
@@ -22,10 +23,12 @@
     <string name="library_info_public_title">Public bookmarks</string>
     <string name="library_info_web_title">Web bookmarks</string>
     <string name="library_info_look_title">Lookmarks</string>
+    <string name="library_info_archive_title">Archive</string>
     <string name="library_info_private">Encrypted notes and articles. Unlock them with your signer to read them.</string>
     <string name="library_info_public">Notes and articles on your public list. Anyone can see these.</string>
     <string name="library_info_web">Pages you saved as public web bookmarks.</string>
     <string name="library_info_look">Notes and articles you reacted to with 👀. Lookmarks are public too. A lookmark is a kind 7 reaction, less official than a bookmark.</string>
+    <string name="library_info_archive">Articles and pages you moved to archive with 📚. These are public reactions: kind 7 for nostr, kind 17 for the web.</string>
     <string name="library_info_close">Got it</string>
     <string name="nav_feed">Feed</string>
     <string name="feed_title">Feed</string>

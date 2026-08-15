@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
@@ -260,6 +261,12 @@ private fun ReadyLibrary(
                 label = stringResource(R.string.library_look),
                 icon = Icons.Outlined.Visibility,
                 onClick = { onSelect(BookmarkBucket.Look) },
+            )
+            ShelfChip(
+                selected = bucket == BookmarkBucket.Archive,
+                label = stringResource(R.string.library_archive),
+                icon = Icons.AutoMirrored.Outlined.LibraryBooks,
+                onClick = { onSelect(BookmarkBucket.Archive) },
             )
         }
         PullToRefreshBox(
@@ -505,6 +512,11 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
                     icon = Icons.Outlined.Visibility,
                     title = stringResource(R.string.library_info_look_title),
                     body = stringResource(R.string.library_info_look),
+                )
+                LibraryInfoRow(
+                    icon = Icons.AutoMirrored.Outlined.LibraryBooks,
+                    title = stringResource(R.string.library_info_archive_title),
+                    body = stringResource(R.string.library_info_archive),
                 )
             }
         },

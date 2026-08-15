@@ -133,6 +133,47 @@ class BookmarkCatalogTest {
         assertTrue(shelves.look[0].url!!.startsWith("nostr:note1"))
     }
 
+    @Test
+    fun archiveShelfUsesBooksReactions() {
+        val eventId = "aa".repeat(32)
+        val note = event(
+            kind = Nip01Event.KIND_TEXT_NOTE,
+            tags = emptyList(),
+            content = "Finished this one",
+            createdAt = 9,
+        ).copy(id = eventId)
+        val archive = event(
+            kind = Nip01Event.KIND_REACTION,
+            tags = listOf(listOf("e", eventId)),
+            content = "📚",
+            createdAt = 20,
+        )
+        val web = event(
+            kind = Nip01Event.KIND_URL_REACTION,
+            tags = listOf(listOf("r", "https://example.com/read")),
+            content = "📚",
+            createdAt = 19,
+        )
+        val look = event(
+            kind = Nip01Event.KIND_REACTION,
+            tags = listOf(listOf("e", "bb".repeat(32))),
+            content = "👀",
+            createdAt = 21,
+        )
+        val shelves = BookmarkCatalog.build(
+            listEvent = null,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            archiveEvents = listOf(archive, web, look),
+            notes = mapOf(eventId to note),
+        )
+        assertEquals(2, shelves.archive.size)
+        assertEquals("Finished this one", shelves.archive[0].title)
+        assertEquals(BookmarkBucket.Archive, shelves.archive[0].bucket)
+        assertEquals("example.com", shelves.archive[1].host)
+        assertEquals("https://example.com/read", shelves.archive[1].url)
+    }
+
     private fun event(
         kind: Int,
         tags: List<List<String>>,

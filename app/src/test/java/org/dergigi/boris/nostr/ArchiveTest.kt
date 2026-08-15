@@ -78,6 +78,34 @@ class ArchiveTest {
     }
 
     @Test
+    fun targetRefPrefersLongFormAddress() {
+        val event = reaction(
+            "📚",
+            Nip01Event.KIND_REACTION,
+            listOf(listOf("e", eventId), listOf("a", coordinate)),
+        )
+        assertEquals(BookmarkRef(BookmarkRefKind.Article, coordinate), Archive.targetRef(event))
+    }
+
+    @Test
+    fun targetRefReadsWebsiteUrl() {
+        val event = reaction(
+            "📚",
+            Nip01Event.KIND_URL_REACTION,
+            listOf(listOf("r", "https://example.com/post")),
+        )
+        assertEquals(
+            BookmarkRef(BookmarkRefKind.Url, "https://example.com/post"),
+            Archive.targetRef(event),
+        )
+    }
+
+    @Test
+    fun targetRefIgnoresLookmarks() {
+        assertNull(Archive.targetRef(reaction("👀", Nip01Event.KIND_REACTION, listOf(listOf("e", eventId)))))
+    }
+
+    @Test
     fun deleteTagsEachReaction() {
         val other = "bb".repeat(32)
         assertEquals(
@@ -87,12 +115,16 @@ class ArchiveTest {
         assertTrue(Archive.deleteTags(listOf("nope")).isEmpty())
     }
 
-    private fun reaction(content: String, kind: Int): Nip01Event = Nip01Event(
+    private fun reaction(
+        content: String,
+        kind: Int,
+        tags: List<List<String>> = emptyList(),
+    ): Nip01Event = Nip01Event(
         id = "11".repeat(32),
         pubkey = pubkey,
         createdAt = 1,
         kind = kind,
-        tags = emptyList(),
+        tags = tags,
         content = content,
         sig = "22".repeat(64),
     )

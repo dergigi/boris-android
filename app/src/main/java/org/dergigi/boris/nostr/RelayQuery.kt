@@ -185,6 +185,27 @@ object RelayQuery {
             .sortedByDescending { it.createdAt }
     }
 
+    fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+        val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
+        if (urls.isEmpty()) return emptyList()
+        val filters = listOf(
+            JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("limit", 200),
+            JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("limit", 200),
+        )
+        return query(urls, filters)
+            .filter { event ->
+                Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .sortedByDescending { it.createdAt }
+            .distinctBy { it.id }
+    }
+
     fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> =
         fetchRecentWritings(readRelays, limit = 200, pubkeyHex = pubkeyHex)
 

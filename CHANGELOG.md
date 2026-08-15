@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Library has an Archive shelf for articles and pages marked with 📚
+
 ## [0.22.0] - 2026-08-15
 
 ### Added
