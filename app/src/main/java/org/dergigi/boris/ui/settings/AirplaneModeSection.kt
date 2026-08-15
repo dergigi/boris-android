@@ -1,6 +1,5 @@
 package org.dergigi.boris.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -45,7 +43,6 @@ fun AirplaneModeSection(
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val uriHandler = LocalUriHandler.current
     var citrineUp by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
         while (isActive) {
@@ -87,21 +84,7 @@ fun AirplaneModeSection(
             checked = settings.useLocalRelayAsCache,
             onCheckedChange = { onUpdate(settings.withBoolean("useLocalRelayAsCache", it)) },
         )
-        Text(
-            text = stringResource(R.string.settings_airplane_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        Text(
-            text = stringResource(R.string.settings_citrine),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
-            textDecoration = TextDecoration.Underline,
-            modifier = Modifier
-                .padding(top = 4.dp)
-                .clickable { uriHandler.openUri(CITRINE_URL) },
-        )
+        AirplaneNote(modifier = Modifier.padding(top = 4.dp))
         RelaysLearnMore(
             onOpenArticle = onOpenArticle,
             modifier = Modifier.padding(top = 4.dp),
@@ -110,16 +93,38 @@ fun AirplaneModeSection(
 }
 
 @Composable
+private fun settingsLinkStyle() = TextLinkStyles(
+    style = SpanStyle(
+        color = MaterialTheme.colorScheme.primary,
+        textDecoration = TextDecoration.Underline,
+    ),
+)
+
+@Composable
+private fun AirplaneNote(modifier: Modifier = Modifier) {
+    val linkStyle = settingsLinkStyle()
+    Text(
+        text = buildAnnotatedString {
+            append(stringResource(R.string.settings_airplane_note_before))
+            append(" ")
+            withLink(LinkAnnotation.Url(url = CITRINE_URL, styles = linkStyle)) {
+                append(stringResource(R.string.settings_citrine))
+            }
+            append(" ")
+            append(stringResource(R.string.settings_airplane_note_after))
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun RelaysLearnMore(
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val linkStyle = TextLinkStyles(
-        style = SpanStyle(
-            color = MaterialTheme.colorScheme.primary,
-            textDecoration = TextDecoration.Underline,
-        ),
-    )
+    val linkStyle = settingsLinkStyle()
     val here = stringResource(R.string.settings_relays_here)
     Text(
         text = buildAnnotatedString {
