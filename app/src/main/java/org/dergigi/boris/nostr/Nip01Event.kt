@@ -45,8 +45,15 @@ data class Nip01Event(
     fun hasPTag(pubkeyHex: String): Boolean =
         tags.any { it.size >= 2 && it[0] == "p" && it[1].equals(pubkeyHex, ignoreCase = true) }
 
+    fun pPubkeys(): Set<String> =
+        tags.mapNotNull { tag ->
+            val hex = tag.getOrNull(1)?.lowercase()
+            hex?.takeIf { tag.getOrNull(0) == "p" && it.length == 64 }
+        }.toSet()
+
     companion object {
         const val KIND_METADATA = 0
+        const val KIND_CONTACTS = 3
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242
         const val KIND_HIGHLIGHT = 9802

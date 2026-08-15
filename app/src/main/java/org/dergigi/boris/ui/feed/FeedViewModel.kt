@@ -1,16 +1,21 @@
 package org.dergigi.boris.ui.feed
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Nip84
@@ -26,6 +31,8 @@ data class FeedItem(
     val authorHex: String,
     val authorName: String,
     val authorPicture: String?,
+    val createdAt: Long,
+    val level: FeedLevel,
 )
 
 sealed interface FeedUiState {
@@ -35,51 +42,49 @@ sealed interface FeedUiState {
     data object Error : FeedUiState
 }
 
-class FeedViewModel : ViewModel() {
+class FeedViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
     private val _state = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
     val state: StateFlow<FeedUiState> = _state.asStateFlow()
 
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
+    private val _scope = MutableStateFlow(initialScope())
+    val scope: StateFlow<FeedScope> = _scope.asStateFlow()
+
+    private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
+    val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
+
+    private var catalog: List<FeedItem> = emptyList()
+    private var failed = false
     private var loadJob: Job? = null
 
-    init {
-        refresh()
-    }
-
     fun refresh() {
-        val keepItems = _state.value is FeedUiState.Ready
+        val keepItems = catalog.isNotEmpty()
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            val session = SessionStore.load(getApplication())
+            _loggedIn.value = session != null
+            _scope.value = resolveScope(session != null)
             if (keepItems) {
                 _refreshing.value = true
             } else {
                 _state.value = FeedUiState.Loading
             }
             try {
-                val seed = withContext(Dispatchers.IO) {
-                    RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
-                }
-                if (!keepItems && seed.isNotEmpty()) {
-                    _state.value = FeedUiState.Ready(toItems(seed, emptyMap()))
-                }
                 val items = withContext(Dispatchers.IO) {
-                    val relays = RelayQuery.discoverContentRelays()
-                    val more = RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT)
-                    val merged = (seed + more)
-                        .distinctBy { it.id }
-                        .sortedByDescending { it.createdAt }
-                        .take(HIGHLIGHT_LIMIT)
-                    val authors = merged.map { it.pubkey }.distinct().take(PROFILE_LIMIT)
-                    val profiles = RelayQuery.fetchProfiles(relays, authors)
-                    toItems(merged, profiles)
+                    loadCatalog(session?.pubkeyHex)
                 }
-                _state.value = if (items.isEmpty()) FeedUiState.Empty else FeedUiState.Ready(items)
+                catalog = items
+                failed = false
+                publish()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                if (_state.value !is FeedUiState.Ready) {
+                failed = catalog.isEmpty()
+                if (failed) {
                     _state.value = FeedUiState.Error
                 }
             } finally {
@@ -88,9 +93,82 @@ class FeedViewModel : ViewModel() {
         }
     }
 
+    fun toggle(level: FeedLevel) {
+        if (!_loggedIn.value && level != FeedLevel.Nostrverse) return
+        val next = _scope.value.toggle(level)
+        if (next == _scope.value) return
+        _scope.value = next
+        if (_loggedIn.value) {
+            FeedScopeStore.save(getApplication(), next)
+        }
+        publish()
+    }
+
+    private fun publish() {
+        if (failed && catalog.isEmpty()) {
+            _state.value = FeedUiState.Error
+            return
+        }
+        val visible = catalog.filter { _scope.value.visible(it.level) }
+        _state.value = if (catalog.isEmpty()) {
+            FeedUiState.Empty
+        } else {
+            FeedUiState.Ready(visible)
+        }
+    }
+
+    private fun resolveScope(loggedIn: Boolean): FeedScope {
+        if (!loggedIn) return FeedScope.LOGGED_OUT
+        return FeedScopeStore.load(getApplication())
+            ?: FeedScope.fromSettings(SettingsSync.settings.value)
+    }
+
+    private fun initialScope(): FeedScope {
+        val loggedIn = SessionStore.load(getApplication()) != null
+        return resolveScope(loggedIn)
+    }
+
+    private suspend fun loadCatalog(pubkeyHex: String?): List<FeedItem> = coroutineScope {
+        val relays = buildList {
+            addAll(RelayList.FALLBACK)
+            if (pubkeyHex != null) addAll(RelayQuery.fetchRelayList(pubkeyHex).read)
+        }.distinct()
+        val friendsDeferred = async {
+            if (pubkeyHex == null) emptySet() else RelayQuery.fetchContactPubkeys(pubkeyHex)
+        }
+        val globalDeferred = async {
+            RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
+        }
+        val mineDeferred = async {
+            if (pubkeyHex == null) {
+                emptyList()
+            } else {
+                RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, pubkeyHex)
+            }
+        }
+        val friends = friendsDeferred.await()
+        val friendsEvents = if (pubkeyHex == null || friends.isEmpty()) {
+            emptyList()
+        } else {
+            RelayQuery.fetchRecentHighlights(
+                relays,
+                HIGHLIGHT_LIMIT,
+                authors = friends,
+            )
+        }
+        val merged = (globalDeferred.await() + mineDeferred.await() + friendsEvents)
+            .distinctBy { it.id }
+            .sortedByDescending { it.createdAt }
+        val authors = merged.map { it.pubkey }.distinct().take(PROFILE_LIMIT)
+        val profiles = RelayQuery.fetchProfiles(relays, authors)
+        toItems(merged, profiles, pubkeyHex, friends)
+    }
+
     private fun toItems(
         events: List<Nip01Event>,
         profiles: Map<String, Profile>,
+        sessionHex: String?,
+        friends: Set<String>,
     ): List<FeedItem> {
         return events.map { event ->
             val url = Nip84.articleUrl(event)
@@ -103,6 +181,8 @@ class FeedViewModel : ViewModel() {
                 authorHex = event.pubkey,
                 authorName = displayName(event.pubkey, profile),
                 authorPicture = profile?.picture,
+                createdAt = event.createdAt,
+                level = classifyFeedLevel(event.pubkey, sessionHex, friends),
             )
         }
     }

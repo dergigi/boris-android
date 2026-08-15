@@ -25,6 +25,9 @@ class UserSettingsTest {
         assertEquals("system", settings.theme)
         assertEquals("midnight", settings.darkColorTheme)
         assertEquals("sepia", settings.lightColorTheme)
+        assertFalse(settings.defaultExploreScopeNostrverse)
+        assertTrue(settings.defaultExploreScopeFriends)
+        assertFalse(settings.defaultExploreScopeMine)
     }
 
     @Test

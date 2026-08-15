@@ -33,8 +33,11 @@
     <string name="highlight_rejected">Highlight rejected.</string>
     <string name="highlight_not_published">Highlight not published.</string>
     <string name="feed_empty">No highlights yet.</string>
+    <string name="feed_empty_filtered">Nothing matches these filters.</string>
     <string name="feed_error">Could not load highlights.</string>
     <string name="feed_retry">Try again</string>
+    <string name="feed_scope_friends_login">Connect to see friends highlights</string>
+    <string name="feed_scope_mine_login">Connect to see your highlights</string>
     <string name="settings_reading_display">Reading &amp; Display</string>
     <string name="settings_highlight_style">Highlight Style</string>
     <string name="settings_style_marker">Text marker style</string>

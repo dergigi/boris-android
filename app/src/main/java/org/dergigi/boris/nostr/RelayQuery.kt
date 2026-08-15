@@ -70,24 +70,49 @@ object RelayQuery {
         return Nip66.select(events, seed, limit)
     }
 
+    fun fetchContactPubkeys(pubkeyHex: String): Set<String> {
+        val relays = buildList {
+            addAll(RelayList.FALLBACK)
+            addAll(fetchRelayList(pubkeyHex).read)
+        }.distinct()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_CONTACTS))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 5)
+        val newest = query(relays, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_CONTACTS &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true)
+            }
+            .maxByOrNull { it.createdAt } ?: return emptySet()
+        return newest.pPubkeys()
+    }
+
     fun fetchRecentHighlights(
         readRelays: List<String>,
         limit: Int = 80,
         pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
-            .put("limit", limit)
-        if (!pubkeyHex.isNullOrBlank()) {
-            filter.put("authors", JSONArray().put(pubkeyHex))
+        val keys = buildList {
+            if (!pubkeyHex.isNullOrBlank()) add(pubkeyHex.lowercase())
+            authors.forEach { key ->
+                if (key.isNotBlank()) add(key.lowercase())
+            }
+        }.distinct()
+        val filters = if (keys.isEmpty()) {
+            listOf(highlightFilter(limit, emptyList()))
+        } else {
+            keys.chunked(AUTHOR_CHUNK).map { chunk -> highlightFilter(limit, chunk) }
         }
-        return query(urls, listOf(filter))
+        val allowed = keys.toSet()
+        return query(urls, filters)
             .filter { event ->
                 event.kind == Nip01Event.KIND_HIGHLIGHT &&
                     event.content.isNotBlank() &&
-                    (pubkeyHex.isNullOrBlank() || event.pubkey.equals(pubkeyHex, ignoreCase = true))
+                    (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
             }
             .sortedByDescending { it.createdAt }
     }
@@ -243,12 +268,23 @@ object RelayQuery {
         }
     }
 
+    private fun highlightFilter(limit: Int, authors: List<String>): JSONObject {
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+            .put("limit", limit)
+        if (authors.isNotEmpty()) {
+            filter.put("authors", JSONArray().apply { authors.forEach { put(it) } })
+        }
+        return filter
+    }
+
     private fun newId(): String = UUID.randomUUID().toString().take(12)
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
     private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
     private const val PROFILE_CHUNK = 25
+    private const val AUTHOR_CHUNK = 50
 
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

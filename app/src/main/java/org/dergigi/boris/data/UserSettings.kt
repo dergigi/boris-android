@@ -16,6 +16,12 @@ class UserSettings internal constructor(
         get() = bool("defaultHighlightVisibilityFriends", true)
     val defaultHighlightVisibilityMine: Boolean
         get() = bool("defaultHighlightVisibilityMine", true)
+    val defaultExploreScopeNostrverse: Boolean
+        get() = bool("defaultExploreScopeNostrverse", false)
+    val defaultExploreScopeFriends: Boolean
+        get() = bool("defaultExploreScopeFriends", true)
+    val defaultExploreScopeMine: Boolean
+        get() = bool("defaultExploreScopeMine", false)
     val paragraphAlignment: String get() = string("paragraphAlignment", "justify")
     val linkColorDark: String get() = string("linkColorDark", "#38bdf8")
     val linkColorLight: String get() = string("linkColorLight", "#3b82f6")

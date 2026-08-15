@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 
@@ -122,7 +123,7 @@ fun ReadingDisplaySection(
                 VisibilityToggle(
                     icon = Icons.Outlined.Group,
                     on = settings.defaultHighlightVisibilityFriends,
-                    tint = hexColor(settings.highlightColorFriends, Color(0xFFF97316)),
+                    tint = hexColor(settings.highlightColorFriends, HighlightFriends),
                     contentDescription = stringResource(R.string.settings_visibility_friends),
                     onClick = {
                         onUpdate(
