@@ -110,11 +110,6 @@ fun ReadingSection(
             checked = settings.openLinksInReader,
             onCheckedChange = { onUpdate(settings.withBoolean("openLinksInReader", it)) },
         )
-        ReadingPreview(
-            settings = settings,
-            darkTheme = darkTheme,
-            modifier = Modifier.padding(top = 12.dp),
-        )
     }
 }
 

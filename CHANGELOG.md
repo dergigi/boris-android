@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- The reading preview in settings sits after the Highlights section, so it reflects both reading and highlight choices
+
 ## [0.30.0] - 2026-08-16
 
 ### Added

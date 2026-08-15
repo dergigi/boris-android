@@ -118,6 +118,10 @@ fun SettingsScreen(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
                 )
+                ReadingPreview(
+                    settings = settings,
+                    darkTheme = settings.isDark(isSystemInDarkTheme()),
+                )
                 FeedSettingsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },
