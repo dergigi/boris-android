@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Library sources explainer names Private, Public, and Web bookmarks, and says lookmarks are public
+
 ## [0.20.0] - 2026-08-15
 
 ### Added

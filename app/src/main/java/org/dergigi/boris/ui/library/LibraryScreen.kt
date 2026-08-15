@@ -486,21 +486,21 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 LibraryInfoRow(
                     icon = Icons.Outlined.Lock,
-                    title = stringResource(R.string.library_private),
+                    title = stringResource(R.string.library_info_private_title),
                     body = stringResource(R.string.library_info_private),
                 )
                 LibraryInfoRow(
                     icon = Icons.Outlined.Public,
-                    title = stringResource(R.string.library_public),
+                    title = stringResource(R.string.library_info_public_title),
                     body = stringResource(R.string.library_info_public),
                 )
                 LibraryInfoRow(
                     icon = Icons.Outlined.Language,
-                    title = stringResource(R.string.library_web),
+                    title = stringResource(R.string.library_info_web_title),
                     body = stringResource(R.string.library_info_web),
                 )
                 LibraryInfoRow(
-                    title = stringResource(R.string.library_look),
+                    title = stringResource(R.string.library_info_look_title),
                     body = stringResource(R.string.library_info_look),
                 )
             }
