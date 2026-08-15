@@ -2,6 +2,7 @@ package org.dergigi.boris.nostr
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProfileTest {
@@ -22,6 +23,16 @@ class ProfileTest {
         )
         assertEquals("Gigi", profile.name)
         assertEquals("Not doing DMs. Aspiring Saunameister.", profile.about)
+    }
+
+    @Test
+    fun displayNameFallsBackToShortNpub() {
+        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        assertEquals("Gigi", Profile.displayName(pubkey, Profile(name = "Gigi", picture = null)))
+        val short = Profile.displayName(pubkey, null)
+        assertEquals(Profile.shortNpub(pubkey), short)
+        assertTrue(short.startsWith("npub1"))
+        assertTrue(short.endsWith("…"))
     }
 
     @Test

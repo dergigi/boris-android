@@ -6,6 +6,20 @@ data class Profile(
     val about: String? = null,
 ) {
     companion object {
+        fun displayName(pubkeyHex: String, profile: Profile?): String {
+            profile?.name?.takeIf { it.isNotBlank() }?.let { return it }
+            return shortNpub(pubkeyHex)
+        }
+
+        fun shortNpub(pubkeyHex: String): String {
+            return try {
+                val npub = Nip19.npubEncode(pubkeyHex)
+                if (npub.length > 16) npub.take(12) + "…" else npub
+            } catch (_: Exception) {
+                pubkeyHex.take(8)
+            }
+        }
+
         fun parse(content: String): Profile {
             val display = jsonString(content, "display_name")
             val name = jsonString(content, "name")

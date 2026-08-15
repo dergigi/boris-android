@@ -18,7 +18,6 @@ import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip01Event
-import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
@@ -266,15 +265,8 @@ class FeedViewModel(
         private const val UNTITLED = "Untitled"
         private const val FUTURE_SLACK_SECONDS = 24L * 60L * 60L
 
-        internal fun authorName(pubkeyHex: String, profile: Profile?): String {
-            profile?.name?.takeIf { it.isNotBlank() }?.let { return it }
-            return try {
-                val npub = Nip19.npubEncode(pubkeyHex)
-                if (npub.length > 16) npub.take(12) + "…" else npub
-            } catch (_: Exception) {
-                pubkeyHex.take(8)
-            }
-        }
+        internal fun authorName(pubkeyHex: String, profile: Profile?): String =
+            Profile.displayName(pubkeyHex, profile)
 
         internal fun writingFrom(
             event: Nip01Event,

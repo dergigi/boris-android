@@ -15,11 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -54,6 +51,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.settings.hexColor
@@ -119,7 +117,7 @@ fun YouHighlightsContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item(key = "header") {
-                YouHeader(
+                AuthorCard(
                     displayName = displayName,
                     about = about,
                     pictureUrl = pictureUrl,
@@ -189,57 +187,6 @@ fun YouHighlightsContent(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun YouHeader(
-    displayName: String,
-    about: String?,
-    pictureUrl: String?,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
-        AsyncImage(
-            model = pictureUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            placeholder = fallback,
-            error = fallback,
-            fallback = fallback,
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape),
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!about.isNullOrBlank()) {
-                Text(
-                    text = about,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
             }
         }
     }

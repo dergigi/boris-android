@@ -27,6 +27,7 @@ import org.dergigi.boris.nostr.BunkerEncryptResult
 import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
+import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.NipB0
 import org.dergigi.boris.nostr.PendingUnsignedEvent
@@ -72,6 +73,9 @@ class ReaderViewModel(
     private val _archived = MutableStateFlow(false)
     val archived: StateFlow<Boolean> = _archived.asStateFlow()
 
+    private val _author = MutableStateFlow<Profile?>(null)
+    val author: StateFlow<Profile?> = _author.asStateFlow()
+
     private val _signIntent = MutableStateFlow<Intent?>(null)
     val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
 
@@ -81,6 +85,7 @@ class ReaderViewModel(
     private var highlightJob: Job? = null
     private var membershipJob: Job? = null
     private var archiveJob: Job? = null
+    private var authorJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
     private var inLibrary = false
@@ -127,6 +132,7 @@ class ReaderViewModel(
             _highlightCount.value = 0
             inLibrary = false
             resetArchive()
+            resetAuthor()
             publishSaveState()
             return
         }
@@ -136,6 +142,7 @@ class ReaderViewModel(
             _highlightCount.value = 0
             inLibrary = false
             resetArchive()
+            resetAuthor()
             publishSaveState()
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url) }
@@ -143,10 +150,12 @@ class ReaderViewModel(
                 startHighlightFetch(content)
                 startMembershipCheck(content)
                 startArchiveCheck(content)
+                startAuthorFetch(content)
             } catch (e: Exception) {
                 highlightJob?.cancel()
                 membershipJob?.cancel()
                 archiveJob?.cancel()
+                authorJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
                 _state.value = ReaderUiState.Error(
@@ -469,6 +478,27 @@ class ReaderViewModel(
                 _archived.value = false
             }
         }
+    }
+
+    private fun startAuthorFetch(content: ReadableContent) {
+        authorJob?.cancel()
+        val pubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
+        if (pubkey == null) {
+            resetAuthor()
+            return
+        }
+        authorJob = viewModelScope.launch(Dispatchers.IO) {
+            _author.value = try {
+                RelayQuery.fetchProfile(pubkey)
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun resetAuthor() {
+        authorJob?.cancel()
+        _author.value = null
     }
 
     private fun resetArchive() {

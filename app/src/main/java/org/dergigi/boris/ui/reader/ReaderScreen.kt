@@ -117,6 +117,8 @@ import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -140,6 +142,7 @@ fun ReaderScreen(
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val canSave by viewModel.canSave.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
+    val author by viewModel.author.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
@@ -167,6 +170,7 @@ fun ReaderScreen(
         loggedIn = loggedIn,
         canSave = canSave,
         archived = archived,
+        author = author,
         settings = settings,
         onBack = onBack,
         onRetry = viewModel::load,
@@ -196,6 +200,7 @@ fun ReaderScreenContent(
     loggedIn: Boolean,
     canSave: Boolean,
     archived: Boolean,
+    author: Profile?,
     settings: UserSettings,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -364,6 +369,7 @@ fun ReaderScreenContent(
                     highlightCount = highlightCount,
                     loggedIn = loggedIn,
                     archived = archived,
+                    author = author,
                     settings = settings,
                     volumeScroll = gallery == null,
                     onOpenArticle = onOpenArticle,
@@ -392,6 +398,7 @@ private fun ArticleBody(
     highlightCount: Int,
     loggedIn: Boolean,
     archived: Boolean,
+    author: Profile?,
     settings: UserSettings,
     onOpenArticle: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
@@ -633,6 +640,15 @@ private fun ArticleBody(
                             onClick = onArchive,
                         )
                     }
+                }
+                val authorPubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
+                if (authorPubkey != null) {
+                    AuthorCard(
+                        displayName = Profile.displayName(authorPubkey, author),
+                        about = author?.about,
+                        pictureUrl = author?.picture,
+                        modifier = Modifier.padding(top = 32.dp),
+                    )
                 }
             }
         }
