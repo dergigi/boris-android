@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Link color, font size, highlight color, and scroll amount pickers sit on the same line as their labels again
+- The Volume buttons settings section is now Scroll Behaviour, with the checkbox reworded to "Use volume buttons to scroll"
 
 ## [0.27.0] - 2026-08-15
 
