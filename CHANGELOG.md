@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader turns markdown footnotes into superscripts and a notes list at the end
+
 ## [0.15.0] - 2026-08-15
 
 ### Added

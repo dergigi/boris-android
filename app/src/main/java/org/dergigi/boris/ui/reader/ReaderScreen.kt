@@ -99,6 +99,7 @@ import com.mikepenz.markdown.model.ReferenceLinkHandlerImpl
 import com.mikepenz.markdown.model.markdownPadding
 import com.mikepenz.markdown.model.rememberMarkdownState
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.PublishedTime
@@ -422,8 +423,9 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
+    val markdownBody = remember(content.body) { Footnotes.expand(content.body) }
     val markdownState = rememberMarkdownState(
-        content = content.body,
+        content = markdownBody,
         flavour = flavour,
         parser = parser,
         referenceLinkHandler = referenceLinkHandler,
