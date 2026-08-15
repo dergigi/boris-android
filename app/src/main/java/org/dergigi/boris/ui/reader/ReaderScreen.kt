@@ -642,6 +642,7 @@ private fun ArticleBody(
                     domain = domain,
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
+                    highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
                     published = if (coverUrl == null) published else null,
                     onHighlightsClick = { paneOpen = true },
                 )
@@ -863,6 +864,17 @@ internal fun highlightCountLabel(count: Int): String? {
     return if (count == 1) "1 highlight" else "$count highlights"
 }
 
+internal fun highlightPillColor(
+    highlights: List<PaintedHighlight>,
+    mine: Color,
+    friends: Color,
+    other: Color,
+): Color = when {
+    highlights.any { it.mine } -> mine
+    highlights.any { it.friend } -> friends
+    else -> other
+}
+
 @Composable
 private fun ArticleHero(
     imageUrl: String,
@@ -945,6 +957,7 @@ private fun ArticleMetaRow(
     domain: String?,
     readingTime: String?,
     highlightsLabel: String?,
+    highlightsColor: Color,
     published: String?,
     onHighlightsClick: (() -> Unit)? = null,
 ) {
@@ -966,7 +979,7 @@ private fun ArticleMetaRow(
             MetaChip(
                 text = highlightsLabel,
                 icon = BorisIcons.Highlighter,
-                highlight = true,
+                accent = highlightsColor,
                 onClick = onHighlightsClick,
             )
         }
@@ -980,20 +993,16 @@ private fun ArticleMetaRow(
 private fun MetaChip(
     text: String,
     icon: ImageVector,
-    highlight: Boolean = false,
+    accent: Color? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val border = if (highlight) {
-        HighlightMine.copy(alpha = 0.55f)
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
-    val fg = if (highlight) {
+    val border = accent?.copy(alpha = 0.55f) ?: MaterialTheme.colorScheme.outline
+    val fg = if (accent != null) {
         MaterialTheme.colorScheme.onBackground
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val iconTint = if (highlight) HighlightMine else fg
+    val iconTint = accent ?: fg
     val shape = RoundedCornerShape(8.dp)
     Row(
         modifier = Modifier

@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - The Feed now shows highlights as the same bordered highlight cards used on profile pages, colored by who made them (you, friends, nostrverse)
 - Highlight cards show the highlighter's profile picture next to their name, in the Feed, on profile pages, and in the reader's highlights pane
+- The highlights pill in the article view takes its color from who made the highlights: yours win, then friends, then nostrverse
 
 ## [0.28.1] - 2026-08-15
 
