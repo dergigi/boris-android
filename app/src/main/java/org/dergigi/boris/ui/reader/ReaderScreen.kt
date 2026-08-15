@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -69,6 +71,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -86,6 +89,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -124,6 +128,7 @@ import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
+import coil3.compose.AsyncImage
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 import kotlin.math.max
@@ -529,17 +534,35 @@ private fun ArticleBody(
             modifier = Modifier
                 .fillMaxSize()
                 .onSizeChanged { viewportHeight = it.height }
-                .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+        val coverUrl = content.imageUrl?.takeIf { it.isNotBlank() }
+        val overlaySummary = content.summary?.takeIf { it.isNotBlank() && it.length <= 150 }
+        val belowSummary = content.summary?.takeIf { it.isNotBlank() && it.length > 150 }
+        if (coverUrl != null) {
+            ArticleHero(
+                imageUrl = coverUrl,
+                title = content.title,
+                summary = overlaySummary,
+                published = published,
+                onClick = {
+                    val urls = buildList {
+                        add(coverUrl)
+                        addAll(UrlExtractor.imageUrls(content.body, content.url))
+                    }.distinct()
+                    onOpenGallery(urls, 0)
+                },
+            )
+        }
         Column(
             modifier = Modifier
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .padding(bottom = 48.dp),
         ) {
-            if (!content.title.isNullOrBlank()) {
+            if (coverUrl == null && !content.title.isNullOrBlank()) {
                 var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                 var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
                 val titleOwner = remember { Any() }
@@ -583,11 +606,33 @@ private fun ArticleBody(
                         ),
                 )
             }
+            if (coverUrl == null && !content.summary.isNullOrBlank()) {
+                Text(
+                    text = content.summary,
+                    style = typography.titleMedium.copy(
+                        fontFamily = family,
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    color = colors.onBackground.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            }
+            if (belowSummary != null) {
+                Text(
+                    text = belowSummary,
+                    style = typography.titleMedium.copy(
+                        fontFamily = family,
+                        fontWeight = FontWeight.Normal,
+                    ),
+                    color = colors.onBackground.copy(alpha = 0.75f),
+                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                )
+            }
                 ArticleMetaRow(
                     domain = domain,
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
-                    published = published,
+                    published = if (coverUrl == null) published else null,
                     onHighlightsClick = {
                         val stop = navigator.next() ?: return@ArticleMetaRow
                         onJump(stop)
@@ -786,6 +831,82 @@ internal fun readingTimeLabel(text: String): String? {
 internal fun highlightCountLabel(count: Int): String? {
     if (count <= 0) return null
     return if (count == 1) "1 highlight" else "$count highlights"
+}
+
+@Composable
+private fun ArticleHero(
+    imageUrl: String,
+    title: String?,
+    summary: String?,
+    published: String?,
+    onClick: () -> Unit,
+) {
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val height = (screenHeight * 0.42f).dp.coerceIn(240.dp, 420.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clickable(onClick = onClick),
+    ) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.4f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.82f),
+                    ),
+                ),
+        )
+        if (published != null) {
+            Text(
+                text = published,
+                style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
+                color = Color.White.copy(alpha = 0.72f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+        ) {
+            if (!title.isNullOrBlank()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 34.sp,
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = if (summary.isNullOrBlank()) 0.dp else 8.dp),
+                )
+            }
+            if (!summary.isNullOrBlank()) {
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 24.sp,
+                    ),
+                    color = Color.White.copy(alpha = 0.9f),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
