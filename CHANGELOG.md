@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-08-16
+
 ### Added
 
 - Home has a header bar like the other screens, with a help button that opens an About page listing all Boris features with the illustrations from readwithboris.com
@@ -16,12 +18,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - The website pill in the article view is now clickable and opens the site's root URL in the browser; nostr-native articles no longer show it
+- The cover image shows an author and publication date byline below the title, replacing the hard-to-read date in the top-right corner
 - The airplane mode section uses the webapp's relay copy ("Don't know what relays are? Learn more here, here, and here") with the same three links, opened in the reader
+- The Citrine link in settings points to Zapstore
 
 ### Fixed
 
 - Home covers no longer go missing: link previews are cached on disk and shown instantly, nostr article covers come from the event cache, and a failed preview fetch falls back to the cached one
-- The cover image shows an author and publication date byline below the title, replacing the hard-to-read date in the top-right corner
 
 ## [0.29.0] - 2026-08-15
 
@@ -410,7 +413,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/dergigi/boris-android/releases/tag/v0.30.0
 [0.29.0]: https://github.com/dergigi/boris-android/releases/tag/v0.29.0
 [0.28.1]: https://github.com/dergigi/boris-android/releases/tag/v0.28.1
 [0.28.0]: https://github.com/dergigi/boris-android/releases/tag/v0.28.0
