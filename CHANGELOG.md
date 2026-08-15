@@ -12,6 +12,9 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Library has an Archive shelf for articles and pages marked with 📚
+- Event cache keeps profiles, relay lists, bookmarks, and articles on disk, so screens render instantly and previously loaded content shows without a connection
+- Library renders from the cache first and refreshes from relays in the background
+- Previously opened web articles render offline via an HTTP cache for reader fetches
 
 ## [0.22.0] - 2026-08-15
 
