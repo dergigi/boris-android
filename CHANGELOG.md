@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader shows a full-bleed cover on articles that have a NIP-23 or Open Graph image, with the title overlaid like the webapp
+
 ## [0.24.0] - 2026-08-15
 
 ### Added
