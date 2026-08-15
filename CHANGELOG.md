@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-15
+
+### Added
+
+- Logged-in You tab shows Reading & Display settings
+- Settings sync with the webapp via the same NIP-78 event (`kind` 30078, `d` tag `com.dergigi.boris.user-settings`)
+- Reader uses those settings for highlight style, colors, visibility, font, size, alignment, and link color
+
 ## [0.0.9] - 2026-08-15
 
 ### Added
@@ -112,7 +120,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.0.9...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dergigi/boris-android/releases/tag/v0.1.0
 [0.0.9]: https://github.com/dergigi/boris-android/releases/tag/v0.0.9
 [0.0.8]: https://github.com/dergigi/boris-android/releases/tag/v0.0.8
 [0.0.7]: https://github.com/dergigi/boris-android/releases/tag/v0.0.7
