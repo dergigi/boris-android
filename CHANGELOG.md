@@ -9,6 +9,19 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-15
+
+### Added
+
+- You shows Writings next to Highlights: the logged-in user's kind 30023 articles, opened in the reader
+- Sign out is a logout icon to the left of settings, with a confirm step
+
+### Changed
+
+- Library app bar says Your Library
+- Feed title is Highlights Feed
+- You app bar no longer repeats You
+
 ## [0.11.0] - 2026-08-15
 
 ### Added
@@ -223,7 +236,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/dergigi/boris-android/releases/tag/v0.12.0
 [0.11.0]: https://github.com/dergigi/boris-android/releases/tag/v0.11.0
 [0.10.0]: https://github.com/dergigi/boris-android/releases/tag/v0.10.0
 [0.9.0]: https://github.com/dergigi/boris-android/releases/tag/v0.9.0
