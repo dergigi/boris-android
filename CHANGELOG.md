@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Feed can switch between highlights and writings, with the same nostrverse / friends / you filters
+
 ## [0.17.0] - 2026-08-15
 
 ### Added

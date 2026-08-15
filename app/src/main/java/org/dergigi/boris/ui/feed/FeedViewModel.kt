@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
@@ -35,9 +37,27 @@ data class FeedItem(
     val level: FeedLevel,
 )
 
+data class FeedWriting(
+    val id: String,
+    val title: String,
+    val summary: String?,
+    val imageUrl: String?,
+    val url: String,
+    val authorHex: String,
+    val authorName: String,
+    val authorPicture: String?,
+    val publishedAt: Long,
+    val level: FeedLevel,
+)
+
 sealed interface FeedUiState {
     data object Loading : FeedUiState
-    data class Ready(val items: List<FeedItem>) : FeedUiState
+    data class Ready(
+        val highlights: List<FeedItem>,
+        val writings: List<FeedWriting>,
+        val hasHighlights: Boolean,
+        val hasWritings: Boolean,
+    ) : FeedUiState
     data object Empty : FeedUiState
     data object Error : FeedUiState
 }
@@ -57,12 +77,13 @@ class FeedViewModel(
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
 
-    private var catalog: List<FeedItem> = emptyList()
+    private var highlights: List<FeedItem> = emptyList()
+    private var writings: List<FeedWriting> = emptyList()
     private var failed = false
     private var loadJob: Job? = null
 
     fun refresh() {
-        val keepItems = catalog.isNotEmpty()
+        val keepItems = highlights.isNotEmpty() || writings.isNotEmpty()
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val session = SessionStore.load(getApplication())
@@ -74,16 +95,17 @@ class FeedViewModel(
                 _state.value = FeedUiState.Loading
             }
             try {
-                val items = withContext(Dispatchers.IO) {
+                val catalog = withContext(Dispatchers.IO) {
                     loadCatalog(session?.pubkeyHex)
                 }
-                catalog = items
+                highlights = catalog.highlights
+                writings = catalog.writings
                 failed = false
                 publish()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                failed = catalog.isEmpty()
+                failed = highlights.isEmpty() && writings.isEmpty()
                 if (failed) {
                     _state.value = FeedUiState.Error
                 }
@@ -105,15 +127,21 @@ class FeedViewModel(
     }
 
     private fun publish() {
-        if (failed && catalog.isEmpty()) {
+        if (failed && highlights.isEmpty() && writings.isEmpty()) {
             _state.value = FeedUiState.Error
             return
         }
-        val visible = catalog.filter { _scope.value.visible(it.level) }
-        _state.value = if (catalog.isEmpty()) {
+        val visibleHighlights = highlights.filter { _scope.value.visible(it.level) }
+        val visibleWritings = writings.filter { _scope.value.visible(it.level) }
+        _state.value = if (highlights.isEmpty() && writings.isEmpty()) {
             FeedUiState.Empty
         } else {
-            FeedUiState.Ready(visible)
+            FeedUiState.Ready(
+                highlights = visibleHighlights,
+                writings = visibleWritings,
+                hasHighlights = highlights.isNotEmpty(),
+                hasWritings = writings.isNotEmpty(),
+            )
         }
     }
 
@@ -128,7 +156,7 @@ class FeedViewModel(
         return resolveScope(loggedIn)
     }
 
-    private suspend fun loadCatalog(pubkeyHex: String?): List<FeedItem> = coroutineScope {
+    private suspend fun loadCatalog(pubkeyHex: String?): Catalog = coroutineScope {
         val relays = buildList {
             addAll(RelayList.FALLBACK)
             if (pubkeyHex != null) addAll(RelayQuery.fetchRelayList(pubkeyHex).read)
@@ -136,35 +164,62 @@ class FeedViewModel(
         val friendsDeferred = async {
             if (pubkeyHex == null) emptySet() else RelayQuery.fetchContactPubkeys(pubkeyHex)
         }
-        val globalDeferred = async {
+        val globalHighlights = async {
             RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
         }
-        val mineDeferred = async {
+        val mineHighlights = async {
             if (pubkeyHex == null) {
                 emptyList()
             } else {
                 RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, pubkeyHex)
             }
         }
-        val friends = friendsDeferred.await()
-        val friendsEvents = if (pubkeyHex == null || friends.isEmpty()) {
-            emptyList()
-        } else {
-            RelayQuery.fetchRecentHighlights(
-                relays,
-                HIGHLIGHT_LIMIT,
-                authors = friends,
-            )
+        val globalWritings = async {
+            RelayQuery.fetchRecentWritings(RelayList.FALLBACK, WRITING_LIMIT)
         }
-        val merged = (globalDeferred.await() + mineDeferred.await() + friendsEvents)
+        val mineWritings = async {
+            if (pubkeyHex == null) {
+                emptyList()
+            } else {
+                RelayQuery.fetchRecentWritings(relays, WRITING_LIMIT, pubkeyHex)
+            }
+        }
+        val friends = friendsDeferred.await()
+        val (friendsHighlights, friendsWritings) = coroutineScope {
+            val highlights = async {
+                if (pubkeyHex == null || friends.isEmpty()) {
+                    emptyList()
+                } else {
+                    RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, authors = friends)
+                }
+            }
+            val writings = async {
+                if (pubkeyHex == null || friends.isEmpty()) {
+                    emptyList()
+                } else {
+                    RelayQuery.fetchRecentWritings(relays, WRITING_LIMIT, authors = friends)
+                }
+            }
+            highlights.await() to writings.await()
+        }
+        val highlightEvents = (globalHighlights.await() + mineHighlights.await() + friendsHighlights)
             .distinctBy { it.id }
             .sortedByDescending { it.createdAt }
-        val authors = merged.map { it.pubkey }.distinct().take(PROFILE_LIMIT)
+        val writingEvents = (globalWritings.await() + mineWritings.await() + friendsWritings)
+            .distinctBy { it.id }
+            .sortedByDescending { Nip23.publishedAt(it) }
+        val authors = (highlightEvents + writingEvents)
+            .map { it.pubkey }
+            .distinct()
+            .take(PROFILE_LIMIT)
         val profiles = RelayQuery.fetchProfiles(relays, authors)
-        toItems(merged, profiles, pubkeyHex, friends)
+        Catalog(
+            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends),
+            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends),
+        )
     }
 
-    private fun toItems(
+    private fun toHighlightItems(
         events: List<Nip01Event>,
         profiles: Map<String, Profile>,
         sessionHex: String?,
@@ -179,7 +234,7 @@ class FeedViewModel(
                 url = url,
                 host = url?.let { ArticleUrl.host(it) },
                 authorHex = event.pubkey,
-                authorName = displayName(event.pubkey, profile),
+                authorName = authorName(event.pubkey, profile),
                 authorPicture = profile?.picture,
                 createdAt = event.createdAt,
                 level = classifyFeedLevel(event.pubkey, sessionHex, friends),
@@ -187,18 +242,64 @@ class FeedViewModel(
         }
     }
 
-    private fun displayName(pubkeyHex: String, profile: Profile?): String {
-        profile?.name?.takeIf { it.isNotBlank() }?.let { return it }
-        return try {
-            val npub = Nip19.npubEncode(pubkeyHex)
-            if (npub.length > 16) npub.take(12) + "…" else npub
-        } catch (_: Exception) {
-            pubkeyHex.take(8)
+    private fun toWritingItems(
+        events: List<Nip01Event>,
+        profiles: Map<String, Profile>,
+        sessionHex: String?,
+        friends: Set<String>,
+    ): List<FeedWriting> {
+        val now = System.currentTimeMillis() / 1000
+        return events.mapNotNull { event ->
+            writingFrom(event, profiles[event.pubkey.lowercase()], sessionHex, friends, now)
         }
     }
 
+    private data class Catalog(
+        val highlights: List<FeedItem>,
+        val writings: List<FeedWriting>,
+    )
+
     companion object {
         private const val HIGHLIGHT_LIMIT = 80
-        private const val PROFILE_LIMIT = 40
+        private const val WRITING_LIMIT = 80
+        private const val PROFILE_LIMIT = 80
+        private const val UNTITLED = "Untitled"
+        private const val FUTURE_SLACK_SECONDS = 24L * 60L * 60L
+
+        internal fun authorName(pubkeyHex: String, profile: Profile?): String {
+            profile?.name?.takeIf { it.isNotBlank() }?.let { return it }
+            return try {
+                val npub = Nip19.npubEncode(pubkeyHex)
+                if (npub.length > 16) npub.take(12) + "…" else npub
+            } catch (_: Exception) {
+                pubkeyHex.take(8)
+            }
+        }
+
+        internal fun writingFrom(
+            event: Nip01Event,
+            profile: Profile?,
+            sessionHex: String?,
+            friends: Set<String>,
+            nowSeconds: Long,
+        ): FeedWriting? {
+            if (Nip23.publishedAt(event) > nowSeconds + FUTURE_SLACK_SECONDS) return null
+            val identifier = Nip23.identifier(event) ?: return null
+            val article = NostrArticle.fromCoordinate(
+                "${Nip01Event.KIND_LONG_FORM}:${event.pubkey}:$identifier",
+            ) ?: return null
+            return FeedWriting(
+                id = event.id,
+                title = Nip23.title(event) ?: UNTITLED,
+                summary = Nip23.summary(event),
+                imageUrl = Nip23.image(event),
+                url = article.uri,
+                authorHex = event.pubkey,
+                authorName = authorName(event.pubkey, profile),
+                authorPicture = profile?.picture,
+                publishedAt = Nip23.publishedAt(event),
+                level = classifyFeedLevel(event.pubkey, sessionHex, friends),
+            )
+        }
     }
 }

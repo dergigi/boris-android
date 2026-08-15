@@ -24,8 +24,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -57,8 +54,9 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.ContentTab
+import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.settings.hexColor
-import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.SourceSerif
 
@@ -104,7 +102,7 @@ fun YouHighlightsContent(
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var tab by rememberSaveable { mutableStateOf(YouTab.Highlights) }
+    var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = onRefresh,
@@ -128,7 +126,7 @@ fun YouHighlightsContent(
                 )
             }
             item(key = "tabs") {
-                YouTabs(tab = tab, onSelect = { tab = it })
+                ContentTabs(tab = tab, onSelect = { tab = it })
             }
             when (state) {
                 YouUiState.Loading -> {
@@ -153,7 +151,7 @@ fun YouHighlightsContent(
                 }
                 is YouUiState.Ready -> {
                     when (tab) {
-                        YouTab.Highlights -> {
+                        ContentTab.Highlights -> {
                             if (state.highlights.isEmpty()) {
                                 item(key = "empty-highlights") {
                                     StatusMessage(
@@ -172,7 +170,7 @@ fun YouHighlightsContent(
                                 }
                             }
                         }
-                        YouTab.Writings -> {
+                        ContentTab.Writings -> {
                             if (state.writings.isEmpty()) {
                                 item(key = "empty-writings") {
                                     StatusMessage(
@@ -194,54 +192,6 @@ fun YouHighlightsContent(
             }
         }
     }
-}
-
-@Composable
-private fun YouTabs(
-    tab: YouTab,
-    onSelect: (YouTab) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        YouTabChip(
-            selected = tab == YouTab.Highlights,
-            label = stringResource(R.string.you_tab_highlights),
-            icon = BorisIcons.Highlighter,
-            onClick = { onSelect(YouTab.Highlights) },
-        )
-        YouTabChip(
-            selected = tab == YouTab.Writings,
-            label = stringResource(R.string.you_tab_writings),
-            icon = Icons.Outlined.Edit,
-            onClick = { onSelect(YouTab.Writings) },
-        )
-    }
-}
-
-@Composable
-private fun YouTabChip(
-    selected: Boolean,
-    label: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        leadingIcon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-        },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-    )
 }
 
 @Composable

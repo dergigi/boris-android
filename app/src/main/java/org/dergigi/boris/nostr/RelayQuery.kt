@@ -96,12 +96,7 @@ object RelayQuery {
     ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
-        val keys = buildList {
-            if (!pubkeyHex.isNullOrBlank()) add(pubkeyHex.lowercase())
-            authors.forEach { key ->
-                if (key.isNotBlank()) add(key.lowercase())
-            }
-        }.distinct()
+        val keys = authorKeys(pubkeyHex, authors)
         val filters = if (keys.isEmpty()) {
             listOf(highlightFilter(limit, emptyList()))
         } else {
@@ -189,20 +184,31 @@ object RelayQuery {
             .sortedByDescending { it.createdAt }
     }
 
-    fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+    fun fetchLongFormArticles(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> =
+        fetchRecentWritings(readRelays, limit = 200, pubkeyHex = pubkeyHex)
+
+    fun fetchRecentWritings(
+        readRelays: List<String>,
+        limit: Int = 80,
+        pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
+    ): List<Nip01Event> {
         val urls = readRelays.mapNotNull { Nip66.normalize(it) }.distinct()
         if (urls.isEmpty()) return emptyList()
-        val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_LONG_FORM))
-            .put("authors", JSONArray().put(pubkeyHex))
-            .put("limit", 200)
-        return query(urls, listOf(filter))
+        val keys = authorKeys(pubkeyHex, authors)
+        val filters = if (keys.isEmpty()) {
+            listOf(writingFilter(limit, emptyList()))
+        } else {
+            keys.chunked(AUTHOR_CHUNK).map { chunk -> writingFilter(limit, chunk) }
+        }
+        val allowed = keys.toSet()
+        return query(urls, filters)
             .filter { event ->
                 event.kind == Nip01Event.KIND_LONG_FORM &&
-                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
-                    !Nip23.identifier(event).isNullOrBlank()
+                    !Nip23.identifier(event).isNullOrBlank() &&
+                    (allowed.isEmpty() || event.pubkey.lowercase() in allowed)
             }
-            .groupBy { Nip23.identifier(it)!!.lowercase() }
+            .groupBy { "${it.pubkey.lowercase()}:${Nip23.identifier(it)!!.lowercase()}" }
             .mapNotNull { (_, events) -> events.maxByOrNull { it.createdAt } }
             .sortedByDescending { Nip23.publishedAt(it) }
     }
@@ -406,15 +412,28 @@ object RelayQuery {
         }
     }
 
-    private fun highlightFilter(limit: Int, authors: List<String>): JSONObject {
+    private fun highlightFilter(limit: Int, authors: List<String>): JSONObject =
+        kindFilter(Nip01Event.KIND_HIGHLIGHT, limit, authors)
+
+    private fun writingFilter(limit: Int, authors: List<String>): JSONObject =
+        kindFilter(Nip01Event.KIND_LONG_FORM, limit, authors)
+
+    private fun kindFilter(kind: Int, limit: Int, authors: List<String>): JSONObject {
         val filter = JSONObject()
-            .put("kinds", JSONArray().put(Nip01Event.KIND_HIGHLIGHT))
+            .put("kinds", JSONArray().put(kind))
             .put("limit", limit)
         if (authors.isNotEmpty()) {
             filter.put("authors", JSONArray().apply { authors.forEach { put(it) } })
         }
         return filter
     }
+
+    private fun authorKeys(pubkeyHex: String?, authors: Collection<String>): List<String> = buildList {
+        if (!pubkeyHex.isNullOrBlank()) add(pubkeyHex.lowercase())
+        authors.forEach { key ->
+            if (key.isNotBlank()) add(key.lowercase())
+        }
+    }.distinct()
 
     private fun newId(): String = UUID.randomUUID().toString().take(12)
 

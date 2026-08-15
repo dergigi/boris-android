@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
@@ -36,6 +37,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +60,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.ui.ContentTab
+import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -76,16 +84,19 @@ fun FeedScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
+    var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
     FeedScreenContent(
         state = state,
         refreshing = refreshing,
         scope = scope,
+        tab = tab,
         loggedIn = loggedIn,
         nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
         friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
         mineColor = hexColor(settings.highlightColorMine, HighlightMine),
         onRefresh = viewModel::refresh,
         onToggle = viewModel::toggle,
+        onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
         modifier = modifier,
     )
@@ -97,12 +108,14 @@ fun FeedScreenContent(
     state: FeedUiState,
     refreshing: Boolean,
     scope: FeedScope,
+    tab: ContentTab,
     loggedIn: Boolean,
     nostrverseColor: Color,
     friendsColor: Color,
     mineColor: Color,
     onRefresh: () -> Unit,
     onToggle: (FeedLevel) -> Unit,
+    onSelectTab: (ContentTab) -> Unit,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -117,7 +130,7 @@ fun FeedScreenContent(
                         on = scope.nostrverse,
                         enabled = true,
                         tint = nostrverseColor,
-                        contentDescription = stringResource(R.string.settings_visibility_nostrverse),
+                        contentDescription = stringResource(R.string.feed_scope_nostrverse),
                         onClick = { onToggle(FeedLevel.Nostrverse) },
                     )
                     ScopeToggle(
@@ -126,7 +139,7 @@ fun FeedScreenContent(
                         enabled = loggedIn,
                         tint = friendsColor,
                         contentDescription = stringResource(
-                            if (loggedIn) R.string.settings_visibility_friends else R.string.feed_scope_friends_login,
+                            if (loggedIn) R.string.feed_scope_friends else R.string.feed_scope_friends_login,
                         ),
                         onClick = { onToggle(FeedLevel.Friends) },
                     )
@@ -136,7 +149,7 @@ fun FeedScreenContent(
                         enabled = loggedIn,
                         tint = mineColor,
                         contentDescription = stringResource(
-                            if (loggedIn) R.string.settings_visibility_mine else R.string.feed_scope_mine_login,
+                            if (loggedIn) R.string.feed_scope_mine else R.string.feed_scope_mine_login,
                         ),
                         onClick = { onToggle(FeedLevel.Mine) },
                     )
@@ -151,65 +164,141 @@ fun FeedScreenContent(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background),
         ) {
-            when (state) {
-                FeedUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-                FeedUiState.Empty -> {
-                    StatusMessage(
-                        text = stringResource(R.string.feed_empty),
-                        onRetry = onRefresh,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-                FeedUiState.Error -> {
-                    StatusMessage(
-                        text = stringResource(R.string.feed_error),
-                        onRetry = onRefresh,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-                is FeedUiState.Ready -> {
-                    PullToRefreshBox(
-                        isRefreshing = refreshing,
-                        onRefresh = onRefresh,
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        if (state.items.isEmpty()) {
-                            StatusMessage(
-                                text = stringResource(R.string.feed_empty_filtered),
-                                onRetry = onRefresh,
-                                modifier = Modifier.align(Alignment.Center),
-                            )
-                        } else {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .widthIn(max = 720.dp)
-                                        .fillMaxSize()
-                                        .align(Alignment.TopCenter),
-                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                                ) {
-                                    items(state.items, key = { it.id }) { item ->
-                                        FeedHighlightRow(
-                                            item = item,
-                                            onOpenArticle = onOpenArticle,
-                                        )
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                                    }
-                                }
+            ContentTabs(
+                tab = tab,
+                onSelect = onSelectTab,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when (state) {
+                    FeedUiState.Loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+                    FeedUiState.Empty -> {
+                        StatusMessage(
+                            text = emptyMessage(tab, filtered = false),
+                            onRetry = onRefresh,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+                    FeedUiState.Error -> {
+                        StatusMessage(
+                            text = stringResource(R.string.feed_error),
+                            onRetry = onRefresh,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+                    is FeedUiState.Ready -> {
+                        PullToRefreshBox(
+                            isRefreshing = refreshing,
+                            onRefresh = onRefresh,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            when (tab) {
+                                ContentTab.Highlights -> FeedHighlightList(
+                                    items = state.highlights,
+                                    emptyText = emptyMessage(tab, filtered = state.hasHighlights),
+                                    onRefresh = onRefresh,
+                                    onOpenArticle = onOpenArticle,
+                                )
+                                ContentTab.Writings -> FeedWritingList(
+                                    items = state.writings,
+                                    emptyText = emptyMessage(tab, filtered = state.hasWritings),
+                                    onRefresh = onRefresh,
+                                    onOpenArticle = onOpenArticle,
+                                )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun emptyMessage(tab: ContentTab, filtered: Boolean): String {
+    if (filtered) return stringResource(R.string.feed_empty_filtered)
+    return stringResource(
+        if (tab == ContentTab.Writings) R.string.feed_writings_empty else R.string.feed_empty,
+    )
+}
+
+@Composable
+private fun FeedHighlightList(
+    items: List<FeedItem>,
+    emptyText: String,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            StatusMessage(
+                text = emptyText,
+                onRetry = onRefresh,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxSize()
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            items(items, key = { it.id }) { item ->
+                FeedHighlightRow(
+                    item = item,
+                    onOpenArticle = onOpenArticle,
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedWritingList(
+    items: List<FeedWriting>,
+    emptyText: String,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            StatusMessage(
+                text = emptyText,
+                onRetry = onRefresh,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxSize()
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(items, key = { it.id }) { item ->
+                FeedWritingRow(
+                    item = item,
+                    onOpenArticle = onOpenArticle,
+                )
             }
         }
     }
@@ -300,6 +389,101 @@ private fun FeedHighlightRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedWritingRow(
+    item: FeedWriting,
+    onOpenArticle: (String) -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable { onOpenArticle(item.url) }
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (item.imageUrl.isNullOrBlank()) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Article,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            } else {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!item.summary.isNullOrBlank()) {
+                Text(
+                    text = item.summary,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
+                AsyncImage(
+                    model = item.authorPicture,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    placeholder = fallback,
+                    error = fallback,
+                    fallback = fallback,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape),
+                )
+                Text(
+                    text = item.authorName,
+                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text(
+                    text = RelativeTime.label(item.publishedAt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

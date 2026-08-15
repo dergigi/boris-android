@@ -22,11 +22,6 @@ import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 
-enum class YouTab {
-    Highlights,
-    Writings,
-}
-
 data class YouHighlight(
     val id: String,
     val quote: String,
