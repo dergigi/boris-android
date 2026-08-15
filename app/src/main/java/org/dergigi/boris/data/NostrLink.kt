@@ -31,6 +31,8 @@ object NostrLink {
 
     fun gatewayUrl(identifier: String): String = "$GATEWAY/$identifier"
 
+    fun copyText(url: String): String = parse(url)?.uri ?: url
+
     fun parse(raw: String?): NostrTarget? {
         if (raw.isNullOrBlank()) return null
         val trimmed = raw.trim()

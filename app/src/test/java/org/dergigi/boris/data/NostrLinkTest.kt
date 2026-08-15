@@ -60,6 +60,18 @@ class NostrLinkTest {
     }
 
     @Test
+    fun copyTextUsesNostrUriOrPlainUrl() {
+        val id = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
+        val note = Nip19.noteEncode(id)
+        assertEquals("nostr:$note", NostrLink.copyText("nostr:$note"))
+        assertEquals("nostr:$naddr", NostrLink.copyText("https://njump.to/$naddr"))
+        assertEquals(
+            "https://www.citadel21.com/the-paranoid-wallet",
+            NostrLink.copyText("https://www.citadel21.com/the-paranoid-wallet"),
+        )
+    }
+
+    @Test
     fun ignoresBareHex() {
         assertNull(NostrLink.parse("d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"))
         assertNull(NostrLink.parse("not a nostr link"))

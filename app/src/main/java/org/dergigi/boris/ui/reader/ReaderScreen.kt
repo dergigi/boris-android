@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -176,6 +177,7 @@ fun ReaderScreenContent(
     onHighlight: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val articleUrl = when (state) {
         is ReaderUiState.Ready -> state.content.url
         is ReaderUiState.Error -> state.url
@@ -202,6 +204,12 @@ fun ReaderScreenContent(
         context.startActivity(Intent.createChooser(intent, "Share article"))
     }
 
+    fun copyLink() {
+        val url = articleUrl ?: return
+        clipboard.setText(AnnotatedString(NostrLink.copyText(url)))
+        Toast.makeText(context, "Copied.", Toast.LENGTH_SHORT).show()
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
@@ -224,6 +232,9 @@ fun ReaderScreenContent(
                     if (articleUrl != null) {
                         IconButton(onClick = ::shareArticle) {
                             Icon(Icons.Filled.Share, contentDescription = "Share article")
+                        }
+                        IconButton(onClick = ::copyLink) {
+                            Icon(Icons.Filled.ContentCopy, contentDescription = "Copy link")
                         }
                         IconButton(onClick = ::openOriginal) {
                             Icon(Icons.Filled.OpenInBrowser, contentDescription = "Open original")
