@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Home shows an "Open from clipboard" banner when the clipboard holds a URL or nostr link, with one tap to read it and a dismiss button
+
 ## [0.27.1] - 2026-08-15
 
 ### Changed
