@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Full-width images in the reader now span the article column instead of staying at their intrinsic size
+
 ## [0.25.0] - 2026-08-15
 
 ### Added
