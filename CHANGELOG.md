@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-15
+
+### Fixed
+
+- Highlights and text selection follow the words on justified paragraphs
+
 ## [0.7.0] - 2026-08-15
 
 ### Added
@@ -174,7 +180,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/dergigi/boris-android/releases/tag/v0.7.1
 [0.7.0]: https://github.com/dergigi/boris-android/releases/tag/v0.7.0
 [0.6.0]: https://github.com/dergigi/boris-android/releases/tag/v0.6.0
 [0.5.0]: https://github.com/dergigi/boris-android/releases/tag/v0.5.0
