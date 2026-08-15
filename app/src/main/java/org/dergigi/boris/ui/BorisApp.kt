@@ -25,9 +25,11 @@ import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.library.LibraryScreen
+import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
 import org.dergigi.boris.ui.settings.SettingsScreen
+import org.dergigi.boris.ui.you.ProfileScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
 import org.dergigi.boris.ui.shell.StubScreen
@@ -41,12 +43,16 @@ object Routes {
     const val SEARCH = "search"
     const val YOU = "you"
     const val SETTINGS = "settings"
+    const val NPUB_ARG = "npub"
+    const val PROFILE = "profile/{$NPUB_ARG}"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
 
     fun reader(url: String): String {
         val encoded = URLEncoder.encode(url, StandardCharsets.UTF_8.name())
         return "reader?url=$encoded"
     }
+
+    fun profile(npub: String): String = "profile/$npub"
 }
 
 @Composable
@@ -146,6 +152,19 @@ fun BorisApp(
                     )
                 }
                 composable(
+                    route = Routes.PROFILE,
+                    arguments = listOf(
+                        navArgument(Routes.NPUB_ARG) { type = NavType.StringType },
+                    ),
+                ) { entry ->
+                    val npub = entry.arguments?.getString(Routes.NPUB_ARG).orEmpty()
+                    ProfileScreen(
+                        npub = npub,
+                        onBack = { navController.popBackStack() },
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                    )
+                }
+                composable(
                     route = Routes.READER,
                     arguments = listOf(
                         navArgument(ReaderViewModel.URL_ARG) { type = NavType.StringType },
@@ -160,6 +179,11 @@ fun BorisApp(
                             }
                         },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
+                            }
+                        },
                     )
                 }
             }

@@ -19,6 +19,7 @@ import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
+import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 
@@ -57,17 +58,29 @@ class YouViewModel(
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
-    private var loadJob: Job? = null
+    private val _profile = MutableStateFlow<Profile?>(null)
+    val profile: StateFlow<Profile?> = _profile.asStateFlow()
 
-    fun refresh() {
-        val session = SessionStore.load(getApplication())
-        if (session == null) {
+    private var loadJob: Job? = null
+    private var pubkeyHex: String = ""
+
+    fun refresh(pubkeyHex: String = this.pubkeyHex) {
+        val key = pubkeyHex.trim().lowercase().takeIf { it.length == 64 }
+            ?: SessionStore.load(getApplication())?.pubkeyHex
+        if (key.isNullOrBlank()) {
             loadJob?.cancel()
+            this.pubkeyHex = ""
+            _profile.value = null
             _state.value = YouUiState.Ready(emptyList(), emptyList())
             _refreshing.value = false
             return
         }
-        val keepItems = _state.value is YouUiState.Ready
+        val samePerson = key == this.pubkeyHex
+        if (!samePerson) {
+            _profile.value = null
+        }
+        this.pubkeyHex = key
+        val keepItems = samePerson && _state.value is YouUiState.Ready
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             if (keepItems) {
@@ -79,11 +92,11 @@ class YouViewModel(
                 val loaded = withContext(Dispatchers.IO) {
                     val relays = buildList {
                         addAll(RelayList.FALLBACK)
-                        addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
+                        addAll(RelayQuery.fetchRelayList(key).read)
                     }.distinct()
                     coroutineScope {
                         val highlights = async {
-                            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, session.pubkeyHex)
+                            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, key)
                                 .map { event ->
                                     val url = Nip84.articleUrl(event)
                                     YouHighlight(
@@ -96,12 +109,14 @@ class YouViewModel(
                                 }
                         }
                         val writings = async {
-                            RelayQuery.fetchLongFormArticles(session.pubkeyHex, relays)
+                            RelayQuery.fetchLongFormArticles(key, relays)
                                 .mapNotNull { event -> writingFrom(event) }
                         }
-                        Loaded(highlights.await(), writings.await())
+                        val profile = async { RelayQuery.fetchProfile(key) }
+                        Loaded(highlights.await(), writings.await(), profile.await())
                     }
                 }
+                _profile.value = loaded.profile
                 _state.value = YouUiState.Ready(loaded.highlights, loaded.writings)
             } catch (e: CancellationException) {
                 throw e
@@ -118,6 +133,7 @@ class YouViewModel(
     private data class Loaded(
         val highlights: List<YouHighlight>,
         val writings: List<YouWriting>,
+        val profile: Profile?,
     )
 
     companion object {

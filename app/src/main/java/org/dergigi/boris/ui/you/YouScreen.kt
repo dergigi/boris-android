@@ -50,6 +50,7 @@ import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentTab
@@ -68,18 +69,21 @@ fun YouHighlights(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
+    val fetchedProfile by viewModel.profile.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val shown = profile ?: fetchedProfile
     val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
-    val displayName = profile?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)
+    val displayName = shown?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)
     LaunchedEffect(npub) {
-        viewModel.refresh()
+        val hex = runCatching { Nip19.npubDecode(npub) }.getOrNull() ?: return@LaunchedEffect
+        viewModel.refresh(hex)
     }
     YouHighlightsContent(
         state = state,
         refreshing = refreshing,
         displayName = displayName,
-        about = profile?.about,
-        pictureUrl = profile?.picture,
+        about = shown?.about,
+        pictureUrl = shown?.picture,
         mineColor = mineColor,
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,

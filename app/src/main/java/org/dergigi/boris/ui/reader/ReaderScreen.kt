@@ -133,6 +133,7 @@ import kotlinx.coroutines.launch
 fun ReaderScreen(
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenProfile: (String) -> Unit,
     viewModel: ReaderViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -175,6 +176,7 @@ fun ReaderScreen(
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
+        onOpenProfile = onOpenProfile,
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
@@ -205,6 +207,7 @@ fun ReaderScreenContent(
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenProfile: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
@@ -373,6 +376,7 @@ fun ReaderScreenContent(
                     settings = settings,
                     volumeScroll = gallery == null,
                     onOpenArticle = onOpenArticle,
+                    onOpenProfile = onOpenProfile,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
                     onArchive = onArchive,
@@ -401,6 +405,7 @@ private fun ArticleBody(
     author: Profile?,
     settings: UserSettings,
     onOpenArticle: (String) -> Unit,
+    onOpenProfile: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
     onArchive: () -> Unit,
@@ -648,6 +653,7 @@ private fun ArticleBody(
                         about = author?.about,
                         pictureUrl = author?.picture,
                         modifier = Modifier.padding(top = 32.dp),
+                        onClick = { onOpenProfile(authorPubkey) },
                     )
                 }
             }

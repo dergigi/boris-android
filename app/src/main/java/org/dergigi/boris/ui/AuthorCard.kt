@@ -1,6 +1,7 @@
 package org.dergigi.boris.ui
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,12 +32,16 @@ fun AuthorCard(
     about: String?,
     pictureUrl: String?,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
+    val shape = RoundedCornerShape(12.dp)
     val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Top,
