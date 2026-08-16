@@ -30,6 +30,8 @@ object LocalSearch {
             val authorHex: String,
             val authorName: String,
             val authorPicture: String?,
+            val mine: Boolean,
+            val friend: Boolean,
         ) : Hit()
 
         data class Article(
@@ -62,11 +64,18 @@ object LocalSearch {
         ) : Hit()
     }
 
-    fun query(raw: String, limit: Int = MAX_RESULTS): List<Hit> {
+    fun query(
+        raw: String,
+        limit: Int = MAX_RESULTS,
+        sessionHex: String? = null,
+        friendPubkeys: Set<String> = emptySet(),
+    ): List<Hit> {
         val needle = normalize(raw)
         if (needle.length < 2) return emptyList()
+        val session = sessionHex?.lowercase()
+        val friends = friendPubkeys.map { it.lowercase() }.toSet()
         val hits = mutableListOf<Hit>()
-        hits += searchHighlights(needle)
+        hits += searchHighlights(needle, session, friends)
         hits += searchArticles(needle)
         hits += searchBookmarks(needle)
         hits += searchPeople(needle)
@@ -76,7 +85,11 @@ object LocalSearch {
             .take(limit)
     }
 
-    private fun searchHighlights(needle: String): List<Hit> =
+    private fun searchHighlights(
+        needle: String,
+        sessionHex: String?,
+        friendPubkeys: Set<String>,
+    ): List<Hit> =
         EventCache.byKind(Nip01Event.KIND_HIGHLIGHT).mapNotNull { event ->
             val quote = event.content.trim()
             if (quote.isEmpty()) return@mapNotNull null
@@ -85,6 +98,8 @@ object LocalSearch {
             val url = Nip84.articleUrl(event)
             val host = url?.let { ArticleUrl.host(it) }
             val profile = cachedProfile(event.pubkey)
+            val author = event.pubkey.lowercase()
+            val mine = sessionHex != null && author == sessionHex
             Hit.Highlight(
                 id = "hl:${event.id}",
                 title = quote,
@@ -95,9 +110,11 @@ object LocalSearch {
                 quote = quote,
                 context = context,
                 host = host,
-                authorHex = event.pubkey.lowercase(),
+                authorHex = author,
                 authorName = Profile.displayName(event.pubkey, profile),
                 authorPicture = profile?.picture,
+                mine = mine,
+                friend = !mine && author in friendPubkeys,
             )
         }
 

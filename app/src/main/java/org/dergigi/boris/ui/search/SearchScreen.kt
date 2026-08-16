@@ -29,28 +29,24 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
 import org.dergigi.boris.data.LocalSearch
-import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
-import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
-import org.dergigi.boris.ui.feed.FeedLevel
-import org.dergigi.boris.ui.feed.classifyFeedLevel
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -67,10 +63,8 @@ fun SearchScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val sessionHex = SessionStore.load(context)?.pubkeyHex?.lowercase()
-    val friends = remember(sessionHex) {
-        sessionHex?.let { RelayQuery.cachedContactPubkeys(it) } ?: emptySet()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshRelation()
     }
     val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
     val friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends)
@@ -80,11 +74,11 @@ fun SearchScreen(
         results = state.results,
         onQueryChange = viewModel::onQueryChange,
         onClear = viewModel::clear,
-        colorFor = { authorHex ->
-            when (classifyFeedLevel(authorHex, sessionHex, friends)) {
-                FeedLevel.Mine -> mineColor
-                FeedLevel.Friends -> friendsColor
-                FeedLevel.Nostrverse -> nostrverseColor
+        colorFor = { hit ->
+            when {
+                hit.mine -> mineColor
+                hit.friend -> friendsColor
+                else -> nostrverseColor
             }
         },
         onOpenHit = { hit ->
@@ -110,7 +104,7 @@ fun SearchScreenContent(
     results: List<LocalSearch.Hit>,
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
-    colorFor: (authorHex: String) -> Color,
+    colorFor: (LocalSearch.Hit.Highlight) -> Color,
     onOpenHit: (LocalSearch.Hit) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -184,7 +178,7 @@ fun SearchScreenContent(
                                 is LocalSearch.Hit.Highlight -> {
                                     SearchHighlightCard(
                                         hit = hit,
-                                        color = colorFor(hit.authorHex),
+                                        color = colorFor(hit),
                                         onOpen = { onOpenHit(hit) },
                                         onOpenProfile = { onOpenProfile(hit.authorHex) },
                                     )
