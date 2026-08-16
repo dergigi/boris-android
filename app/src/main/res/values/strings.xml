@@ -59,7 +59,7 @@
     <string name="about_airplane_mode_1">Boris is offline-first by design. You can read, create highlights, and browse your library without a network. When offline, Boris stores changes locally and syncs later.</string>
     <string name="about_social_highlights_title">Social Highlights</string>
     <string name="about_social_highlights_1">Discover highlights from your friends and others, as well as long-form content from the nostrverse.</string>
-    <string name="about_social_highlights_2">"Swarm highlights" help you discover the most interesting passages, while the explore page will show you nostr-native long-form content.</string>
+    <string name="about_social_highlights_2">"Swarm highlights" help you discover the most interesting passages, while the feed shows you nostr-native long-form content.</string>
     <string name="about_lists_title">Lists, Libraries, and More</string>
     <string name="about_lists_1">Boris turns your bookmarks into a focused reading queue. It supports public and private bookmarks, as well as regular web URLs.</string>
     <string name="about_lists_2">Keep track of reading progress, jump to specific passages, and mark articles (and other stuff) as read.</string>
