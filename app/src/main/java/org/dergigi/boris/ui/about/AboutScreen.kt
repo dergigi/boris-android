@@ -65,6 +65,7 @@ import coil3.request.ImageRequest
 import coil3.svg.SvgDecoder
 import kotlinx.coroutines.launch
 import org.dergigi.boris.R
+import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.SourceSerif
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,7 +109,7 @@ fun AboutScreen(
                 when (val item = ABOUT_PAGES[page]) {
                     AboutPage.Intro -> IntroPage()
                     is AboutPage.Feature -> FeaturePage(item.feature)
-                    AboutPage.Cta -> CtaPage()
+                    AboutPage.Cta -> CtaPage(onStartReading = onBack)
                 }
             }
             PageDots(
@@ -223,7 +224,7 @@ private fun FreeAsInBeerParagraph(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CtaPage() {
+private fun CtaPage(onStartReading: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     AboutPageColumn {
         Text(
@@ -276,6 +277,26 @@ private fun CtaPage() {
             icon = Icons.Outlined.Lightbulb,
             onClick = { uriHandler.openUri(AboutLinks.FEATURE_REQUEST) },
         )
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = onStartReading,
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+        ) {
+            Icon(
+                imageVector = BorisIcons.Highlighter,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.about_cta_start),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
     }
 }
 
