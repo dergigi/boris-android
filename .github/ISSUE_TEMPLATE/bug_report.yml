@@ -1,0 +1,64 @@
+name: Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Boris. The more detail you can share, the faster we can fix it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug in a sentence or two.
+      placeholder: When I…, Boris…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can someone else hit the same issue?
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Settings → About, or the version shown under the app name.
+      placeholder: 0.46.0
+    validations:
+      required: true
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: Android 15
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: Pixel 8
+    validations:
+      required: false
+  - type: textarea
+    id: extras
+    attributes:
+      label: Extra context
+      description: Screenshots, logs, or anything else that might help.
+    validations:
+      required: false

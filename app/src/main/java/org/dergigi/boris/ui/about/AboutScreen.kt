@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -263,28 +265,47 @@ private fun CtaPage() {
             )
         }
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(
-            onClick = { uriHandler.openUri(AboutLinks.GITHUB) },
-            shape = RoundedCornerShape(8.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.onBackground,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp),
-        ) {
-            Icon(
-                Icons.Outlined.BugReport,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.about_cta_github),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
+        CtaOutlinedButton(
+            label = stringResource(R.string.about_cta_bug),
+            icon = Icons.Outlined.BugReport,
+            onClick = { uriHandler.openUri(AboutLinks.BUG_REPORT) },
+        )
+        Spacer(Modifier.height(12.dp))
+        CtaOutlinedButton(
+            label = stringResource(R.string.about_cta_feature),
+            icon = Icons.Outlined.Lightbulb,
+            onClick = { uriHandler.openUri(AboutLinks.FEATURE_REQUEST) },
+        )
+    }
+}
+
+@Composable
+private fun CtaOutlinedButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+        )
     }
 }
 

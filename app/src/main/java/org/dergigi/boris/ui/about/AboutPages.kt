@@ -18,6 +18,8 @@ internal sealed class AboutPage {
 internal object AboutLinks {
     const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqrtmsxpl5yfmkwn9uvnfnqylqduhr0x"
     const val GITHUB = "https://github.com/dergigi/boris-android"
+    const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"
+    const val FEATURE_REQUEST = "$GITHUB/issues/new?template=feature_request.yml"
     const val VALUE = "https://dergigi.com/value/"
     val nostrUrl = "https://njump.to/$NPUB"
 }
