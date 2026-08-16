@@ -9,6 +9,20 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-08-16
+
+### Added
+
+- The reader + button lets you save nostr-native articles and notes to private or public bookmarks
+
+### Changed
+
+- Boolean settings use a switch on the right of the label
+
+### Fixed
+
+- Opening the highlights pane from a purple pill no longer lands on an empty filter
+
 ## [0.30.2] - 2026-08-16
 
 ### Changed
@@ -432,7 +446,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.30.2...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/dergigi/boris-android/releases/tag/v0.31.0
 [0.30.2]: https://github.com/dergigi/boris-android/releases/tag/v0.30.2
 [0.30.1]: https://github.com/dergigi/boris-android/releases/tag/v0.30.1
 [0.30.0]: https://github.com/dergigi/boris-android/releases/tag/v0.30.0
