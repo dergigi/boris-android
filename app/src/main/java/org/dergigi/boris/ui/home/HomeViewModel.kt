@@ -194,7 +194,7 @@ class HomeViewModel(
     }
 
     private fun loadOthers(excludeHex: String?, friendPubkeys: Set<String>): List<HighlightedArticle> {
-        val events = RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
+        val events = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
             .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys) }
         return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
     }

@@ -105,6 +105,24 @@ object RelayQuery {
         return Nip66.select(events, seed, limit)
     }
 
+    /**
+     * Relays for global (nostrverse) queries: the fallback set plus NIP-66
+     * discovered relays. Discovery runs once per session in the background and
+     * is never a gate; until it completes this is just the fallback set.
+     */
+    fun globalReadRelays(): List<String> {
+        refreshOnce("nip66:discovery") {
+            discovered = discoverContentRelays().filterNot { it in RelayList.FALLBACK }
+        }
+        return (RelayList.FALLBACK + discovered).distinct()
+    }
+
+    /** NIP-66 discovered relays from this session, beyond the fallback set. */
+    fun discoveredRelays(): List<String> = discovered
+
+    @Volatile
+    private var discovered: List<String> = emptyList()
+
     fun fetchContactPubkeys(pubkeyHex: String): Set<String> {
         val cached = EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)
         if (cached != null) {

@@ -262,7 +262,7 @@ class FeedViewModel(
             if (pubkeyHex == null) emptySet() else RelayQuery.fetchContactPubkeys(pubkeyHex)
         }
         val globalHighlights = async {
-            RelayQuery.fetchRecentHighlights(RelayList.FALLBACK, HIGHLIGHT_LIMIT)
+            RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
         }
         val mineHighlights = async {
             if (pubkeyHex == null) {
@@ -272,7 +272,7 @@ class FeedViewModel(
             }
         }
         val globalWritings = async {
-            RelayQuery.fetchRecentWritings(RelayList.FALLBACK, WRITING_LIMIT)
+            RelayQuery.fetchRecentWritings(RelayQuery.globalReadRelays(), WRITING_LIMIT)
         }
         val mineWritings = async {
             if (pubkeyHex == null) {

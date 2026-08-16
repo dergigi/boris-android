@@ -124,6 +124,7 @@ private suspend fun relayRows(context: android.content.Context): List<RelayRowSt
         addAll(list.read)
         addAll(list.write)
         addAll(RelayList.FALLBACK)
+        addAll(RelayQuery.discoveredRelays())
         addAll(RelayScoreBoard.topRelays(follows, TOP_COVERAGE_RELAYS))
     }.mapNotNull(LocalRelays::resolve).distinct()
     return coroutineScope {
