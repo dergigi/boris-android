@@ -52,8 +52,11 @@ import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
+import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
+import org.dergigi.boris.ui.theme.HighlightOther
 
 @Composable
 fun YouHighlights(
@@ -67,8 +70,13 @@ fun YouHighlights(
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val fetchedProfile by viewModel.profile.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val relation by viewModel.relation.collectAsStateWithLifecycle()
     val shown = profile ?: fetchedProfile
-    val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
+    val highlightColor = when (relation) {
+        FeedLevel.Mine -> hexColor(settings.highlightColorMine, HighlightMine)
+        FeedLevel.Friends -> hexColor(settings.highlightColorFriends, HighlightFriends)
+        FeedLevel.Nostrverse -> hexColor(settings.highlightColorNostrverse, HighlightOther)
+    }
     val displayName = shown?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)
     LaunchedEffect(npub) {
         val hex = runCatching { Nip19.npubDecode(npub) }.getOrNull() ?: return@LaunchedEffect
@@ -80,7 +88,7 @@ fun YouHighlights(
         displayName = displayName,
         about = shown?.about,
         pictureUrl = shown?.picture,
-        mineColor = mineColor,
+        highlightColor = highlightColor,
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
         modifier = modifier,
@@ -95,7 +103,7 @@ fun YouHighlightsContent(
     displayName: String,
     about: String?,
     pictureUrl: String?,
-    mineColor: Color,
+    highlightColor: Color,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -161,7 +169,7 @@ fun YouHighlightsContent(
                                 items(state.highlights, key = { it.id }) { item ->
                                     HighlightCard(
                                         quote = item.quote,
-                                        color = mineColor,
+                                        color = highlightColor,
                                         createdAt = item.createdAt,
                                         authorName = displayName,
                                         host = item.host,

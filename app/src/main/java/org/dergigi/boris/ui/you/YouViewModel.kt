@@ -22,6 +22,8 @@ import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.ui.feed.FeedLevel
+import org.dergigi.boris.ui.feed.classifyFeedLevel
 
 data class YouHighlight(
     val id: String,
@@ -61,6 +63,9 @@ class YouViewModel(
     private val _profile = MutableStateFlow<Profile?>(null)
     val profile: StateFlow<Profile?> = _profile.asStateFlow()
 
+    private val _relation = MutableStateFlow(FeedLevel.Nostrverse)
+    val relation: StateFlow<FeedLevel> = _relation.asStateFlow()
+
     private var loadJob: Job? = null
     private var pubkeyHex: String = ""
 
@@ -71,6 +76,7 @@ class YouViewModel(
             loadJob?.cancel()
             this.pubkeyHex = ""
             _profile.value = null
+            _relation.value = FeedLevel.Nostrverse
             _state.value = YouUiState.Ready(emptyList(), emptyList())
             _refreshing.value = false
             return
@@ -80,6 +86,7 @@ class YouViewModel(
             _profile.value = null
         }
         this.pubkeyHex = key
+        _relation.value = relationFor(key, remote = false)
         val keepItems = samePerson && _state.value is YouUiState.Ready
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -88,6 +95,7 @@ class YouViewModel(
                 val cached = withContext(Dispatchers.IO) { loadCached(key) }
                 if (cached != null) {
                     _profile.value = cached.profile
+                    _relation.value = cached.relation
                     _state.value = YouUiState.Ready(cached.highlights, cached.writings)
                     showing = true
                 }
@@ -122,10 +130,12 @@ class YouViewModel(
                                 .mapNotNull { event -> writingFrom(event) }
                         }
                         val profile = async { RelayQuery.fetchProfile(key) }
-                        Loaded(highlights.await(), writings.await(), profile.await())
+                        val relation = async { relationFor(key, remote = true) }
+                        Loaded(highlights.await(), writings.await(), profile.await(), relation.await())
                     }
                 }
                 _profile.value = loaded.profile
+                _relation.value = loaded.relation
                 _state.value = YouUiState.Ready(loaded.highlights, loaded.writings)
             } catch (e: CancellationException) {
                 throw e
@@ -155,13 +165,24 @@ class YouViewModel(
         }
         val profile = RelayQuery.cachedProfiles(listOf(key))[key]
         if (highlights.isEmpty() && writings.isEmpty() && profile == null) return null
-        return Loaded(highlights, writings, profile)
+        return Loaded(highlights, writings, profile, relationFor(key, remote = false))
+    }
+
+    private fun relationFor(profileHex: String, remote: Boolean): FeedLevel {
+        val sessionHex = SessionStore.load(getApplication())?.pubkeyHex
+        val friends = when {
+            sessionHex == null -> emptySet()
+            remote -> RelayQuery.fetchContactPubkeys(sessionHex)
+            else -> RelayQuery.cachedContactPubkeys(sessionHex)
+        }
+        return classifyFeedLevel(profileHex, sessionHex, friends)
     }
 
     private data class Loaded(
         val highlights: List<YouHighlight>,
         val writings: List<YouWriting>,
         val profile: Profile?,
+        val relation: FeedLevel,
     )
 
     companion object {
