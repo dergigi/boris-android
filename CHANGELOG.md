@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Relays settings category showing the connection status of local and remote relays, with last-seen times for unreachable ones
+
 ## [0.44.0] - 2026-08-16
 
 ### Added

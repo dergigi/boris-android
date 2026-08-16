@@ -227,6 +227,12 @@
     <string name="settings_feed_summary">Default scope, RSS feeds</string>
     <string name="settings_scroll_summary">Top bar, volume button scrolling</string>
     <string name="settings_airplane_summary">Downloads, storage, local relays</string>
+    <string name="settings_relays">Relays</string>
+    <string name="settings_relays_summary">Connection status of your nostr relays</string>
+    <string name="settings_relays_intro">Relays Boris reads from and publishes to. Status is checked while this screen is open.</string>
+    <string name="settings_relays_checking">Checking relays…</string>
+    <string name="settings_relay_connected">Connected</string>
+    <string name="settings_relay_disconnected">Not reachable</string>
     <string name="settings_offline_intro">Boris downloads article text so your library stays readable offline. Articles you open are always cached, regardless of these settings.</string>
     <string name="settings_offline_available">Available offline</string>
     <string name="settings_offline_bookmarks">Bookmarks</string>

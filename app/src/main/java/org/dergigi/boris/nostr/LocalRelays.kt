@@ -1,14 +1,6 @@
 package org.dergigi.boris.nostr
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import java.net.URI
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 object LocalRelays {
     const val CITRINE = "ws://127.0.0.1:4869"
@@ -77,37 +69,5 @@ object LocalRelays {
     private fun isLocalHost(host: String): Boolean =
         host == "127.0.0.1" || host == "localhost" || host == "::1"
 
-    private fun probe(url: String): Boolean {
-        val latch = CountDownLatch(1)
-        val opened = AtomicBoolean(false)
-        val client = OkHttpClient.Builder()
-            .connectTimeout(PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .readTimeout(PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .callTimeout(PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .build()
-        val socket = try {
-            client.newWebSocket(
-                Request.Builder().url(url).build(),
-                object : WebSocketListener() {
-                    override fun onOpen(webSocket: WebSocket, response: Response) {
-                        opened.set(true)
-                        latch.countDown()
-                    }
-
-                    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                        latch.countDown()
-                    }
-                },
-            )
-        } catch (_: Exception) {
-            client.dispatcher.executorService.shutdown()
-            client.connectionPool.evictAll()
-            return false
-        }
-        latch.await(PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-        socket.cancel()
-        client.dispatcher.executorService.shutdown()
-        client.connectionPool.evictAll()
-        return opened.get()
-    }
+    private fun probe(url: String): Boolean = RelayProbe.isReachable(url, PROBE_TIMEOUT_MS)
 }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CellTower
 import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
@@ -79,6 +80,7 @@ enum class SettingsCategory(
     Library(R.string.settings_library, R.string.settings_library_summary, Color(0xFF0EA5E9)),
     Feed(R.string.feed_title, R.string.settings_feed_summary, Color(0xFF9333EA)),
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
+    Relays(R.string.settings_relays, R.string.settings_relays_summary, Color(0xFF06B6D4)),
     Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, Color(0xFFEF4444)),
 }
 
@@ -93,6 +95,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Library -> Icons.Outlined.LocalLibrary
         SettingsCategory.Feed -> Icons.Outlined.DynamicFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
+        SettingsCategory.Relays -> Icons.Outlined.CellTower
         SettingsCategory.Airplane -> Icons.Outlined.Flight
     }
 
@@ -109,6 +112,7 @@ private val CATEGORY_GROUPS = listOf(
         SettingsCategory.Library,
         SettingsCategory.Feed,
         SettingsCategory.Scroll,
+        SettingsCategory.Relays,
         SettingsCategory.Airplane,
     ),
 )
@@ -307,6 +311,7 @@ private fun SettingsCategoryDetail(
                 RssFeedsSection(settings = settings, onUpdate = onUpdate)
             }
             SettingsCategory.Scroll -> ScrollBehaviourSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Relays -> RelaysSection()
             SettingsCategory.Airplane -> {
                 AirplaneModeSection(
                     settings = settings,
