@@ -9,9 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-08-16
+
 ### Added
 
-- Relays settings category showing the connection status of local and remote relays, with last-seen times for unreachable ones
+- Relays settings category showing the connection status of local and remote relays, with last-seen times for unreachable ones, plus how many of your follows write to each relay
+- Outbox routing (NIP-65): highlights and writings from people you follow are fetched from their write relays, so content on small personal relays shows up
+- Relay health tracking: dead relays are skipped for a while after repeated failures and get second chances later
+- Persistent relay pool: connections stay open across queries instead of reconnecting for every request
+- Relay discovery (NIP-66) expands the relay set for global feeds
 
 ## [0.44.0] - 2026-08-16
 
