@@ -180,7 +180,7 @@
     <string name="settings_home">Home</string>
     <string name="settings_hide_archived">Hide archived articles</string>
     <string name="settings_feed_scope">Default Feed Scope</string>
-    <string name="settings_airplane_mode">App &amp; Airplane Mode</string>
+    <string name="settings_airplane_mode">Airplane mode</string>
     <string name="settings_airplane_body">Boris is offline-first by design. You can read, create highlights, and browse your library without being connected to the internet. Boris will store changes locally and sync later.</string>
     <string name="settings_use_local_relay">Use local relays as cache</string>
     <string name="settings_citrine">Citrine</string>
@@ -220,9 +220,7 @@
     <string name="settings_home_summary">Archived articles</string>
     <string name="settings_feed_summary">Default scope, RSS feeds</string>
     <string name="settings_scroll_summary">Top bar, volume button scrolling</string>
-    <string name="settings_airplane_summary">Offline reading, local relays</string>
-    <string name="settings_offline">Offline</string>
-    <string name="settings_offline_summary">Downloads, storage limit</string>
+    <string name="settings_airplane_summary">Downloads, storage, local relays</string>
     <string name="settings_offline_intro">Boris downloads article text so your library stays readable offline. Articles you open are always cached, regardless of these settings.</string>
     <string name="settings_offline_available">Available offline</string>
     <string name="settings_offline_bookmarks">Bookmarks</string>

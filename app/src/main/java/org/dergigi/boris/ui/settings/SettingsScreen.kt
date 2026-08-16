@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
@@ -78,7 +77,6 @@ enum class SettingsCategory(
     Home(R.string.settings_home, R.string.settings_home_summary, Color(0xFFEC4899)),
     Feed(R.string.feed_title, R.string.settings_feed_summary, Color(0xFF9333EA)),
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
-    Offline(R.string.settings_offline, R.string.settings_offline_summary, Color(0xFF0EA5E9)),
     Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, Color(0xFFEF4444)),
 }
 
@@ -92,7 +90,6 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Home -> Icons.Outlined.Home
         SettingsCategory.Feed -> Icons.Outlined.DynamicFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
-        SettingsCategory.Offline -> Icons.Outlined.CloudDownload
         SettingsCategory.Airplane -> Icons.Outlined.Flight
     }
 
@@ -108,7 +105,6 @@ private val CATEGORY_GROUPS = listOf(
         SettingsCategory.Home,
         SettingsCategory.Feed,
         SettingsCategory.Scroll,
-        SettingsCategory.Offline,
         SettingsCategory.Airplane,
     ),
 )
@@ -303,12 +299,14 @@ private fun SettingsCategoryDetail(
                 RssFeedsSection(settings = settings, onUpdate = onUpdate)
             }
             SettingsCategory.Scroll -> ScrollBehaviourSection(settings = settings, onUpdate = onUpdate)
-            SettingsCategory.Offline -> OfflineSection(settings = settings, onUpdate = onUpdate)
-            SettingsCategory.Airplane -> AirplaneModeSection(
-                settings = settings,
-                onUpdate = onUpdate,
-                onOpenArticle = onOpenArticle,
-            )
+            SettingsCategory.Airplane -> {
+                AirplaneModeSection(
+                    settings = settings,
+                    onUpdate = onUpdate,
+                    onOpenArticle = onOpenArticle,
+                )
+                OfflineSection(settings = settings, onUpdate = onUpdate)
+            }
         }
     }
 }
