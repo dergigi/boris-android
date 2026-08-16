@@ -15,24 +15,26 @@ class ReaderRepository(
     private val client: OkHttpClient = defaultClient,
 ) {
     fun fetch(url: String): ReadableContent {
-        when (val target = NostrLink.parse(url)) {
-            is NostrTarget.Article -> return fetchArticle(target.ref)
-            is NostrTarget.Note -> return fetchNote(target)
-            null -> Unit
+        val content = when (val target = NostrLink.parse(url)) {
+            is NostrTarget.Article -> fetchArticle(target.ref)
+            is NostrTarget.Note -> fetchNote(target)
+            null -> {
+                val targetUrl = UrlExtractor.normalize(url)
+                val request = Request.Builder()
+                    .url(toProxyUrl(targetUrl))
+                    .header("Accept", "text/plain")
+                    .get()
+                    .build()
+                val text = try {
+                    execute(request)
+                } catch (e: IOException) {
+                    executeFromCache(request) ?: throw e
+                }
+                withCover(parse(targetUrl, text))
+            }
         }
-        val targetUrl = UrlExtractor.normalize(url)
-        val request = Request.Builder()
-            .url(toProxyUrl(targetUrl))
-            .header("Accept", "text/plain")
-            .get()
-            .build()
-
-        val text = try {
-            execute(request)
-        } catch (e: IOException) {
-            executeFromCache(request) ?: throw e
-        }
-        return withCover(parse(targetUrl, text))
+        ArticlePreview.remember(content)
+        return content
     }
 
     private fun execute(request: Request): String =

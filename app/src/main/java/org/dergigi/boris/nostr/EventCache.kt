@@ -133,12 +133,12 @@ object EventCache {
             event.kind == Nip01Event.KIND_CONTACTS ||
             event.kind in 10000..19999 -> "${event.kind}:${event.pubkey.lowercase()}"
         event.kind in 30000..39999 ->
-            "${event.kind}:${event.pubkey.lowercase()}:${event.tagValue("d").orEmpty()}"
+            "${event.kind}:${event.pubkey.lowercase()}:${event.tagValue("d").orEmpty().trim()}"
         else -> null
     }
 
     private fun newestKey(kind: Int, pubkeyLower: String, identifier: String?): String = when {
-        kind in 30000..39999 -> "$kind:$pubkeyLower:${identifier.orEmpty()}"
+        kind in 30000..39999 -> "$kind:$pubkeyLower:${identifier.orEmpty().trim()}"
         else -> "$kind:$pubkeyLower"
     }
 

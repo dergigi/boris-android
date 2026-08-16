@@ -393,7 +393,7 @@ object RelayQuery {
             .filter { event ->
                 event.kind == pointer.kind &&
                     event.pubkey.equals(pointer.pubkey, ignoreCase = true) &&
-                    event.tagValue("d") == pointer.identifier
+                    event.tagValue("d")?.trim() == pointer.identifier.trim()
             }
             .maxByOrNull { it.createdAt } ?: return null
         EventCache.put(newest)

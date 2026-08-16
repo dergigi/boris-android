@@ -1,11 +1,26 @@
 package org.dergigi.boris.data
 
+import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip01Event.Companion.KIND_HIGHLIGHT
+import org.dergigi.boris.nostr.Nip01Event.Companion.KIND_LONG_FORM
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class HighlightedArticlesTest {
+    @Before
+    fun setUp() {
+        EventCache.clear()
+        OgPreviewCache.clear()
+    }
+
+    @After
+    fun tearDown() {
+        EventCache.clear()
+        OgPreviewCache.clear()
+    }
     @Test
     fun uniqueRecentKeepsNewestUrlAndDropsDuplicates() {
         val events = listOf(
@@ -37,6 +52,54 @@ class HighlightedArticlesTest {
         assertEquals(1, articles.size)
         assertEquals("my-article", articles[0].host)
         assertEquals("nostr:", articles[0].url.take(6))
+    }
+
+    @Test
+    fun usesCachedArticleTitleAndCover() {
+        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        val coordinate = "30023:$pubkey:i-left-the-future-and-arrived-at-home"
+        EventCache.put(
+            Nip01Event(
+                id = "11".repeat(32),
+                pubkey = pubkey,
+                createdAt = 10,
+                kind = KIND_LONG_FORM,
+                tags = listOf(
+                    listOf("d", "i-left-the-future-and-arrived-at-home"),
+                    listOf("title", "I Left the Future and Arrived at Home"),
+                    listOf("image", "https://cdn.example.com/cover.jpg"),
+                ),
+                content = "body",
+                sig = "22".repeat(32),
+            ),
+        )
+        val articles = HighlightedArticles.fromEvents(
+            listOf(highlight("ignored", createdAt = 5, tags = listOf(listOf("a", coordinate)))),
+            limit = 12,
+        )
+        assertEquals("I Left the Future and Arrived at Home", articles[0].title)
+        assertEquals("https://cdn.example.com/cover.jpg", articles[0].imageUrl)
+    }
+
+    @Test
+    fun usesReaderPreviewWhenTheArticleEventIsMissing() {
+        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        val coordinate = "30023:$pubkey:i-left-the-future-and-arrived-at-home"
+        val uri = NostrArticle.fromCoordinate(coordinate)!!.uri
+        ArticlePreview.remember(
+            ReadableContent(
+                url = uri,
+                title = "I Left the Future and Arrived at Home",
+                imageUrl = "https://cdn.example.com/cover.jpg",
+                articleCoordinate = coordinate,
+            ),
+        )
+        val articles = HighlightedArticles.fromEvents(
+            listOf(highlight("ignored", createdAt = 5, tags = listOf(listOf("a", coordinate)))),
+            limit = 12,
+        )
+        assertEquals("I Left the Future and Arrived at Home", articles[0].title)
+        assertEquals("https://cdn.example.com/cover.jpg", articles[0].imageUrl)
     }
 
     @Test

@@ -15,11 +15,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArchivedArticles
+import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
+import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
-import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
@@ -53,14 +54,11 @@ class HomeViewModel(
         loadJob = viewModelScope.launch {
             val pubkey = SessionStore.load(getApplication())?.pubkeyHex
             val keep = _highlights.value is HomeHighlightsState.Ready
-            var showing = keep
-            if (!keep) {
-                val cached = withContext(Dispatchers.IO) { loadCached(pubkey) }
-                if (cached != null) {
-                    _highlights.value = cached
-                    showing = true
-                }
+            val cached = withContext(Dispatchers.IO) { loadCached(pubkey) }
+            if (cached != null) {
+                _highlights.value = cached
             }
+            val showing = keep || cached != null
             if (showing) {
                 _refreshing.value = true
             } else {
@@ -96,9 +94,9 @@ class HomeViewModel(
                                 ArchivedArticles.keys(RelayQuery.fetchArchiveReactions(pubkey, relays))
                             }
                         }
-                        val rawYours = yoursDeferred.await()
-                        val rawFriends = friendsDeferred.await()
-                        val rawOthers = othersDeferred.await()
+                        val rawYours = HighlightedArticles.hydrate(yoursDeferred.await())
+                        val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
+                        val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
                         val archivedKeys = archiveDeferred.await()
                         val previews = loadPreviews(
                             (rawYours + rawFriends + rawOthers).map { it.url }.distinct(),
@@ -165,7 +163,7 @@ class HomeViewModel(
         val previews = (yours + friends + others)
             .map { it.url }
             .distinct()
-            .associateWith { OgPreviewCache.get(it) }
+            .associateWith { ArticlePreview.get(it) }
         val archivedKeys = if (pubkey == null) {
             emptySet()
         } else {
@@ -204,8 +202,11 @@ class HomeViewModel(
     private suspend fun loadPreviews(urls: List<String>): Map<String, OgPreview?> = coroutineScope {
         urls.map { url ->
             async {
+                val cached = ArticlePreview.get(url)
+                if (NostrLink.parse(url) != null) return@async url to cached
+                if (cached?.title != null && cached.imageUrl != null) return@async url to cached
                 val fetched = runCatching { OgMetaClient.fetch(url) }.getOrNull()
-                url to (fetched ?: OgPreviewCache.get(url))
+                url to mergePreview(cached, fetched)
             }
         }.awaitAll().toMap()
     }
@@ -214,12 +215,7 @@ class HomeViewModel(
         items: List<HighlightedArticle>,
         previews: Map<String, OgPreview?>,
     ): List<HighlightedArticle> = items.map { article ->
-        val preview = previews[article.url] ?: return@map article
-        article.copy(
-            title = preview.title?.takeIf { it.isNotBlank() } ?: article.title,
-            imageUrl = preview.imageUrl ?: article.imageUrl,
-            host = preview.siteName?.takeIf { it.isNotBlank() } ?: article.host,
-        )
+        HighlightedArticles.decorate(article, previews[article.url] ?: ArticlePreview.get(article.url))
     }
 
     private data class LoadedRows(
@@ -233,6 +229,17 @@ class HomeViewModel(
         private const val HIGHLIGHT_LIMIT = 80
         private const val ARTICLE_LIMIT = 12
     }
+}
+
+internal fun mergePreview(cached: OgPreview?, fetched: OgPreview?): OgPreview? {
+    if (fetched == null) return cached
+    if (cached == null) return fetched
+    return OgPreview(
+        title = fetched.title ?: cached.title,
+        imageUrl = fetched.imageUrl ?: cached.imageUrl,
+        siteName = fetched.siteName ?: cached.siteName,
+        description = fetched.description ?: cached.description,
+    )
 }
 
 internal fun isNetworkHighlight(
