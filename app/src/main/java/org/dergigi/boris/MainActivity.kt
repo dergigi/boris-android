@@ -15,6 +15,7 @@ import org.dergigi.boris.data.OfflineDownloader
 import org.dergigi.boris.data.OfflineStore
 import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReaderRepository
+import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.OfflineOutbox
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
         EventCache.init(File(filesDir, "event_cache"))
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))
+        RssRepository.init(File(filesDir, "rss_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
         OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
         OfflineSync.bind(this)
