@@ -84,10 +84,11 @@ Recent decisions affecting current work:
 
 - Phase 2 added: Bunker login (NIP-46)
 - Phase 3 added: Nostr highlights
+- Backlog 999.1–999.3 added: reading-progress sync, search, home settings/sections (2026-08-16)
 
 ### Pending Todos
 
-None yet.
+None yet. Future work is parked in ROADMAP.md Backlog (999.x).
 
 ### Blockers/Concerns
 
@@ -103,6 +104,9 @@ Items acknowledged and carried forward from previous milestone close:
 | Identity | nostrconnect:// / camera QR | Deferred | 2026-08-14 Phase 2 discuss |
 | Identity | sign_event / NIP-44 | Deferred | 2026-08-14 init |
 | Reader | Bookmarks / highlights on Android | Active (Phase 3: highlights) | 2026-08-14 init |
+| Sync | Reading progress via Nostr | Backlog 999.1 | 2026-08-16 |
+| Search | In-app search | Backlog 999.2 | 2026-08-16 |
+| Home | Settings + Continue Reading / Most highlighted sections | Backlog 999.3 | 2026-08-16 |
 
 ## Session Continuity
 
