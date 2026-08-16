@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-08-16
+
+### Added
+
+- Web highlights also get zap splits, covering you and Boris since the author is unknown
+- New toggle to disable zap splits entirely, on by default
+
 ## [0.36.0] - 2026-08-16
 
 ### Added
