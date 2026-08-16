@@ -64,11 +64,23 @@ import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.FeedScope
 import org.dergigi.boris.ui.theme.SourceSerif
 
-internal fun highlightFilter(settings: UserSettings) = FeedScope(
-    nostrverse = settings.defaultHighlightVisibilityNostrverse,
-    friends = settings.defaultHighlightVisibilityFriends,
-    mine = settings.defaultHighlightVisibilityMine,
-)
+internal fun highlightFilter(
+    settings: UserSettings,
+    highlights: List<PaintedHighlight> = emptyList(),
+): FeedScope {
+    val base = FeedScope(
+        nostrverse = settings.defaultHighlightVisibilityNostrverse,
+        friends = settings.defaultHighlightVisibilityFriends,
+        mine = settings.defaultHighlightVisibilityMine,
+    )
+    if (highlights.isEmpty() || highlights.any(base::shows)) return base
+    // Match the highlights pill priority so opening the pane never lands on an empty filter.
+    return when {
+        highlights.any { it.mine } -> base.copy(mine = true)
+        highlights.any { it.friend } -> base.copy(friends = true)
+        else -> base.copy(nostrverse = true)
+    }
+}
 
 internal fun FeedScope.shows(item: PaintedHighlight): Boolean = when {
     item.mine -> mine
@@ -102,8 +114,12 @@ fun HighlightsPane(
     onOpenProfile: (String) -> Unit,
     onToggleMarks: () -> Unit,
 ) {
-    var filter by remember(open) { mutableStateOf(highlightFilter(settings)) }
+    var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
     val visible = remember(highlights, filter) { highlights.filter(filter::shows) }
+    LaunchedEffect(open, highlights) {
+        if (!open || highlights.isEmpty() || highlights.any(filter::shows)) return@LaunchedEffect
+        filter = highlightFilter(settings, highlights)
+    }
     BackHandler(enabled = open, onBack = onDismiss)
     AnimatedVisibility(
         visible = open,

@@ -24,6 +24,43 @@ class HighlightsPaneTest {
     }
 
     @Test
+    fun filterEnablesNostrverseWhenOnlyOthersExistAndItIsOff() {
+        val settings = UserSettings.parse(
+            """{"defaultHighlightVisibilityMine":true,"defaultHighlightVisibilityFriends":true,"defaultHighlightVisibilityNostrverse":false}""",
+        )
+        val filter = highlightFilter(settings, listOf(other))
+        assertTrue(filter.nostrverse)
+        assertTrue(filter.friends)
+        assertTrue(filter.mine)
+        assertTrue(filter.shows(other))
+    }
+
+    @Test
+    fun filterEnablesFriendsWhenOnlyFriendsExistAndTheyAreOff() {
+        val settings = UserSettings.parse(
+            """{"defaultHighlightVisibilityMine":true,"defaultHighlightVisibilityFriends":false,"defaultHighlightVisibilityNostrverse":false}""",
+        )
+        val filter = highlightFilter(settings, listOf(friend, other))
+        assertTrue(filter.friends)
+        assertFalse(filter.nostrverse)
+        assertTrue(filter.shows(friend))
+        assertFalse(filter.shows(other))
+    }
+
+    @Test
+    fun filterKeepsSettingsWhenSomethingAlreadyMatches() {
+        val settings = UserSettings.parse(
+            """{"defaultHighlightVisibilityMine":true,"defaultHighlightVisibilityFriends":false,"defaultHighlightVisibilityNostrverse":false}""",
+        )
+        val filter = highlightFilter(settings, listOf(mine, other))
+        assertTrue(filter.mine)
+        assertFalse(filter.friends)
+        assertFalse(filter.nostrverse)
+        assertTrue(filter.shows(mine))
+        assertFalse(filter.shows(other))
+    }
+
+    @Test
     fun filterKeepsAtLeastOneLevelOn() {
         val onlyMine = highlightFilter(
             UserSettings.parse(
