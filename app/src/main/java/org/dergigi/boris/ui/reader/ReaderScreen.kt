@@ -763,7 +763,6 @@ private fun ArticleBody(
                 imageUrl = coverUrl,
                 title = content.title,
                 summary = overlaySummary,
-                published = published,
                 onClick = {
                     val urls = buildList {
                         add(coverUrl)
@@ -855,7 +854,7 @@ private fun ArticleBody(
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
-                    published = if (coverUrl == null) published else null,
+                    published = published,
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
                     onHighlightsClick = { paneOpen = true },
                 )
@@ -1087,7 +1086,6 @@ private fun ArticleHero(
     imageUrl: String,
     title: String?,
     summary: String?,
-    published: String?,
     onClick: () -> Unit,
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -1130,18 +1128,8 @@ private fun ArticleHero(
                     ),
                     color = Color.White,
                     modifier = Modifier.padding(
-                        bottom = if (published == null && summary.isNullOrBlank()) 0.dp else 8.dp,
+                        bottom = if (summary.isNullOrBlank()) 0.dp else 8.dp,
                     ),
-                )
-            }
-            if (published != null) {
-                Text(
-                    text = published,
-                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-                    color = Color.White.copy(alpha = 0.72f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(bottom = if (summary.isNullOrBlank()) 0.dp else 8.dp),
                 )
             }
             if (!summary.isNullOrBlank()) {
