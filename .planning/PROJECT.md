@@ -26,7 +26,7 @@ Reading stays first. Login is a stored identity (npub plus Amber package or bunk
 - [x] Sign out clears that stored identity
 - [x] If Amber is missing, say so and point the user at Zapstore first, then F-Droid / GitHub
 - [x] Pair a bunker (`bunker://` / NIP-46) and show npub
-- [ ] Create and show own NIP-84 highlights in the reader while logged in
+- [x] Create and show own NIP-84 highlights in the reader while logged in
 
 ### Out of Scope
 

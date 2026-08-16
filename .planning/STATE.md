@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 3
+current_phase: 03
 current_phase_name: Nostr highlights
-status: ready_for_verification
+status: completed
 stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-14T22:26:03.693Z"
-last_activity: 2026-08-15
-last_activity_desc: Phase 3 plan 01 executed (NIP-84 highlights tracer)
+last_updated: "2026-08-16T21:43:24.269Z"
+last_activity: 2026-08-16
+last_activity_desc: Phase 03 complete
 progress:
   total_phases: 3
   completed_phases: 3
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 3: Nostr highlights
+**Current focus:** Milestone v1.0 phases complete; backlog 999.x next
 
 ## Current Position
 
-Phase: 3 of 3 (Nostr highlights)
-Plan: 1 of 1 in current phase
-Status: Plan executed; ready for verification
-Last activity: 2026-08-15 — Phase 3 plan 01 executed (NIP-84 highlights tracer)
+Phase: 03 of 3 (Nostr highlights)
+Plan: Not started
+Status: All phases complete
+Last activity: 2026-08-16 — Phase 03 complete
 
 Progress: [██████████] 100%
 
@@ -38,7 +38,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: —
 - Total execution time: —
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 1. Amber login | 1 | 1 | — |
 | 2. Bunker login (NIP-46) | 0 | 1 | — |
+| 03 | 1 | - | - |
 
 **Recent Trend:**
 
@@ -104,9 +105,9 @@ Items acknowledged and carried forward from previous milestone close:
 | Identity | Bunker / NIP-46 | Active (Phase 2) | 2026-08-14 init |
 | Identity | nostrconnect:// / camera QR | Deferred | 2026-08-14 Phase 2 discuss |
 | Identity | sign_event / NIP-44 | Deferred | 2026-08-14 init |
-| Reader | Bookmarks / highlights on Android | Active (Phase 3: highlights) | 2026-08-14 init |
+| Reader | Bookmarks / highlights on Android | Complete (Phase 3: highlights) | 2026-08-14 init |
 | Sync | Reading progress via Nostr | Backlog 999.1 | 2026-08-16 |
-| Search | In-app search (local cache MVP; NIP-50 later) | Backlog 999.2 / 999.4 | 2026-08-16 |
+| Search | Local-cache MVP shipped (v0.50); NIP-50 later | Backlog 999.2 / 999.4 | 2026-08-16 |
 | Home | Settings + Continue Reading / Most highlighted sections | Backlog 999.3 | 2026-08-16 |
 
 ## Session Continuity

@@ -8,7 +8,7 @@ Boris already reads articles. This milestone adds optional identity on Home (Amb
 
 - [x] **Phase 1: Amber login** - Connect via Amber, persist npub, sign out, missing-signer UX
 - [x] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
-- [ ] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern
+- [x] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern (completed 2026-08-16)
 
 ## Phase Details
 
@@ -61,7 +61,7 @@ Phases execute in numeric order: 1, 2, 3
 |-------|----------------|--------|-----------|
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
-| 3. Nostr highlights | 1/1 | In Progress|  |
+| 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 
 ### Phase 3: Nostr highlights
 
@@ -77,7 +77,7 @@ Phases execute in numeric order: 1, 2, 3
   4. A highlight created on the webapp for the same URL (same npub) paints on Android when the quote is in the fetched body
   5. Relays failing does not block reading
 
-**Plans:** 1/1 plans executed
+**Plans:** 1/1 plans complete
 
 Plans:
 
@@ -92,6 +92,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ### Phase 999.2: Implement search (BACKLOG)
@@ -102,6 +103,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ### Phase 999.3: Home screen settings and sections (BACKLOG)
@@ -111,6 +113,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ### Phase 999.4: NIP-50 relay search (BACKLOG)
@@ -120,6 +123,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ---
