@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -82,6 +83,7 @@ import org.dergigi.boris.ui.theme.BorisIcons
 @Composable
 fun LibraryScreen(
     onOpenArticle: (String) -> Unit,
+    onOpenLibrarySettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
@@ -127,6 +129,7 @@ fun LibraryScreen(
         onOpenArticle = onOpenArticle,
         onConnect = { authViewModel.connectIntent()?.let(authLauncher::launch) },
         onConnectBunker = { authViewModel.connectBunker(bunkerUri) },
+        onOpenLibrarySettings = onOpenLibrarySettings,
         modifier = modifier,
     )
 }
@@ -147,6 +150,7 @@ fun LibraryScreenContent(
     onOpenArticle: (String) -> Unit,
     onConnect: () -> Unit,
     onConnectBunker: () -> Unit,
+    onOpenLibrarySettings: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showInfo by remember { mutableStateOf(false) }
@@ -159,6 +163,12 @@ fun LibraryScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.library_title)) },
                 actions = {
+                    IconButton(onClick = onOpenLibrarySettings) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = stringResource(R.string.library_settings),
+                        )
+                    }
                     IconButton(onClick = { showInfo = true }) {
                         Icon(
                             imageVector = Icons.Outlined.Info,

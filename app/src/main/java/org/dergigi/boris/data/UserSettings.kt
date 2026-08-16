@@ -47,6 +47,14 @@ class UserSettings internal constructor(
     val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", false)
+    val defaultLibraryView: BookmarkBucket
+        get() = when (string("defaultLibraryView", "Public")) {
+            "Private" -> BookmarkBucket.Private
+            "Web" -> BookmarkBucket.Web
+            "Look" -> BookmarkBucket.Look
+            "Archive" -> BookmarkBucket.Archive
+            else -> BookmarkBucket.Public
+        }
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int

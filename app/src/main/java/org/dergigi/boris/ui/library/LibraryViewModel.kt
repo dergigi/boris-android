@@ -26,6 +26,7 @@ import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.Archive
@@ -56,7 +57,7 @@ class LibraryViewModel(
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
-    private val _bucket = MutableStateFlow(BookmarkBucket.Public)
+    private val _bucket = MutableStateFlow(SettingsSync.settings.value.defaultLibraryView)
     val bucket: StateFlow<BookmarkBucket> = _bucket.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)

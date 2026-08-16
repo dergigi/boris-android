@@ -127,6 +127,32 @@ class UserSettingsTest {
     }
 
     @Test
+    fun defaultLibraryViewReadsAndFallsBack() {
+        assertEquals(
+            BookmarkBucket.Public,
+            UserSettings.defaults().defaultLibraryView,
+        )
+        assertEquals(
+            BookmarkBucket.Private,
+            UserSettings.parse("""{"defaultLibraryView":"Private"}""").defaultLibraryView,
+        )
+        assertEquals(
+            BookmarkBucket.Look,
+            UserSettings.parse("""{"defaultLibraryView":"Look"}""").defaultLibraryView,
+        )
+        assertEquals(
+            BookmarkBucket.Public,
+            UserSettings.parse("""{"defaultLibraryView":"nope"}""").defaultLibraryView,
+        )
+        val updated = UserSettings.defaults().withString("defaultLibraryView", "Archive")
+        assertEquals(BookmarkBucket.Archive, updated.defaultLibraryView)
+        assertEquals(
+            BookmarkBucket.Archive,
+            UserSettings.parse(updated.toJson()).defaultLibraryView,
+        )
+    }
+
+    @Test
     fun volumeButtonScrollReadsAndClamps() {
         val off = UserSettings.parse("""{"volumeButtonScroll":false,"volumeButtonScrollPercent":50}""")
         assertFalse(off.volumeButtonScroll)

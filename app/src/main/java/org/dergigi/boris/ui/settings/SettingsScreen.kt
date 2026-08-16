@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,6 +76,7 @@ enum class SettingsCategory(
     Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, Color(0xFFEAB308)),
     ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, Color(0xFF6366F1)),
     Home(R.string.settings_home, R.string.settings_home_summary, Color(0xFFEC4899)),
+    Library(R.string.settings_library, R.string.settings_library_summary, Color(0xFF0EA5E9)),
     Feed(R.string.feed_title, R.string.settings_feed_summary, Color(0xFF9333EA)),
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
     Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, Color(0xFFEF4444)),
@@ -88,6 +90,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Highlights -> BorisIcons.Highlighter
         SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
         SettingsCategory.Home -> Icons.Outlined.Home
+        SettingsCategory.Library -> Icons.Outlined.LocalLibrary
         SettingsCategory.Feed -> Icons.Outlined.DynamicFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
         SettingsCategory.Airplane -> Icons.Outlined.Flight
@@ -103,6 +106,7 @@ private val CATEGORY_GROUPS = listOf(
     ),
     listOf(
         SettingsCategory.Home,
+        SettingsCategory.Library,
         SettingsCategory.Feed,
         SettingsCategory.Scroll,
         SettingsCategory.Airplane,
@@ -297,6 +301,7 @@ private fun SettingsCategoryDetail(
             }
             SettingsCategory.ZapSplits -> ZapSplitsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Home -> HomeSettingsSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Library -> LibrarySettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Feed -> {
                 FeedSettingsSection(settings = settings, onUpdate = onUpdate)
                 RssFeedsSection(settings = settings, onUpdate = onUpdate)
