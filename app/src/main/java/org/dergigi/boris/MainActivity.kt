@@ -22,6 +22,7 @@ import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.OfflineOutbox
 import org.dergigi.boris.nostr.OfflineSync
 import org.dergigi.boris.nostr.RelayHealth
+import org.dergigi.boris.nostr.RelayPool
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -68,6 +69,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         OfflineSync.flush()
         OfflineDownloader.kickoff(applicationContext)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        RelayPool.closeAll()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -1,6 +1,5 @@
 package org.dergigi.boris.nostr
 
-import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -416,6 +415,8 @@ object RelayQuery {
         val targets = routes.mapValues { (_, subset) ->
             subset.toList().chunked(AUTHOR_CHUNK).map(filterFor)
         }
+        // The routed relay set is the hot path; keep those sockets open.
+        RelayPool.markPersistent(routes.keys)
         val allowed = keys.toSet()
         val remote = queryPerRelay(targets)
             .filter { event -> accept(event) && event.pubkey.lowercase() in allowed }
@@ -650,55 +651,26 @@ object RelayQuery {
         cacheEvent(event)
         val targets = reachableRelays(relayUrls(writeRelays))
         if (targets.isEmpty()) return PublishResult(remoteOk = false, localOk = false)
-        val sockets = mutableListOf<RelaySocket>()
         val remoteOk = AtomicBoolean(false)
         val localOk = AtomicBoolean(false)
         val responses = CountDownLatch(targets.size)
-        try {
-            for (url in targets) {
-                val socket = RelaySocket(url, client)
-                sockets.add(socket)
-                val startedAt = System.currentTimeMillis()
-                val signaled = AtomicBoolean(false)
-                fun signal() {
-                    if (signaled.compareAndSet(false, true)) responses.countDown()
+        val active = mutableListOf<PooledRelay>()
+        for (url in targets) {
+            val relay = RelayPool.acquire(url)
+            active.add(relay)
+            val signaled = AtomicBoolean(false)
+            relay.publish(event) { ok ->
+                if (ok) {
+                    if (LocalRelays.isLocal(url)) localOk.set(true) else remoteOk.set(true)
                 }
-                try {
-                    socket.open(
-                        onOpen = {
-                            RelayHealth.onConnectOk(url, System.currentTimeMillis() - startedAt)
-                            val message = JSONArray()
-                                .put("EVENT")
-                                .put(JSONObject(event.toJsonString()))
-                                .toString()
-                            socket.send(message)
-                        },
-                        onMessage = { text ->
-                            try {
-                                val arr = JSONArray(text)
-                                if (arr.optString(0) == "OK") {
-                                    if (arr.optBoolean(2)) {
-                                        if (LocalRelays.isLocal(url)) localOk.set(true) else remoteOk.set(true)
-                                    }
-                                    signal()
-                                }
-                            } catch (_: Exception) {
-                            }
-                        },
-                        onFailure = {
-                            RelayHealth.onConnectFail(url)
-                            signal()
-                        },
-                    )
-                } catch (_: Exception) {
-                    signal()
-                }
+                if (signaled.compareAndSet(false, true)) responses.countDown()
             }
+        }
+        try {
             responses.await(PUBLISH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         } catch (_: Exception) {
-        } finally {
-            sockets.forEach { it.close() }
         }
+        active.forEach { it.cancelPublish(event.id) }
         return PublishResult(remoteOk = remoteOk.get(), localOk = localOk.get())
     }
 
@@ -712,63 +684,34 @@ object RelayQuery {
     private fun queryPerRelay(targets: Map<String, List<JSONObject>>): List<Nip01Event> {
         val reachable = skipCooldowns(reachableRelays(targets.keys.toList()))
         if (reachable.isEmpty()) return emptyList()
-        val sockets = mutableListOf<RelaySocket>()
         val events = ConcurrentHashMap<String, Nip01Event>()
         val eose = CountDownLatch(reachable.size)
-        try {
-            for (url in reachable) {
-                val filters = targets[url].orEmpty()
-                if (filters.isEmpty()) {
-                    eose.countDown()
-                    continue
-                }
-                val socket = RelaySocket(url, client)
-                sockets.add(socket)
-                val startedAt = System.currentTimeMillis()
-                val eoseSignaled = AtomicBoolean(false)
-                fun signalEose() {
-                    if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
-                }
-                try {
-                    socket.open(
-                        onOpen = {
-                            RelayHealth.onConnectOk(url, System.currentTimeMillis() - startedAt)
-                            val req = JSONArray().put("REQ").put(newId())
-                            filters.forEach { req.put(it) }
-                            socket.send(req.toString())
-                        },
-                        onMessage = { text ->
-                            try {
-                                val arr = JSONArray(text)
-                                when (arr.optString(0)) {
-                                    "EVENT" -> {
-                                        val event = Nip01Event.parse(arr.getJSONObject(2)) ?: return@open
-                                        if (event.verify()) {
-                                            events[event.id] = event
-                                            RelayHealth.onEvents(url, 1)
-                                        }
-                                    }
-                                    "EOSE" -> signalEose()
-                                }
-                            } catch (_: Exception) {
-                            }
-                        },
-                        onFailure = {
-                            RelayHealth.onConnectFail(url)
-                            signalEose()
-                        },
-                    )
-                } catch (_: Exception) {
-                    signalEose()
-                }
+        val active = mutableListOf<Pair<PooledRelay, String>>()
+        for (url in reachable) {
+            val filters = targets[url].orEmpty()
+            if (filters.isEmpty()) {
+                eose.countDown()
+                continue
             }
-            eose.await(QUERY_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            return events.values.toList()
-        } catch (_: Exception) {
-            return events.values.toList()
-        } finally {
-            sockets.forEach { it.close() }
+            val relay = RelayPool.acquire(url)
+            val subId = newId()
+            active.add(relay to subId)
+            val eoseSignaled = AtomicBoolean(false)
+            relay.subscribe(
+                subId = subId,
+                filters = filters,
+                onEvent = { event -> events[event.id] = event },
+                onEose = {
+                    if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
+                },
+            )
         }
+        try {
+            eose.await(QUERY_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        } catch (_: Exception) {
+        }
+        active.forEach { (relay, subId) -> relay.unsubscribe(subId) }
+        return events.values.toList()
     }
 
     /**
@@ -838,8 +781,4 @@ object RelayQuery {
     private const val EVENT_CHUNK = 25
     private const val AUTHOR_CHUNK = 50
 
-    private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .build()
 }
