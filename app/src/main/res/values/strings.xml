@@ -155,7 +155,7 @@
     <string name="settings_preview">Preview</string>
     <string name="settings_media">Media</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
-    <string name="settings_open_links_in_reader">Open links in Reader</string>
+    <string name="settings_open_links_in_reader">Open weblinks in Boris</string>
     <string name="settings_home">Home</string>
     <string name="settings_hide_archived">Hide archived articles</string>
     <string name="settings_feed_scope">Default Feed Scope</string>

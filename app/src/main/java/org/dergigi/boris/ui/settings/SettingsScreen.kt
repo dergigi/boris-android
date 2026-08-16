@@ -41,6 +41,7 @@ import org.dergigi.boris.BuildConfig
 import org.dergigi.boris.R
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.reader.openWeblink
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,7 +152,10 @@ fun SettingsScreen(
                     onUpdate = { next -> settingsViewModel.update { next } },
                     onOpenArticle = onOpenArticle,
                 )
-                SettingsVersionFooter()
+                SettingsVersionFooter(
+                    openInBoris = settings.openLinksInReader,
+                    onOpenArticle = onOpenArticle,
+                )
             }
         }
     }
@@ -165,7 +169,10 @@ private fun SectionDivider() {
 private const val GITHUB_REPO = "https://github.com/dergigi/boris-android"
 
 @Composable
-private fun SettingsVersionFooter() {
+private fun SettingsVersionFooter(
+    openInBoris: Boolean,
+    onOpenArticle: (String) -> Unit,
+) {
     val uriHandler = LocalUriHandler.current
     val version = BuildConfig.VERSION_NAME
     val commit = BuildConfig.GIT_COMMIT
@@ -182,7 +189,12 @@ private fun SettingsVersionFooter() {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable {
-                uriHandler.openUri("$GITHUB_REPO/releases/tag/v$version")
+                openWeblink(
+                    "$GITHUB_REPO/releases/tag/v$version",
+                    openInBoris,
+                    onOpenArticle,
+                    uriHandler::openUri,
+                )
             },
         )
         Text(
@@ -195,7 +207,12 @@ private fun SettingsVersionFooter() {
             style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.clickable(enabled = commit != "unknown") {
-                uriHandler.openUri("$GITHUB_REPO/commit/$commit")
+                openWeblink(
+                    "$GITHUB_REPO/commit/$commit",
+                    openInBoris,
+                    onOpenArticle,
+                    uriHandler::openUri,
+                )
             },
         )
     }

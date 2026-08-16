@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.LocalRelays
+import org.dergigi.boris.ui.reader.openWeblink
 
 private const val CITRINE_URL = "https://zapstore.dev/apps/com.greenart7c3.citrine"
 private val RELAY_LINKS = listOf(
@@ -84,8 +86,13 @@ fun AirplaneModeSection(
             checked = settings.useLocalRelayAsCache,
             onCheckedChange = { onUpdate(settings.withBoolean("useLocalRelayAsCache", it)) },
         )
-        AirplaneNote(modifier = Modifier.padding(top = 4.dp))
+        AirplaneNote(
+            openInBoris = settings.openLinksInReader,
+            onOpenArticle = onOpenArticle,
+            modifier = Modifier.padding(top = 4.dp),
+        )
         RelaysLearnMore(
+            openInBoris = settings.openLinksInReader,
             onOpenArticle = onOpenArticle,
             modifier = Modifier.padding(top = 4.dp),
         )
@@ -101,13 +108,22 @@ private fun settingsLinkStyle() = TextLinkStyles(
 )
 
 @Composable
-private fun AirplaneNote(modifier: Modifier = Modifier) {
+private fun AirplaneNote(
+    openInBoris: Boolean,
+    onOpenArticle: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uriHandler = LocalUriHandler.current
     val linkStyle = settingsLinkStyle()
     Text(
         text = buildAnnotatedString {
             append(stringResource(R.string.settings_airplane_note_before))
             append(" ")
-            withLink(LinkAnnotation.Url(url = CITRINE_URL, styles = linkStyle)) {
+            withLink(
+                LinkAnnotation.Clickable(tag = "citrine", styles = linkStyle) {
+                    openWeblink(CITRINE_URL, openInBoris, onOpenArticle, uriHandler::openUri)
+                },
+            ) {
                 append(stringResource(R.string.settings_citrine))
             }
             append(" ")
@@ -121,9 +137,11 @@ private fun AirplaneNote(modifier: Modifier = Modifier) {
 
 @Composable
 private fun RelaysLearnMore(
+    openInBoris: Boolean,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val uriHandler = LocalUriHandler.current
     val linkStyle = settingsLinkStyle()
     val here = stringResource(R.string.settings_relays_here)
     Text(
@@ -137,7 +155,7 @@ private fun RelaysLearnMore(
                 }
                 withLink(
                     LinkAnnotation.Clickable(tag = "relay$index", styles = linkStyle) {
-                        onOpenArticle(url)
+                        openWeblink(url, openInBoris, onOpenArticle, uriHandler::openUri)
                     },
                 ) {
                     append(here)

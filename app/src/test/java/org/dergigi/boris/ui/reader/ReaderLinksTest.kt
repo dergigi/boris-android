@@ -32,6 +32,18 @@ class ReaderLinksTest {
     }
 
     @Test
+    fun settingsWeblinksFollowTheSameSwitch() {
+        assertEquals(
+            ReaderLinkAction.OpenInReader("https://nostr.how/en/relays"),
+            readerLinkAction("https://nostr.how/en/relays", "", openInReader = true),
+        )
+        assertEquals(
+            ReaderLinkAction.OpenExternal("https://nostr.how/en/relays"),
+            readerLinkAction("https://nostr.how/en/relays", "", openInReader = false),
+        )
+    }
+
+    @Test
     fun mailtoAlwaysGoesOutside() {
         val action = readerLinkAction(
             uri = "mailto:hi@example.com",

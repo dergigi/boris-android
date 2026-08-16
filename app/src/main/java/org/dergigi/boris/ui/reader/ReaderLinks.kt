@@ -18,3 +18,16 @@ internal fun readerLinkAction(
     if (openInReader && article != null) return ReaderLinkAction.OpenInReader(article)
     return ReaderLinkAction.OpenExternal(article ?: uri)
 }
+
+internal fun openWeblink(
+    url: String,
+    openInBoris: Boolean,
+    onOpenArticle: (String) -> Unit,
+    onOpenExternal: (String) -> Unit,
+) {
+    when (val action = readerLinkAction(url, currentUrl = "", openInReader = openInBoris)) {
+        ReaderLinkAction.Ignore -> Unit
+        is ReaderLinkAction.OpenInReader -> onOpenArticle(action.url)
+        is ReaderLinkAction.OpenExternal -> onOpenExternal(action.url)
+    }
+}
