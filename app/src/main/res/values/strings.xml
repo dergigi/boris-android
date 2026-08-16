@@ -33,6 +33,15 @@
     <string name="nav_feed">Feed</string>
     <string name="feed_title">Feed</string>
     <string name="nav_search">Search</string>
+    <string name="search_title">Search</string>
+    <string name="search_placeholder">Highlights, articles, bookmarks…</string>
+    <string name="search_hint">Search your local cache: highlights, articles, bookmarks, and people you\'ve already seen.</string>
+    <string name="search_empty">No matches in your local cache.</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_kind_highlight">Highlight</string>
+    <string name="search_kind_article">Article</string>
+    <string name="search_kind_bookmark">Bookmark</string>
+    <string name="search_kind_person">Person</string>
     <string name="nav_you">You</string>
     <string name="home_recently_highlighted">Recently highlighted</string>
     <string name="home_recently_highlighted_by_you">Recently highlighted by you</string>

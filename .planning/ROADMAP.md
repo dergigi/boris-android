@@ -96,7 +96,8 @@ Plans:
 
 ### Phase 999.2: Implement search (BACKLOG)
 
-**Goal:** Let users search highlights, writings, bookmarks, and related content from within Boris.
+**Goal:** In-app search for highlights, writings, bookmarks, and related content.
+**Notes:** Local-cache MVP ships first (search EventCache only). Relay-backed discovery is Phase 999.4.
 **Requirements:** TBD
 **Plans:** 0 plans
 
@@ -106,6 +107,15 @@ Plans:
 ### Phase 999.3: Home screen settings and sections (BACKLOG)
 
 **Goal:** Proper Home settings, plus richer Home sections such as Continue Reading and Most highlighted this week (and room for more).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.4: NIP-50 relay search (BACKLOG)
+
+**Goal:** Extend search beyond the local EventCache using NIP-50 (`search` filter field) on supporting relays.
 **Requirements:** TBD
 **Plans:** 0 plans
 

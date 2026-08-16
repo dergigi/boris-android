@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -30,12 +29,12 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.reader.ReaderFocus
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
+import org.dergigi.boris.ui.search.SearchScreen
 import org.dergigi.boris.ui.settings.SettingsCategory
 import org.dergigi.boris.ui.settings.SettingsScreen
 import org.dergigi.boris.ui.you.ProfileScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
-import org.dergigi.boris.ui.shell.StubScreen
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -171,7 +170,17 @@ fun BorisApp(
                     )
                 }
                 composable(Routes.SEARCH) {
-                    StubScreen(stringResource(MainTab.Search.labelRes))
+                    SearchScreen(
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenHighlight = { url, quote ->
+                            navController.navigate(Routes.reader(url, quote = quote))
+                        },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
+                            }
+                        },
+                    )
                 }
                 composable(Routes.YOU) {
                     AccountScreen(
