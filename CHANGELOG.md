@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-08-16
+
+### Added
+
+- Zap splits: highlights of nostr-native content carry weighted zap tags for you, the author(s), and Boris (NIP-57 Appendix G)
+- New Zap Splits settings category with presets and sliders, synced with the webapp via the same settings keys
+
 ## [0.35.0] - 2026-08-16
 
 ### Changed
