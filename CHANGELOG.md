@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Highlight cards and article marks only color the quote, not the surrounding context sentences
+
 ## [0.34.0] - 2026-08-16
 
 ### Changed

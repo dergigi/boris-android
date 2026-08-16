@@ -36,18 +36,54 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
+import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.ui.theme.SourceSerif
 
 fun highlightContextParts(quote: String, context: String?): Triple<String, String, String> {
-    if (context.isNullOrBlank()) return Triple("", quote, "")
-    val index = context.indexOf(quote)
-    if (index < 0) return Triple(context.trim(), quote, "")
+    val mark = quote.trim()
+    if (mark.isEmpty()) return Triple(context.orEmpty(), "", "")
+    if (context.isNullOrBlank()) return Triple("", mark, "")
+    val range = QuoteMatch.occurrences(context, mark).firstOrNull()
+    if (range != null) {
+        if (coversContext(context, range)) {
+            tighterCore(context)?.let { return it }
+        }
+        return Triple(
+            context.substring(0, range.first),
+            context.substring(range.first, range.last + 1),
+            context.substring(range.last + 1),
+        )
+    }
+    if (QuoteMatch.normalizeWhitespace(mark) == QuoteMatch.normalizeWhitespace(context.trim())) {
+        tighterCore(context)?.let { return it }
+    }
+    return Triple(context, mark, "")
+}
+
+fun highlightMark(quote: String, context: String?): String =
+    highlightContextParts(quote, context).second.ifBlank { quote.trim() }
+
+private fun coversContext(context: String, range: IntRange): Boolean {
+    val start = context.indexOfFirst { !it.isWhitespace() }
+    val end = context.indexOfLast { !it.isWhitespace() }
+    if (start < 0 || end < 0) return true
+    return range.first <= start && range.last >= end
+}
+
+private fun tighterCore(context: String): Triple<String, String, String>? {
+    val sentences = context.trim().split(SENTENCE_BREAK).filter { it.isNotBlank() }
+    if (sentences.size < 3) return null
+    val core = sentences[1]
+    val index = context.indexOf(core)
+    if (index < 0) return null
     return Triple(
         context.substring(0, index),
-        quote,
-        context.substring(index + quote.length),
+        core,
+        context.substring(index + core.length),
     )
 }
+
+private val SENTENCE_BREAK = Regex("(?<=[.!?])\\s+")
 
 @Composable
 fun HighlightQuoteText(
@@ -60,7 +96,7 @@ fun HighlightQuoteText(
     val (before, marked, after) = highlightContextParts(quote, context)
     Text(
         text = buildAnnotatedString {
-            if (before.isNotBlank()) append(before)
+            if (before.isNotEmpty()) append(before)
             withStyle(
                 SpanStyle(
                     background = color.copy(alpha = 0.45f),
@@ -69,7 +105,7 @@ fun HighlightQuoteText(
             ) {
                 append(marked)
             }
-            if (after.isNotBlank()) append(after)
+            if (after.isNotEmpty()) append(after)
         },
         style = MaterialTheme.typography.bodyMedium.copy(
             fontFamily = SourceSerif,

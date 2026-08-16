@@ -13,6 +13,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.QuoteMatch
+import org.dergigi.boris.ui.highlightMark
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -48,7 +49,7 @@ fun Modifier.drawHighlightMarks(
     if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
     fun paint(items: List<PaintedHighlight>, fill: Color) {
         items.forEach { item ->
-            QuoteMatch.occurrences(displayed, item.quote).forEach { range ->
+            QuoteMatch.occurrences(displayed, highlightMark(item.quote, item.context)).forEach { range ->
                 paintHighlight(result, range.first, range.last + 1, fill, underline)
             }
         }

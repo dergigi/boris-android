@@ -88,4 +88,43 @@ class HighlightsPaneTest {
             highlightContextParts("quote", "nearby words"),
         )
     }
+
+    @Test
+    fun contextKeepsSurroundingSentencesUnmarked() {
+        val quote = "I carry my home with me not in luggage, but in myself."
+        val context =
+            "But the truth is deeper than that. I carry my home with me not in luggage, but in myself. In my body, my heart, my sense of presence."
+        assertEquals(
+            Triple(
+                "But the truth is deeper than that. ",
+                quote,
+                " In my body, my heart, my sense of presence.",
+            ),
+            highlightContextParts(quote, context),
+        )
+    }
+
+    @Test
+    fun contextFindsQuoteAcrossNewlines() {
+        val quote = "I carry my home with me not in luggage, but in myself."
+        val context =
+            "But the truth is deeper than that.\nI carry my home with me not in luggage, but in myself.\nIn my body, my heart, my sense of presence."
+        val parts = highlightContextParts(quote, context)
+        assertEquals(quote, parts.second.replace(Regex("\\s+"), " ").trim())
+        assertTrue(parts.first.contains("truth is deeper"))
+        assertTrue(parts.third.contains("sense of presence"))
+    }
+
+    @Test
+    fun matchingContextStillMarksOnlyTheMiddleSentence() {
+        val context =
+            "But the truth is deeper than that. I carry my home with me not in luggage, but in myself. In my body, my heart, my sense of presence."
+        val parts = highlightContextParts(context, context)
+        assertEquals(
+            "I carry my home with me not in luggage, but in myself.",
+            parts.second,
+        )
+        assertTrue(parts.first.contains("truth is deeper"))
+        assertTrue(parts.third.contains("sense of presence"))
+    }
 }
