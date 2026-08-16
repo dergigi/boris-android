@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-08-16
+
+### Changed
+
+- Home, Library, Feed, and You top bars use a shared 3-dot menu; settings for each screen live there. Help, library info, and feed scope toggles stay visible.
+
 ## [0.48.0] - 2026-08-16
 
 ### Changed
