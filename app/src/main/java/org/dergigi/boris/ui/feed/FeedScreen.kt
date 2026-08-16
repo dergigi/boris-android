@@ -1,5 +1,8 @@
 package org.dergigi.boris.ui.feed
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -47,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +69,8 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
+import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -75,8 +82,10 @@ fun FeedScreen(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
         onOpenArticle(url)
     },
+    onOpenProfile: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = viewModel(),
+    menuViewModel: HighlightMenuViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
@@ -85,6 +94,25 @@ fun FeedScreen(
     val rssItems by viewModel.rss.collectAsStateWithLifecycle()
     val rssLoading by viewModel.rssLoading.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val deletedIds by menuViewModel.deleted.collectAsStateWithLifecycle()
+    val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
+    val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val signLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        menuViewModel.onSignerResult(result.resultCode, result.data)
+    }
+    LaunchedEffect(menuSignIntent) {
+        val intent = menuSignIntent ?: return@LaunchedEffect
+        menuViewModel.consumeSignIntent()
+        signLauncher.launch(intent)
+    }
+    LaunchedEffect(menuMessage) {
+        val message = menuMessage ?: return@LaunchedEffect
+        menuViewModel.consumeMessage()
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
@@ -106,6 +134,22 @@ fun FeedScreen(
         onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
+        deletedIds = deletedIds,
+        menuFor = { item ->
+            HighlightCardMenu(
+                highlightId = item.id,
+                authorHex = item.authorHex,
+                onGoToQuote = item.url?.let { url ->
+                    { onOpenHighlight(url, item.id, item.quote) }
+                },
+                onViewProfile = { onOpenProfile(item.authorHex) },
+                onDelete = if (menuViewModel.canDelete(item.authorHex)) {
+                    { menuViewModel.delete(item.id) }
+                } else {
+                    null
+                },
+            )
+        },
         modifier = modifier,
     )
 }
@@ -130,6 +174,8 @@ fun FeedScreenContent(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
+    deletedIds: Set<String> = emptySet(),
+    menuFor: (FeedItem) -> HighlightCardMenu? = { null },
 ) {
     Scaffold(
         modifier = modifier,
@@ -239,7 +285,7 @@ fun FeedScreenContent(
                             ) {
                                 when (tab) {
                                     ContentTab.Highlights -> FeedHighlightList(
-                                        items = state.highlights,
+                                        items = state.highlights.filter { it.id !in deletedIds },
                                         emptyText = emptyMessage(tab, filtered = state.hasHighlights),
                                         levelColor = { level ->
                                             when (level) {
@@ -250,6 +296,7 @@ fun FeedScreenContent(
                                         },
                                         onRefresh = onRefresh,
                                         onOpenHighlight = onOpenHighlight,
+                                        menuFor = menuFor,
                                     )
                                     ContentTab.Writings -> FeedWritingList(
                                         items = state.writings,
@@ -283,6 +330,7 @@ private fun FeedHighlightList(
     levelColor: (FeedLevel) -> Color,
     onRefresh: () -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    menuFor: (FeedItem) -> HighlightCardMenu? = { null },
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -316,6 +364,7 @@ private fun FeedHighlightList(
                     onClick = item.url?.let { url ->
                         { onOpenHighlight(url, item.id, item.quote) }
                     },
+                    menu = menuFor(item),
                 )
             }
         }

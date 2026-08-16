@@ -132,6 +132,7 @@ fun HighlightCard(
     authorPicture: String? = null,
     maxQuoteLines: Int = Int.MAX_VALUE,
     onClick: (() -> Unit)? = null,
+    menu: HighlightCardMenu? = null,
 ) {
     val shape = RoundedCornerShape(8.dp)
     Column(
@@ -175,11 +176,21 @@ fun HighlightCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        HighlightAuthor(
-            name = authorName,
-            color = color,
-            picture = authorPicture,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HighlightAuthor(
+                name = authorName,
+                color = color,
+                picture = authorPicture,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (menu != null) {
+                HighlightCardMenuButton(menu = menu)
+            }
+        }
     }
 }
 

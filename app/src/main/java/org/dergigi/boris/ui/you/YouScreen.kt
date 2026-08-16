@@ -1,5 +1,8 @@
 package org.dergigi.boris.ui.you
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +57,8 @@ import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
+import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -68,12 +75,33 @@ fun YouHighlights(
     },
     modifier: Modifier = Modifier,
     viewModel: YouViewModel = viewModel(),
+    menuViewModel: HighlightMenuViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val fetchedProfile by viewModel.profile.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val relation by viewModel.relation.collectAsStateWithLifecycle()
+    val deletedIds by menuViewModel.deleted.collectAsStateWithLifecycle()
+    val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
+    val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val signLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        menuViewModel.onSignerResult(result.resultCode, result.data)
+    }
+    LaunchedEffect(menuSignIntent) {
+        val intent = menuSignIntent ?: return@LaunchedEffect
+        menuViewModel.consumeSignIntent()
+        signLauncher.launch(intent)
+    }
+    LaunchedEffect(menuMessage) {
+        val message = menuMessage ?: return@LaunchedEffect
+        menuViewModel.consumeMessage()
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+    val authorHex = remember(npub) { runCatching { Nip19.npubDecode(npub) }.getOrNull() }
     val shown = profile ?: fetchedProfile
     val highlightColor = when (relation) {
         FeedLevel.Mine -> hexColor(settings.highlightColorMine, HighlightMine)
@@ -95,6 +123,21 @@ fun YouHighlights(
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
+        deletedIds = deletedIds,
+        menuFor = { item ->
+            HighlightCardMenu(
+                highlightId = item.id,
+                authorHex = authorHex,
+                onGoToQuote = item.url?.let { url ->
+                    { onOpenHighlight(url, item.id, item.quote) }
+                },
+                onDelete = if (menuViewModel.canDelete(authorHex)) {
+                    { menuViewModel.delete(item.id) }
+                } else {
+                    null
+                },
+            )
+        },
         modifier = modifier,
     )
 }
@@ -112,6 +155,8 @@ fun YouHighlightsContent(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
+    deletedIds: Set<String> = emptySet(),
+    menuFor: (YouHighlight) -> HighlightCardMenu? = { null },
 ) {
     var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
     PullToRefreshBox(
@@ -163,7 +208,8 @@ fun YouHighlightsContent(
                 is YouUiState.Ready -> {
                     when (tab) {
                         ContentTab.Highlights -> {
-                            if (state.highlights.isEmpty()) {
+                            val visible = state.highlights.filter { it.id !in deletedIds }
+                            if (visible.isEmpty()) {
                                 item(key = "empty-highlights") {
                                     StatusMessage(
                                         text = stringResource(R.string.you_highlights_empty),
@@ -171,7 +217,7 @@ fun YouHighlightsContent(
                                     )
                                 }
                             } else {
-                                items(state.highlights, key = { it.id }) { item ->
+                                items(visible, key = { it.id }) { item ->
                                     HighlightCard(
                                         quote = item.quote,
                                         context = item.context,
@@ -183,6 +229,7 @@ fun YouHighlightsContent(
                                         onClick = item.url?.let { url ->
                                             { onOpenHighlight(url, item.id, item.quote) }
                                         },
+                                        menu = menuFor(item),
                                     )
                                 }
                             }

@@ -148,6 +148,11 @@ fun BorisApp(
                         onOpenHighlight = { url, id, quote ->
                             navController.navigate(Routes.reader(url, id, quote))
                         },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
+                            }
+                        },
                     )
                 }
                 composable(Routes.SEARCH) {
