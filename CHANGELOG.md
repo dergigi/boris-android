@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-08-17
+
+### Added
+
+- Reader menu: Find in article, a Ctrl+F-style fulltext search with a side pane, painted matches, and previous/next navigation
+
 ## [0.52.0] - 2026-08-17
 
 ### Added
