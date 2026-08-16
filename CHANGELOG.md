@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-08-16
+
+### Added
+
+- Search tab searches your local cache for highlights, articles, bookmarks, and people
+
+### Changed
+
+- You tab shows settings as a top-bar icon again; sign-out stays in the 3-dot menu
+
 ## [0.49.0] - 2026-08-16
 
 ### Changed
