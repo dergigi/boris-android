@@ -136,5 +136,15 @@ Plans:
 
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
+### Phase 999.6: Friends-of-friends scope (BACKLOG)
+
+**Goal:** Extend you / friends / nostrverse with a friends-of-friends level (follow-of-follow), for highlights, feeds, and related coloring/visibility.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
 ---
 *Roadmap created: 2026-08-14*
