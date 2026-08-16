@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-08-16
+
+### Added
+
+- Reading preview on the Appearance settings screen
+- Settings gear in the reader highlights pane, opening the Highlights settings screen
+
 ## [0.41.2] - 2026-08-16
 
 ### Changed
