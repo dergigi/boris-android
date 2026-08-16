@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-08-16
+
+### Added
+
+- Offline downloads: Boris prefetches your whole library for offline reading, with per-shelf toggles and progress in the new Offline settings
+- Configurable storage limit for the article and image caches, 1 GB by default
+
 ## [0.37.0] - 2026-08-16
 
 ### Added
