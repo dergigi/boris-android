@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-08-16
+
+### Changed
+
+- Reader meta row: author is a clickable avatar pill that opens their profile; published date is a pill too
+
 ## [0.47.0] - 2026-08-16
 
 ### Added
