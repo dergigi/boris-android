@@ -21,6 +21,29 @@ internal object JsonMap {
         }
     }
 
+    fun parseStringArray(json: String): List<String> {
+        val parser = Parser(json)
+        return try {
+            parser.skipWs()
+            val list = parser.parseStringArray()
+            parser.skipWs()
+            if (parser.remaining()) emptyList() else list
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun stringifyStrings(values: List<String>): String = buildString {
+        append('[')
+        values.forEachIndexed { i, value ->
+            if (i > 0) append(',')
+            append('"')
+            append(escape(value))
+            append('"')
+        }
+        append(']')
+    }
+
     fun stringify(map: Map<String, JsonValue>): String = buildString {
         append('{')
         map.entries.forEachIndexed { i, (key, value) ->
@@ -88,6 +111,29 @@ internal object JsonMap {
                         return out
                     }
                     else -> error("object")
+                }
+            }
+        }
+
+        fun parseStringArray(): List<String> {
+            expect('[')
+            val out = mutableListOf<String>()
+            skipWs()
+            if (at(']')) {
+                i++
+                return out
+            }
+            while (true) {
+                skipWs()
+                out.add(parseString())
+                skipWs()
+                when {
+                    at(',') -> i++
+                    at(']') -> {
+                        i++
+                        return out
+                    }
+                    else -> error("array")
                 }
             }
         }

@@ -104,6 +104,29 @@ class UserSettingsTest {
     }
 
     @Test
+    fun rssFeedsRoundTrip() {
+        val settings = UserSettings.defaults()
+        assertTrue(settings.rssFeeds.isEmpty())
+        val feeds = listOf("https://dergigi.com/feed.xml", "https://example.com/rss")
+        val updated = settings.withStringList("rssFeeds", feeds)
+        assertEquals(feeds, updated.rssFeeds)
+        val roundTrip = UserSettings.parse(updated.toJson())
+        assertEquals(feeds, roundTrip.rssFeeds)
+        val removed = roundTrip.withStringList("rssFeeds", feeds - feeds.first())
+        assertEquals(listOf("https://example.com/rss"), removed.rssFeeds)
+    }
+
+    @Test
+    fun rssFeedsIgnoresMalformedValues() {
+        assertTrue(UserSettings.parse("""{"rssFeeds":"nope"}""").rssFeeds.isEmpty())
+        assertTrue(UserSettings.parse("""{"rssFeeds":[1,2]}""").rssFeeds.isEmpty())
+        assertEquals(
+            listOf("https://a.com/feed"),
+            UserSettings.parse("""{"rssFeeds":["https://a.com/feed"]}""").rssFeeds,
+        )
+    }
+
+    @Test
     fun volumeButtonScrollReadsAndClamps() {
         val off = UserSettings.parse("""{"volumeButtonScroll":false,"volumeButtonScrollPercent":50}""")
         assertFalse(off.volumeButtonScroll)
