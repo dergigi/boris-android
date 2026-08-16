@@ -9,6 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-08-16
+
+### Added
+
+- RSS: a third tab in the feed next to Highlights and Writings, turning Boris into a simple RSS reader
+- Manage feed URLs in the Feed settings category; the list syncs across devices like other settings
+- RSS items render straight from the feed content, so they are readable offline and open instantly; teaser-only feeds fall back to the regular web fetch
+- Highlighting an RSS item works like highlighting the regular web page
+
 ## [0.38.0] - 2026-08-16
 
 ### Added
