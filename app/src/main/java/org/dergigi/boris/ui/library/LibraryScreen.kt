@@ -25,7 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
@@ -78,6 +77,7 @@ import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
+import org.dergigi.boris.ui.theme.BorisIcons
 
 @Composable
 fun LibraryScreen(
@@ -265,7 +265,7 @@ private fun ReadyLibrary(
             ShelfChip(
                 selected = bucket == BookmarkBucket.Archive,
                 label = stringResource(R.string.library_archive),
-                icon = Icons.AutoMirrored.Outlined.LibraryBooks,
+                icon = BorisIcons.Books,
                 onClick = { onSelect(BookmarkBucket.Archive) },
             )
         }
@@ -514,7 +514,7 @@ private fun LibraryInfoDialog(onDismiss: () -> Unit) {
                     body = stringResource(R.string.library_info_look),
                 )
                 LibraryInfoRow(
-                    icon = Icons.AutoMirrored.Outlined.LibraryBooks,
+                    icon = BorisIcons.Books,
                     title = stringResource(R.string.library_info_archive_title),
                     body = stringResource(R.string.library_info_archive),
                 )

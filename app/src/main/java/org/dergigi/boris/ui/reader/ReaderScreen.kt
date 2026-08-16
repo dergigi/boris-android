@@ -36,11 +36,9 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -969,7 +967,7 @@ private fun ArchiveButton(
         modifier = modifier,
     ) {
         Icon(
-            imageVector = if (archived) Icons.Outlined.CheckCircle else Icons.AutoMirrored.Outlined.LibraryBooks,
+            imageVector = BorisIcons.Books,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
         )

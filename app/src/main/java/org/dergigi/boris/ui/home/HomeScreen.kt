@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
-import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.CircularProgressIndicator
@@ -115,7 +114,7 @@ fun HomeScreen(
                             },
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.LibraryBooks,
+                                imageVector = BorisIcons.Books,
                                 contentDescription = stringResource(
                                     if (settings.hideArchivedOnHome) {
                                         R.string.home_show_archived

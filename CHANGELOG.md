@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Archive uses the same books icon as the webapp, on Home, in the reader, and on the Library shelf
+
 ## [0.33.1] - 2026-08-16
 
 ### Changed
