@@ -27,6 +27,9 @@ import kotlin.math.roundToInt
 object ReadingProgress {
     const val COMPLETE_PERCENT = 95
 
+    /** Positions below this fraction are noise; not worth restoring. */
+    private const val MIN_RESTORE_FRACTION = 0.01f
+
     fun percent(scrollValue: Int, scrollMax: Int): Int {
         if (scrollMax <= 0) return 0
         return ((scrollValue.toFloat() / scrollMax) * 100f).roundToInt().coerceIn(0, 100)
@@ -35,6 +38,17 @@ object ReadingProgress {
     fun isComplete(percent: Int): Boolean = percent >= COMPLETE_PERCENT
 
     fun isStarted(percent: Int): Boolean = percent in 1..10
+
+    fun fraction(scrollValue: Int, scrollMax: Int): Float {
+        if (scrollMax <= 0) return 0f
+        return (scrollValue.toFloat() / scrollMax).coerceIn(0f, 1f)
+    }
+
+    /** Scroll offset to restore for a saved fraction, or null if not worth restoring. */
+    fun restoreOffset(fraction: Float, scrollMax: Int): Int? {
+        if (scrollMax <= 0 || fraction < MIN_RESTORE_FRACTION) return null
+        return (fraction.coerceIn(0f, 1f) * scrollMax).roundToInt()
+    }
 }
 
 private val CompleteGreen = Color(0xFF22C55E)

@@ -22,6 +22,22 @@ class ReadingProgressTest {
     }
 
     @Test
+    fun fractionClampsToUnitRange() {
+        assertEquals(0f, ReadingProgress.fraction(0, 0), 0f)
+        assertEquals(0.5f, ReadingProgress.fraction(500, 1000), 0.0001f)
+        assertEquals(1f, ReadingProgress.fraction(1200, 1000), 0f)
+    }
+
+    @Test
+    fun restoreOffsetSkipsNoiseAndMissingLayout() {
+        assertEquals(null, ReadingProgress.restoreOffset(0.5f, 0))
+        assertEquals(null, ReadingProgress.restoreOffset(0f, 1000))
+        assertEquals(null, ReadingProgress.restoreOffset(0.009f, 1000))
+        assertEquals(500, ReadingProgress.restoreOffset(0.5f, 1000))
+        assertEquals(1000, ReadingProgress.restoreOffset(1.5f, 1000))
+    }
+
+    @Test
     fun completeMatchesWebappThreshold() {
         assertFalse(ReadingProgress.isComplete(94))
         assertTrue(ReadingProgress.isComplete(95))

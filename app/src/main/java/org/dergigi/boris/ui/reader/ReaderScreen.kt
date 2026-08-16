@@ -66,6 +66,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -124,6 +125,7 @@ import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
@@ -139,6 +141,9 @@ import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -637,6 +642,27 @@ private fun ArticleBody(
         selectedId = id
         pendingJumpId = null
         ReaderFocus.clear()
+    }
+    var positionRestored by remember(content.url) { mutableStateOf(false) }
+    LaunchedEffect(content.url) {
+        if (positionRestored) return@LaunchedEffect
+        if (focusHighlightId.isNotBlank()) {
+            positionRestored = true
+            return@LaunchedEffect
+        }
+        val saved = ReadingPositionStore.fraction(content.url)
+        val max = snapshotFlow { scrollState.maxValue }.first { it > 0 }
+        ReadingProgress.restoreOffset(saved, max)?.let { scrollState.scrollTo(it) }
+        positionRestored = true
+    }
+    LaunchedEffect(content.url) {
+        snapshotFlow { scrollState.value }.collectLatest { value ->
+            if (!positionRestored) return@collectLatest
+            val max = scrollState.maxValue
+            if (max <= 0) return@collectLatest
+            delay(400)
+            ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
+        }
     }
     val openFromStop = remember<(HighlightStop) -> Unit> {
         { stop ->
