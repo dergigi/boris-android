@@ -131,6 +131,11 @@ fun SettingsScreen(
                     darkTheme = settings.isDark(isSystemInDarkTheme()),
                 )
                 SectionDivider()
+                HomeSettingsSection(
+                    settings = settings,
+                    onUpdate = { next -> settingsViewModel.update { next } },
+                )
+                SectionDivider()
                 FeedSettingsSection(
                     settings = settings,
                     onUpdate = { next -> settingsViewModel.update { next } },

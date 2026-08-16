@@ -41,6 +41,9 @@
     <string name="home_clipboard_open">Open from clipboard</string>
     <string name="home_clipboard_dismiss">Dismiss</string>
     <string name="home_title">Home</string>
+    <string name="home_hide_archived">Hide archived</string>
+    <string name="home_show_archived">Show archived</string>
+    <string name="home_empty_archived">Everything here is already archived.</string>
     <string name="home_about">About Boris</string>
     <string name="about_title">About Boris</string>
     <string name="about_back">Back</string>
@@ -148,6 +151,8 @@
     <string name="settings_media">Media</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
     <string name="settings_open_links_in_reader">Open links in Reader</string>
+    <string name="settings_home">Home</string>
+    <string name="settings_hide_archived">Hide archived articles</string>
     <string name="settings_feed_scope">Default Feed Scope</string>
     <string name="settings_airplane_mode">App &amp; Airplane Mode</string>
     <string name="settings_airplane_body">Boris is offline-first by design. You can read, create highlights, and browse your library without being connected to the internet. Boris will store changes locally and sync later.</string>

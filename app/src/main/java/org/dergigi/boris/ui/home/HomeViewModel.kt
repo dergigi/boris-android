@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.OgMetaClient
@@ -32,6 +33,7 @@ sealed interface HomeHighlightsState {
         val friends: List<HighlightedArticle>,
         val others: List<HighlightedArticle>,
         val loggedIn: Boolean,
+        val archivedKeys: Set<String> = emptySet(),
     ) : HomeHighlightsState
 }
 
@@ -65,7 +67,7 @@ class HomeViewModel(
                 _highlights.value = HomeHighlightsState.Loading
             }
             try {
-                val (yours, friends, others) = withContext(Dispatchers.IO) {
+                val (yours, friends, others, archivedKeys) = withContext(Dispatchers.IO) {
                     coroutineScope {
                         val friendKeysDeferred = async {
                             if (pubkey == null) {
@@ -87,23 +89,38 @@ class HomeViewModel(
                         }
                         val friendsDeferred = async { loadFriends(relays, friendKeys) }
                         val othersDeferred = async { loadOthers(pubkey, friendKeys) }
+                        val archiveDeferred = async {
+                            if (pubkey == null) {
+                                emptySet()
+                            } else {
+                                ArchivedArticles.keys(RelayQuery.fetchArchiveReactions(pubkey, relays))
+                            }
+                        }
                         val rawYours = yoursDeferred.await()
                         val rawFriends = friendsDeferred.await()
                         val rawOthers = othersDeferred.await()
+                        val archivedKeys = archiveDeferred.await()
                         val previews = loadPreviews(
                             (rawYours + rawFriends + rawOthers).map { it.url }.distinct(),
                         )
-                        Triple(
+                        LoadedRows(
                             applyPreviews(rawYours, previews),
                             applyPreviews(rawFriends, previews),
                             applyPreviews(rawOthers, previews),
+                            archivedKeys,
                         )
                     }
                 }
                 _highlights.value = if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) {
                     HomeHighlightsState.Empty
                 } else {
-                    HomeHighlightsState.Ready(yours, friends, others, loggedIn = pubkey != null)
+                    HomeHighlightsState.Ready(
+                        yours,
+                        friends,
+                        others,
+                        loggedIn = pubkey != null,
+                        archivedKeys = archivedKeys,
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -149,11 +166,17 @@ class HomeViewModel(
             .map { it.url }
             .distinct()
             .associateWith { OgPreviewCache.get(it) }
+        val archivedKeys = if (pubkey == null) {
+            emptySet()
+        } else {
+            ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
+        }
         return HomeHighlightsState.Ready(
             applyPreviews(yours, previews),
             applyPreviews(friends, previews),
             applyPreviews(others, previews),
             loggedIn = pubkey != null,
+            archivedKeys = archivedKeys,
         )
     }
 
@@ -198,6 +221,13 @@ class HomeViewModel(
             host = preview.siteName?.takeIf { it.isNotBlank() } ?: article.host,
         )
     }
+
+    private data class LoadedRows(
+        val yours: List<HighlightedArticle>,
+        val friends: List<HighlightedArticle>,
+        val others: List<HighlightedArticle>,
+        val archivedKeys: Set<String>,
+    )
 
     companion object {
         private const val HIGHLIGHT_LIMIT = 80

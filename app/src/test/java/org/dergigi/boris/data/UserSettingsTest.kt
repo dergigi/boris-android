@@ -33,6 +33,7 @@ class UserSettingsTest {
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
         assertTrue(settings.useLocalRelayAsCache)
+        assertFalse(settings.hideArchivedOnHome)
     }
 
     @Test

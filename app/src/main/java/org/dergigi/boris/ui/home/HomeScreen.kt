@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.SettingsSync
@@ -101,6 +103,34 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
                 actions = {
+                    if (loggedIn) {
+                        IconButton(
+                            onClick = {
+                                SettingsSync.apply(
+                                    settings.withBoolean(
+                                        "hideArchivedOnHome",
+                                        !settings.hideArchivedOnHome,
+                                    ),
+                                )
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.LibraryBooks,
+                                contentDescription = stringResource(
+                                    if (settings.hideArchivedOnHome) {
+                                        R.string.home_show_archived
+                                    } else {
+                                        R.string.home_hide_archived
+                                    },
+                                ),
+                                tint = if (settings.hideArchivedOnHome) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            )
+                        }
+                    }
                     IconButton(onClick = onOpenAbout) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
@@ -141,6 +171,7 @@ fun HomeScreen(
                 highlights = highlights,
                 refreshing = refreshing,
                 loggedIn = loggedIn,
+                hideArchived = settings.hideArchivedOnHome,
                 mineColor = hexColor(settings.highlightColorMine, HighlightMine),
                 friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
@@ -206,6 +237,7 @@ fun HomeScreenContent(
     highlights: HomeHighlightsState,
     refreshing: Boolean,
     loggedIn: Boolean,
+    hideArchived: Boolean,
     mineColor: Color,
     friendsColor: Color,
     nostrverseColor: Color,
@@ -237,50 +269,81 @@ fun HomeScreenContent(
                 )
             }
             is HomeHighlightsState.Ready -> {
+                val yours = ArchivedArticles.visible(
+                    highlights.yours,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
+                val friends = ArchivedArticles.visible(
+                    highlights.friends,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
+                val others = ArchivedArticles.visible(
+                    highlights.others,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(top = 20.dp, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(28.dp),
-                    ) {
-                        if (highlights.yours.isNotEmpty()) {
-                            HighlightedRow(
-                                title = stringResource(R.string.home_recently_highlighted_by_you),
-                                items = highlights.yours,
-                                rowKey = "you",
-                                tint = mineColor,
-                                onRead = onRead,
-                            )
-                        }
-                        if (highlights.friends.isNotEmpty()) {
-                            HighlightedRow(
-                                title = stringResource(R.string.home_recently_highlighted_by_friends),
-                                items = highlights.friends,
-                                rowKey = "friends",
-                                tint = friendsColor,
-                                onRead = onRead,
-                            )
-                        }
-                        if (highlights.others.isNotEmpty()) {
-                            HighlightedRow(
-                                title = stringResource(
-                                    if (loggedIn || highlights.yours.isNotEmpty() || highlights.friends.isNotEmpty()) {
-                                        R.string.home_recently_highlighted_by_others
+                    if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            StatusMessage(
+                                text = stringResource(
+                                    if (hideArchived && highlights.archivedKeys.isNotEmpty()) {
+                                        R.string.home_empty_archived
                                     } else {
-                                        R.string.home_recently_highlighted
+                                        R.string.feed_empty
                                     },
                                 ),
-                                items = highlights.others,
-                                rowKey = "others",
-                                tint = nostrverseColor,
-                                onRead = onRead,
+                                onRetry = onRefresh,
+                                modifier = Modifier.align(Alignment.Center),
                             )
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 20.dp, bottom = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(28.dp),
+                        ) {
+                            if (yours.isNotEmpty()) {
+                                HighlightedRow(
+                                    title = stringResource(R.string.home_recently_highlighted_by_you),
+                                    items = yours,
+                                    rowKey = "you",
+                                    tint = mineColor,
+                                    onRead = onRead,
+                                )
+                            }
+                            if (friends.isNotEmpty()) {
+                                HighlightedRow(
+                                    title = stringResource(R.string.home_recently_highlighted_by_friends),
+                                    items = friends,
+                                    rowKey = "friends",
+                                    tint = friendsColor,
+                                    onRead = onRead,
+                                )
+                            }
+                            if (others.isNotEmpty()) {
+                                HighlightedRow(
+                                    title = stringResource(
+                                        if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
+                                            R.string.home_recently_highlighted_by_others
+                                        } else {
+                                            R.string.home_recently_highlighted
+                                        },
+                                    ),
+                                    items = others,
+                                    rowKey = "others",
+                                    tint = nostrverseColor,
+                                    onRead = onRead,
+                                )
+                            }
                         }
                     }
                 }
