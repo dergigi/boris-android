@@ -43,7 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -246,35 +247,21 @@ private fun CtaPage(onStartReading: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(32.dp))
-        Button(
+        CtaOutlinedButton(
+            label = stringResource(R.string.about_cta_nostr),
+            icon = painterResource(R.drawable.ic_nostr),
             onClick = { uriHandler.openUri(AboutLinks.nostrUrl) },
-            shape = RoundedCornerShape(8.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_nostr),
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.about_cta_nostr),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
+        )
         Spacer(Modifier.height(12.dp))
         CtaOutlinedButton(
             label = stringResource(R.string.about_cta_bug),
-            icon = Icons.Outlined.BugReport,
+            icon = rememberVectorPainter(Icons.Outlined.BugReport),
             onClick = { uriHandler.openUri(AboutLinks.BUG_REPORT) },
         )
         Spacer(Modifier.height(12.dp))
         CtaOutlinedButton(
             label = stringResource(R.string.about_cta_feature),
-            icon = Icons.Outlined.Lightbulb,
+            icon = rememberVectorPainter(Icons.Outlined.Lightbulb),
             onClick = { uriHandler.openUri(AboutLinks.FEATURE_REQUEST) },
         )
         Spacer(Modifier.height(24.dp))
@@ -303,7 +290,7 @@ private fun CtaPage(onStartReading: () -> Unit) {
 @Composable
 private fun CtaOutlinedButton(
     label: String,
-    icon: ImageVector,
+    icon: Painter,
     onClick: () -> Unit,
 ) {
     OutlinedButton(
@@ -318,7 +305,7 @@ private fun CtaOutlinedButton(
             .heightIn(min = 52.dp),
     ) {
         Icon(
-            imageVector = icon,
+            painter = icon,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
         )
