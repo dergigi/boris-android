@@ -1,6 +1,5 @@
 package org.dergigi.boris.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +25,64 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.ui.theme.SourceSerif
+
+fun highlightContextParts(quote: String, context: String?): Triple<String, String, String> {
+    if (context.isNullOrBlank()) return Triple("", quote, "")
+    val index = context.indexOf(quote)
+    if (index < 0) return Triple(context.trim(), quote, "")
+    return Triple(
+        context.substring(0, index),
+        quote,
+        context.substring(index + quote.length),
+    )
+}
+
+@Composable
+fun HighlightQuoteText(
+    quote: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    context: String? = null,
+    maxLines: Int = Int.MAX_VALUE,
+) {
+    val (before, marked, after) = highlightContextParts(quote, context)
+    Text(
+        text = buildAnnotatedString {
+            if (before.isNotBlank()) append(before)
+            withStyle(
+                SpanStyle(
+                    background = color.copy(alpha = 0.45f),
+                    color = MaterialTheme.colorScheme.onBackground,
+                ),
+            ) {
+                append(marked)
+            }
+            if (after.isNotBlank()) append(after)
+        },
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontFamily = SourceSerif,
+            fontSize = 17.sp,
+            lineHeight = 26.sp,
+            fontStyle = FontStyle.Italic,
+        ),
+        color = MaterialTheme.colorScheme.onBackground,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun HighlightCard(
@@ -42,6 +91,7 @@ fun HighlightCard(
     createdAt: Long,
     authorName: String,
     modifier: Modifier = Modifier,
+    context: String? = null,
     host: String? = null,
     authorPicture: String? = null,
     maxQuoteLines: Int = Int.MAX_VALUE,
@@ -76,19 +126,11 @@ fun HighlightCard(
                 )
             }
         }
-        Text(
-            text = quote,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = SourceSerif,
-                fontSize = 18.sp,
-                lineHeight = 28.sp,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
+        HighlightQuoteText(
+            quote = quote,
+            context = context,
+            color = color,
             maxLines = maxQuoteLines,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .background(color.copy(alpha = 0.45f), RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
         )
         if (!host.isNullOrBlank()) {
             Text(

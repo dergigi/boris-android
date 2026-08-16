@@ -271,6 +271,7 @@ private fun FeedHighlightList(
             items(items, key = { it.id }) { item ->
                 HighlightCard(
                     quote = item.quote,
+                    context = item.context,
                     color = levelColor(item.level),
                     createdAt = item.createdAt,
                     authorName = item.authorName,

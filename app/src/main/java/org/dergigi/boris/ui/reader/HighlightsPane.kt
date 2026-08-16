@@ -49,20 +49,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.HighlightAuthor
+import org.dergigi.boris.ui.HighlightQuoteText
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.FeedScope
-import org.dergigi.boris.ui.theme.SourceSerif
 
 internal fun highlightFilter(
     settings: UserSettings,
@@ -86,17 +81,6 @@ internal fun FeedScope.shows(item: PaintedHighlight): Boolean = when {
     item.mine -> mine
     item.friend -> friends
     else -> nostrverse
-}
-
-internal fun highlightContextParts(quote: String, context: String?): Triple<String, String, String> {
-    if (context.isNullOrBlank()) return Triple("", quote, "")
-    val index = context.indexOf(quote)
-    if (index < 0) return Triple(context.trim(), quote, "")
-    return Triple(
-        context.substring(0, index),
-        quote,
-        context.substring(index + quote.length),
-    )
 }
 
 @Composable
@@ -302,7 +286,6 @@ private fun HighlightPaneCard(
 ) {
     val shape = RoundedCornerShape(8.dp)
     val border = color.copy(alpha = if (selected) 0.95f else 0.55f)
-    val (before, quote, after) = highlightContextParts(item.quote, item.context)
     val name = item.authorName.ifBlank { Profile.displayName(item.pubkey, null) }
     Column(
         modifier = Modifier
@@ -335,26 +318,10 @@ private fun HighlightPaneCard(
                 )
             }
         }
-        Text(
-            text = buildAnnotatedString {
-                if (before.isNotBlank()) append(before)
-                withStyle(
-                    SpanStyle(
-                        background = color.copy(alpha = 0.45f),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-                ) {
-                    append(quote)
-                }
-                if (after.isNotBlank()) append(after)
-            },
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = SourceSerif,
-                fontSize = 17.sp,
-                lineHeight = 26.sp,
-                fontStyle = FontStyle.Italic,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
+        HighlightQuoteText(
+            quote = item.quote,
+            context = item.context,
+            color = color,
         )
         HighlightAuthor(
             name = name,

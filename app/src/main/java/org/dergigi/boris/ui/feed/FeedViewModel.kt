@@ -27,6 +27,7 @@ import org.dergigi.boris.nostr.RelayQuery
 data class FeedItem(
     val id: String,
     val quote: String,
+    val context: String? = null,
     val url: String?,
     val host: String?,
     val authorHex: String,
@@ -284,6 +285,7 @@ class FeedViewModel(
             FeedItem(
                 id = event.id,
                 quote = event.content.trim(),
+                context = event.tagValue("context"),
                 url = url,
                 host = url?.let { ArticleUrl.host(it) },
                 authorHex = event.pubkey,

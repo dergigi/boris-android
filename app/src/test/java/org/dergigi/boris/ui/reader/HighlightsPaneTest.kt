@@ -2,6 +2,7 @@ package org.dergigi.boris.ui.reader
 
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.feed.FeedLevel
+import org.dergigi.boris.ui.highlightContextParts
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -174,6 +174,7 @@ fun YouHighlightsContent(
                                 items(state.highlights, key = { it.id }) { item ->
                                     HighlightCard(
                                         quote = item.quote,
+                                        context = item.context,
                                         color = highlightColor,
                                         createdAt = item.createdAt,
                                         authorName = displayName,

@@ -28,6 +28,7 @@ import org.dergigi.boris.ui.feed.classifyFeedLevel
 data class YouHighlight(
     val id: String,
     val quote: String,
+    val context: String? = null,
     val url: String?,
     val host: String?,
     val createdAt: Long,
@@ -119,6 +120,7 @@ class YouViewModel(
                                     YouHighlight(
                                         id = event.id,
                                         quote = event.content.trim(),
+                                        context = event.tagValue("context"),
                                         url = url,
                                         host = url?.let { ArticleUrl.host(it) },
                                         createdAt = event.createdAt,
@@ -155,6 +157,7 @@ class YouViewModel(
             YouHighlight(
                 id = event.id,
                 quote = event.content.trim(),
+                context = event.tagValue("context"),
                 url = url,
                 host = url?.let { ArticleUrl.host(it) },
                 createdAt = event.createdAt,
