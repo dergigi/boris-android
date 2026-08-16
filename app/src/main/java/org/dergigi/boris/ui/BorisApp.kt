@@ -245,6 +245,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenHighlightSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Highlights)) {
+                                launchSingleTop = true
+                            }
+                        },
                     )
                 }
             }

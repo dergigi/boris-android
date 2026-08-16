@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
@@ -96,6 +97,7 @@ fun HighlightsPane(
     onDismiss: () -> Unit,
     onSelect: (PaintedHighlight) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onOpenHighlightSettings: () -> Unit = {},
     onToggleMarks: () -> Unit,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
@@ -143,6 +145,7 @@ fun HighlightsPane(
                         onToggleNostrverse = { filter = filter.toggle(FeedLevel.Nostrverse) },
                         onToggleFriends = { filter = filter.toggle(FeedLevel.Friends) },
                         onToggleMine = { filter = filter.toggle(FeedLevel.Mine) },
+                        onOpenHighlightSettings = onOpenHighlightSettings,
                         onToggleMarks = onToggleMarks,
                     )
                     if (visible.isEmpty()) {
@@ -205,6 +208,7 @@ private fun HighlightsPaneHeader(
     onToggleNostrverse: () -> Unit,
     onToggleFriends: () -> Unit,
     onToggleMine: () -> Unit,
+    onOpenHighlightSettings: () -> Unit,
     onToggleMarks: () -> Unit,
 ) {
     Row(
@@ -247,6 +251,12 @@ private fun HighlightsPaneHeader(
                     onClick = onToggleMine,
                 )
             }
+        }
+        IconButton(onClick = onOpenHighlightSettings) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.reader_highlights_settings),
+            )
         }
         IconButton(onClick = onToggleMarks) {
             Icon(

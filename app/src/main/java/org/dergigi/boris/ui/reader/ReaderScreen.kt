@@ -147,6 +147,7 @@ fun ReaderScreen(
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit,
+    onOpenHighlightSettings: () -> Unit = {},
     viewModel: ReaderViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -196,6 +197,7 @@ fun ReaderScreen(
         onOpenArticle = onOpenArticle,
         onOpenProfile = onOpenProfile,
         onOpenReaderSettings = onOpenReaderSettings,
+        onOpenHighlightSettings = onOpenHighlightSettings,
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
@@ -296,6 +298,7 @@ fun ReaderScreenContent(
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit = {},
+    onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
@@ -487,6 +490,7 @@ fun ReaderScreenContent(
                     volumeScroll = gallery == null,
                     onOpenArticle = onOpenArticle,
                     onOpenProfile = onOpenProfile,
+                    onOpenHighlightSettings = onOpenHighlightSettings,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
                     onArchive = onArchive,
@@ -518,6 +522,7 @@ private fun ArticleBody(
     settings: UserSettings,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
     onArchive: () -> Unit,
@@ -931,6 +936,10 @@ private fun ArticleBody(
             onOpenProfile = { pubkey ->
                 paneOpen = false
                 onOpenProfile(pubkey)
+            },
+            onOpenHighlightSettings = {
+                paneOpen = false
+                onOpenHighlightSettings()
             },
             onToggleMarks = {
                 SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
