@@ -45,6 +45,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -133,6 +134,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -328,6 +330,12 @@ fun ReaderScreenContent(
         context.startActivity(intent)
     }
 
+    fun openNative() {
+        val url = articleUrl ?: return
+        val nostrUri = NostrLink.parse(url)?.uri ?: return
+        openExternalUri(context, nostrUri)
+    }
+
     fun shareArticle() {
         val url = articleUrl ?: return
         val shareUrl = NostrLink.parse(url)?.publicUrl ?: url
@@ -383,6 +391,9 @@ fun ReaderScreenContent(
                         )
                     }
                     if (articleUrl != null) {
+                        val nativeUri = remember(articleUrl) {
+                            NostrLink.parse(articleUrl)?.uri
+                        }
                         var menuOpen by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { menuOpen = true }) {
@@ -422,6 +433,23 @@ fun ReaderScreenContent(
                                         openOriginal()
                                     },
                                 )
+                                if (nativeUri != null) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.reader_open_native))
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Smartphone,
+                                                contentDescription = null,
+                                            )
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            openNative()
+                                        },
+                                    )
+                                }
                                 if (loggedIn) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.reader_settings)) },

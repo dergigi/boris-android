@@ -234,6 +234,7 @@
     <string name="settings_not_published">Settings were not published.</string>
     <string name="settings_title">Settings</string>
     <string name="reader_settings">Reader settings</string>
+    <string name="reader_open_native">Open in native app</string>
     <string name="settings_appearance_summary">Theme, dark and light colors</string>
     <string name="settings_reading_summary">Font, size, alignment, weblinks</string>
     <string name="settings_media_summary">Full-width images</string>
