@@ -179,6 +179,7 @@
     <string name="settings_relays_prefix">Don\'t know what relays are? Learn more</string>
     <string name="settings_relays_here">here</string>
     <string name="settings_scroll_behaviour">Scroll Behaviour</string>
+    <string name="settings_hide_top_bar">Hide top bar on scroll</string>
     <string name="settings_volume_scroll">Use volume buttons to scroll</string>
     <string name="settings_volume_scroll_amount">Scroll amount</string>
     <string name="settings_theme">Theme</string>
@@ -205,7 +206,7 @@
     <string name="settings_highlights_summary">Style, colors, visibility</string>
     <string name="settings_home_summary">Archived articles</string>
     <string name="settings_feed_summary">Default scope, RSS feeds</string>
-    <string name="settings_scroll_summary">Volume button scrolling</string>
+    <string name="settings_scroll_summary">Top bar, volume button scrolling</string>
     <string name="settings_airplane_summary">Offline reading, local relays</string>
     <string name="settings_offline">Offline</string>
     <string name="settings_offline_summary">Downloads, storage limit</string>

@@ -71,6 +71,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Density
@@ -336,10 +337,17 @@ fun ReaderScreenContent(
         Toast.makeText(context, "Copied.", Toast.LENGTH_SHORT).show()
     }
 
+    val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        modifier = if (settings.hideTopBarOnScroll) {
+            Modifier.nestedScroll(topBarScroll.nestedScrollConnection)
+        } else {
+            Modifier
+        },
         topBar = {
             TopAppBar(
+                scrollBehavior = if (settings.hideTopBarOnScroll) topBarScroll else null,
                 title = {
                     val title = (state as? ReaderUiState.Ready)?.content?.title
                     Text(

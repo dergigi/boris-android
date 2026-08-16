@@ -47,6 +47,7 @@ class UserSettings internal constructor(
     val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", false)
+    val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)

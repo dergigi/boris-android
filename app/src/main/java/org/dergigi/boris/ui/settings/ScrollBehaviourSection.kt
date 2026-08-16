@@ -36,6 +36,11 @@ fun ScrollBehaviourSection(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         SettingCheckbox(
+            label = stringResource(R.string.settings_hide_top_bar),
+            checked = settings.hideTopBarOnScroll,
+            onCheckedChange = { onUpdate(settings.withBoolean("hideTopBarOnScroll", it)) },
+        )
+        SettingCheckbox(
             label = stringResource(R.string.settings_volume_scroll),
             checked = settings.volumeButtonScroll,
             onCheckedChange = { onUpdate(settings.withBoolean("volumeButtonScroll", it)) },
