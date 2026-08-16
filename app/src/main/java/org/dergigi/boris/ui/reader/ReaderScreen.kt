@@ -151,6 +151,7 @@ fun ReaderScreen(
     val gallery by viewModel.gallery.collectAsStateWithLifecycle()
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val highlightCount by viewModel.highlightCount.collectAsStateWithLifecycle()
+    val highlightsLoaded by viewModel.highlightsLoaded.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val canSave by viewModel.canSave.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
@@ -179,6 +180,8 @@ fun ReaderScreen(
         gallery = gallery,
         highlights = highlights,
         highlightCount = highlightCount,
+        highlightsLoaded = highlightsLoaded,
+        focusHighlightId = viewModel.focusHighlightId,
         loggedIn = loggedIn,
         canSave = canSave,
         archived = archived,
@@ -260,6 +263,8 @@ fun ReaderScreenContent(
     gallery: ImageGalleryState?,
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
+    highlightsLoaded: Boolean,
+    focusHighlightId: String,
     loggedIn: Boolean,
     canSave: Boolean,
     archived: Boolean,
@@ -431,6 +436,8 @@ fun ReaderScreenContent(
                     content = state.content,
                     highlights = highlights,
                     highlightCount = highlightCount,
+                    highlightsLoaded = highlightsLoaded,
+                    focusHighlightId = focusHighlightId,
                     loggedIn = loggedIn,
                     archived = archived,
                     author = author,
@@ -461,6 +468,8 @@ private fun ArticleBody(
     content: ReadableContent,
     highlights: List<PaintedHighlight>,
     highlightCount: Int,
+    highlightsLoaded: Boolean,
+    focusHighlightId: String,
     loggedIn: Boolean,
     archived: Boolean,
     author: Profile?,
@@ -502,7 +511,18 @@ private fun ArticleBody(
         if (opened !in urls) urls.add(0, opened)
         onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
     }
-    val painted = highlights.visibleFor(settings)
+    val focusQuote = remember(focusHighlightId, highlights) {
+        ReaderFocus.peek()
+            ?.takeIf { it.highlightId.equals(focusHighlightId, ignoreCase = true) }
+            ?.quote
+            ?.takeIf { it.isNotBlank() }
+            ?: highlights.firstOrNull { it.id.equals(focusHighlightId, ignoreCase = true) }?.quote
+    }
+    val painted = HighlightJump.withFocus(
+        highlights.visibleFor(settings),
+        focusHighlightId,
+        focusQuote,
+    )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
     val bodyLine = (settings.fontSize * 36f / 21f).sp
@@ -547,6 +567,22 @@ private fun ArticleBody(
     }
     var paneOpen by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf<String?>(null) }
+    var pendingJumpId by remember {
+        mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
+    }
+    LaunchedEffect(pendingJumpId, painted, highlightsLoaded) {
+        val id = pendingJumpId ?: return@LaunchedEffect
+        if (painted.none { it.id.equals(id, ignoreCase = true) } && !highlightsLoaded) {
+            return@LaunchedEffect
+        }
+        val stop = HighlightJump.awaitStop(navigator, id) {
+            scrollViewport?.isAttached == true
+        } ?: return@LaunchedEffect
+        jumpState.value(navigator.select(stop))
+        selectedId = id
+        pendingJumpId = null
+        ReaderFocus.clear()
+    }
     val openFromStop = remember<(HighlightStop) -> Unit> {
         { stop ->
             jumpState.value(navigator.select(stop))
@@ -803,8 +839,8 @@ private fun ArticleBody(
             otherColor = otherColor,
             onDismiss = { paneOpen = false },
             onSelect = { item ->
-                navigator.firstStop(item.id)?.let { jumpState.value(navigator.select(it)) }
                 selectedId = item.id
+                pendingJumpId = item.id
                 paneOpen = false
             },
             onOpenProfile = { pubkey ->

@@ -27,6 +27,7 @@ import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.library.LibraryScreen
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.ui.reader.ReaderFocus
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
 import org.dergigi.boris.ui.settings.SettingsScreen
@@ -47,11 +48,15 @@ object Routes {
     const val ABOUT = "about"
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
-    const val READER = "reader?url={${ReaderViewModel.URL_ARG}}"
+    const val READER = "reader?url={${ReaderViewModel.URL_ARG}}&highlight={${ReaderViewModel.HIGHLIGHT_ARG}}"
 
-    fun reader(url: String): String {
+    fun reader(url: String, highlightId: String? = null, quote: String? = null): String {
+        if (!highlightId.isNullOrBlank()) {
+            ReaderFocus.offer(highlightId, quote.orEmpty())
+        }
         val encoded = URLEncoder.encode(url, StandardCharsets.UTF_8.name())
-        return "reader?url=$encoded"
+        val hid = URLEncoder.encode(highlightId.orEmpty(), StandardCharsets.UTF_8.name())
+        return "reader?url=$encoded&highlight=$hid"
     }
 
     fun profile(npub: String): String = "profile/$npub"
@@ -135,6 +140,9 @@ fun BorisApp(
                 composable(Routes.FEED) {
                     FeedScreen(
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
+                        },
                     )
                 }
                 composable(Routes.SEARCH) {
@@ -150,6 +158,9 @@ fun BorisApp(
                             }
                         },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
+                        },
                     )
                 }
                 composable(Routes.SETTINGS) {
@@ -175,12 +186,19 @@ fun BorisApp(
                         npub = npub,
                         onBack = { navController.popBackStack() },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
+                        },
                     )
                 }
                 composable(
                     route = Routes.READER,
                     arguments = listOf(
                         navArgument(ReaderViewModel.URL_ARG) { type = NavType.StringType },
+                        navArgument(ReaderViewModel.HIGHLIGHT_ARG) {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
                     ),
                 ) {
                     ReaderScreen(

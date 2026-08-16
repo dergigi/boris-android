@@ -26,6 +26,9 @@ fun ProfileScreen(
     npub: String,
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     viewModel: YouViewModel = viewModel(),
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
@@ -61,6 +64,7 @@ fun ProfileScreen(
             npub = npub,
             profile = profile,
             onOpenArticle = onOpenArticle,
+            onOpenHighlight = onOpenHighlight,
             modifier = Modifier.padding(innerPadding),
             viewModel = viewModel,
         )

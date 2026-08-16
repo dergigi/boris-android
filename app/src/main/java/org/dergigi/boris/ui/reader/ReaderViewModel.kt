@@ -58,6 +58,8 @@ class ReaderViewModel(
 ) : AndroidViewModel(application) {
     private val repository = ReaderRepository()
     val url: String = decodeUrl(savedStateHandle.get<String>(URL_ARG).orEmpty())
+    val focusHighlightId: String =
+        decodeUrl(savedStateHandle.get<String>(HIGHLIGHT_ARG).orEmpty()).trim().lowercase()
 
     private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
@@ -70,6 +72,9 @@ class ReaderViewModel(
 
     private val _highlightCount = MutableStateFlow(0)
     val highlightCount: StateFlow<Int> = _highlightCount.asStateFlow()
+
+    private val _highlightsLoaded = MutableStateFlow(false)
+    val highlightsLoaded: StateFlow<Boolean> = _highlightsLoaded.asStateFlow()
 
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
@@ -137,6 +142,7 @@ class ReaderViewModel(
             _state.value = ReaderUiState.Error("No URL to read.", url)
             _highlights.value = emptyList()
             _highlightCount.value = 0
+            _highlightsLoaded.value = true
             inLibrary = false
             resetArchive()
             resetAuthor()
@@ -147,6 +153,7 @@ class ReaderViewModel(
             _state.value = ReaderUiState.Loading
             _highlights.value = emptyList()
             _highlightCount.value = 0
+            _highlightsLoaded.value = false
             inLibrary = false
             resetArchive()
             resetAuthor()
@@ -165,6 +172,7 @@ class ReaderViewModel(
                 authorJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
+                _highlightsLoaded.value = true
                 _state.value = ReaderUiState.Error(
                     e.message ?: "Failed to load this article.",
                     url,
@@ -946,6 +954,7 @@ class ReaderViewModel(
         highlightJob?.cancel()
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
+        _highlightsLoaded.value = false
         publishSaveState()
         highlightJob = viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -982,6 +991,8 @@ class ReaderViewModel(
                     paintHighlights(events, session?.pubkeyHex, contacts)
                 }
             } catch (_: Exception) {
+            } finally {
+                _highlightsLoaded.value = true
             }
         }
     }
@@ -997,6 +1008,7 @@ class ReaderViewModel(
 
     companion object {
         const val URL_ARG = "url"
+        const val HIGHLIGHT_ARG = "highlight"
 
         fun decodeUrl(encoded: String): String =
             URLDecoder.decode(encoded, StandardCharsets.UTF_8.name())

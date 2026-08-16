@@ -70,6 +70,9 @@ import org.dergigi.boris.ui.theme.HighlightOther
 @Composable
 fun FeedScreen(
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = viewModel(),
 ) {
@@ -95,6 +98,7 @@ fun FeedScreen(
         onToggle = viewModel::toggle,
         onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
+        onOpenHighlight = onOpenHighlight,
         modifier = modifier,
     )
 }
@@ -114,6 +118,7 @@ fun FeedScreenContent(
     onToggle: (FeedLevel) -> Unit,
     onSelectTab: (ContentTab) -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -211,7 +216,7 @@ fun FeedScreenContent(
                                         }
                                     },
                                     onRefresh = onRefresh,
-                                    onOpenArticle = onOpenArticle,
+                                    onOpenHighlight = onOpenHighlight,
                                 )
                                 ContentTab.Writings -> FeedWritingList(
                                     items = state.writings,
@@ -242,7 +247,7 @@ private fun FeedHighlightList(
     emptyText: String,
     levelColor: (FeedLevel) -> Color,
     onRefresh: () -> Unit,
-    onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -272,7 +277,9 @@ private fun FeedHighlightList(
                     host = item.host,
                     authorPicture = item.authorPicture,
                     maxQuoteLines = 8,
-                    onClick = item.url?.let { url -> { onOpenArticle(url) } },
+                    onClick = item.url?.let { url ->
+                        { onOpenHighlight(url, item.id, item.quote) }
+                    },
                 )
             }
         }

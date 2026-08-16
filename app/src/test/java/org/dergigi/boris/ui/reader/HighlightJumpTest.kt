@@ -5,6 +5,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HighlightJumpTest {
+    @org.junit.After
+    fun clearFocus() {
+        ReaderFocus.clear()
+    }
+
     @Test
     fun stopsFollowReadingOrderInOneBlock() {
         val owner = Any()
@@ -48,6 +53,18 @@ class HighlightJumpTest {
             localTopAt = { start, _ -> start.toFloat() },
         )
         assertEquals(listOf(0, 5), stops.map { it.start })
+    }
+
+    @Test
+    fun withFocusAddsAMissingHighlightFromTheQuote() {
+        val existing = listOf(PaintedHighlight("aa", "kept", mine = true))
+        val next = HighlightJump.withFocus(existing, "BB", "seeded")
+        assertEquals(2, next.size)
+        assertEquals("bb", next.last().id)
+        assertEquals("seeded", next.last().quote)
+        assertEquals(existing, HighlightJump.withFocus(existing, "aa", "ignored"))
+        assertEquals(existing, HighlightJump.withFocus(existing, "cc", "  "))
+        assertEquals(existing, HighlightJump.withFocus(existing, "", "seeded"))
     }
 
     @Test

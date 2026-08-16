@@ -63,6 +63,9 @@ fun YouHighlights(
     npub: String,
     profile: Profile?,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     modifier: Modifier = Modifier,
     viewModel: YouViewModel = viewModel(),
 ) {
@@ -91,6 +94,7 @@ fun YouHighlights(
         highlightColor = highlightColor,
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
+        onOpenHighlight = onOpenHighlight,
         modifier = modifier,
     )
 }
@@ -106,6 +110,7 @@ fun YouHighlightsContent(
     highlightColor: Color,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
@@ -174,7 +179,9 @@ fun YouHighlightsContent(
                                         authorName = displayName,
                                         host = item.host,
                                         authorPicture = pictureUrl,
-                                        onClick = item.url?.let { url -> { onOpenArticle(url) } },
+                                        onClick = item.url?.let { url ->
+                                            { onOpenHighlight(url, item.id, item.quote) }
+                                        },
                                     )
                                 }
                             }

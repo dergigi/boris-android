@@ -3,11 +3,18 @@ package org.dergigi.boris.ui.reader
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.TextLayoutResult
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import org.dergigi.boris.nostr.QuoteMatch
 import kotlin.math.roundToInt
 
@@ -50,12 +57,44 @@ object HighlightJump {
     fun scrollTarget(scrollValue: Int, scrollMax: Int, yInViewport: Float, paddingPx: Float): Int {
         return (scrollValue + yInViewport - paddingPx).roundToInt().coerceIn(0, scrollMax.coerceAtLeast(0))
     }
+
+    fun withFocus(
+        highlights: List<PaintedHighlight>,
+        highlightId: String?,
+        quote: String?,
+    ): List<PaintedHighlight> {
+        val id = highlightId?.trim()?.lowercase().orEmpty()
+        if (id.isEmpty()) return highlights
+        if (highlights.any { it.id.equals(id, ignoreCase = true) }) return highlights
+        val text = quote?.trim().orEmpty()
+        if (text.isEmpty()) return highlights
+        return highlights + PaintedHighlight(id = id, quote = text, mine = false)
+    }
+
+    suspend fun awaitStop(
+        navigator: HighlightNavigator,
+        highlightId: String,
+        timeoutMs: Long = 10_000L,
+        viewportReady: () -> Boolean,
+    ): HighlightStop? {
+        val id = highlightId.trim()
+        if (id.isEmpty()) return null
+        return withTimeoutOrNull(timeoutMs) {
+            snapshotFlow {
+                if (!viewportReady()) return@snapshotFlow null
+                val stop = navigator.firstStop(id) ?: return@snapshotFlow null
+                val coords = navigator.coordinates(stop.owner)
+                if (coords == null || !coords.isAttached) return@snapshotFlow null
+                stop
+            }.filterNotNull().first()
+        }
+    }
 }
 
 @Stable
 class HighlightNavigator {
     private val nodes = linkedMapOf<Any, Node>()
-    var stops: List<HighlightStop> = emptyList()
+    var stops: List<HighlightStop> by mutableStateOf(emptyList())
         private set
     var index: Int = -1
         private set
@@ -91,7 +130,7 @@ class HighlightNavigator {
     }
 
     fun firstStop(highlightId: String): HighlightStop? =
-        stops.firstOrNull { it.highlightId == highlightId }
+        stops.firstOrNull { it.highlightId.equals(highlightId, ignoreCase = true) }
 
     fun hit(owner: Any, layout: TextLayoutResult, position: Offset): HighlightStop? {
         val node = nodes[owner] ?: return null

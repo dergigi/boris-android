@@ -55,6 +55,9 @@ import org.dergigi.boris.ui.you.YouLoggedOut
 fun AccountScreen(
     onOpenSettings: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     incomingBunker: String? = null,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
@@ -140,6 +143,7 @@ fun AccountScreen(
                     npub = current.npub,
                     profile = profile,
                     onOpenArticle = onOpenArticle,
+                    onOpenHighlight = onOpenHighlight,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
