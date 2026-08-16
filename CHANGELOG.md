@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-08-16
+
+### Changed
+
+- Relays settings screen is split into Read, Write, and Local sections
+
 ## [0.45.0] - 2026-08-16
 
 ### Added
