@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OfflineDownloader
@@ -33,8 +34,15 @@ class MainActivity : ComponentActivity() {
     private var incomingBunker by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        OfflineSync.bind(this)
         EventCache.init(File(filesDir, "event_cache"))
+        // Hold splash only while the event cache loads online. Offline and
+        // warm starts exit immediately so we never invent a wait.
+        splash.setKeepOnScreenCondition {
+            OfflineSync.hasNetwork() && !EventCache.isReady()
+        }
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         RelayHealth.init(File(filesDir, "relay_health.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
@@ -42,7 +50,6 @@ class MainActivity : ComponentActivity() {
         RssRepository.init(File(filesDir, "rss_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
         OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
-        OfflineSync.bind(this)
         applyIntent(intent)
         enableEdgeToEdge()
         setContent {

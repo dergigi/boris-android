@@ -43,6 +43,9 @@ object EventCache {
         }
     }
 
+    /** True once the initial disk load finished (or never started). */
+    fun isReady(): Boolean = !initialized || loadedLatch.count == 0L
+
     fun put(event: Nip01Event) {
         awaitLoaded()
         if (putInternal(event)) scheduleSave(event.kind)
