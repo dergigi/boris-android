@@ -45,6 +45,11 @@ object ReadingPositionStore {
 
     fun fraction(url: String): Float = synchronized(lock) { positions[key(url)] ?: 0f }
 
+    /** All saved positions, most recently read first. Keys are canonical (see [key]). */
+    fun entries(): List<Pair<String, Float>> = synchronized(lock) {
+        positions.entries.reversed().map { it.key to it.value }
+    }
+
     fun save(url: String, fraction: Float) {
         val clamped = fraction.coerceIn(0f, 1f)
         synchronized(lock) {

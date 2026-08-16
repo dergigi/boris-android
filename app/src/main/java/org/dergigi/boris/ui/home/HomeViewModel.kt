@@ -16,12 +16,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
+import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.EventCache
+import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 
@@ -35,6 +38,8 @@ sealed interface HomeHighlightsState {
         val others: List<HighlightedArticle>,
         val loggedIn: Boolean,
         val archivedKeys: Set<String> = emptySet(),
+        val continueReading: List<HighlightedArticle> = emptyList(),
+        val mostHighlighted: List<HighlightedArticle> = emptyList(),
     ) : HomeHighlightsState
 }
 
@@ -65,7 +70,7 @@ class HomeViewModel(
                 _highlights.value = HomeHighlightsState.Loading
             }
             try {
-                val (yours, friends, others, archivedKeys) = withContext(Dispatchers.IO) {
+                val rows = withContext(Dispatchers.IO) {
                     coroutineScope {
                         val friendKeysDeferred = async {
                             if (pubkey == null) {
@@ -97,27 +102,38 @@ class HomeViewModel(
                         val rawYours = HighlightedArticles.hydrate(yoursDeferred.await())
                         val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
                         val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
+                        val rawContinue = ContinueReading.articles(ARTICLE_LIMIT)
+                        val rawMost = HighlightedArticles.mostHighlighted(
+                            EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
+                            ARTICLE_LIMIT,
+                        )
                         val archivedKeys = archiveDeferred.await()
                         val previews = loadPreviews(
-                            (rawYours + rawFriends + rawOthers).map { it.url }.distinct(),
+                            (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
+                                .map { it.url }
+                                .distinct(),
                         )
                         LoadedRows(
                             applyPreviews(rawYours, previews),
                             applyPreviews(rawFriends, previews),
                             applyPreviews(rawOthers, previews),
                             archivedKeys,
+                            applyPreviews(rawContinue, previews),
+                            applyPreviews(rawMost, previews),
                         )
                     }
                 }
-                _highlights.value = if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) {
+                _highlights.value = if (rows.isEmpty()) {
                     HomeHighlightsState.Empty
                 } else {
                     HomeHighlightsState.Ready(
-                        yours,
-                        friends,
-                        others,
+                        rows.yours,
+                        rows.friends,
+                        rows.others,
                         loggedIn = pubkey != null,
-                        archivedKeys = archivedKeys,
+                        archivedKeys = rows.archivedKeys,
+                        continueReading = rows.continueReading,
+                        mostHighlighted = rows.mostHighlighted,
                     )
                 }
             } catch (e: CancellationException) {
@@ -159,8 +175,17 @@ class HomeViewModel(
                 .filter { event -> isNetworkHighlight(event.pubkey, pubkey, friendKeys) },
             ARTICLE_LIMIT,
         )
-        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) return null
-        val previews = (yours + friends + others)
+        val continueReading = ContinueReading.articles(ARTICLE_LIMIT)
+        val mostHighlighted = HighlightedArticles.mostHighlighted(
+            EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
+            ARTICLE_LIMIT,
+        )
+        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+            continueReading.isEmpty() && mostHighlighted.isEmpty()
+        ) {
+            return null
+        }
+        val previews = (yours + friends + others + continueReading + mostHighlighted)
             .map { it.url }
             .distinct()
             .associateWith { ArticlePreview.get(it) }
@@ -175,6 +200,8 @@ class HomeViewModel(
             applyPreviews(others, previews),
             loggedIn = pubkey != null,
             archivedKeys = archivedKeys,
+            continueReading = applyPreviews(continueReading, previews),
+            mostHighlighted = applyPreviews(mostHighlighted, previews),
         )
     }
 
@@ -223,7 +250,13 @@ class HomeViewModel(
         val friends: List<HighlightedArticle>,
         val others: List<HighlightedArticle>,
         val archivedKeys: Set<String>,
-    )
+        val continueReading: List<HighlightedArticle>,
+        val mostHighlighted: List<HighlightedArticle>,
+    ) {
+        fun isEmpty(): Boolean =
+            yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+                continueReading.isEmpty() && mostHighlighted.isEmpty()
+    }
 
     companion object {
         private const val HIGHLIGHT_LIMIT = 80

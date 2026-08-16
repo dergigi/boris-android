@@ -35,6 +35,36 @@ object HighlightedArticles {
         return out
     }
 
+    /** Articles ranked by number of distinct highlight events; needs at least two to rank. */
+    fun mostHighlighted(events: List<Nip01Event>, limit: Int): List<HighlightedArticle> {
+        val counts = LinkedHashMap<String, MutableList<Nip01Event>>()
+        val seen = HashSet<String>()
+        for (event in events) {
+            if (!seen.add(event.id)) continue
+            val raw = Nip84.articleUrl(event) ?: continue
+            val target = NostrLink.parse(raw)
+            val url = target?.uri ?: ArticleUrl.normalize(raw)
+            if (target == null && !url.startsWith("http")) continue
+            counts.getOrPut(url) { mutableListOf() }.add(event)
+        }
+        return counts.entries
+            .filter { it.value.size >= 2 }
+            .sortedWith(
+                compareByDescending<Map.Entry<String, List<Nip01Event>>> { it.value.size }
+                    .thenByDescending { entry -> entry.value.maxOf { it.createdAt } },
+            )
+            .take(limit)
+            .mapNotNull { (url, hits) ->
+                val target = NostrLink.parse(url)
+                val host = when (target) {
+                    is NostrTarget.Article -> target.ref.pointer.identifier.ifBlank { "nostr" }
+                    is NostrTarget.Note -> "nostr"
+                    null -> ArticleUrl.host(url) ?: return@mapNotNull null
+                }
+                decorate(HighlightedArticle(url, host, host, null, hits.maxOf { it.createdAt }))
+            }
+    }
+
     /** Fetches kind-30023 events that are not in the cache, then re-applies titles and covers. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {
         for (item in items) {

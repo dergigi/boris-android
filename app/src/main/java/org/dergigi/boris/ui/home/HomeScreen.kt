@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Settings
@@ -46,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -181,6 +183,7 @@ fun HomeScreen(
                 refreshing = refreshing,
                 loggedIn = loggedIn,
                 hideArchived = settings.hideArchivedOnHome,
+                sectionOrder = HomeSections.order(settings.homeSectionOrder),
                 mineColor = hexColor(settings.highlightColorMine, HighlightMine),
                 friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
@@ -253,6 +256,7 @@ fun HomeScreenContent(
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
+    sectionOrder: List<String> = HomeSections.DEFAULT,
 ) {
     Box(
         modifier = modifier
@@ -293,12 +297,24 @@ fun HomeScreenContent(
                     highlights.archivedKeys,
                     hideArchived,
                 )
+                val continueReading = ArchivedArticles.visible(
+                    highlights.continueReading,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
+                val mostHighlighted = ArchivedArticles.visible(
+                    highlights.mostHighlighted,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    if (yours.isEmpty() && friends.isEmpty() && others.isEmpty()) {
+                    if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+                        continueReading.isEmpty() && mostHighlighted.isEmpty()
+                    ) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             StatusMessage(
                                 text = stringResource(
@@ -320,38 +336,61 @@ fun HomeScreenContent(
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {
-                            if (yours.isNotEmpty()) {
-                                HighlightedRow(
-                                    title = stringResource(R.string.home_recently_highlighted_by_you),
-                                    items = yours,
-                                    rowKey = "you",
-                                    tint = mineColor,
-                                    onRead = onRead,
-                                )
-                            }
-                            if (friends.isNotEmpty()) {
-                                HighlightedRow(
-                                    title = stringResource(R.string.home_recently_highlighted_by_friends),
-                                    items = friends,
-                                    rowKey = "friends",
-                                    tint = friendsColor,
-                                    onRead = onRead,
-                                )
-                            }
-                            if (others.isNotEmpty()) {
-                                HighlightedRow(
-                                    title = stringResource(
-                                        if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
-                                            R.string.home_recently_highlighted_by_others
-                                        } else {
-                                            R.string.home_recently_highlighted
-                                        },
-                                    ),
-                                    items = others,
-                                    rowKey = "others",
-                                    tint = nostrverseColor,
-                                    onRead = onRead,
-                                )
+                            sectionOrder.forEach { section ->
+                                when (section) {
+                                    HomeSections.CONTINUE -> if (continueReading.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(R.string.home_continue_reading),
+                                            items = continueReading,
+                                            rowKey = "continue",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                    HomeSections.YOURS -> if (yours.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(R.string.home_recently_highlighted_by_you),
+                                            items = yours,
+                                            rowKey = "you",
+                                            tint = mineColor,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                    HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(R.string.home_recently_highlighted_by_friends),
+                                            items = friends,
+                                            rowKey = "friends",
+                                            tint = friendsColor,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                    HomeSections.OTHERS -> if (others.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(
+                                                if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
+                                                    R.string.home_recently_highlighted_by_others
+                                                } else {
+                                                    R.string.home_recently_highlighted
+                                                },
+                                            ),
+                                            items = others,
+                                            rowKey = "others",
+                                            tint = nostrverseColor,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                    HomeSections.MOST -> if (mostHighlighted.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(R.string.home_most_highlighted),
+                                            items = mostHighlighted,
+                                            rowKey = "most",
+                                            tint = nostrverseColor,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -368,6 +407,7 @@ private fun HighlightedRow(
     rowKey: String,
     tint: Color,
     onRead: (String) -> Unit,
+    icon: ImageVector = BorisIcons.Highlighter,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -379,7 +419,7 @@ private fun HighlightedRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
-                imageVector = BorisIcons.Highlighter,
+                imageVector = icon,
                 contentDescription = null,
                 tint = tint,
                 modifier = Modifier.size(20.dp),

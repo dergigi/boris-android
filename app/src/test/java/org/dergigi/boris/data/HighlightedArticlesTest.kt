@@ -130,6 +130,36 @@ class HighlightedArticlesTest {
         )
     }
 
+    @Test
+    fun mostHighlightedRanksByCountAndNeedsAtLeastTwo() {
+        val events = listOf(
+            highlight("https://example.com/popular", createdAt = 1),
+            highlight("https://example.com/popular", createdAt = 2),
+            highlight("https://example.com/popular", createdAt = 3),
+            highlight("https://example.com/runner-up", createdAt = 4),
+            highlight("https://example.com/runner-up", createdAt = 5),
+            highlight("https://example.com/lonely", createdAt = 6),
+        )
+        val articles = HighlightedArticles.mostHighlighted(events, limit = 12)
+        assertEquals(
+            listOf(
+                "https://example.com/popular",
+                "https://example.com/runner-up",
+            ),
+            articles.map { it.url },
+        )
+    }
+
+    @Test
+    fun mostHighlightedDedupesEventIds() {
+        val duplicate = highlight("https://example.com/one", createdAt = 1)
+        val articles = HighlightedArticles.mostHighlighted(
+            listOf(duplicate, duplicate, duplicate),
+            limit = 12,
+        )
+        assertEquals(emptyList<String>(), articles.map { it.url })
+    }
+
     private fun highlight(
         url: String,
         createdAt: Long,
