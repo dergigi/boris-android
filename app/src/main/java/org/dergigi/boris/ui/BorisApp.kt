@@ -30,6 +30,7 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.reader.ReaderFocus
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
+import org.dergigi.boris.ui.settings.SettingsCategory
 import org.dergigi.boris.ui.settings.SettingsScreen
 import org.dergigi.boris.ui.you.ProfileScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
@@ -44,7 +45,8 @@ object Routes {
     const val FEED = "feed"
     const val SEARCH = "search"
     const val YOU = "you"
-    const val SETTINGS = "settings"
+    const val SETTINGS_CATEGORY_ARG = "category"
+    const val SETTINGS = "settings?category={$SETTINGS_CATEGORY_ARG}"
     const val ABOUT = "about"
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
@@ -60,6 +62,9 @@ object Routes {
     }
 
     fun profile(npub: String): String = "profile/$npub"
+
+    fun settings(category: SettingsCategory? = null): String =
+        if (category == null) "settings" else "settings?category=${category.name}"
 }
 
 @Composable
@@ -153,7 +158,7 @@ fun BorisApp(
                         incomingBunker = incomingBunker,
                         viewModel = authViewModel,
                         onOpenSettings = {
-                            navController.navigate(Routes.SETTINGS) {
+                            navController.navigate(Routes.settings()) {
                                 launchSingleTop = true
                             }
                         },
@@ -163,11 +168,21 @@ fun BorisApp(
                         },
                     )
                 }
-                composable(Routes.SETTINGS) {
+                composable(
+                    route = Routes.SETTINGS,
+                    arguments = listOf(
+                        navArgument(Routes.SETTINGS_CATEGORY_ARG) {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                    ),
+                ) { entry ->
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
                         authViewModel = authViewModel,
+                        initialCategory = entry.arguments?.getString(Routes.SETTINGS_CATEGORY_ARG),
                     )
                 }
                 composable(Routes.ABOUT) {
@@ -213,6 +228,11 @@ fun BorisApp(
                         onOpenProfile = { pubkeyHex ->
                             runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
                                 navController.navigate(Routes.profile(npub))
+                            }
+                        },
+                        onOpenReaderSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Reading)) {
+                                launchSingleTop = true
                             }
                         },
                     )

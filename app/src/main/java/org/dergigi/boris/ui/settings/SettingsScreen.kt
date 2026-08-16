@@ -63,7 +63,7 @@ import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.openWeblink
 import org.dergigi.boris.ui.theme.BorisIcons
 
-private enum class SettingsCategory(
+enum class SettingsCategory(
     val titleRes: Int,
     val subtitleRes: Int,
     val tint: Color,
@@ -111,6 +111,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
     authViewModel: AuthViewModel,
+    initialCategory: String? = null,
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
@@ -123,7 +124,7 @@ fun SettingsScreen(
     ) { result ->
         settingsViewModel.onSignerResult(result.resultCode, result.data)
     }
-    var openCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    var openCategory by rememberSaveable { mutableStateOf(initialCategory) }
     val category = openCategory?.let { name -> SettingsCategory.entries.firstOrNull { it.name == name } }
 
     LaunchedEffect(signIntent) {

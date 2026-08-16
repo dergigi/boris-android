@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -144,6 +145,7 @@ fun ReaderScreen(
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onOpenReaderSettings: () -> Unit,
     viewModel: ReaderViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -192,6 +194,7 @@ fun ReaderScreen(
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
         onOpenProfile = onOpenProfile,
+        onOpenReaderSettings = onOpenReaderSettings,
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
@@ -291,6 +294,7 @@ fun ReaderScreenContent(
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onOpenReaderSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
@@ -400,6 +404,18 @@ fun ReaderScreenContent(
                                         openOriginal()
                                     },
                                 )
+                                if (loggedIn) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_settings)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.Settings, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            onOpenReaderSettings()
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
