@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-08-16
+
+### Fixed
+
+- Empty RSS tab opens Feed settings instead of offering a useless retry
+
 ## [0.41.0] - 2026-08-16
 
 ### Added
