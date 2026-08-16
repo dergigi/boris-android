@@ -133,6 +133,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenHomeSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Home)) {
+                                launchSingleTop = true
+                            }
+                        },
                         authViewModel = authViewModel,
                     )
                 }
@@ -158,7 +163,7 @@ fun BorisApp(
                                 navController.navigate(Routes.profile(npub))
                             }
                         },
-                        onOpenRssSettings = {
+                        onOpenFeedSettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Feed)) {
                                 launchSingleTop = true
                             }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.RssFeed
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -71,6 +72,8 @@ import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -84,7 +87,7 @@ fun FeedScreen(
         onOpenArticle(url)
     },
     onOpenProfile: (String) -> Unit = {},
-    onOpenRssSettings: () -> Unit = {},
+    onOpenFeedSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = viewModel(),
     menuViewModel: HighlightMenuViewModel = viewModel(),
@@ -136,7 +139,7 @@ fun FeedScreen(
         onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
-        onOpenRssSettings = onOpenRssSettings,
+        onOpenRssSettings = onOpenFeedSettings,
         deletedIds = deletedIds,
         menuFor = { item ->
             HighlightCardMenu(
@@ -214,6 +217,15 @@ fun FeedScreenContent(
                             if (loggedIn) R.string.feed_scope_mine else R.string.feed_scope_mine_login,
                         ),
                         onClick = { onToggle(FeedLevel.Mine) },
+                    )
+                    TopBarMoreMenu(
+                        items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.feed_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onOpenRssSettings,
+                            ),
+                        ),
                     )
                 },
                 windowInsets = WindowInsets(0),

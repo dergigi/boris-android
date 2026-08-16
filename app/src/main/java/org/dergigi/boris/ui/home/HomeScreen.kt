@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,6 +68,8 @@ import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -77,6 +80,7 @@ import org.dergigi.boris.ui.theme.HighlightOther
 fun HomeScreen(
     onRead: (String) -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenHomeSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
@@ -103,40 +107,45 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
                 actions = {
-                    if (loggedIn) {
-                        IconButton(
-                            onClick = {
-                                SettingsSync.apply(
-                                    settings.withBoolean(
-                                        "hideArchivedOnHome",
-                                        !settings.hideArchivedOnHome,
-                                    ),
-                                )
-                            },
-                        ) {
-                            Icon(
-                                imageVector = BorisIcons.Books,
-                                contentDescription = stringResource(
-                                    if (settings.hideArchivedOnHome) {
-                                        R.string.home_show_archived
-                                    } else {
-                                        R.string.home_hide_archived
-                                    },
-                                ),
-                                tint = if (settings.hideArchivedOnHome) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                            )
-                        }
-                    }
                     IconButton(onClick = onOpenAbout) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
                             contentDescription = stringResource(R.string.home_about),
                         )
                     }
+                    TopBarMoreMenu(
+                        items = buildList {
+                            if (loggedIn) {
+                                add(
+                                    TopBarMenuItem(
+                                        label = stringResource(
+                                            if (settings.hideArchivedOnHome) {
+                                                R.string.home_show_archived
+                                            } else {
+                                                R.string.home_hide_archived
+                                            },
+                                        ),
+                                        icon = BorisIcons.Books,
+                                        onClick = {
+                                            SettingsSync.apply(
+                                                settings.withBoolean(
+                                                    "hideArchivedOnHome",
+                                                    !settings.hideArchivedOnHome,
+                                                ),
+                                            )
+                                        },
+                                    ),
+                                )
+                            }
+                            add(
+                                TopBarMenuItem(
+                                    label = stringResource(R.string.home_settings),
+                                    icon = Icons.Outlined.Settings,
+                                    onClick = onOpenHomeSettings,
+                                ),
+                            )
+                        },
+                    )
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -74,6 +74,8 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -164,18 +166,21 @@ fun LibraryScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.library_title)) },
                 actions = {
-                    IconButton(onClick = onOpenLibrarySettings) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = stringResource(R.string.library_settings),
-                        )
-                    }
                     IconButton(onClick = { showInfo = true }) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = stringResource(R.string.library_info),
                         )
                     }
+                    TopBarMoreMenu(
+                        items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.library_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onOpenLibrarySettings,
+                            ),
+                        ),
+                    )
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(

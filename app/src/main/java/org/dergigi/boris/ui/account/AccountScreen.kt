@@ -43,6 +43,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -112,20 +114,26 @@ fun AccountScreen(
             TopAppBar(
                 title = {},
                 actions = {
-                    if (loggedIn) {
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = stringResource(R.string.settings_title),
+                    TopBarMoreMenu(
+                        items = buildList {
+                            add(
+                                TopBarMenuItem(
+                                    label = stringResource(R.string.settings_title),
+                                    icon = Icons.Outlined.Settings,
+                                    onClick = onOpenSettings,
+                                ),
                             )
-                        }
-                        IconButton(onClick = { confirmSignOut = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Logout,
-                                contentDescription = stringResource(R.string.auth_sign_out),
-                            )
-                        }
-                    }
+                            if (loggedIn) {
+                                add(
+                                    TopBarMenuItem(
+                                        label = stringResource(R.string.auth_sign_out),
+                                        icon = Icons.AutoMirrored.Outlined.Logout,
+                                        onClick = { confirmSignOut = true },
+                                    ),
+                                )
+                            }
+                        },
+                    )
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(
