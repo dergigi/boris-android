@@ -33,7 +33,7 @@ Reading stays first. Login is a stored identity (npub plus Amber package or bunk
 - Importing or storing an `nsec` in Boris
 - Encrypt/decrypt, bookmarks, comments, highlight sidebar
 - `nostrconnect://`, camera QR, Boris as a bunker server
-- Profiles, feeds, zaps: not a social client
+- Profiles and feeds as a full social client (zapping people/articles/highlights is backlog 999.5)
 
 ## Context
 

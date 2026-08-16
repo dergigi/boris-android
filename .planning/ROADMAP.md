@@ -126,5 +126,15 @@ Plans:
 
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
+### Phase 999.5: Zap people, articles, and highlights (BACKLOG)
+
+**Goal:** Let users zap people, articles, and highlights from within Boris (Lightning / NIP-57), without turning the app into a full social client.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
 ---
 *Roadmap created: 2026-08-14*
