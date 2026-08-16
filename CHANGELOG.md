@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.41.2] - 2026-08-16
+
+### Changed
+
+- Offline downloads and App & Airplane Mode are one Airplane mode settings screen
+
 ## [0.41.1] - 2026-08-16
 
 ### Fixed
