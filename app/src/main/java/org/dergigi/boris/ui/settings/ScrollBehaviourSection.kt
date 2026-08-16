@@ -35,12 +35,6 @@ fun ScrollBehaviourSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            text = stringResource(R.string.settings_scroll_behaviour),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
         SettingCheckbox(
             label = stringResource(R.string.settings_volume_scroll),
             checked = settings.volumeButtonScroll,

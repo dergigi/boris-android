@@ -190,6 +190,14 @@
     <string name="settings_cancelled">Settings save cancelled.</string>
     <string name="settings_not_published">Settings were not published.</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_appearance_summary">Theme, dark and light colors</string>
+    <string name="settings_reading_summary">Font, size, alignment, weblinks</string>
+    <string name="settings_media_summary">Full-width images</string>
+    <string name="settings_highlights_summary">Style, colors, visibility</string>
+    <string name="settings_home_summary">Archived articles</string>
+    <string name="settings_feed_summary">Default feed scope</string>
+    <string name="settings_scroll_summary">Volume button scrolling</string>
+    <string name="settings_airplane_summary">Offline reading, local relays</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_back">Back</string>
     <string name="you_logged_out_title">Your highlights</string>
