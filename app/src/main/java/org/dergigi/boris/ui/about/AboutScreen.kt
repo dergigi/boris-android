@@ -1,98 +1,71 @@
 package org.dergigi.boris.ui.about
 
-import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.svg.SvgDecoder
+import kotlinx.coroutines.launch
 import org.dergigi.boris.R
-
-private data class Feature(
-    val asset: String,
-    @StringRes val title: Int,
-    val paragraphs: List<Int>,
-)
-
-private val FEATURES = listOf(
-    Feature(
-        asset = "read-anywhere.svg",
-        title = R.string.about_read_anywhere_title,
-        paragraphs = listOf(R.string.about_read_anywhere_1, R.string.about_read_anywhere_2),
-    ),
-    Feature(
-        asset = "distraction-free.svg",
-        title = R.string.about_distraction_free_title,
-        paragraphs = listOf(R.string.about_distraction_free_1, R.string.about_distraction_free_2),
-    ),
-    Feature(
-        asset = "airplane-mode.svg",
-        title = R.string.about_airplane_mode_title,
-        paragraphs = listOf(R.string.about_airplane_mode_1, R.string.about_airplane_mode_2),
-    ),
-    Feature(
-        asset = "swarm-highlights.svg",
-        title = R.string.about_social_highlights_title,
-        paragraphs = listOf(R.string.about_social_highlights_1, R.string.about_social_highlights_2),
-    ),
-    Feature(
-        asset = "reading-list.svg",
-        title = R.string.about_lists_title,
-        paragraphs = listOf(R.string.about_lists_1, R.string.about_lists_2),
-    ),
-    Feature(
-        asset = "zap-splits.svg",
-        title = R.string.about_zap_splits_title,
-        paragraphs = listOf(R.string.about_zap_splits_1, R.string.about_zap_splits_2),
-    ),
-    Feature(
-        asset = "comforting-colors.svg",
-        title = R.string.about_comforting_colors_title,
-        paragraphs = listOf(R.string.about_comforting_colors_1),
-    ),
-    Feature(
-        asset = "peace-of-mind.svg",
-        title = R.string.about_peace_of_mind_title,
-        paragraphs = listOf(R.string.about_peace_of_mind_1, R.string.about_peace_of_mind_2),
-    ),
-    Feature(
-        asset = "free-forever.svg",
-        title = R.string.about_free_title,
-        paragraphs = listOf(R.string.about_free_1, R.string.about_free_2),
-    ),
-)
+import org.dergigi.boris.ui.theme.SourceSerif
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
     onBack: () -> Unit,
 ) {
+    val pagerState = rememberPagerState(pageCount = { ABOUT_PAGES.size })
+    val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -113,52 +86,65 @@ fun AboutScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(40.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item(key = "intro") {
-                Column(
-                    modifier = Modifier
-                        .widthIn(max = 720.dp)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.about_intro_title),
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        text = stringResource(R.string.about_intro_body),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.SansSerif),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) { page ->
+                when (val item = ABOUT_PAGES[page]) {
+                    AboutPage.Intro -> IntroPage()
+                    is AboutPage.Feature -> FeaturePage(item.feature)
+                    AboutPage.Cta -> CtaPage()
                 }
             }
-            items(FEATURES, key = { it.asset }) { feature ->
-                FeatureCard(feature)
-            }
+            PageDots(
+                count = ABOUT_PAGES.size,
+                selected = pagerState.currentPage,
+                onSelect = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp, top = 8.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun FeatureCard(feature: Feature) {
+private fun IntroPage() {
+    AboutPageColumn {
+        Text(
+            text = stringResource(R.string.about_intro_title),
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = SourceSerif,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.about_intro_body),
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = FontFamily.SansSerif,
+                textAlign = TextAlign.Center,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun FeaturePage(feature: AboutFeature) {
     val context = LocalContext.current
-    Column(
-        modifier = Modifier
-            .widthIn(max = 720.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    AboutPageColumn {
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data("file:///android_asset/features/${feature.asset}")
@@ -167,21 +153,151 @@ private fun FeatureCard(feature: Feature) {
             contentDescription = stringResource(feature.title),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp),
+                .height(200.dp),
         )
+        Spacer(Modifier.height(28.dp))
         Text(
             text = stringResource(feature.title),
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontFamily = FontFamily.SansSerif,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontFamily = SourceSerif,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
             ),
             color = MaterialTheme.colorScheme.onBackground,
         )
+        Spacer(Modifier.height(12.dp))
         feature.paragraphs.forEach { paragraph ->
             Text(
                 text = stringResource(paragraph),
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    textAlign = TextAlign.Center,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 10.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CtaPage() {
+    val uriHandler = LocalUriHandler.current
+    AboutPageColumn {
+        Text(
+            text = stringResource(R.string.about_cta_title),
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = SourceSerif,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.about_cta_body),
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = FontFamily.SansSerif,
+                textAlign = TextAlign.Center,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(32.dp))
+        Button(
+            onClick = { uriHandler.openUri(AboutLinks.nostrUrl) },
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+        ) {
+            Icon(
+                Icons.Outlined.AlternateEmail,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.about_cta_nostr),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = { uriHandler.openUri(AboutLinks.GITHUB) },
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+        ) {
+            Icon(
+                Icons.Outlined.BugReport,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.about_cta_github),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AboutPageColumn(content: @Composable () -> Unit) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = maxHeight)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Column(
+                modifier = Modifier.widthIn(max = 440.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun PageDots(
+    count: Int,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = stringResource(R.string.about_page_indicator, selected + 1, count)
+    Row(
+        modifier = modifier.semantics { contentDescription = label },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(count) { index ->
+            val active = index == selected
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(if (active) 8.dp else 7.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (active) {
+                            MaterialTheme.colorScheme.onBackground
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
+                    )
+                    .clickable { onSelect(index) },
             )
         }
     }

@@ -75,6 +75,11 @@
     <string name="about_free_title">Free as in Freedom</string>
     <string name="about_free_1">Boris is free and open-source and always will be. You can do with it what you want. Fork it, modify it, contribute to it, or just use it as is.</string>
     <string name="about_free_2">Boris is free as in beer too, but you can send me sats if you appreciate my work.</string>
+    <string name="about_cta_title">Come say hi</string>
+    <string name="about_cta_body">Connect on Nostr, or open GitHub to report a bug or suggest a feature.</string>
+    <string name="about_cta_nostr">Connect on Nostr</string>
+    <string name="about_cta_github">Report a bug or idea</string>
+    <string name="about_page_indicator">Page %1$d of %2$d</string>
     <string name="auth_connect">Amber</string>
     <string name="auth_bunker">Bunker</string>
     <string name="auth_sign_out">Sign out</string>
