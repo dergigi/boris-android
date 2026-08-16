@@ -55,6 +55,8 @@ class UserSettings internal constructor(
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
 
+    fun offlineDownloadEnabled(key: String): Boolean = bool(key, true)
+
     fun isDark(systemDark: Boolean): Boolean = when (theme) {
         "light" -> false
         "dark" -> true

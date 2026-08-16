@@ -34,6 +34,7 @@ class ReaderRepository(
             }
         }
         ArticlePreview.remember(content)
+        OfflineStore.markDownloaded(url)
         return content
     }
 
@@ -179,9 +180,13 @@ class ReaderRepository(
         @Volatile
         private var httpCacheDir: File? = null
 
+        @Volatile
+        private var httpCacheBytes: Long = HTTP_CACHE_BYTES
+
         /** Must run before the first ReaderRepository is constructed. */
-        fun init(cacheDir: File) {
+        fun init(cacheDir: File, maxBytes: Long = HTTP_CACHE_BYTES) {
             httpCacheDir = cacheDir
+            httpCacheBytes = maxBytes
         }
 
         private val defaultClient: OkHttpClient by lazy {
@@ -190,7 +195,7 @@ class ReaderRepository(
                 .readTimeout(45, TimeUnit.SECONDS)
                 .apply {
                     val dir = httpCacheDir ?: return@apply
-                    cache(Cache(dir, HTTP_CACHE_BYTES))
+                    cache(Cache(dir, httpCacheBytes))
                     // jina sends no cache headers; force responses into the cache
                     // so previously opened articles render offline.
                     addNetworkInterceptor { chain ->

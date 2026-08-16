@@ -9,7 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.OfflineDownloader
+import org.dergigi.boris.data.OfflineStore
 import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.UrlExtractor
@@ -28,7 +31,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EventCache.init(File(filesDir, "event_cache"))
-        ReaderRepository.init(File(filesDir, "reader_http_cache"))
+        OfflineStore.init(File(filesDir, "offline_downloads.json"))
+        ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
         OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
         OfflineSync.bind(this)
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         OfflineSync.flush()
+        OfflineDownloader.kickoff(applicationContext)
     }
 
     override fun onNewIntent(intent: Intent) {
