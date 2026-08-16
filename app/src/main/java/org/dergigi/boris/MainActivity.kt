@@ -21,6 +21,7 @@ import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.OfflineOutbox
 import org.dergigi.boris.nostr.OfflineSync
+import org.dergigi.boris.nostr.RelayHealth
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         EventCache.init(File(filesDir, "event_cache"))
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
+        RelayHealth.init(File(filesDir, "relay_health.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
         ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))
         RssRepository.init(File(filesDir, "rss_http_cache"))

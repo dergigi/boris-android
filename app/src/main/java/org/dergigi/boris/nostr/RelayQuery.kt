@@ -408,7 +408,11 @@ object RelayQuery {
         val keys = authorKeys(null, authors)
         if (keys.isEmpty()) return
         RelayListRepository.prefetch(keys)
-        val routes = OutboxRouter.route(keys, reachableRelays(relayUrls(fallbackRelays)))
+        val routes = OutboxRouter.route(
+            authors = keys,
+            fallbackRelays = reachableRelays(relayUrls(fallbackRelays)),
+            skip = { RelayHealth.inCooldown(it) },
+        )
         val targets = routes.mapValues { (_, subset) ->
             subset.toList().chunked(AUTHOR_CHUNK).map(filterFor)
         }
@@ -654,6 +658,7 @@ object RelayQuery {
             for (url in targets) {
                 val socket = RelaySocket(url, client)
                 sockets.add(socket)
+                val startedAt = System.currentTimeMillis()
                 val signaled = AtomicBoolean(false)
                 fun signal() {
                     if (signaled.compareAndSet(false, true)) responses.countDown()
@@ -661,6 +666,7 @@ object RelayQuery {
                 try {
                     socket.open(
                         onOpen = {
+                            RelayHealth.onConnectOk(url, System.currentTimeMillis() - startedAt)
                             val message = JSONArray()
                                 .put("EVENT")
                                 .put(JSONObject(event.toJsonString()))
@@ -679,7 +685,10 @@ object RelayQuery {
                             } catch (_: Exception) {
                             }
                         },
-                        onFailure = { signal() },
+                        onFailure = {
+                            RelayHealth.onConnectFail(url)
+                            signal()
+                        },
                     )
                 } catch (_: Exception) {
                     signal()
@@ -701,7 +710,7 @@ object RelayQuery {
 
     /** Like [query], but each relay receives its own filter set. */
     private fun queryPerRelay(targets: Map<String, List<JSONObject>>): List<Nip01Event> {
-        val reachable = reachableRelays(targets.keys.toList())
+        val reachable = skipCooldowns(reachableRelays(targets.keys.toList()))
         if (reachable.isEmpty()) return emptyList()
         val sockets = mutableListOf<RelaySocket>()
         val events = ConcurrentHashMap<String, Nip01Event>()
@@ -715,6 +724,7 @@ object RelayQuery {
                 }
                 val socket = RelaySocket(url, client)
                 sockets.add(socket)
+                val startedAt = System.currentTimeMillis()
                 val eoseSignaled = AtomicBoolean(false)
                 fun signalEose() {
                     if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
@@ -722,6 +732,7 @@ object RelayQuery {
                 try {
                     socket.open(
                         onOpen = {
+                            RelayHealth.onConnectOk(url, System.currentTimeMillis() - startedAt)
                             val req = JSONArray().put("REQ").put(newId())
                             filters.forEach { req.put(it) }
                             socket.send(req.toString())
@@ -732,14 +743,20 @@ object RelayQuery {
                                 when (arr.optString(0)) {
                                     "EVENT" -> {
                                         val event = Nip01Event.parse(arr.getJSONObject(2)) ?: return@open
-                                        if (event.verify()) events[event.id] = event
+                                        if (event.verify()) {
+                                            events[event.id] = event
+                                            RelayHealth.onEvents(url, 1)
+                                        }
                                     }
                                     "EOSE" -> signalEose()
                                 }
                             } catch (_: Exception) {
                             }
                         },
-                        onFailure = { signalEose() },
+                        onFailure = {
+                            RelayHealth.onConnectFail(url)
+                            signalEose()
+                        },
                     )
                 } catch (_: Exception) {
                     signalEose()
@@ -752,6 +769,16 @@ object RelayQuery {
         } finally {
             sockets.forEach { it.close() }
         }
+    }
+
+    /**
+     * Drops relays that are in failure cooldown, but never an explicitly targeted
+     * single relay, and never all of them.
+     */
+    private fun skipCooldowns(urls: List<String>): List<String> {
+        if (urls.size <= 1) return urls
+        val active = urls.filterNot { RelayHealth.inCooldown(it) }
+        return active.ifEmpty { urls }
     }
 
     private fun highlightFilter(limit: Int, authors: List<String>): JSONObject =

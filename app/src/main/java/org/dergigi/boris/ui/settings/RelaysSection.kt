@@ -43,22 +43,22 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.LocalRelays
+import org.dergigi.boris.nostr.RelayHealth
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayProbe
 import org.dergigi.boris.nostr.RelayQuery
-import java.util.concurrent.ConcurrentHashMap
+import org.dergigi.boris.nostr.RelayScoreBoard
 
 private data class RelayRowState(
     val url: String,
     val local: Boolean,
     val connected: Boolean,
     val lastSeenAt: Long?,
+    val coverage: Int,
 )
 
-/** App-session memory of when each relay last answered a probe (epoch seconds). */
-private val lastSeenAt = ConcurrentHashMap<String, Long>()
-
 private const val REFRESH_MS = 15_000L
+private const val TOP_COVERAGE_RELAYS = 8
 
 @Composable
 fun RelaysSection(
@@ -68,7 +68,7 @@ fun RelaysSection(
     var rows by remember { mutableStateOf<List<RelayRowState>?>(null) }
     LaunchedEffect(Unit) {
         while (isActive) {
-            rows = withContext(Dispatchers.IO) { probeRelays(context) }
+            rows = withContext(Dispatchers.IO) { relayRows(context) }
             delay(REFRESH_MS)
         }
     }
@@ -102,7 +102,11 @@ fun RelaysSection(
     }
 }
 
-private suspend fun probeRelays(context: android.content.Context): List<RelayRowState> {
+/**
+ * Status comes from observed traffic (RelayHealth) where fresh; relays without
+ * recent traffic get an active probe, whose outcome also feeds RelayHealth.
+ */
+private suspend fun relayRows(context: android.content.Context): List<RelayRowState> {
     val pubkey = SessionStore.load(context)?.pubkeyHex
     val list = if (pubkey != null) {
         try {
@@ -113,30 +117,45 @@ private suspend fun probeRelays(context: android.content.Context): List<RelayRow
     } else {
         RelayList.fallback()
     }
+    val follows = pubkey?.let { RelayQuery.cachedContactPubkeys(it) } ?: emptySet()
+    val coverage = RelayScoreBoard.coverageCounts(follows)
     val urls = buildList {
         add(LocalRelays.CITRINE)
         addAll(list.read)
         addAll(list.write)
         addAll(RelayList.FALLBACK)
+        addAll(RelayScoreBoard.topRelays(follows, TOP_COVERAGE_RELAYS))
     }.mapNotNull(LocalRelays::resolve).distinct()
     return coroutineScope {
         urls.map { url ->
             async(Dispatchers.IO) {
-                val connected = RelayProbe.isReachable(url)
-                if (connected) lastSeenAt[url] = System.currentTimeMillis() / 1000
+                val connected = if (RelayHealth.isFresh(url)) true else probe(url)
                 RelayRowState(
                     url = url,
                     local = LocalRelays.isLocal(url),
                     connected = connected,
-                    lastSeenAt = lastSeenAt[url],
+                    lastSeenAt = RelayHealth.stats(url)?.lastOkAt?.takeIf { it > 0 }?.let { it / 1000 },
+                    coverage = coverage[url] ?: 0,
                 )
             }
         }.map { it.await() }
     }.sortedWith(
         compareByDescending<RelayRowState> { it.local }
             .thenByDescending { it.connected }
+            .thenByDescending { it.coverage }
             .thenBy { it.url },
     )
+}
+
+private fun probe(url: String): Boolean {
+    val startedAt = System.currentTimeMillis()
+    val ok = RelayProbe.isReachable(url)
+    if (ok) {
+        RelayHealth.onConnectOk(url, System.currentTimeMillis() - startedAt)
+    } else {
+        RelayHealth.onConnectFail(url)
+    }
+    return ok
 }
 
 private val StatusGreen = Color(0xFF22C55E)
@@ -168,14 +187,22 @@ private fun RelayRow(row: RelayRowState) {
             tint = tint,
             modifier = Modifier.size(18.dp),
         )
-        Text(
-            text = displayUrl(row.url),
-            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = displayUrl(row.url),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (row.coverage > 0) {
+                Text(
+                    text = stringResource(R.string.settings_relay_coverage, row.coverage),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         val seen = row.lastSeenAt
         if (!row.connected && seen != null) {
             Icon(
