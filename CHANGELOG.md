@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-08-16
+
+### Changed
+
+- Search results reuse shared cards: highlights (with mine/friends/nostrverse colors), people (`AuthorCard`), and articles/bookmarks (`ArticleRow`)
+
 ## [0.50.0] - 2026-08-16
 
 ### Added
