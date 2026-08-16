@@ -20,17 +20,19 @@ class ReaderRepository(
             is NostrTarget.Note -> fetchNote(target)
             null -> {
                 val targetUrl = UrlExtractor.normalize(url)
-                val request = Request.Builder()
-                    .url(toProxyUrl(targetUrl))
-                    .header("Accept", "text/plain")
-                    .get()
-                    .build()
-                val text = try {
-                    execute(request)
-                } catch (e: IOException) {
-                    executeFromCache(request) ?: throw e
+                rssContent(url, targetUrl) ?: run {
+                    val request = Request.Builder()
+                        .url(toProxyUrl(targetUrl))
+                        .header("Accept", "text/plain")
+                        .get()
+                        .build()
+                    val text = try {
+                        execute(request)
+                    } catch (e: IOException) {
+                        executeFromCache(request) ?: throw e
+                    }
+                    withCover(parse(targetUrl, text))
                 }
-                withCover(parse(targetUrl, text))
             }
         }
         ArticlePreview.remember(content)
@@ -116,6 +118,30 @@ class ReaderRepository(
             eventId = event.id,
             authorPubkey = event.pubkey,
             sourceZapTags = zapTags(event),
+        )
+    }
+
+    /**
+     * Renders an RSS item straight from its feed content. Returns null when
+     * the URL is not a known feed item or the feed only ships a teaser, in
+     * which case the regular web fetch takes over.
+     */
+    private fun rssContent(vararg urls: String): ReadableContent? {
+        val feeds = SettingsSync.settings.value.rssFeeds
+        if (feeds.isEmpty()) return null
+        val item = urls.distinct().firstNotNullOfOrNull { RssRepository.itemFor(it, feeds) }
+            ?: return null
+        val html = item.contentHtml ?: return null
+        val markdown = HtmlToMarkdown.convert(html)
+        if (markdown.length < MIN_RSS_MARKDOWN_CHARS) return null
+        val body = item.imageUrl?.let { ArticleCover.stripLeadingImage(markdown, it) } ?: markdown
+        return ReadableContent(
+            url = item.link,
+            title = item.title,
+            markdown = body,
+            publishedAt = item.publishedAt.takeIf { it > 0 },
+            imageUrl = item.imageUrl,
+            summary = item.summary,
         )
     }
 
@@ -211,6 +237,9 @@ class ReaderRepository(
 
         private const val HTTP_CACHE_BYTES = 50L * 1024L * 1024L
         private const val FRESH_SECONDS = 300
+
+        /** Feed bodies shorter than this are teasers; fetch the web page instead. */
+        private const val MIN_RSS_MARKDOWN_CHARS = 500
 
         private val markdownBlockRegex = Regex("""Markdown Content:\s""", RegexOption.IGNORE_CASE)
         private val titleRegex = Regex(
