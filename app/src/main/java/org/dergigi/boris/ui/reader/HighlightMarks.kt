@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.ui.highlightMark
+import org.dergigi.boris.ui.theme.FindMark
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -28,6 +29,7 @@ object HighlightMarks {
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()
     return filter { item ->
+        if (item.find) return@filter true
         when {
             item.mine -> settings.defaultHighlightVisibilityMine
             item.friend -> settings.defaultHighlightVisibilityFriends
@@ -44,19 +46,25 @@ fun Modifier.drawHighlightMarks(
     friendsColor: Color = HighlightFriends,
     otherColor: Color = HighlightOther,
     underline: Boolean = false,
+    findColor: Color = FindMark,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
     fun paint(items: List<PaintedHighlight>, fill: Color) {
         items.forEach { item ->
-            QuoteMatch.occurrences(displayed, highlightMark(item.quote, item.context)).forEach { range ->
+            QuoteMatch.occurrences(
+                displayed,
+                highlightMark(item.quote, item.context),
+                ignoreCase = item.ignoreCase,
+            ).forEach { range ->
                 paintHighlight(result, range.first, range.last + 1, fill, underline)
             }
         }
     }
-    paint(highlights.filter { !it.mine && !it.friend }, otherColor)
-    paint(highlights.filter { it.friend && !it.mine }, friendsColor)
-    paint(highlights.filter { it.mine }, mineColor)
+    paint(highlights.filter { it.find }, findColor)
+    paint(highlights.filter { !it.find && !it.mine && !it.friend }, otherColor)
+    paint(highlights.filter { !it.find && it.friend && !it.mine }, friendsColor)
+    paint(highlights.filter { !it.find && it.mine }, mineColor)
 }
 
 fun DrawScope.paintHighlight(

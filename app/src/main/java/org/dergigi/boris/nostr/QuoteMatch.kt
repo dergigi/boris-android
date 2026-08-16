@@ -1,19 +1,27 @@
 package org.dergigi.boris.nostr
 
 object QuoteMatch {
-    fun occurrences(haystack: String, quote: String): List<IntRange> {
+    fun occurrences(
+        haystack: String,
+        quote: String,
+        ignoreCase: Boolean = false,
+    ): List<IntRange> {
         val q = quote.trim()
         if (q.isEmpty()) return emptyList()
-        val exact = exactOccurrences(haystack, q)
-        if (exact.isNotEmpty()) return exact
+        val exact = exactOccurrences(haystack, q, ignoreCase)
+        if (exact.isNotEmpty() || ignoreCase) return exact
         return normalizedOccurrences(haystack, q)
     }
 
-    private fun exactOccurrences(haystack: String, quote: String): List<IntRange> {
+    private fun exactOccurrences(
+        haystack: String,
+        quote: String,
+        ignoreCase: Boolean,
+    ): List<IntRange> {
         val out = mutableListOf<IntRange>()
         var start = 0
         while (true) {
-            val i = haystack.indexOf(quote, start)
+            val i = haystack.indexOf(quote, start, ignoreCase = ignoreCase)
             if (i < 0) break
             out.add(i until i + quote.length)
             start = i + quote.length

@@ -35,7 +35,7 @@ object HighlightJump {
     ): List<HighlightStop> {
         if (text.isEmpty() || highlights.isEmpty()) return emptyList()
         return highlights.flatMap { item ->
-            QuoteMatch.occurrences(text, item.quote).mapNotNull { range ->
+            QuoteMatch.occurrences(text, item.quote, ignoreCase = item.ignoreCase).mapNotNull { range ->
                 val end = range.last + 1
                 val top = localTopAt(range.first, end) ?: return@mapNotNull null
                 HighlightStop(
@@ -131,6 +131,18 @@ class HighlightNavigator {
 
     fun firstStop(highlightId: String): HighlightStop? =
         stops.firstOrNull { it.highlightId.equals(highlightId, ignoreCase = true) }
+
+    fun nthStop(highlightId: String, occurrence: Int): HighlightStop? {
+        if (occurrence < 0) return null
+        return stops
+            .asSequence()
+            .filter { it.highlightId.equals(highlightId, ignoreCase = true) }
+            .drop(occurrence)
+            .firstOrNull()
+    }
+
+    fun stopCount(highlightId: String): Int =
+        stops.count { it.highlightId.equals(highlightId, ignoreCase = true) }
 
     fun hit(owner: Any, layout: TextLayoutResult, position: Offset): HighlightStop? {
         val node = nodes[owner] ?: return null

@@ -235,6 +235,15 @@
     <string name="settings_title">Settings</string>
     <string name="reader_settings">Reader settings</string>
     <string name="reader_open_native">Open in native app</string>
+    <string name="reader_find">Find in article</string>
+    <string name="reader_find_title">Find</string>
+    <string name="reader_find_placeholder">Search in article</string>
+    <string name="reader_find_hint">Type to search this article.</string>
+    <string name="reader_find_empty">No matches</string>
+    <string name="reader_find_count">%1$d of %2$d</string>
+    <string name="reader_find_close">Close find</string>
+    <string name="reader_find_previous">Previous match</string>
+    <string name="reader_find_next">Next match</string>
     <string name="settings_appearance_summary">Theme, dark and light colors</string>
     <string name="settings_reading_summary">Font, size, alignment, weblinks</string>
     <string name="settings_media_summary">Full-width images</string>

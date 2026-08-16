@@ -45,8 +45,17 @@ class QuoteMatchTest {
     }
 
     @Test
-    fun occurrencesReturnsEmptyForBlankQuote() {
-        assertTrue(QuoteMatch.occurrences("hello", "   ").isEmpty())
-        assertTrue(QuoteMatch.occurrences("hello", "").isEmpty())
+    fun occurrencesIgnoreCaseFindsMixedCase() {
+        assertEquals(
+            listOf(0 until 5, 6 until 11),
+            QuoteMatch.occurrences("Hello hello", "HELLO", ignoreCase = true),
+        )
+    }
+
+    @Test
+    fun occurrencesIgnoreCaseDoesNotUseWhitespaceNormalization() {
+        assertTrue(
+            QuoteMatch.occurrences("hello   world", "hello world", ignoreCase = true).isEmpty(),
+        )
     }
 }

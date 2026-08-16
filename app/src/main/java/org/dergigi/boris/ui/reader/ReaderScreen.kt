@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.Button
@@ -147,8 +148,10 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun ReaderScreen(
@@ -356,6 +359,7 @@ fun ReaderScreenContent(
     }
 
     val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    var findOpen by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         modifier = if (settings.hideTopBarOnScroll) {
@@ -450,6 +454,18 @@ fun ReaderScreenContent(
                                         },
                                     )
                                 }
+                                if (state is ReaderUiState.Ready) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_find)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.Search, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            findOpen = true
+                                        },
+                                    )
+                                }
                                 if (loggedIn) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.reader_settings)) },
@@ -523,6 +539,8 @@ fun ReaderScreenContent(
                     author = author,
                     settings = settings,
                     volumeScroll = gallery == null,
+                    findOpen = findOpen,
+                    onFindOpenChange = { findOpen = it },
                     onOpenArticle = onOpenArticle,
                     onOpenProfile = onOpenProfile,
                     onOpenHighlightSettings = onOpenHighlightSettings,
@@ -561,6 +579,8 @@ private fun ArticleBody(
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
     onArchive: () -> Unit,
+    findOpen: Boolean,
+    onFindOpenChange: (Boolean) -> Unit,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -608,10 +628,22 @@ private fun ArticleBody(
             ?.takeIf { it.isNotBlank() }
             ?: highlights.firstOrNull { it.id.equals(focusHighlightId, ignoreCase = true) }?.quote
     }
+    var findQuery by remember { mutableStateOf("") }
+    var findIndex by remember { mutableIntStateOf(0) }
+    var findJump by remember { mutableIntStateOf(0) }
+    val findHaystack = remember(content.title, content.body) {
+        listOfNotNull(content.title?.takeIf { it.isNotBlank() }, content.body)
+            .joinToString("\n\n")
+    }
+    val findHits = remember(findHaystack, findQuery) {
+        ArticleFind.hits(findHaystack, findQuery)
+    }
     val painted = HighlightJump.withFocus(
         highlights.visibleFor(settings),
         focusHighlightId,
         focusQuote,
+    ) + listOfNotNull(
+        ArticleFind.painted(findQuery).takeIf { findOpen },
     )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
@@ -660,6 +692,24 @@ private fun ArticleBody(
     var pendingJumpId by remember {
         mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
     }
+    LaunchedEffect(findOpen) {
+        if (findOpen) paneOpen = false
+        else {
+            findQuery = ""
+            findIndex = 0
+        }
+    }
+    LaunchedEffect(findJump, findQuery, painted, findOpen) {
+        if (!findOpen || findQuery.isBlank()) return@LaunchedEffect
+        val stop = withTimeoutOrNull(10_000L) {
+            snapshotFlow {
+                if (scrollViewport?.isAttached != true) return@snapshotFlow null
+                navigator.nthStop(ArticleFind.HIGHLIGHT_ID, findIndex)
+            }.filterNotNull().first()
+        } ?: return@LaunchedEffect
+        jumpState.value(navigator.select(stop))
+        selectedId = ArticleFind.HIGHLIGHT_ID
+    }
     LaunchedEffect(pendingJumpId, painted, highlightsLoaded) {
         val id = pendingJumpId ?: return@LaunchedEffect
         if (painted.none { it.id.equals(id, ignoreCase = true) } && !highlightsLoaded) {
@@ -698,8 +748,20 @@ private fun ArticleBody(
         { stop ->
             jumpState.value(navigator.select(stop))
             selectedId = stop.highlightId
+            onFindOpenChange(false)
             paneOpen = true
         }
+    }
+    fun stepFind(delta: Int) {
+        val count = findHits.size
+        if (count <= 0) return
+        findIndex = Math.floorMod(findIndex + delta, count)
+        findJump++
+    }
+    fun goFind(index: Int) {
+        if (index !in findHits.indices) return
+        findIndex = index
+        findJump++
     }
     val highlightedComponents = remember(
         mineColor,
@@ -884,7 +946,10 @@ private fun ArticleBody(
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
                     published = published,
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
-                    onHighlightsClick = { paneOpen = true },
+                    onHighlightsClick = {
+                        onFindOpenChange(false)
+                        paneOpen = true
+                    },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
                     Markdown(
@@ -991,6 +1056,22 @@ private fun ArticleBody(
             onToggleMarks = {
                 SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
             },
+        )
+        FindPane(
+            open = findOpen,
+            query = findQuery,
+            hits = findHits,
+            activeIndex = findIndex,
+            matchCount = findHits.size,
+            onQueryChange = { next ->
+                findQuery = next
+                findIndex = 0
+                findJump++
+            },
+            onDismiss = { onFindOpenChange(false) },
+            onPrevious = { stepFind(-1) },
+            onNext = { stepFind(1) },
+            onSelect = { goFind(it) },
         )
     }
 }
