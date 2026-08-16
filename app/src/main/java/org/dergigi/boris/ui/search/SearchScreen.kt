@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,10 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -50,12 +45,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.LocalSearch
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.feed.FeedLevel
@@ -198,7 +193,16 @@ fun SearchScreenContent(
                                         onOpenProfile = { onOpenProfile(hit.authorHex) },
                                     )
                                 }
-                                else -> {
+                                is LocalSearch.Hit.Person -> {
+                                    AuthorCard(
+                                        displayName = hit.title,
+                                        about = hit.subtitle,
+                                        pictureUrl = hit.pictureUrl,
+                                        onClick = { onOpenHit(hit) },
+                                    )
+                                }
+                                is LocalSearch.Hit.Article,
+                                is LocalSearch.Hit.Bookmark -> {
                                     SearchResultRow(
                                         hit = hit,
                                         onClick = { onOpenHit(hit) },
@@ -261,13 +265,11 @@ private fun SearchResultRow(
     onClick: () -> Unit,
 ) {
     val (kindLabel, icon) = when (hit) {
-        is LocalSearch.Hit.Highlight -> error("highlights use SearchHighlightCard")
         is LocalSearch.Hit.Article ->
             stringResource(R.string.search_kind_article) to Icons.AutoMirrored.Outlined.MenuBook
         is LocalSearch.Hit.Bookmark ->
             stringResource(R.string.search_kind_bookmark) to Icons.Outlined.Bookmark
-        is LocalSearch.Hit.Person ->
-            stringResource(R.string.search_kind_person) to Icons.Outlined.Person
+        else -> error("unsupported search row: ${hit::class.simpleName}")
     }
     Row(
         modifier = Modifier
@@ -276,7 +278,14 @@ private fun SearchResultRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        SearchLeading(hit = hit, fallback = icon)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .size(40.dp)
+                .padding(8.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -306,32 +315,5 @@ private fun SearchResultRow(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun SearchLeading(
-    hit: LocalSearch.Hit,
-    fallback: ImageVector,
-) {
-    val picture = (hit as? LocalSearch.Hit.Person)?.pictureUrl
-    if (!picture.isNullOrBlank()) {
-        AsyncImage(
-            model = picture,
-            contentDescription = null,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop,
-        )
-    } else {
-        Icon(
-            imageVector = fallback,
-            contentDescription = null,
-            modifier = Modifier
-                .size(40.dp)
-                .padding(8.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
