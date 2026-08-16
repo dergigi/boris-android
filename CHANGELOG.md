@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-08-17
+
+### Added
+
+- Support Boris screen: zap supporters with avatars and sats totals, reachable via the orange heart on the You tab
+
+### Changed
+
+- About Boris: Start reading is the only primary button on the last page
+
 ## [0.54.0] - 2026-08-17
 
 ### Added
