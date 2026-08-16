@@ -18,6 +18,7 @@ internal sealed class AboutPage {
 internal object AboutLinks {
     const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqrtmsxpl5yfmkwn9uvnfnqylqduhr0x"
     const val GITHUB = "https://github.com/dergigi/boris-android"
+    const val VALUE = "https://dergigi.com/value/"
     val nostrUrl = "https://njump.to/$NPUB"
 }
 
@@ -65,7 +66,7 @@ internal val ABOUT_FEATURES = listOf(
     AboutFeature(
         asset = "free-forever.svg",
         title = R.string.about_free_title,
-        paragraphs = listOf(R.string.about_free_1, R.string.about_free_2),
+        paragraphs = listOf(R.string.about_free_1, R.string.about_free_2_before),
     ),
 )
 

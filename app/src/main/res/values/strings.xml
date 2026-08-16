@@ -73,7 +73,9 @@
     <string name="about_peace_of_mind_2">You will never be locked out, no matter what. You are in full control of your data. All the highlights, bookmarks, and reading metadata you create will always be available to you, if you care enough to keep them around.</string>
     <string name="about_free_title">Free as in Freedom</string>
     <string name="about_free_1">Boris is free and open-source and always will be. You can do with it what you want. Fork it, modify it, contribute to it, or just use it as is.</string>
-    <string name="about_free_2">Boris is free as in beer too, but you can send me sats if you appreciate my work.</string>
+    <string name="about_free_2_before">Boris is free as in beer too, but you can </string>
+    <string name="about_free_2_link">send me sats</string>
+    <string name="about_free_2_after"> if you appreciate my work.</string>
     <string name="about_cta_title">Come say hi</string>
     <string name="about_cta_body">Connect on Nostr, or open GitHub to report a bug or suggest a feature.</string>
     <string name="about_cta_nostr">Connect on Nostr</string>

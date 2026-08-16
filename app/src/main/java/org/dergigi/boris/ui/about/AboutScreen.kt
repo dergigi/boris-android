@@ -48,9 +48,15 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -167,17 +173,51 @@ private fun FeaturePage(feature: AboutFeature) {
         )
         Spacer(Modifier.height(12.dp))
         feature.paragraphs.forEach { paragraph ->
-            Text(
-                text = stringResource(paragraph),
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    textAlign = TextAlign.Center,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
+            if (paragraph == R.string.about_free_2_before) {
+                FreeAsInBeerParagraph(modifier = Modifier.padding(bottom = 10.dp))
+            } else {
+                Text(
+                    text = stringResource(paragraph),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = FontFamily.SansSerif,
+                        textAlign = TextAlign.Center,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun FreeAsInBeerParagraph(modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    val linkStyle = TextLinkStyles(
+        style = SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+        ),
+    )
+    Text(
+        text = buildAnnotatedString {
+            append(stringResource(R.string.about_free_2_before))
+            withLink(
+                LinkAnnotation.Clickable(tag = "sats", styles = linkStyle) {
+                    uriHandler.openUri(AboutLinks.VALUE)
+                },
+            ) {
+                append(stringResource(R.string.about_free_2_link))
+            }
+            append(stringResource(R.string.about_free_2_after))
+        },
+        style = MaterialTheme.typography.bodyLarge.copy(
+            fontFamily = FontFamily.SansSerif,
+            textAlign = TextAlign.Center,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 @Composable
