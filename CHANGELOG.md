@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-08-16
+
+### Added
+
+- Splash screen with the new icon while the event cache loads online; skipped offline so the app opens immediately
+
+### Changed
+
+- App icon updated to the highlighter mark
+
 ## [0.45.1] - 2026-08-16
 
 ### Changed
