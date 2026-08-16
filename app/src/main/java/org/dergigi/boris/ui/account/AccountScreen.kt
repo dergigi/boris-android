@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -113,26 +114,23 @@ fun AccountScreen(
             TopAppBar(
                 title = {},
                 actions = {
-                    TopBarMoreMenu(
-                        items = buildList {
-                            add(
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = stringResource(R.string.settings_title),
+                        )
+                    }
+                    if (loggedIn) {
+                        TopBarMoreMenu(
+                            items = listOf(
                                 TopBarMenuItem(
-                                    label = stringResource(R.string.settings_title),
-                                    icon = Icons.Outlined.Settings,
-                                    onClick = onOpenSettings,
+                                    label = stringResource(R.string.auth_sign_out),
+                                    icon = Icons.AutoMirrored.Outlined.Logout,
+                                    onClick = { confirmSignOut = true },
                                 ),
-                            )
-                            if (loggedIn) {
-                                add(
-                                    TopBarMenuItem(
-                                        label = stringResource(R.string.auth_sign_out),
-                                        icon = Icons.AutoMirrored.Outlined.Logout,
-                                        onClick = { confirmSignOut = true },
-                                    ),
-                                )
-                            }
-                        },
-                    )
+                            ),
+                        )
+                    }
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(
