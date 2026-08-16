@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-08-16
+
+### Added
+
+- Home can hide articles you already archived, from the top-bar toggle or a matching settings switch
+
+### Fixed
+
+- Clicking a highlight from a profile or the feed waits for the article and marks, then scrolls to that quote
+- Profile highlights use the friends or nostrverse color based on your relationship to that person
+
 ## [0.31.0] - 2026-08-16
 
 ### Added
@@ -446,7 +457,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.31.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.32.0...HEAD
+[0.32.0]: https://github.com/dergigi/boris-android/releases/tag/v0.32.0
 [0.31.0]: https://github.com/dergigi/boris-android/releases/tag/v0.31.0
 [0.30.2]: https://github.com/dergigi/boris-android/releases/tag/v0.30.2
 [0.30.1]: https://github.com/dergigi/boris-android/releases/tag/v0.30.1
