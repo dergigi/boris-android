@@ -61,6 +61,12 @@ fun ZapSplitsSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        SettingCheckbox(
+            label = stringResource(R.string.settings_zap_enabled),
+            checked = settings.zapSplitsEnabled,
+            onCheckedChange = { onUpdate(settings.withBoolean("zapSplitsEnabled", it)) },
+        )
+        if (!settings.zapSplitsEnabled) return@Column
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = stringResource(R.string.settings_zap_presets),

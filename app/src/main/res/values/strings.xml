@@ -201,6 +201,7 @@
     <string name="settings_airplane_summary">Offline reading, local relays</string>
     <string name="settings_zap_splits">Zap Splits</string>
     <string name="settings_zap_summary">Shares for you, authors, and Boris</string>
+    <string name="settings_zap_enabled">Add zap splits to highlights</string>
     <string name="settings_zap_presets">Presets</string>
     <string name="settings_zap_preset_default">Default</string>
     <string name="settings_zap_preset_generous">Generous</string>

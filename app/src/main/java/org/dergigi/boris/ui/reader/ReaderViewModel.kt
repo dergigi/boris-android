@@ -256,6 +256,7 @@ class ReaderViewModel(
         // Web content has no author pubkey, so the author share is skipped there
         // and the split covers only the highlighter and Boris.
         val settings = SettingsSync.settings.value
+        if (!settings.zapSplitsEnabled) return emptyList()
         return ZapSplits.tags(
             highlighterPubkey = highlighterPubkey,
             sourceAuthorPubkey = content.authorPubkey,

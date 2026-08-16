@@ -50,6 +50,7 @@ class UserSettings internal constructor(
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)
+    val zapSplitsEnabled: Boolean get() = bool("zapSplitsEnabled", true)
     val zapSplitHighlighterWeight: Double get() = double("zapSplitHighlighterWeight", 50.0)
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
