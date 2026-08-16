@@ -32,6 +32,7 @@ import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.NipB0
+import org.dergigi.boris.nostr.OutboxRouter
 import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
@@ -988,10 +989,13 @@ class ReaderViewModel(
                 }
                 val cached = cachedHighlightsFor(content)
                 if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex, friends)
-                val relays = buildList {
-                    addAll(RelayList.FALLBACK)
-                    if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
-                }.distinct()
+                val relays = OutboxRouter.authorTargets(
+                    pubkeyHex = content.authorPubkey?.trim().orEmpty(),
+                    base = buildList {
+                        addAll(RelayList.FALLBACK)
+                        if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
+                    },
+                ).distinct()
                 val contacts = if (session != null) {
                     RelayQuery.fetchContactPubkeys(session.pubkeyHex)
                 } else {

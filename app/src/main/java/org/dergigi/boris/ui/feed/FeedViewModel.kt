@@ -287,14 +287,14 @@ class FeedViewModel(
                 if (pubkeyHex == null || friends.isEmpty()) {
                     emptyList()
                 } else {
-                    RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, authors = friends)
+                    RelayQuery.fetchRecentHighlightsByAuthors(friends, relays, HIGHLIGHT_LIMIT)
                 }
             }
             val writings = async {
                 if (pubkeyHex == null || friends.isEmpty()) {
                     emptyList()
                 } else {
-                    RelayQuery.fetchRecentWritings(relays, WRITING_LIMIT, authors = friends)
+                    RelayQuery.fetchRecentWritingsByAuthors(friends, relays, WRITING_LIMIT)
                 }
             }
             highlights.await() to writings.await()

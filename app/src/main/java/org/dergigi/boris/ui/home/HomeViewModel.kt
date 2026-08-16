@@ -188,7 +188,7 @@ class HomeViewModel(
     private fun loadFriends(relays: List<String>, friendPubkeys: Set<String>): List<HighlightedArticle> {
         if (friendPubkeys.isEmpty()) return emptyList()
         return HighlightedArticles.fromEvents(
-            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, authors = friendPubkeys),
+            RelayQuery.fetchRecentHighlightsByAuthors(friendPubkeys, relays, HIGHLIGHT_LIMIT),
             ARTICLE_LIMIT,
         )
     }

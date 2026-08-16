@@ -366,6 +366,58 @@ object RelayQuery {
             .take(limit)
     }
 
+    /**
+     * Outbox-routed variant of [fetchRecentHighlights]: fetches each author's
+     * highlights from their write relays, with [fallbackRelays] as safety net.
+     */
+    fun fetchRecentHighlightsByAuthors(
+        authors: Collection<String>,
+        fallbackRelays: List<String>,
+        limit: Int = 80,
+    ): List<Nip01Event> {
+        fetchRouted(
+            authors = authors,
+            fallbackRelays = fallbackRelays,
+            filterFor = { chunk -> highlightFilter(limit, chunk) },
+            accept = { it.kind == Nip01Event.KIND_HIGHLIGHT && it.content.isNotBlank() },
+        )
+        return cachedRecentHighlights(limit, authors = authors)
+    }
+
+    /** Outbox-routed variant of [fetchRecentWritings]. */
+    fun fetchRecentWritingsByAuthors(
+        authors: Collection<String>,
+        fallbackRelays: List<String>,
+        limit: Int = 80,
+    ): List<Nip01Event> {
+        fetchRouted(
+            authors = authors,
+            fallbackRelays = fallbackRelays,
+            filterFor = { chunk -> writingFilter(limit, chunk) },
+            accept = { it.kind == Nip01Event.KIND_LONG_FORM && !Nip23.identifier(it).isNullOrBlank() },
+        )
+        return cachedRecentWritings(limit, authors = authors)
+    }
+
+    private fun fetchRouted(
+        authors: Collection<String>,
+        fallbackRelays: List<String>,
+        filterFor: (List<String>) -> JSONObject,
+        accept: (Nip01Event) -> Boolean,
+    ) {
+        val keys = authorKeys(null, authors)
+        if (keys.isEmpty()) return
+        RelayListRepository.prefetch(keys)
+        val routes = OutboxRouter.route(keys, reachableRelays(relayUrls(fallbackRelays)))
+        val targets = routes.mapValues { (_, subset) ->
+            subset.toList().chunked(AUTHOR_CHUNK).map(filterFor)
+        }
+        val allowed = keys.toSet()
+        val remote = queryPerRelay(targets)
+            .filter { event -> accept(event) && event.pubkey.lowercase() in allowed }
+        EventCache.putAll(remote)
+    }
+
     fun fetchArticle(pointer: NaddrPointer): Nip01Event? {
         val cached = EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
         if (cached != null) {
@@ -379,10 +431,13 @@ object RelayQuery {
 
     private fun fetchArticleRemote(pointer: NaddrPointer): Nip01Event? {
         val relays = relayUrls(
-            buildList {
-                addAll(pointer.relays)
-                addAll(RelayList.FALLBACK)
-            },
+            OutboxRouter.authorTargets(
+                pubkeyHex = pointer.pubkey,
+                base = buildList {
+                    addAll(pointer.relays)
+                    addAll(RelayList.FALLBACK)
+                },
+            ),
         )
         val filter = JSONObject()
             .put("kinds", JSONArray().put(pointer.kind))
@@ -638,14 +693,26 @@ object RelayQuery {
         return PublishResult(remoteOk = remoteOk.get(), localOk = localOk.get())
     }
 
-    private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> {
-        val targets = reachableRelays(urls)
-        if (targets.isEmpty()) return emptyList()
+    internal fun rawQuery(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
+        query(urls, filters)
+
+    private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
+        queryPerRelay(urls.associateWith { filters })
+
+    /** Like [query], but each relay receives its own filter set. */
+    private fun queryPerRelay(targets: Map<String, List<JSONObject>>): List<Nip01Event> {
+        val reachable = reachableRelays(targets.keys.toList())
+        if (reachable.isEmpty()) return emptyList()
         val sockets = mutableListOf<RelaySocket>()
         val events = ConcurrentHashMap<String, Nip01Event>()
-        val eose = CountDownLatch(targets.size)
+        val eose = CountDownLatch(reachable.size)
         try {
-            for (url in targets) {
+            for (url in reachable) {
+                val filters = targets[url].orEmpty()
+                if (filters.isEmpty()) {
+                    eose.countDown()
+                    continue
+                }
                 val socket = RelaySocket(url, client)
                 sockets.add(socket)
                 val eoseSignaled = AtomicBoolean(false)

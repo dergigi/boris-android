@@ -108,9 +108,12 @@ class YouViewModel(
             }
             try {
                 val loaded = withContext(Dispatchers.IO) {
+                    // Their content lives on their write relays (NIP-65 outbox).
+                    val list = RelayQuery.fetchRelayList(key)
                     val relays = buildList {
                         addAll(RelayList.FALLBACK)
-                        addAll(RelayQuery.fetchRelayList(key).read)
+                        addAll(list.write)
+                        addAll(list.read)
                     }.distinct()
                     coroutineScope {
                         val highlights = async {
