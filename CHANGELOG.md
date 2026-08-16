@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-08-16
+
+### Changed
+
+- Settings look like the stock Android settings app: grouped category rows with colored icon tiles, each opening its own sub-screen
+
+### Added
+
+- Reader settings in the reader's 3-dot menu jumps straight to the reading options
+
 ## [0.34.1] - 2026-08-16
 
 ### Fixed
