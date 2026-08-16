@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-08-16
+
+### Added
+
+- 3-dot menu on highlight cards in the feed, You tab, and profiles: go to quote, view profile, open with njump, open with a native nostr app
+- Delete your own highlights via NIP-09 deletion requests, signed with Amber or your bunker
+
 ## [0.40.0] - 2026-08-16
 
 ### Added
