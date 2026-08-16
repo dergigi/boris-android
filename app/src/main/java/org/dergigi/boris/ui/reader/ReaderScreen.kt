@@ -30,6 +30,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
@@ -151,6 +153,7 @@ fun ReaderScreen(
     val highlightsLoaded by viewModel.highlightsLoaded.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val canSave by viewModel.canSave.collectAsStateWithLifecycle()
+    val inLibrary by viewModel.inLibrary.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
     val author by viewModel.author.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
@@ -181,6 +184,7 @@ fun ReaderScreen(
         focusHighlightId = viewModel.focusHighlightId,
         loggedIn = loggedIn,
         canSave = canSave,
+        inLibrary = inLibrary,
         archived = archived,
         author = author,
         settings = settings,
@@ -206,24 +210,39 @@ fun ReaderScreen(
 @Composable
 private fun SaveLibraryButton(
     choosePrivacy: Boolean,
+    inLibrary: Boolean,
+    archived: Boolean,
+    canSave: Boolean,
     onSave: (privateBookmark: Boolean) -> Unit,
 ) {
+    val icon = when {
+        archived -> Icons.Filled.CheckCircle
+        inLibrary -> Icons.Filled.Bookmark
+        else -> Icons.Outlined.AddCircle
+    }
+    val description = stringResource(
+        when {
+            archived -> R.string.reader_archived
+            inLibrary -> R.string.reader_already_saved
+            else -> R.string.reader_save_library
+        },
+    )
+    if (!canSave || archived) {
+        IconButton(onClick = {}) {
+            Icon(icon, contentDescription = description)
+        }
+        return
+    }
     if (!choosePrivacy) {
         IconButton(onClick = { onSave(true) }) {
-            Icon(
-                Icons.Outlined.AddCircle,
-                contentDescription = stringResource(R.string.reader_save_library),
-            )
+            Icon(icon, contentDescription = description)
         }
         return
     }
     var menuOpen by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { menuOpen = true }) {
-            Icon(
-                Icons.Outlined.AddCircle,
-                contentDescription = stringResource(R.string.reader_save_library),
-            )
+            Icon(icon, contentDescription = description)
         }
         DropdownMenu(
             expanded = menuOpen,
@@ -264,6 +283,7 @@ fun ReaderScreenContent(
     focusHighlightId: String,
     loggedIn: Boolean,
     canSave: Boolean,
+    inLibrary: Boolean,
     archived: Boolean,
     author: Profile?,
     settings: UserSettings,
@@ -331,11 +351,12 @@ fun ReaderScreenContent(
                     }
                 },
                 actions = {
-                    if (canSave) {
+                    if (loggedIn && state is ReaderUiState.Ready) {
                         SaveLibraryButton(
-                            choosePrivacy = (state as? ReaderUiState.Ready)
-                                ?.content
-                                ?.let { !LibrarySave.isWeb(it) } == true,
+                            choosePrivacy = !LibrarySave.isWeb(state.content),
+                            inLibrary = inLibrary,
+                            archived = archived,
+                            canSave = canSave,
                             onSave = onSave,
                         )
                     }

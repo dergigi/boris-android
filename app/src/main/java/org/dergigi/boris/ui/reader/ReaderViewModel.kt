@@ -82,6 +82,9 @@ class ReaderViewModel(
     private val _canSave = MutableStateFlow(false)
     val canSave: StateFlow<Boolean> = _canSave.asStateFlow()
 
+    private val _inLibrary = MutableStateFlow(false)
+    val inLibrary: StateFlow<Boolean> = _inLibrary.asStateFlow()
+
     private val _archived = MutableStateFlow(false)
     val archived: StateFlow<Boolean> = _archived.asStateFlow()
 
@@ -100,7 +103,6 @@ class ReaderViewModel(
     private var authorJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
-    private var inLibrary = false
     private var saving = false
     private var archiving = false
     private var pendingArchive = false
@@ -143,7 +145,7 @@ class ReaderViewModel(
             _highlights.value = emptyList()
             _highlightCount.value = 0
             _highlightsLoaded.value = true
-            inLibrary = false
+            _inLibrary.value = false
             resetArchive()
             resetAuthor()
             publishSaveState()
@@ -154,7 +156,7 @@ class ReaderViewModel(
             _highlights.value = emptyList()
             _highlightCount.value = 0
             _highlightsLoaded.value = false
-            inLibrary = false
+            _inLibrary.value = false
             resetArchive()
             resetAuthor()
             publishSaveState()
@@ -260,7 +262,7 @@ class ReaderViewModel(
 
     fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         val app = getApplication<Application>()
-        if (saving || inLibrary) return null
+        if (saving || _inLibrary.value) return null
         val session = SessionStore.load(app) ?: return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         saving = true
@@ -361,7 +363,7 @@ class ReaderViewModel(
     private fun onSignedLibrary(session: Session, event: Nip01Event) {
         viewModelScope.launch(Dispatchers.IO) {
             publish(session, event)
-            inLibrary = true
+            _inLibrary.value = true
             saving = false
             _message.value = getApplication<Application>().getString(R.string.reader_saved)
             publishSaveState()
@@ -622,7 +624,7 @@ class ReaderViewModel(
     ) {
         val tags = list?.tags.orEmpty()
         if (Nip51.containsTag(tags, newTag)) {
-            inLibrary = true
+            _inLibrary.value = true
             saving = false
             _message.value = getApplication<Application>().getString(R.string.reader_already_saved)
             publishSaveState()
@@ -643,7 +645,7 @@ class ReaderViewModel(
             return
         }
         if (Nip51.containsTag(tags, newTag)) {
-            inLibrary = true
+            _inLibrary.value = true
             saving = false
             _message.value = getApplication<Application>().getString(R.string.reader_already_saved)
             publishSaveState()
@@ -742,7 +744,7 @@ class ReaderViewModel(
                 return
             }
             if (Nip51.containsTag(hidden, newTag)) {
-                inLibrary = true
+                _inLibrary.value = true
                 saving = false
                 _message.value = app.getString(R.string.reader_already_saved)
                 publishSaveState()
@@ -782,7 +784,7 @@ class ReaderViewModel(
         val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
         val tags = list?.tags.orEmpty()
         if (Nip51.containsTag(tags, newTag)) {
-            inLibrary = true
+            _inLibrary.value = true
             saving = false
             _message.value = app.getString(R.string.reader_already_saved)
             publishSaveState()
@@ -801,7 +803,7 @@ class ReaderViewModel(
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
         if (session == null) {
-            inLibrary = false
+            _inLibrary.value = false
             publishSaveState()
             return
         }
@@ -813,9 +815,9 @@ class ReaderViewModel(
                 }.distinct()
                 val list = RelayQuery.fetchBookmarkList(session.pubkeyHex, relays)
                 val web = RelayQuery.fetchWebBookmarks(session.pubkeyHex, relays)
-                inLibrary = LibrarySave.isSaved(content, list, web)
+                _inLibrary.value = LibrarySave.isSaved(content, list, web)
             } catch (_: Exception) {
-                inLibrary = false
+                _inLibrary.value = false
             }
             publishSaveState()
         }
@@ -854,7 +856,7 @@ class ReaderViewModel(
 
     private fun publishSaveState() {
         _canSave.value = _loggedIn.value &&
-            !inLibrary &&
+            !_inLibrary.value &&
             !saving &&
             _state.value is ReaderUiState.Ready
     }

@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Archive uses the same books icon as the webapp, on Home, in the reader, and on the Library shelf
+- The reader + becomes a bookmark when the article is already saved, and a circled check when it is archived
 
 ## [0.33.1] - 2026-08-16
 
