@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -502,15 +501,23 @@ private fun ArticleBody(
             }
         }
     }
-    val imageTransformer = ClickableCoilImageTransformer(
-        fullWidth = settings.fullWidthImages,
-        maxHeight = (LocalConfiguration.current.screenHeightDp * 0.7f).dp,
-    ) { link ->
-        val opened = UrlExtractor.articleUrl(link, content.url) ?: return@ClickableCoilImageTransformer
-        val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
-        if (opened !in urls) urls.add(0, opened)
-        onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
+    val fullWidthImages = settings.fullWidthImages
+    val maxImageHeight = (LocalConfiguration.current.screenHeightDp * 0.7f).dp
+    val onImageClick = remember(content.url, content.body, onOpenGallery) {
+        { link: String ->
+            val opened = UrlExtractor.articleUrl(link, content.url)
+            if (opened != null) {
+                val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
+                if (opened !in urls) urls.add(0, opened)
+                onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
+            }
+        }
     }
+    val imageTransformer = ClickableCoilImageTransformer(
+        fullWidth = fullWidthImages,
+        maxHeight = maxImageHeight,
+        onImageClick = onImageClick,
+    )
     val focusQuote = remember(focusHighlightId, highlights) {
         ReaderFocus.peek()
             ?.takeIf { it.highlightId.equals(focusHighlightId, ignoreCase = true) }
@@ -590,10 +597,45 @@ private fun ArticleBody(
             paneOpen = true
         }
     }
-    val highlightedComponents = remember(mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) {
+    val highlightedComponents = remember(
+        mineColor,
+        friendsColor,
+        otherColor,
+        underline,
+        selection,
+        navigator,
+        openFromStop,
+        content.url,
+        fullWidthImages,
+        maxImageHeight,
+        onImageClick,
+    ) {
         markdownComponents(
             text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            paragraph = { HighlightedMarkdownNode(it, it.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            paragraph = { model ->
+                val imageUrl = standaloneMarkdownImageUrl(model.content, model.node)
+                if (imageUrl != null) {
+                    ArticleImage(
+                        url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
+                        fullWidth = fullWidthImages,
+                        maxHeight = maxImageHeight,
+                        onClick = onImageClick,
+                    )
+                } else {
+                    HighlightedMarkdownNode(model, model.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop)
+                }
+            },
+            image = { model ->
+                val imageUrl = markdownImageDestination(model.content, model.node)
+                if (imageUrl != null) {
+                    ArticleImage(
+                        url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
+                        fullWidth = fullWidthImages,
+                        maxHeight = maxImageHeight,
+                        onClick = onImageClick,
+                    )
+                }
+            },
             heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
             heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
             heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
@@ -1135,16 +1177,12 @@ private class ClickableCoilImageTransformer(
     @Composable
     override fun transform(link: String): ImageData {
         val data = Coil3ImageTransformerImpl.transform(link)
-        val sized = if (fullWidth) {
-            Modifier.fillMaxWidth()
-        } else {
-            Modifier.heightIn(max = maxHeight)
-        }
         return data.copy(
-            modifier = sized
+            modifier = Modifier
+                .fillMaxSize()
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { onImageClick(link) },
-            contentScale = if (fullWidth) ContentScale.FillWidth else ContentScale.Fit,
+            contentScale = ContentScale.Fit,
             alignment = Alignment.Center,
         )
     }
@@ -1161,7 +1199,8 @@ private class ClickableCoilImageTransformer(
             maxHeightPx = with(density) { maxHeight.toPx() },
         )
         return PlaceholderConfig(
-            with(density) { Size(box.width.toSp().value, box.height.toSp().value) },
+            size = with(density) { Size(box.width.toSp().value, box.height.toSp().value) },
+            animate = false,
         )
     }
 
