@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +50,7 @@ import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
+import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.you.YouHighlights
 import org.dergigi.boris.ui.you.YouLoggedOut
 
@@ -56,6 +58,7 @@ import org.dergigi.boris.ui.you.YouLoggedOut
 @Composable
 fun AccountScreen(
     onOpenSettings: () -> Unit,
+    onOpenSupport: () -> Unit = {},
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
         onOpenArticle(url)
@@ -114,6 +117,13 @@ fun AccountScreen(
             TopAppBar(
                 title = {},
                 actions = {
+                    IconButton(onClick = onOpenSupport) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = stringResource(R.string.support_title),
+                            tint = HighlightFriends,
+                        )
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,

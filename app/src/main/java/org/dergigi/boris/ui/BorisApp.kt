@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
+import org.dergigi.boris.ui.support.SupportScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
@@ -47,6 +48,7 @@ object Routes {
     const val SETTINGS_CATEGORY_ARG = "category"
     const val SETTINGS = "settings?category={$SETTINGS_CATEGORY_ARG}"
     const val ABOUT = "about"
+    const val SUPPORT = "support"
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}&highlight={${ReaderViewModel.HIGHLIGHT_ARG}}"
@@ -191,6 +193,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenSupport = {
+                            navController.navigate(Routes.SUPPORT) {
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
                         onOpenHighlight = { url, id, quote ->
                             navController.navigate(Routes.reader(url, id, quote))
@@ -217,6 +224,16 @@ fun BorisApp(
                 composable(Routes.ABOUT) {
                     AboutScreen(
                         onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(Routes.SUPPORT) {
+                    SupportScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
+                            }
+                        },
                     )
                 }
                 composable(

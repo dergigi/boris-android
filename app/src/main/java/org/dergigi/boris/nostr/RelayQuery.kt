@@ -307,6 +307,17 @@ object RelayQuery {
             .filter { Lookmarks.isLook(it) }
             .sortedByDescending { it.createdAt }
 
+    /** Zap receipts (kind 9735) tagging [pubkeyHex], from global read relays plus zap relays. */
+    fun fetchZapReceipts(pubkeyHex: String, limit: Int = 1000): List<Nip01Event> {
+        val urls = relayUrls((globalReadRelays() + ZAP_RELAYS).distinct())
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_ZAP_RECEIPT))
+            .put("#p", JSONArray().put(pubkeyHex.lowercase()))
+            .put("limit", limit)
+        return query(urls, listOf(filter))
+    }
+
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {
@@ -791,6 +802,8 @@ object RelayQuery {
     private val refreshPool = Executors.newFixedThreadPool(2) { runnable ->
         Thread(runnable, "relay-refresh").apply { isDaemon = true }
     }
+
+    private val ZAP_RELAYS = listOf("wss://relay.getalby.com/v1")
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
