@@ -153,6 +153,11 @@ fun BorisApp(
                                 navController.navigate(Routes.profile(npub))
                             }
                         },
+                        onOpenRssSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Feed)) {
+                                launchSingleTop = true
+                            }
+                        },
                     )
                 }
                 composable(Routes.SEARCH) {

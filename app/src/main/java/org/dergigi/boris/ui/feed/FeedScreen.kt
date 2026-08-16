@@ -83,6 +83,7 @@ fun FeedScreen(
         onOpenArticle(url)
     },
     onOpenProfile: (String) -> Unit = {},
+    onOpenRssSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = viewModel(),
     menuViewModel: HighlightMenuViewModel = viewModel(),
@@ -134,6 +135,7 @@ fun FeedScreen(
         onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
+        onOpenRssSettings = onOpenRssSettings,
         deletedIds = deletedIds,
         menuFor = { item ->
             HighlightCardMenu(
@@ -173,6 +175,7 @@ fun FeedScreenContent(
     onSelectTab: (ContentTab) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    onOpenRssSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     deletedIds: Set<String> = emptySet(),
     menuFor: (FeedItem) -> HighlightCardMenu? = { null },
@@ -251,7 +254,10 @@ fun FeedScreenContent(
                                 emptyText = stringResource(
                                     if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
                                 ),
-                                onRefresh = onRefresh,
+                                emptyActionLabel = stringResource(
+                                    if (hasRssFeeds) R.string.feed_retry else R.string.feed_rss_open_settings,
+                                ),
+                                onEmptyAction = if (hasRssFeeds) onRefresh else onOpenRssSettings,
                                 onOpenArticle = onOpenArticle,
                             )
                         }
@@ -266,14 +272,14 @@ fun FeedScreenContent(
                         FeedUiState.Empty -> {
                             StatusMessage(
                                 text = emptyMessage(tab, filtered = false),
-                                onRetry = onRefresh,
+                                onAction = onRefresh,
                                 modifier = Modifier.align(Alignment.Center),
                             )
                         }
                         FeedUiState.Error -> {
                             StatusMessage(
                                 text = stringResource(R.string.feed_error),
-                                onRetry = onRefresh,
+                                onAction = onRefresh,
                                 modifier = Modifier.align(Alignment.Center),
                             )
                         }
@@ -336,7 +342,7 @@ private fun FeedHighlightList(
         Box(modifier = Modifier.fillMaxSize()) {
             StatusMessage(
                 text = emptyText,
-                onRetry = onRefresh,
+                onAction = onRefresh,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -382,7 +388,7 @@ private fun FeedWritingList(
         Box(modifier = Modifier.fillMaxSize()) {
             StatusMessage(
                 text = emptyText,
-                onRetry = onRefresh,
+                onAction = onRefresh,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -411,14 +417,16 @@ private fun FeedWritingList(
 private fun FeedRssList(
     items: List<RssItem>,
     emptyText: String,
-    onRefresh: () -> Unit,
+    emptyActionLabel: String,
+    onEmptyAction: () -> Unit,
     onOpenArticle: (String) -> Unit,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
             StatusMessage(
                 text = emptyText,
-                onRetry = onRefresh,
+                actionLabel = emptyActionLabel,
+                onAction = onEmptyAction,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -609,8 +617,9 @@ private fun FeedArticleRow(
 @Composable
 private fun StatusMessage(
     text: String,
-    onRetry: () -> Unit,
+    onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    actionLabel: String = stringResource(R.string.feed_retry),
 ) {
     Column(
         modifier = modifier
@@ -625,10 +634,10 @@ private fun StatusMessage(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         TextButton(
-            onClick = onRetry,
+            onClick = onAction,
             shape = RoundedCornerShape(8.dp),
         ) {
-            Text(stringResource(R.string.feed_retry))
+            Text(actionLabel)
         }
     }
 }

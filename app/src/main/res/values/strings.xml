@@ -141,6 +141,7 @@
     <string name="feed_tab_rss">RSS</string>
     <string name="feed_rss_empty">No RSS items yet.</string>
     <string name="feed_rss_none_configured">Add RSS feeds in Settings to read them here.</string>
+    <string name="feed_rss_open_settings">Open settings</string>
     <string name="settings_rss_feeds">RSS feeds</string>
     <string name="settings_rss_url_hint">Feed URL</string>
     <string name="settings_rss_add">Add feed</string>
