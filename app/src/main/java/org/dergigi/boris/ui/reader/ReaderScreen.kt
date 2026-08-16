@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Language
@@ -80,6 +82,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -130,7 +133,6 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -761,8 +763,6 @@ private fun ArticleBody(
                 imageUrl = coverUrl,
                 title = content.title,
                 summary = overlaySummary,
-                author = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
-                    ?.let { Profile.displayName(it, author) },
                 published = published,
                 onClick = {
                     val urls = buildList {
@@ -846,7 +846,11 @@ private fun ArticleBody(
                     modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
                 )
             }
+                val authorPubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
                 ArticleMetaRow(
+                    authorName = authorPubkey?.let { Profile.displayName(it, author) },
+                    authorPicture = author?.picture,
+                    onAuthorClick = authorPubkey?.let { hex -> { onOpenProfile(hex) } },
                     domain = domain,
                     readingTime = readingTime,
                     highlightsLabel = highlightsLabel,
@@ -910,16 +914,6 @@ private fun ArticleBody(
                             onClick = onArchive,
                         )
                     }
-                }
-                val authorPubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
-                if (authorPubkey != null) {
-                    AuthorCard(
-                        displayName = Profile.displayName(authorPubkey, author),
-                        about = author?.about,
-                        pictureUrl = author?.picture,
-                        modifier = Modifier.padding(top = 32.dp),
-                        onClick = { onOpenProfile(authorPubkey) },
-                    )
                 }
             }
         }
@@ -1093,13 +1087,11 @@ private fun ArticleHero(
     imageUrl: String,
     title: String?,
     summary: String?,
-    author: String?,
     published: String?,
     onClick: () -> Unit,
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val height = (screenHeight * 0.42f).dp.coerceIn(240.dp, 420.dp)
-    val byline = listOfNotNull(author, published).joinToString(" · ").ifEmpty { null }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1138,13 +1130,13 @@ private fun ArticleHero(
                     ),
                     color = Color.White,
                     modifier = Modifier.padding(
-                        bottom = if (byline == null && summary.isNullOrBlank()) 0.dp else 8.dp,
+                        bottom = if (published == null && summary.isNullOrBlank()) 0.dp else 8.dp,
                     ),
                 )
             }
-            if (byline != null) {
+            if (published != null) {
                 Text(
-                    text = byline,
+                    text = published,
                     style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
                     color = Color.White.copy(alpha = 0.72f),
                     maxLines = 1,
@@ -1171,6 +1163,9 @@ private fun ArticleHero(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ArticleMetaRow(
+    authorName: String?,
+    authorPicture: String?,
+    onAuthorClick: (() -> Unit)?,
     domain: String?,
     readingTime: String?,
     highlightsLabel: String?,
@@ -1179,7 +1174,15 @@ private fun ArticleMetaRow(
     onDomainClick: (() -> Unit)? = null,
     onHighlightsClick: (() -> Unit)? = null,
 ) {
-    if (domain == null && readingTime == null && highlightsLabel == null && published == null) return
+    if (
+        authorName == null &&
+        domain == null &&
+        readingTime == null &&
+        highlightsLabel == null &&
+        published == null
+    ) {
+        return
+    }
     FlowRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -1187,6 +1190,13 @@ private fun ArticleMetaRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (authorName != null) {
+            AuthorMetaChip(
+                name = authorName,
+                pictureUrl = authorPicture,
+                onClick = onAuthorClick,
+            )
+        }
         if (domain != null) {
             MetaChip(text = domain, icon = Icons.Outlined.Language, onClick = onDomainClick)
         }
@@ -1204,6 +1214,45 @@ private fun ArticleMetaRow(
         if (published != null) {
             MetaChip(text = published, icon = Icons.Outlined.CalendarMonth)
         }
+    }
+}
+
+@Composable
+private fun AuthorMetaChip(
+    name: String,
+    pictureUrl: String?,
+    onClick: (() -> Unit)? = null,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    val fg = MaterialTheme.colorScheme.onSurfaceVariant
+    val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
+    Row(
+        modifier = Modifier
+            .clip(shape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        AsyncImage(
+            model = pictureUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            placeholder = fallback,
+            error = fallback,
+            fallback = fallback,
+            modifier = Modifier
+                .size(18.dp)
+                .clip(CircleShape),
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+            color = fg,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
