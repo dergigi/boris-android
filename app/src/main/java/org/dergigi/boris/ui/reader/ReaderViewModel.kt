@@ -250,17 +250,17 @@ class ReaderViewModel(
         }
     }
 
-    fun saveToLibrary(): Intent? {
+    fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         val app = getApplication<Application>()
         if (saving || inLibrary) return null
         val session = SessionStore.load(app) ?: return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         saving = true
         publishSaveState()
-        return if (LibrarySave.isWeb(content)) {
-            requestWebBookmark(session, content)
-        } else {
-            requestPrivateBookmark(session, content)
+        return when {
+            LibrarySave.isWeb(content) -> requestWebBookmark(session, content)
+            privateBookmark -> requestPrivateBookmark(session, content)
+            else -> requestPublicBookmark(session, content)
         }
     }
 
@@ -566,6 +566,27 @@ class ReaderViewModel(
         }
     }
 
+    private fun requestPublicBookmark(session: Session, content: ReadableContent): Intent? {
+        val newTag = LibrarySave.hiddenTag(content)
+        if (newTag == null) {
+            failSave(getApplication<Application>().getString(R.string.reader_save_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                viewModelScope.launch {
+                    val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+                    beginPublicAmber(session, list, newTag)
+                }
+                null
+            }
+            is Session.Bunker -> {
+                viewModelScope.launch { savePublicWithBunker(session, newTag) }
+                null
+            }
+        }
+    }
+
     private fun beginPrivateAmber(
         session: Session.Amber,
         list: Nip01Event?,
@@ -584,6 +605,22 @@ class ReaderViewModel(
             return
         }
         requestPrivateEncrypt(session, list, listOf(newTag))
+    }
+
+    private fun beginPublicAmber(
+        session: Session.Amber,
+        list: Nip01Event?,
+        newTag: List<String>,
+    ) {
+        val tags = list?.tags.orEmpty()
+        if (Nip51.containsTag(tags, newTag)) {
+            inLibrary = true
+            saving = false
+            _message.value = getApplication<Application>().getString(R.string.reader_already_saved)
+            publishSaveState()
+            return
+        }
+        requestBookmarkListSign(session, tags + listOf(newTag), list?.content.orEmpty())
     }
 
     private fun continuePrivateAfterDecrypt(
@@ -629,19 +666,26 @@ class ReaderViewModel(
         list: Nip01Event,
         ciphertext: String,
     ) {
+        requestBookmarkListSign(session, list.tags, ciphertext)
+    }
+
+    private fun requestBookmarkListSign(
+        session: Session,
+        publicTags: List<List<String>>,
+        content: String,
+    ) {
         val createdAt = System.currentTimeMillis() / 1000
-        val tags = list.tags
         when (session) {
             is Session.Amber -> {
                 pendingUnsigned = PendingUnsignedEvent(
                     pubkey = session.pubkeyHex,
                     createdAt = createdAt,
                     kind = Nip01Event.KIND_BOOKMARKS,
-                    tags = tags,
-                    content = ciphertext,
+                    tags = publicTags,
+                    content = content,
                 )
                 _signIntent.value = RemoteSignerBridge.buildSignEventIntent(
-                    Nip51.unsignedJson(tags, ciphertext, session.pubkeyHex, createdAt),
+                    Nip51.unsignedJson(publicTags, content, session.pubkeyHex, createdAt),
                     session.signerPackage,
                     session.pubkeyHex,
                 )
@@ -650,7 +694,7 @@ class ReaderViewModel(
                 viewModelScope.launch {
                     signWithBunker(
                         session,
-                        Nip51.unsignedJson(tags, ciphertext, pubkeyHex = null, createdAt),
+                        Nip51.unsignedJson(publicTags, content, pubkeyHex = null, createdAt),
                         library = true,
                     )
                 }
@@ -723,6 +767,25 @@ class ReaderViewModel(
         } finally {
             privkey.fill(0)
         }
+    }
+
+    private suspend fun savePublicWithBunker(session: Session.Bunker, newTag: List<String>) {
+        val app = getApplication<Application>()
+        val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+        val tags = list?.tags.orEmpty()
+        if (Nip51.containsTag(tags, newTag)) {
+            inLibrary = true
+            saving = false
+            _message.value = app.getString(R.string.reader_already_saved)
+            publishSaveState()
+            return
+        }
+        val createdAt = System.currentTimeMillis() / 1000
+        signWithBunker(
+            session,
+            Nip51.unsignedJson(tags + listOf(newTag), list?.content.orEmpty(), pubkeyHex = null, createdAt),
+            library = true,
+        )
     }
 
     private fun startMembershipCheck(content: ReadableContent) {

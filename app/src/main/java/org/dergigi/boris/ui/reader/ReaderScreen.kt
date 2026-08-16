@@ -39,6 +39,8 @@ import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
@@ -117,6 +119,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
+import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
@@ -191,13 +194,63 @@ fun ReaderScreen(
         onHighlight = { quote ->
             viewModel.highlight(quote)?.let(launcher::launch)
         },
-        onSave = {
-            viewModel.saveToLibrary()?.let(launcher::launch)
+        onSave = { privateBookmark ->
+            viewModel.saveToLibrary(privateBookmark)?.let(launcher::launch)
         },
         onArchive = {
             viewModel.archive()?.let(launcher::launch)
         },
     )
+}
+
+@Composable
+private fun SaveLibraryButton(
+    choosePrivacy: Boolean,
+    onSave: (privateBookmark: Boolean) -> Unit,
+) {
+    if (!choosePrivacy) {
+        IconButton(onClick = { onSave(true) }) {
+            Icon(
+                Icons.Outlined.AddCircle,
+                contentDescription = stringResource(R.string.reader_save_library),
+            )
+        }
+        return
+    }
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { menuOpen = true }) {
+            Icon(
+                Icons.Outlined.AddCircle,
+                contentDescription = stringResource(R.string.reader_save_library),
+            )
+        }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_save_private)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.Lock, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    onSave(true)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_save_public)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.Public, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    onSave(false)
+                },
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -220,7 +273,7 @@ fun ReaderScreenContent(
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
     onHighlight: (String) -> Unit,
-    onSave: () -> Unit,
+    onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -277,12 +330,12 @@ fun ReaderScreenContent(
                 },
                 actions = {
                     if (canSave) {
-                        IconButton(onClick = onSave) {
-                            Icon(
-                                Icons.Outlined.AddCircle,
-                                contentDescription = stringResource(R.string.reader_save_library),
-                            )
-                        }
+                        SaveLibraryButton(
+                            choosePrivacy = (state as? ReaderUiState.Ready)
+                                ?.content
+                                ?.let { !LibrarySave.isWeb(it) } == true,
+                            onSave = onSave,
+                        )
                     }
                     if (articleUrl != null) {
                         var menuOpen by remember { mutableStateOf(false) }

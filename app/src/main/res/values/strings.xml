@@ -99,6 +99,8 @@
     <string name="highlight_rejected">Highlight rejected.</string>
     <string name="highlight_not_published">Highlight not published.</string>
     <string name="reader_save_library">Save to library</string>
+    <string name="reader_save_private">Add to private bookmarks</string>
+    <string name="reader_save_public">Add to public bookmarks</string>
     <string name="reader_saved">Saved to library.</string>
     <string name="reader_already_saved">Already in your library.</string>
     <string name="reader_save_cancelled">Save cancelled.</string>
