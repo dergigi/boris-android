@@ -70,7 +70,7 @@
     <string name="about_comforting_colors_1">Read during the day or late at night. Boris has multiple light and dark themes tuned for long reads. Choose fonts and sizes, highlight styles, and pick colors that fit your personal choice.</string>
     <string name="about_peace_of_mind_title">Peace of Mind</string>
     <string name="about_peace_of_mind_1">No signups, no accounts, no lock-ins. Your data lives on Nostr, and Boris renders it locally through an opinionated lens.</string>
-    <string name="about_peace_of_mind_2">You will never be locked out, no matter what. Boris will never rugpull you, because it can\'t rugpull you. You are in full control of your data. All the highlights, bookmarks, and reading metadata you create will forever be your own.</string>
+    <string name="about_peace_of_mind_2">You will never be locked out, no matter what. You are in full control of your data. All the highlights, bookmarks, and reading metadata you create will always be available to you, if you care enough to keep them around.</string>
     <string name="about_free_title">Free as in Freedom</string>
     <string name="about_free_1">Boris is free and open-source and always will be. You can do with it what you want. Fork it, modify it, contribute to it, or just use it as is.</string>
     <string name="about_free_2">Boris is free as in beer too, but you can send me sats if you appreciate my work.</string>
