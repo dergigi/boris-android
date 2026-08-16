@@ -22,8 +22,14 @@ object LocalSearch {
             override val title: String,
             override val subtitle: String?,
             override val sortAt: Long,
+            val eventId: String,
             val url: String?,
             val quote: String,
+            val context: String?,
+            val host: String?,
+            val authorHex: String,
+            val authorName: String,
+            val authorPicture: String?,
         ) : Hit()
 
         data class Article(
@@ -73,13 +79,21 @@ object LocalSearch {
             val context = event.tagValue("context")
             if (!matches(needle, quote, context)) return@mapNotNull null
             val url = Nip84.articleUrl(event)
+            val host = url?.let { ArticleUrl.host(it) }
+            val profile = cachedProfile(event.pubkey)
             Hit.Highlight(
                 id = "hl:${event.id}",
                 title = quote,
-                subtitle = url?.let { hostish(it) },
+                subtitle = host,
                 sortAt = event.createdAt,
+                eventId = event.id,
                 url = url,
                 quote = quote,
+                context = context,
+                host = host,
+                authorHex = event.pubkey.lowercase(),
+                authorName = Profile.displayName(event.pubkey, profile),
+                authorPicture = profile?.picture,
             )
         }
 
@@ -139,6 +153,11 @@ object LocalSearch {
                 )
             }
 
+    private fun cachedProfile(pubkeyHex: String): Profile? {
+        val event = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex) ?: return null
+        return Profile.parse(event.content)
+    }
+
     internal fun normalize(raw: String): String =
         raw.trim().lowercase().replace(Whitespace, " ")
 
@@ -150,7 +169,7 @@ object LocalSearch {
     }
 
     private fun hostish(url: String): String =
-        runCatching { java.net.URI(url).host }.getOrNull()?.removePrefix("www.") ?: url
+        ArticleUrl.host(url) ?: url
 
     private val Whitespace = Regex("\\s+")
 }

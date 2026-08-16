@@ -172,8 +172,8 @@ fun BorisApp(
                 composable(Routes.SEARCH) {
                     SearchScreen(
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
-                        onOpenHighlight = { url, quote ->
-                            navController.navigate(Routes.reader(url, quote = quote))
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
                         },
                         onOpenProfile = { pubkeyHex ->
                             runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
