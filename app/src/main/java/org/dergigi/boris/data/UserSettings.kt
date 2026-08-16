@@ -50,6 +50,9 @@ class UserSettings internal constructor(
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)
+    val zapSplitHighlighterWeight: Double get() = double("zapSplitHighlighterWeight", 50.0)
+    val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
+    val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
 
     fun isDark(systemDark: Boolean): Boolean = when (theme) {
         "light" -> false
@@ -62,6 +65,11 @@ class UserSettings internal constructor(
     fun withBoolean(key: String, value: Boolean): UserSettings = overlay(key, JsonValue.Bool(value))
 
     fun withInt(key: String, value: Int): UserSettings = overlay(key, JsonValue.Num(value.toString()))
+
+    fun withDouble(key: String, value: Double): UserSettings {
+        val raw = if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+        return overlay(key, JsonValue.Num(raw))
+    }
 
     fun toJson(): String = JsonMap.stringify(values)
 
@@ -90,6 +98,11 @@ class UserSettings internal constructor(
     private fun int(key: String, default: Int): Int {
         val raw = (values[key] as? JsonValue.Num)?.raw ?: return default
         return raw.toDoubleOrNull()?.toInt() ?: default
+    }
+
+    private fun double(key: String, default: Double): Double {
+        val raw = (values[key] as? JsonValue.Num)?.raw ?: return default
+        return raw.toDoubleOrNull() ?: default
     }
 
     companion object {

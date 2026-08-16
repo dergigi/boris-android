@@ -72,6 +72,7 @@ class ReaderRepository(
             authorPubkey = event.pubkey,
             imageUrl = image,
             summary = Nip23.summary(event),
+            sourceZapTags = zapTags(event),
         )
     }
 
@@ -94,6 +95,7 @@ class ReaderRepository(
                 authorPubkey = event.pubkey,
                 imageUrl = image,
                 summary = Nip23.summary(event),
+                sourceZapTags = zapTags(event),
             )
         }
         if (event.kind != Nip01Event.KIND_TEXT_NOTE) {
@@ -112,8 +114,12 @@ class ReaderRepository(
             publishedAt = event.createdAt,
             eventId = event.id,
             authorPubkey = event.pubkey,
+            sourceZapTags = zapTags(event),
         )
     }
+
+    private fun zapTags(event: Nip01Event): List<List<String>> =
+        event.tags.filter { it.size >= 2 && it[0] == "zap" }
 
     internal fun noteMarkdown(content: String): String =
         UrlExtractor.embedImageLinks(content.replace("\n", "  \n"))

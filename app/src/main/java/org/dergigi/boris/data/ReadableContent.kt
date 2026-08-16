@@ -11,6 +11,7 @@ data class ReadableContent(
     val authorPubkey: String? = null,
     val imageUrl: String? = null,
     val summary: String? = null,
+    val sourceZapTags: List<List<String>> = emptyList(),
 ) {
     val body: String
         get() = markdown?.takeIf { it.isNotBlank() } ?: html?.let(::stripHtml).orEmpty()

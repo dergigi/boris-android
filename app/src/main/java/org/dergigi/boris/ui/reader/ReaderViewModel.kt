@@ -20,6 +20,7 @@ import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.BunkerClient
@@ -37,6 +38,7 @@ import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
 import org.dergigi.boris.nostr.SignerResults
+import org.dergigi.boris.nostr.ZapSplits
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -194,6 +196,7 @@ class ReaderViewModel(
         val session = SessionStore.load(app) ?: return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         val context = Nip84.extractContext(trimmed, content.body)
+        val zapSplits = zapSplitTags(content, session.pubkeyHex)
         when (session) {
             is Session.Amber -> {
                 val createdAt = System.currentTimeMillis() / 1000
@@ -203,6 +206,7 @@ class ReaderViewModel(
                     content.articleCoordinate,
                     content.eventId,
                     content.authorPubkey,
+                    zapSplits,
                 )
                 pendingUnsigned = PendingUnsignedEvent(
                     pubkey = session.pubkeyHex,
@@ -220,6 +224,7 @@ class ReaderViewModel(
                     content.articleCoordinate,
                     content.eventId,
                     content.authorPubkey,
+                    zapSplits,
                 )
                 return RemoteSignerBridge.buildSignEventIntent(
                     unsigned,
@@ -237,6 +242,7 @@ class ReaderViewModel(
                     coordinate = content.articleCoordinate,
                     eventId = content.eventId,
                     authorPubkey = content.authorPubkey,
+                    zapSplits = zapSplits,
                 )
                 viewModelScope.launch {
                     signWithBunker(session, unsigned)
@@ -244,6 +250,20 @@ class ReaderViewModel(
                 return null
             }
         }
+    }
+
+    private fun zapSplitTags(content: ReadableContent, highlighterPubkey: String): List<List<String>> {
+        val nostrNative = !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank()
+        if (!nostrNative) return emptyList()
+        val settings = SettingsSync.settings.value
+        return ZapSplits.tags(
+            highlighterPubkey = highlighterPubkey,
+            sourceAuthorPubkey = content.authorPubkey,
+            sourceZapTags = content.sourceZapTags,
+            highlighterWeight = settings.zapSplitHighlighterWeight,
+            borisWeight = settings.zapSplitBorisWeight,
+            authorWeight = settings.zapSplitAuthorWeight,
+        )
     }
 
     fun archive(): Intent? {

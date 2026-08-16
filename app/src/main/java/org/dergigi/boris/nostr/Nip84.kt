@@ -33,6 +33,7 @@ object Nip84 {
         coordinate: String? = null,
         eventId: String? = null,
         authorPubkey: String? = null,
+        zapSplits: List<List<String>> = emptyList(),
     ): List<List<String>> = buildList {
         if (!coordinate.isNullOrBlank()) {
             add(listOf("a", coordinate))
@@ -46,6 +47,7 @@ object Nip84 {
         }
         if (!context.isNullOrBlank()) add(listOf("context", context))
         add(listOf("alt", ALT))
+        addAll(zapSplits)
     }
 
     fun unsignedJson(
@@ -57,11 +59,12 @@ object Nip84 {
         coordinate: String? = null,
         eventId: String? = null,
         authorPubkey: String? = null,
+        zapSplits: List<List<String>> = emptyList(),
     ): String {
         val obj = JSONObject()
             .put("kind", KIND)
             .put("content", quote)
-            .put("tags", tagsToJson(tags(url, context, coordinate, eventId, authorPubkey)))
+            .put("tags", tagsToJson(tags(url, context, coordinate, eventId, authorPubkey, zapSplits)))
             .put("created_at", createdAt)
         if (!pubkeyHex.isNullOrBlank()) {
             obj.put("pubkey", pubkeyHex)

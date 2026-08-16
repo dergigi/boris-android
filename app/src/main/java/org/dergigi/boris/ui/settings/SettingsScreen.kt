@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
@@ -72,6 +73,7 @@ enum class SettingsCategory(
     Reading(R.string.settings_reading, R.string.settings_reading_summary, Color(0xFF22C55E)),
     Media(R.string.settings_media, R.string.settings_media_summary, Color(0xFFF97316)),
     Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, Color(0xFFEAB308)),
+    ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, Color(0xFF6366F1)),
     Home(R.string.settings_home, R.string.settings_home_summary, Color(0xFFEC4899)),
     Feed(R.string.feed_title, R.string.settings_feed_summary, Color(0xFF9333EA)),
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
@@ -84,6 +86,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Reading -> Icons.AutoMirrored.Outlined.MenuBook
         SettingsCategory.Media -> Icons.Outlined.Image
         SettingsCategory.Highlights -> BorisIcons.Highlighter
+        SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
         SettingsCategory.Home -> Icons.Outlined.Home
         SettingsCategory.Feed -> Icons.Outlined.DynamicFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
@@ -96,6 +99,7 @@ private val CATEGORY_GROUPS = listOf(
         SettingsCategory.Reading,
         SettingsCategory.Media,
         SettingsCategory.Highlights,
+        SettingsCategory.ZapSplits,
     ),
     listOf(
         SettingsCategory.Home,
@@ -288,6 +292,7 @@ private fun SettingsCategoryDetail(
                 HighlightsSection(settings = settings, onUpdate = onUpdate)
                 ReadingPreview(settings = settings, darkTheme = darkTheme)
             }
+            SettingsCategory.ZapSplits -> ZapSplitsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Home -> HomeSettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Feed -> FeedSettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Scroll -> ScrollBehaviourSection(settings = settings, onUpdate = onUpdate)
