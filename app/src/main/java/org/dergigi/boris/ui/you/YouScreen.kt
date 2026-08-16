@@ -54,6 +54,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
+import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
@@ -264,69 +265,14 @@ private fun YouWritingCard(
     item: YouWriting,
     onOpenArticle: (String) -> Unit,
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable { onOpenArticle(item.url) }
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (item.imageUrl.isNullOrBlank()) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Article,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
-                )
-            } else {
-                AsyncImage(
-                    model = item.imageUrl,
-                    contentDescription = item.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!item.summary.isNullOrBlank()) {
-                Text(
-                    text = item.summary,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Text(
-                text = RelativeTime.label(item.publishedAt),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+    ArticleRow(
+        title = item.title,
+        summary = item.summary,
+        imageUrl = item.imageUrl,
+        publishedAt = item.publishedAt,
+        url = item.url,
+        onClick = { onOpenArticle(item.url) },
+    )
 }
 
 @Composable

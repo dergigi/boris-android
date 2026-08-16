@@ -67,6 +67,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
@@ -74,7 +75,6 @@ import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
-import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -495,7 +495,7 @@ private fun FeedWritingRow(
     item: FeedWriting,
     onOpenArticle: (String) -> Unit,
 ) {
-    FeedArticleRow(
+    ArticleRow(
         title = item.title,
         summary = item.summary,
         imageUrl = item.imageUrl,
@@ -513,7 +513,7 @@ private fun FeedRssRow(
     item: RssItem,
     onOpenArticle: (String) -> Unit,
 ) {
-    FeedArticleRow(
+    ArticleRow(
         title = item.title,
         summary = item.summary,
         imageUrl = item.imageUrl,
@@ -524,111 +524,6 @@ private fun FeedRssRow(
         url = item.link,
         onClick = { onOpenArticle(item.link) },
     )
-}
-
-@Composable
-private fun FeedArticleRow(
-    title: String,
-    summary: String?,
-    imageUrl: String?,
-    byline: String,
-    bylinePicture: String?,
-    bylineFallbackIcon: ImageVector,
-    publishedAt: Long,
-    url: String?,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (imageUrl.isNullOrBlank()) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Article,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
-                )
-            } else {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!summary.isNullOrBlank()) {
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val fallback = rememberVectorPainter(bylineFallbackIcon)
-                AsyncImage(
-                    model = bylinePicture,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    placeholder = fallback,
-                    error = fallback,
-                    fallback = fallback,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(CircleShape),
-                )
-                Text(
-                    text = byline,
-                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (publishedAt > 0) {
-                    Text(
-                        text = RelativeTime.label(publishedAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            CardReadingProgress(url = url)
-        }
-    }
 }
 
 @Composable

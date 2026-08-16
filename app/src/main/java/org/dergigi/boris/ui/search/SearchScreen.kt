@@ -1,23 +1,20 @@
 package org.dergigi.boris.ui.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
@@ -39,9 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,6 +45,7 @@ import org.dergigi.boris.data.LocalSearch
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
@@ -201,10 +197,27 @@ fun SearchScreenContent(
                                         onClick = { onOpenHit(hit) },
                                     )
                                 }
-                                is LocalSearch.Hit.Article,
+                                is LocalSearch.Hit.Article -> {
+                                    ArticleRow(
+                                        title = hit.title,
+                                        summary = hit.subtitle,
+                                        imageUrl = hit.imageUrl,
+                                        byline = hit.authorName,
+                                        bylinePicture = hit.authorPicture,
+                                        bylineFallbackIcon = Icons.Outlined.AccountCircle,
+                                        publishedAt = hit.sortAt,
+                                        url = hit.url,
+                                        onClick = { onOpenHit(hit) },
+                                    )
+                                }
                                 is LocalSearch.Hit.Bookmark -> {
-                                    SearchResultRow(
-                                        hit = hit,
+                                    ArticleRow(
+                                        title = hit.title,
+                                        imageUrl = hit.imageUrl,
+                                        imageFallbackIcon = Icons.Outlined.Bookmark,
+                                        byline = hit.subtitle,
+                                        publishedAt = hit.sortAt,
+                                        url = hit.url,
                                         onClick = { onOpenHit(hit) },
                                     )
                                 }
@@ -256,64 +269,5 @@ private fun SearchHint(text: String) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-@Composable
-private fun SearchResultRow(
-    hit: LocalSearch.Hit,
-    onClick: () -> Unit,
-) {
-    val (kindLabel, icon) = when (hit) {
-        is LocalSearch.Hit.Article ->
-            stringResource(R.string.search_kind_article) to Icons.AutoMirrored.Outlined.MenuBook
-        is LocalSearch.Hit.Bookmark ->
-            stringResource(R.string.search_kind_bookmark) to Icons.Outlined.Bookmark
-        else -> error("unsupported search row: ${hit::class.simpleName}")
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier
-                .size(40.dp)
-                .padding(8.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 12.dp),
-        ) {
-            Text(
-                text = kindLabel,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = hit.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            hit.subtitle?.takeIf { it.isNotBlank() }?.let { sub ->
-                Text(
-                    text = sub,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-        }
     }
 }

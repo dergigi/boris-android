@@ -38,6 +38,9 @@ object LocalSearch {
             override val subtitle: String?,
             override val sortAt: Long,
             val url: String,
+            val imageUrl: String?,
+            val authorName: String,
+            val authorPicture: String?,
         ) : Hit()
 
         data class Bookmark(
@@ -46,6 +49,7 @@ object LocalSearch {
             override val subtitle: String?,
             override val sortAt: Long,
             val url: String,
+            val imageUrl: String? = null,
         ) : Hit()
 
         data class Person(
@@ -109,12 +113,16 @@ object LocalSearch {
                 val article = NostrArticle.fromCoordinate(
                     "${event.kind}:${event.pubkey.lowercase()}:$identifier",
                 ) ?: return@mapNotNull null
+                val profile = cachedProfile(event.pubkey)
                 Hit.Article(
                     id = "art:${event.pubkey.lowercase()}:$identifier",
                     title = title,
                     subtitle = summary?.take(120),
                     sortAt = Nip23.publishedAt(event),
                     url = article.uri,
+                    imageUrl = Nip23.image(event),
+                    authorName = Profile.displayName(event.pubkey, profile),
+                    authorPicture = profile?.picture,
                 )
             }
 

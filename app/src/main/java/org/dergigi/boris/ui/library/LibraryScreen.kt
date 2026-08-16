@@ -74,13 +74,13 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
-import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.theme.BorisIcons
 
 @Composable
@@ -357,67 +357,15 @@ private fun BookmarkRow(
     item: BookmarkItem,
     onOpenArticle: (String) -> Unit,
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(enabled = item.url != null) {
-                item.url?.let(onOpenArticle)
-            }
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (item.imageUrl.isNullOrBlank()) {
-                Icon(
-                    imageVector = Icons.Outlined.Bookmark,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
-                )
-            } else {
-                AsyncImage(
-                    model = item.imageUrl,
-                    contentDescription = item.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!item.host.isNullOrBlank()) {
-                Text(
-                    text = item.host,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            CardReadingProgress(url = item.url)
-        }
-    }
+    ArticleRow(
+        title = item.title,
+        imageUrl = item.imageUrl,
+        imageFallbackIcon = Icons.Outlined.Bookmark,
+        byline = item.host,
+        url = item.url,
+        enabled = item.url != null,
+        onClick = { item.url?.let(onOpenArticle) },
+    )
 }
 
 @Composable
