@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +58,12 @@ private data class RelayRowState(
     val coverage: Int,
 )
 
+private data class RelaySections(
+    val local: List<RelayRowState>,
+    val read: List<RelayRowState>,
+    val write: List<RelayRowState>,
+)
+
 private const val REFRESH_MS = 15_000L
 private const val TOP_COVERAGE_RELAYS = 8
 
@@ -65,24 +72,23 @@ fun RelaysSection(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var rows by remember { mutableStateOf<List<RelayRowState>?>(null) }
+    var sections by remember { mutableStateOf<RelaySections?>(null) }
     LaunchedEffect(Unit) {
         while (isActive) {
-            rows = withContext(Dispatchers.IO) { relayRows(context) }
+            sections = withContext(Dispatchers.IO) { relaySections(context) }
             delay(REFRESH_MS)
         }
     }
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             text = stringResource(R.string.settings_relays_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
         )
-        val current = rows
+        val current = sections
         if (current == null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -97,16 +103,42 @@ fun RelaysSection(
                 )
             }
         } else {
-            current.forEach { row -> RelayRow(row) }
+            RelayGroup(title = stringResource(R.string.settings_relays_section_read), rows = current.read)
+            RelayGroup(title = stringResource(R.string.settings_relays_section_write), rows = current.write)
+            RelayGroup(title = stringResource(R.string.settings_relays_section_local), rows = current.local)
         }
+    }
+}
+
+@Composable
+private fun RelayGroup(
+    title: String,
+    rows: List<RelayRowState>,
+) {
+    if (rows.isEmpty()) return
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+        )
+        rows.forEach { row -> RelayRow(row) }
     }
 }
 
 /**
  * Status comes from observed traffic (RelayHealth) where fresh; relays without
  * recent traffic get an active probe, whose outcome also feeds RelayHealth.
+ *
+ * Local, read, and write are separate lists. A relay that is both read and write
+ * appears in both sections. Fallbacks, NIP-66 discoveries, and outbox coverage
+ * relays are read targets from Boris's point of view.
  */
-private suspend fun relayRows(context: android.content.Context): List<RelayRowState> {
+private suspend fun relaySections(context: android.content.Context): RelaySections {
     val pubkey = SessionStore.load(context)?.pubkeyHex
     val list = if (pubkey != null) {
         try {
@@ -119,16 +151,24 @@ private suspend fun relayRows(context: android.content.Context): List<RelayRowSt
     }
     val follows = pubkey?.let { RelayQuery.cachedContactPubkeys(it) } ?: emptySet()
     val coverage = RelayScoreBoard.coverageCounts(follows)
-    val urls = buildList {
-        add(LocalRelays.CITRINE)
+    val localUrls = listOf(LocalRelays.CITRINE)
+        .mapNotNull(LocalRelays::resolve)
+        .distinct()
+    val writeUrls = list.write
+        .mapNotNull(LocalRelays::resolve)
+        .filterNot(LocalRelays::isLocal)
+        .distinct()
+    val readUrls = buildList {
         addAll(list.read)
-        addAll(list.write)
         addAll(RelayList.FALLBACK)
         addAll(RelayQuery.discoveredRelays())
         addAll(RelayScoreBoard.topRelays(follows, TOP_COVERAGE_RELAYS))
-    }.mapNotNull(LocalRelays::resolve).distinct()
-    return coroutineScope {
-        urls.map { url ->
+    }.mapNotNull(LocalRelays::resolve)
+        .filterNot(LocalRelays::isLocal)
+        .distinct()
+    val allUrls = (localUrls + readUrls + writeUrls).distinct()
+    val rows = coroutineScope {
+        allUrls.map { url ->
             async(Dispatchers.IO) {
                 val connected = if (RelayHealth.isFresh(url)) true else probe(url)
                 RelayRowState(
@@ -140,11 +180,20 @@ private suspend fun relayRows(context: android.content.Context): List<RelayRowSt
                 )
             }
         }.map { it.await() }
-    }.sortedWith(
-        compareByDescending<RelayRowState> { it.local }
-            .thenByDescending { it.connected }
-            .thenByDescending { it.coverage }
-            .thenBy { it.url },
+    }.associateBy { it.url }
+
+    fun section(urls: List<String>): List<RelayRowState> =
+        urls.mapNotNull { rows[it] }
+            .sortedWith(
+                compareByDescending<RelayRowState> { it.connected }
+                    .thenByDescending { it.coverage }
+                    .thenBy { it.url },
+            )
+
+    return RelaySections(
+        local = section(localUrls),
+        read = section(readUrls),
+        write = section(writeUrls),
     )
 }
 
