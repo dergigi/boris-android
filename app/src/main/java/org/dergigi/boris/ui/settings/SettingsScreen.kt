@@ -298,7 +298,10 @@ private fun SettingsCategoryDetail(
             }
             SettingsCategory.ZapSplits -> ZapSplitsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Home -> HomeSettingsSection(settings = settings, onUpdate = onUpdate)
-            SettingsCategory.Feed -> FeedSettingsSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Feed -> {
+                FeedSettingsSection(settings = settings, onUpdate = onUpdate)
+                RssFeedsSection(settings = settings, onUpdate = onUpdate)
+            }
             SettingsCategory.Scroll -> ScrollBehaviourSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Offline -> OfflineSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Airplane -> AirplaneModeSection(
