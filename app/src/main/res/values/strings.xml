@@ -51,7 +51,7 @@
     <string name="about_intro_body">I\'m a nostr-native app designed for reading and highlighting.</string>
     <string name="about_read_anywhere_title">Read Anywhere</string>
     <string name="about_read_anywhere_1">Boris works on any device. Whether you prefer to read on desktop, mobile, or tablet, Boris is there for you.</string>
-    <string name="about_read_anywhere_2">If you install boris as a PWA, you can read and highlight on your phone or tablet as if it was a native app.</string>
+    <string name="about_read_anywhere_2">Your highlights, bookmarks, and settings sync across devices over nostr, so you can pick up where you left off on phone, tablet, or desktop.</string>
     <string name="about_distraction_free_title">Distraction-Free</string>
     <string name="about_distraction_free_1">Boris aims to be a calm reader app with clean typography, beautiful design, and a focus on readability.</string>
     <string name="about_distraction_free_2">Boris does not and will never have ads, trackers, paywalls, subscriptions, or any other distractions.</string>
