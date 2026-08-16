@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-08-16
+
+### Added
+
+- Library settings category with a default shelf setting: Private, Public, Web, Lookmarks, or Archive
+- Settings gear on the library screen, opening the Library settings
+
 ## [0.42.0] - 2026-08-16
 
 ### Added
