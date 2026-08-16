@@ -253,8 +253,8 @@ class ReaderViewModel(
     }
 
     private fun zapSplitTags(content: ReadableContent, highlighterPubkey: String): List<List<String>> {
-        val nostrNative = !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank()
-        if (!nostrNative) return emptyList()
+        // Web content has no author pubkey, so the author share is skipped there
+        // and the split covers only the highlighter and Boris.
         val settings = SettingsSync.settings.value
         return ZapSplits.tags(
             highlighterPubkey = highlighterPubkey,

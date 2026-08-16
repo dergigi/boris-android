@@ -210,7 +210,7 @@
     <string name="settings_zap_author_share">Author\'s Share: %1$s</string>
     <string name="settings_zap_boris_share">Boris\' Share: %1$s</string>
     <string name="settings_zap_percent">(%1$s%%)</string>
-    <string name="settings_zap_note">Weights determine zap splits when highlighting nostr-native content. If the content has multiple authors, their share is divided proportionally.</string>
+    <string name="settings_zap_note">Weights determine zap splits when highlighting. If the content has multiple authors, their share is divided proportionally. For web content the author is unknown, so their share is skipped.</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_back">Back</string>
     <string name="you_logged_out_title">Your highlights</string>

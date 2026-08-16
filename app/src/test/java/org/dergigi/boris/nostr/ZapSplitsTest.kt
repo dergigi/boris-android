@@ -122,6 +122,25 @@ class ZapSplitsTest {
     }
 
     @Test
+    fun webHighlightSplitsBetweenHighlighterAndBorisOnly() {
+        val tags = ZapSplits.tags(
+            highlighterPubkey = highlighter,
+            sourceAuthorPubkey = null,
+            sourceZapTags = emptyList(),
+            highlighterWeight = 50.0,
+            borisWeight = 2.1,
+            authorWeight = 50.0,
+        )
+        assertEquals(
+            listOf(
+                listOf("zap", highlighter, ZapSplits.ZAP_RELAY, "50"),
+                listOf("zap", ZapSplits.BORIS_PUBKEY, ZapSplits.ZAP_RELAY, "2.1"),
+            ),
+            tags,
+        )
+    }
+
+    @Test
     fun highlightTagsIncludeZapSplits() {
         val zapSplits = ZapSplits.tags(
             highlighterPubkey = highlighter,
