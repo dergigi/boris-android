@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-08-17
+
+### Added
+
+- Home: Continue Reading section with articles you started, built from local reading positions
+- Home: Most Highlighted section ranking articles by highlight count
+- Home settings: re-order all Home sections
+
 ## [0.53.0] - 2026-08-17
 
 ### Added
