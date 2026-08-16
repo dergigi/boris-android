@@ -71,6 +71,7 @@ import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
+import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -490,6 +491,7 @@ private fun FeedWritingRow(
         bylinePicture = item.authorPicture,
         bylineFallbackIcon = Icons.Outlined.AccountCircle,
         publishedAt = item.publishedAt,
+        url = item.url,
         onClick = { onOpenArticle(item.url) },
     )
 }
@@ -507,6 +509,7 @@ private fun FeedRssRow(
         bylinePicture = null,
         bylineFallbackIcon = Icons.Outlined.RssFeed,
         publishedAt = item.publishedAt,
+        url = item.link,
         onClick = { onOpenArticle(item.link) },
     )
 }
@@ -520,6 +523,7 @@ private fun FeedArticleRow(
     bylinePicture: String?,
     bylineFallbackIcon: ImageVector,
     publishedAt: Long,
+    url: String?,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -610,6 +614,7 @@ private fun FeedArticleRow(
                     )
                 }
             }
+            CardReadingProgress(url = url)
         }
     }
 }

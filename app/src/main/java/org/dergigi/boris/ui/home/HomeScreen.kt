@@ -65,6 +65,7 @@ import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -454,6 +455,7 @@ private fun HighlightedArticleCard(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        CardReadingProgress(url = article.url)
     }
 }
 

@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ReadingPositionStore
 import kotlin.math.roundToInt
 
 object ReadingProgress {
@@ -52,6 +56,45 @@ object ReadingProgress {
 }
 
 private val CompleteGreen = Color(0xFF22C55E)
+
+/**
+ * Thin, subtle progress strip for article cards. Renders nothing when the
+ * article has not been opened yet, mirroring the webapp card indicator.
+ */
+@Composable
+fun CardReadingProgress(
+    url: String?,
+    modifier: Modifier = Modifier,
+) {
+    if (url.isNullOrBlank()) return
+    val version by ReadingPositionStore.version.collectAsStateWithLifecycle()
+    val percent = remember(url, version) {
+        (ReadingPositionStore.fraction(url) * 100f).roundToInt()
+    }
+    if (percent <= 0) return
+    val clamped = percent.coerceIn(1, 100)
+    val complete = ReadingProgress.isComplete(clamped)
+    val started = ReadingProgress.isStarted(clamped)
+    val barColor = when {
+        complete -> CompleteGreen
+        started -> MaterialTheme.colorScheme.onBackground
+        else -> MaterialTheme.colorScheme.primary
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(2.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(clamped / 100f)
+                .background(barColor),
+        )
+    }
+}
 
 @Composable
 fun ReadingProgressBar(

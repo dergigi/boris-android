@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Reading position is saved per article on the device and restored when reopening
+- Article cards on home, library, and feed show a subtle reading progress bar once an article has been started
 
 ## [0.43.0] - 2026-08-16
 

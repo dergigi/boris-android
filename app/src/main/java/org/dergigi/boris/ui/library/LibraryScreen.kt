@@ -78,6 +78,7 @@ import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.auth.NstartFooter
+import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.theme.BorisIcons
 
 @Composable
@@ -409,6 +410,7 @@ private fun BookmarkRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            CardReadingProgress(url = item.url)
         }
     }
 }
