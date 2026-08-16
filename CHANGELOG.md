@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-08-16
+
+### Added
+
+- The reader top bar hides when scrolling down and reappears when scrolling up, giving the article the full screen
+- New "Hide top bar on scroll" toggle in the Scroll behaviour settings, on by default
+
 ## [0.39.0] - 2026-08-16
 
 ### Added
