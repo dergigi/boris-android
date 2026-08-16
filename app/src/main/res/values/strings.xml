@@ -56,8 +56,7 @@
     <string name="about_distraction_free_1">Boris aims to be a calm reader app with clean typography, beautiful design, and a focus on readability.</string>
     <string name="about_distraction_free_2">Boris does not and will never have ads, trackers, paywalls, subscriptions, or any other distractions.</string>
     <string name="about_airplane_mode_title">Airplane Mode</string>
-    <string name="about_airplane_mode_1">Boris is offline-first by design. With a local relay you can read, create highlights, and browse your library without a network. When in Airplane Mode or offline, Boris will store changes locally and sync later.</string>
-    <string name="about_airplane_mode_2">Run Citrine on your phone or nostr-relay-tray on your desktop to use Boris offline.</string>
+    <string name="about_airplane_mode_1">Boris is offline-first by design. You can read, create highlights, and browse your library without a network. When offline, Boris stores changes locally and syncs later.</string>
     <string name="about_social_highlights_title">Social Highlights</string>
     <string name="about_social_highlights_1">Discover highlights from your friends and others, as well as long-form content from the nostrverse.</string>
     <string name="about_social_highlights_2">"Swarm highlights" help you discover the most interesting passages, while the explore page will show you nostr-native long-form content.</string>

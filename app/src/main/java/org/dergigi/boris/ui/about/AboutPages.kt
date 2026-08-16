@@ -35,7 +35,7 @@ internal val ABOUT_FEATURES = listOf(
     AboutFeature(
         asset = "airplane-mode.svg",
         title = R.string.about_airplane_mode_title,
-        paragraphs = listOf(R.string.about_airplane_mode_1, R.string.about_airplane_mode_2),
+        paragraphs = listOf(R.string.about_airplane_mode_1),
     ),
     AboutFeature(
         asset = "swarm-highlights.svg",
