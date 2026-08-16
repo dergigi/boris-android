@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
+import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.ContentTabs
@@ -80,6 +82,8 @@ fun FeedScreen(
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val scope by viewModel.scope.collectAsStateWithLifecycle()
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
+    val rssItems by viewModel.rss.collectAsStateWithLifecycle()
+    val rssLoading by viewModel.rssLoading.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
@@ -91,6 +95,9 @@ fun FeedScreen(
         scope = scope,
         tab = tab,
         loggedIn = loggedIn,
+        rssItems = rssItems,
+        rssLoading = rssLoading,
+        hasRssFeeds = settings.rssFeeds.isNotEmpty(),
         nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
         friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
         mineColor = hexColor(settings.highlightColorMine, HighlightMine),
@@ -111,6 +118,9 @@ fun FeedScreenContent(
     scope: FeedScope,
     tab: ContentTab,
     loggedIn: Boolean,
+    rssItems: List<RssItem>,
+    rssLoading: Boolean,
+    hasRssFeeds: Boolean,
     nostrverseColor: Color,
     friendsColor: Color,
     mineColor: Color,
@@ -176,54 +186,79 @@ fun FeedScreenContent(
                 tab = tab,
                 onSelect = onSelectTab,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                showRss = true,
             )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                when (state) {
-                    FeedUiState.Loading -> {
+                if (tab == ContentTab.Rss) {
+                    if (rssLoading && rssItems.isEmpty()) {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
                         )
-                    }
-                    FeedUiState.Empty -> {
-                        StatusMessage(
-                            text = emptyMessage(tab, filtered = false),
-                            onRetry = onRefresh,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
-                    }
-                    FeedUiState.Error -> {
-                        StatusMessage(
-                            text = stringResource(R.string.feed_error),
-                            onRetry = onRefresh,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
-                    }
-                    is FeedUiState.Ready -> {
+                    } else {
                         PullToRefreshBox(
                             isRefreshing = refreshing,
                             onRefresh = onRefresh,
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            when (tab) {
-                                ContentTab.Highlights -> FeedHighlightList(
-                                    items = state.highlights,
-                                    emptyText = emptyMessage(tab, filtered = state.hasHighlights),
-                                    levelColor = { level ->
-                                        when (level) {
-                                            FeedLevel.Mine -> mineColor
-                                            FeedLevel.Friends -> friendsColor
-                                            FeedLevel.Nostrverse -> nostrverseColor
-                                        }
-                                    },
-                                    onRefresh = onRefresh,
-                                    onOpenHighlight = onOpenHighlight,
-                                )
-                                ContentTab.Writings -> FeedWritingList(
-                                    items = state.writings,
-                                    emptyText = emptyMessage(tab, filtered = state.hasWritings),
-                                    onRefresh = onRefresh,
-                                    onOpenArticle = onOpenArticle,
-                                )
+                            FeedRssList(
+                                items = rssItems,
+                                emptyText = stringResource(
+                                    if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
+                                ),
+                                onRefresh = onRefresh,
+                                onOpenArticle = onOpenArticle,
+                            )
+                        }
+                    }
+                } else {
+                    when (state) {
+                        FeedUiState.Loading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
+                        FeedUiState.Empty -> {
+                            StatusMessage(
+                                text = emptyMessage(tab, filtered = false),
+                                onRetry = onRefresh,
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
+                        FeedUiState.Error -> {
+                            StatusMessage(
+                                text = stringResource(R.string.feed_error),
+                                onRetry = onRefresh,
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
+                        is FeedUiState.Ready -> {
+                            PullToRefreshBox(
+                                isRefreshing = refreshing,
+                                onRefresh = onRefresh,
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                when (tab) {
+                                    ContentTab.Highlights -> FeedHighlightList(
+                                        items = state.highlights,
+                                        emptyText = emptyMessage(tab, filtered = state.hasHighlights),
+                                        levelColor = { level ->
+                                            when (level) {
+                                                FeedLevel.Mine -> mineColor
+                                                FeedLevel.Friends -> friendsColor
+                                                FeedLevel.Nostrverse -> nostrverseColor
+                                            }
+                                        },
+                                        onRefresh = onRefresh,
+                                        onOpenHighlight = onOpenHighlight,
+                                    )
+                                    ContentTab.Writings -> FeedWritingList(
+                                        items = state.writings,
+                                        emptyText = emptyMessage(tab, filtered = state.hasWritings),
+                                        onRefresh = onRefresh,
+                                        onOpenArticle = onOpenArticle,
+                                    )
+                                    ContentTab.Rss -> Unit
+                                }
                             }
                         }
                     }
@@ -324,6 +359,42 @@ private fun FeedWritingList(
 }
 
 @Composable
+private fun FeedRssList(
+    items: List<RssItem>,
+    emptyText: String,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            StatusMessage(
+                text = emptyText,
+                onRetry = onRefresh,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxSize()
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(items, key = { it.link }) { item ->
+                FeedRssRow(
+                    item = item,
+                    onOpenArticle = onOpenArticle,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ScopeToggle(
     icon: ImageVector,
     on: Boolean,
@@ -354,12 +425,52 @@ private fun FeedWritingRow(
     item: FeedWriting,
     onOpenArticle: (String) -> Unit,
 ) {
+    FeedArticleRow(
+        title = item.title,
+        summary = item.summary,
+        imageUrl = item.imageUrl,
+        byline = item.authorName,
+        bylinePicture = item.authorPicture,
+        bylineFallbackIcon = Icons.Outlined.AccountCircle,
+        publishedAt = item.publishedAt,
+        onClick = { onOpenArticle(item.url) },
+    )
+}
+
+@Composable
+private fun FeedRssRow(
+    item: RssItem,
+    onOpenArticle: (String) -> Unit,
+) {
+    FeedArticleRow(
+        title = item.title,
+        summary = item.summary,
+        imageUrl = item.imageUrl,
+        byline = item.sourceTitle,
+        bylinePicture = null,
+        bylineFallbackIcon = Icons.Outlined.RssFeed,
+        publishedAt = item.publishedAt,
+        onClick = { onOpenArticle(item.link) },
+    )
+}
+
+@Composable
+private fun FeedArticleRow(
+    title: String,
+    summary: String?,
+    imageUrl: String?,
+    byline: String,
+    bylinePicture: String?,
+    bylineFallbackIcon: ImageVector,
+    publishedAt: Long,
+    onClick: () -> Unit,
+) {
     val shape = RoundedCornerShape(12.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .clickable { onOpenArticle(item.url) }
+            .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -371,7 +482,7 @@ private fun FeedWritingRow(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
-            if (item.imageUrl.isNullOrBlank()) {
+            if (imageUrl.isNullOrBlank()) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.Article,
                     contentDescription = null,
@@ -380,8 +491,8 @@ private fun FeedWritingRow(
                 )
             } else {
                 AsyncImage(
-                    model = item.imageUrl,
-                    contentDescription = item.title,
+                    model = imageUrl,
+                    contentDescription = title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -392,7 +503,7 @@ private fun FeedWritingRow(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = item.title,
+                text = title,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.SemiBold,
@@ -401,9 +512,9 @@ private fun FeedWritingRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (!item.summary.isNullOrBlank()) {
+            if (!summary.isNullOrBlank()) {
                 Text(
-                    text = item.summary,
+                    text = summary,
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -414,9 +525,9 @@ private fun FeedWritingRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
+                val fallback = rememberVectorPainter(bylineFallbackIcon)
                 AsyncImage(
-                    model = item.authorPicture,
+                    model = bylinePicture,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     placeholder = fallback,
@@ -427,18 +538,20 @@ private fun FeedWritingRow(
                         .clip(CircleShape),
                 )
                 Text(
-                    text = item.authorName,
+                    text = byline,
                     style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                Text(
-                    text = RelativeTime.label(item.publishedAt),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (publishedAt > 0) {
+                    Text(
+                        text = RelativeTime.label(publishedAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

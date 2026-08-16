@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import org.dergigi.boris.ui.theme.BorisIcons
 enum class ContentTab {
     Highlights,
     Writings,
+    Rss,
 }
 
 @Composable
@@ -29,6 +31,7 @@ fun ContentTabs(
     tab: ContentTab,
     onSelect: (ContentTab) -> Unit,
     modifier: Modifier = Modifier,
+    showRss: Boolean = false,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -46,6 +49,14 @@ fun ContentTabs(
             icon = Icons.Outlined.Edit,
             onClick = { onSelect(ContentTab.Writings) },
         )
+        if (showRss) {
+            ContentTabChip(
+                selected = tab == ContentTab.Rss,
+                label = stringResource(R.string.feed_tab_rss),
+                icon = Icons.Outlined.RssFeed,
+                onClick = { onSelect(ContentTab.Rss) },
+            )
+        }
     }
 }
 

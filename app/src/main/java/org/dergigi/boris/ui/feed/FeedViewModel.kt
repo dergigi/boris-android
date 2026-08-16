@@ -13,8 +13,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.awaitAll
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.NostrArticle
+import org.dergigi.boris.data.RssItem
+import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip01Event
@@ -77,18 +80,30 @@ class FeedViewModel(
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
 
+    private val _rss = MutableStateFlow<List<RssItem>>(emptyList())
+    val rss: StateFlow<List<RssItem>> = _rss.asStateFlow()
+
+    private val _rssLoading = MutableStateFlow(false)
+    val rssLoading: StateFlow<Boolean> = _rssLoading.asStateFlow()
+
     private var highlights: List<FeedItem> = emptyList()
     private var writings: List<FeedWriting> = emptyList()
     private var failed = false
     private var loadJob: Job? = null
+    private var rssJob: Job? = null
 
     init {
         viewModelScope.launch {
-            var last = FeedScope.fromSettings(SettingsSync.settings.value)
+            var lastScope = FeedScope.fromSettings(SettingsSync.settings.value)
+            var lastFeeds = SettingsSync.settings.value.rssFeeds
             SettingsSync.settings.collect { settings ->
+                if (settings.rssFeeds != lastFeeds) {
+                    lastFeeds = settings.rssFeeds
+                    refreshRss()
+                }
                 val next = FeedScope.fromSettings(settings)
-                if (next == last) return@collect
-                last = next
+                if (next == lastScope) return@collect
+                lastScope = next
                 if (_loggedIn.value) {
                     _scope.value = next
                     publish()
@@ -98,6 +113,7 @@ class FeedViewModel(
     }
 
     fun refresh() {
+        refreshRss()
         val keepItems = highlights.isNotEmpty() || writings.isNotEmpty()
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -140,6 +156,33 @@ class FeedViewModel(
                 }
             } finally {
                 _refreshing.value = false
+            }
+        }
+    }
+
+    private fun refreshRss() {
+        val feeds = SettingsSync.settings.value.rssFeeds
+        if (feeds.isEmpty()) {
+            _rss.value = emptyList()
+            return
+        }
+        rssJob?.cancel()
+        rssJob = viewModelScope.launch {
+            if (_rss.value.isEmpty()) _rssLoading.value = true
+            try {
+                val items = withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        feeds.map { feed ->
+                            async {
+                                runCatching { RssRepository.fetch(feed) }
+                                    .getOrDefault(emptyList())
+                            }
+                        }.awaitAll()
+                    }
+                }.flatten().distinctBy { it.link }.sortedByDescending { it.publishedAt }
+                if (items.isNotEmpty()) _rss.value = items
+            } finally {
+                _rssLoading.value = false
             }
         }
     }

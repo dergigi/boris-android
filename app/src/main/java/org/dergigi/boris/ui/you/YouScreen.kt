@@ -204,6 +204,7 @@ fun YouHighlightsContent(
                                 }
                             }
                         }
+                        ContentTab.Rss -> Unit
                     }
                 }
             }
