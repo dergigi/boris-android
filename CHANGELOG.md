@@ -9,6 +9,18 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-08-16
+
+### Added
+
+- About Boris: separate Report a bug and Suggest a feature buttons, with GitHub issue templates
+- About Boris: Start reading button on the last page
+- About Boris: official Nostr logo on Connect on Nostr; send me sats links to dergigi.com/value
+
+### Changed
+
+- About Boris copy cleaned up for the Android app (no PWA pitch, feed instead of explore, simpler airplane mode wording, RSS mention, peace of mind rewrite)
+
 ## [0.46.0] - 2026-08-16
 
 ### Added
