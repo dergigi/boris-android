@@ -83,5 +83,34 @@ Plans:
 
 - [x] 03-01-PLAN.md — NIP-84 highlights in the reader
 
+## Backlog
+
+### Phase 999.1: Sync reading progress via Nostr (BACKLOG)
+
+**Goal:** Reading progress currently lives only on-device; sync it over Nostr so progress follows the user across devices.
+**Requirements:** TBD (spec choice still open — local-first today; evaluate existing NIPs vs a Boris-specific approach)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.2: Implement search (BACKLOG)
+
+**Goal:** Let users search highlights, writings, bookmarks, and related content from within Boris.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.3: Home screen settings and sections (BACKLOG)
+
+**Goal:** Proper Home settings, plus richer Home sections such as Continue Reading and Most highlighted this week (and room for more).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
 ---
 *Roadmap created: 2026-08-14*
