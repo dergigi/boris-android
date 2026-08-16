@@ -57,6 +57,9 @@ class UserSettings internal constructor(
             else -> BookmarkBucket.Public
         }
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
+    val syncReadingPosition: Boolean get() = bool("syncReadingPosition", true)
+    val autoScrollToReadingPosition: Boolean get() = bool("autoScrollToReadingPosition", true)
+    val autoMarkAsReadOnCompletion: Boolean get() = bool("autoMarkAsReadOnCompletion", false)
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)

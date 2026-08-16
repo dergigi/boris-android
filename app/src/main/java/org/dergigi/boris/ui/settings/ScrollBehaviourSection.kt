@@ -45,6 +45,21 @@ fun ScrollBehaviourSection(
             checked = settings.volumeButtonScroll,
             onCheckedChange = { onUpdate(settings.withBoolean("volumeButtonScroll", it)) },
         )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_sync_reading_position),
+            checked = settings.syncReadingPosition,
+            onCheckedChange = { onUpdate(settings.withBoolean("syncReadingPosition", it)) },
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_auto_scroll_position),
+            checked = settings.autoScrollToReadingPosition,
+            onCheckedChange = { onUpdate(settings.withBoolean("autoScrollToReadingPosition", it)) },
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_auto_archive_complete),
+            checked = settings.autoMarkAsReadOnCompletion,
+            onCheckedChange = { onUpdate(settings.withBoolean("autoMarkAsReadOnCompletion", it)) },
+        )
         if (settings.volumeButtonScroll) {
             SettingRow(stringResource(R.string.settings_volume_scroll_amount)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

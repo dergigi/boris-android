@@ -17,6 +17,7 @@ import org.dergigi.boris.data.OfflineStore
 import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.ReadingPositionStore
+import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         RelayHealth.init(File(filesDir, "relay_health.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
+        ReadingPositionSync.refreshAsync(applicationContext)
         ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))
         RssRepository.init(File(filesDir, "rss_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))

@@ -28,6 +28,35 @@ object RemoteSignerBridge {
         }
     }
 
+    /**
+     * Signs via the signer's content provider without showing UI (NIP-55).
+     * Returns the signed event JSON, or null when the user has not granted
+     * background permission for this event kind.
+     */
+    fun signEventSilently(
+        context: Context,
+        unsignedJson: String,
+        signerPackage: String,
+        currentUserHex: String,
+    ): String? {
+        return try {
+            context.contentResolver.query(
+                Uri.parse("content://$signerPackage.SIGN_EVENT"),
+                arrayOf(unsignedJson, "", currentUserHex),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) return null
+                if (cursor.getColumnIndex("rejected") >= 0) return null
+                val index = cursor.getColumnIndex("event")
+                if (index < 0) null else cursor.getString(index)
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun buildSignEventIntent(
         unsignedJson: String,
         signerPackage: String,

@@ -318,6 +318,17 @@ object RelayQuery {
         return query(urls, listOf(filter))
     }
 
+    /** Reading progress events (kind 39802) authored by [pubkeyHex]. */
+    fun fetchReadingPositions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
+        val urls = relayUrls((readRelays + globalReadRelays()).distinct())
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_READING_PROGRESS))
+            .put("authors", JSONArray().put(pubkeyHex.lowercase()))
+            .put("limit", 500)
+        return query(urls, listOf(filter))
+    }
+
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = relayUrls(readRelays)
         if (urls.isNotEmpty()) {

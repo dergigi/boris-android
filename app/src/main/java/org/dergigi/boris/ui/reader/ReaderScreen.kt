@@ -62,6 +62,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -131,6 +132,7 @@ import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingPositionStore
+import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
@@ -146,11 +148,13 @@ import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
@@ -723,6 +727,7 @@ private fun ArticleBody(
         pendingJumpId = null
         ReaderFocus.clear()
     }
+    val appContext = LocalContext.current.applicationContext
     var positionRestored by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
         if (positionRestored) return@LaunchedEffect
@@ -730,9 +735,13 @@ private fun ArticleBody(
             positionRestored = true
             return@LaunchedEffect
         }
+        // Throttled no-op most of the time; first call pulls positions from relays.
+        withContext(Dispatchers.IO) { ReadingPositionSync.refresh(appContext) }
         val saved = ReadingPositionStore.fraction(content.url)
         val max = snapshotFlow { scrollState.maxValue }.first { it > 0 }
-        ReadingProgress.restoreOffset(saved, max)?.let { scrollState.scrollTo(it) }
+        if (settings.autoScrollToReadingPosition && scrollState.value == 0) {
+            ReadingProgress.restoreOffset(saved, max)?.let { scrollState.scrollTo(it) }
+        }
         positionRestored = true
     }
     LaunchedEffect(content.url) {
@@ -743,6 +752,20 @@ private fun ArticleBody(
             delay(400)
             ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
         }
+    }
+    DisposableEffect(content.url) {
+        onDispose { ReadingPositionSync.publishAsync(appContext, content.url) }
+    }
+    val autoArchive = settings.autoMarkAsReadOnCompletion
+    LaunchedEffect(content.url, loggedIn, archived, autoArchive) {
+        snapshotFlow { ReadingProgress.percent(scrollState.value, scrollState.maxValue) }
+            .collectLatest { percent ->
+                if (percent < 100 || !positionRestored) return@collectLatest
+                // Mirrors the webapp: complete only after holding 100% for 2s.
+                delay(2000)
+                ReadingPositionSync.publishAsync(appContext, content.url)
+                if (autoArchive && loggedIn && !archived) onArchive()
+            }
     }
     val openFromStop = remember<(HighlightStop) -> Unit> {
         { stop ->

@@ -236,6 +236,9 @@
     <string name="settings_hide_top_bar">Hide top bar on scroll</string>
     <string name="settings_volume_scroll">Use volume buttons to scroll</string>
     <string name="settings_volume_scroll_amount">Scroll amount</string>
+    <string name="settings_sync_reading_position">Sync reading position across devices</string>
+    <string name="settings_auto_scroll_position">Auto-scroll to saved reading position</string>
+    <string name="settings_auto_archive_complete">Automatically move to archive at 100%</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_light">Light theme</string>

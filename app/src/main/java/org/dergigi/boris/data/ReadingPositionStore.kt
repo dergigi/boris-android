@@ -10,7 +10,9 @@ object ReadingPositionStore {
     private const val MAX_ENTRIES = 500
     private val lock = Any()
     private var file: File? = null
-    private val positions = LinkedHashMap<String, Float>()
+    private val positions = LinkedHashMap<String, Entry>()
+
+    private data class Entry(val fraction: Float, val updatedAt: Long)
 
     private val _version = MutableStateFlow(0)
 
@@ -25,7 +27,13 @@ object ReadingPositionStore {
                 runCatching {
                     val obj = JSONObject(target.readText())
                     for (key in obj.keys()) {
-                        positions[key] = obj.getDouble(key).toFloat()
+                        val value = obj.optJSONObject(key)
+                        positions[key] = if (value != null) {
+                            Entry(value.optDouble("f", 0.0).toFloat(), value.optLong("t", 0L))
+                        } else {
+                            // Legacy format: plain fraction without timestamp.
+                            Entry(obj.getDouble(key).toFloat(), 0L)
+                        }
                     }
                 }
             }
@@ -43,29 +51,53 @@ object ReadingPositionStore {
         null -> UrlExtractor.normalize(url)
     }
 
-    fun fraction(url: String): Float = synchronized(lock) { positions[key(url)] ?: 0f }
+    fun fraction(url: String): Float = synchronized(lock) { positions[key(url)]?.fraction ?: 0f }
+
+    /** Unix seconds when the position was last updated, 0 if unknown. */
+    fun updatedAt(url: String): Long = synchronized(lock) { positions[key(url)]?.updatedAt ?: 0L }
 
     /** All saved positions, most recently read first. Keys are canonical (see [key]). */
     fun entries(): List<Pair<String, Float>> = synchronized(lock) {
-        positions.entries.reversed().map { it.key to it.value }
+        positions.entries.reversed()
+            .sortedByDescending { it.value.updatedAt }
+            .map { it.key to it.value.fraction }
     }
 
     fun save(url: String, fraction: Float) {
         val clamped = fraction.coerceIn(0f, 1f)
         synchronized(lock) {
-            val k = key(url)
-            positions.remove(k)
-            positions[k] = clamped
-            while (positions.size > MAX_ENTRIES) {
-                positions.remove(positions.keys.first())
-            }
-            val target = file ?: return@synchronized
-            runCatching {
-                val obj = JSONObject()
-                positions.forEach { (key, value) -> obj.put(key, value.toDouble()) }
-                target.writeText(obj.toString())
-            }
+            put(key(url), Entry(clamped, System.currentTimeMillis() / 1000))
         }
         _version.value++
+    }
+
+    /**
+     * Applies a position synced from another device. Newest timestamp wins;
+     * returns false when the local entry is same-aged or newer.
+     */
+    fun merge(key: String, fraction: Float, updatedAt: Long): Boolean {
+        synchronized(lock) {
+            val existing = positions[key]
+            if (existing != null && existing.updatedAt >= updatedAt) return false
+            put(key, Entry(fraction.coerceIn(0f, 1f), updatedAt))
+        }
+        _version.value++
+        return true
+    }
+
+    private fun put(key: String, entry: Entry) {
+        positions.remove(key)
+        positions[key] = entry
+        while (positions.size > MAX_ENTRIES) {
+            positions.remove(positions.keys.first())
+        }
+        val target = file ?: return
+        runCatching {
+            val obj = JSONObject()
+            positions.forEach { (k, v) ->
+                obj.put(k, JSONObject().put("f", v.fraction.toDouble()).put("t", v.updatedAt))
+            }
+            target.writeText(obj.toString())
+        }
     }
 }
