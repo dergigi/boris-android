@@ -87,6 +87,7 @@ Recent decisions affecting current work:
 - Phase 3 added: Nostr highlights
 - Backlog 999.1–999.3 added: reading-progress sync, search, home settings/sections (2026-08-16)
 - Backlog 999.4 added: NIP-50 relay search; 999.2 notes local-cache MVP first (2026-08-16)
+- Backlog 999.5 added: zap people, articles, and highlights (2026-08-16)
 
 ### Pending Todos
 
@@ -109,6 +110,7 @@ Items acknowledged and carried forward from previous milestone close:
 | Sync | Reading progress via Nostr | Backlog 999.1 | 2026-08-16 |
 | Search | Local-cache MVP shipped (v0.50); NIP-50 later | Backlog 999.2 / 999.4 | 2026-08-16 |
 | Home | Settings + Continue Reading / Most highlighted sections | Backlog 999.3 | 2026-08-16 |
+| Zaps | Zap people, articles, and highlights | Backlog 999.5 | 2026-08-16 |
 
 ## Session Continuity
 
