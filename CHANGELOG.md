@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-08-16
+
 ### Added
 
 - Reading position is saved per article on the device and restored when reopening
