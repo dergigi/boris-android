@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-08-17
+
+### Added
+
+- Reader menu: Open in native app for nostr articles (`nostr:naddr` / `nevent` / `note`)
+
 ## [0.51.0] - 2026-08-16
 
 ### Changed
