@@ -282,7 +282,10 @@ private fun SettingsCategoryDetail(
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         when (category) {
-            SettingsCategory.Appearance -> ThemeSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Appearance -> {
+                ThemeSection(settings = settings, onUpdate = onUpdate)
+                ReadingPreview(settings = settings, darkTheme = darkTheme)
+            }
             SettingsCategory.Reading -> {
                 ReadingSection(settings = settings, darkTheme = darkTheme, onUpdate = onUpdate)
                 ReadingPreview(settings = settings, darkTheme = darkTheme)
