@@ -14,6 +14,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Shared or opened links no longer reopen the reader after Back and a screen rotation
 - Article URLs with percent-encoding (e.g. `%26`, `%2F`) no longer get double-decoded before fetch
 - Open-with / VIEW links go through the same URL extractor as share (no raw `dataString` fallback)
+- Reader “Try again” cancels the previous in-flight fetch so an older response cannot overwrite a newer load
 
 ### Changed
 

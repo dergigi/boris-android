@@ -68,12 +68,10 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Fix: Upgrade extracted image URLs to `https://` when the host supports it, or proxy images through the same HTTPS path as articles.
 
 **In-flight `load()` is not cancelled:**
-- Symptoms: Fast retry or a second navigation can show a stale article if the older GET finishes last.
+- Status: Fixed — `load()` cancels the previous `loadJob` (and highlight/membership/archive/author jobs) before starting a new fetch; `CancellationException` is rethrown so cancel is not shown as an error.
+- Symptoms (historical): Fast retry could show a stale article if an older GET finished last.
 - Files: `app/src/main/java/org/dergigi/boris/ui/reader/ReaderViewModel.kt`
-- Trigger: Tap Try again twice, or open a second reader destination while the first fetch is still running (in-article links push a new destination; the old ViewModel stays).
-- Workaround: Wait for the spinner.
-- Root cause: Each `load()` launches a new coroutine. No `Job` cancel, no generation token.
-- Fix: Hold a `Job` and cancel it at the start of `load()`, or use a single `viewModelScope` collector.
+- Root cause: Each `load()` launched a new coroutine with no cancel of the prior one.
 
 **VIEW intents skip `UrlExtractor`:**
 - Status: Fixed — VIEW uses `UrlExtractor.extract` like share; no raw `dataString` fallback (`UrlExtractorTest.viewStyleDataRejectsNonArticleStrings`).

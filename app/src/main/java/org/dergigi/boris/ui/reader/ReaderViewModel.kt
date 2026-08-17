@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,6 +106,7 @@ class ReaderViewModel(
     private var membershipJob: Job? = null
     private var archiveJob: Job? = null
     private var authorJob: Job? = null
+    private var loadJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
     private var saving = false
@@ -155,7 +157,12 @@ class ReaderViewModel(
             publishSaveState()
             return
         }
-        viewModelScope.launch {
+        loadJob?.cancel()
+        highlightJob?.cancel()
+        membershipJob?.cancel()
+        archiveJob?.cancel()
+        authorJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.value = ReaderUiState.Loading
             _highlights.value = emptyList()
             _highlightCount.value = 0
@@ -171,6 +178,8 @@ class ReaderViewModel(
                 startMembershipCheck(content)
                 startArchiveCheck(content)
                 startAuthorFetch(content)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 highlightJob?.cancel()
                 membershipJob?.cancel()
