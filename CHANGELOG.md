@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Cold-start quote screen fades out gently instead of cutting away
+- Home loading spinner cycles through short status labels (relays, highlights, bookmarks, …)
 
 ## [0.70.0] - 2026-08-17
 

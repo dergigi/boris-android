@@ -1,5 +1,10 @@
 package org.dergigi.boris.ui.home
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +49,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,9 +62,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -66,6 +74,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
@@ -324,7 +333,7 @@ fun HomeScreenContent(
                             .padding(vertical = 48.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator()
+                        HomeLoadingIndicator()
                     }
                 }
             }
@@ -548,6 +557,47 @@ fun HomeScreenContent(
         }
     }
 }
+
+@Composable
+private fun HomeLoadingIndicator(modifier: Modifier = Modifier) {
+    val messages = stringArrayResource(R.array.home_loading_status)
+    var index by remember { mutableIntStateOf(0) }
+    LaunchedEffect(messages) {
+        if (messages.isEmpty()) return@LaunchedEffect
+        while (true) {
+            delay(HOME_LOADING_STATUS_MS)
+            index = (index + 1) % messages.size
+        }
+    }
+    Column(
+        modifier = modifier.padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        CircularProgressIndicator()
+        if (messages.isNotEmpty()) {
+            AnimatedContent(
+                targetState = index,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(280)) togetherWith
+                        fadeOut(animationSpec = tween(280))
+                },
+                label = "homeLoadingStatus",
+            ) { i ->
+                Text(
+                    text = messages[i],
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.SansSerif,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+private const val HOME_LOADING_STATUS_MS = 2_200L
 
 @Composable
 private fun HomePromptSections(

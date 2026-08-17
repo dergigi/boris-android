@@ -65,6 +65,14 @@
     <string name="home_login_body">Optional. Link a Nostr account to publish highlights and discover what your friends found interesting enough to highlight.</string>
     <string name="home_login_cta">Log in</string>
     <string name="home_login_dismiss">Dismiss login prompt</string>
+    <string-array name="home_loading_status">
+        <item>Connecting…</item>
+        <item>Fetching from relays…</item>
+        <item>Finding highlights…</item>
+        <item>Grabbing bookmarks…</item>
+        <item>Looking for articles…</item>
+        <item>Almost there…</item>
+    </string-array>
     <string name="about_title">About Boris</string>
     <string name="about_back">Back</string>
     <string name="about_intro_title">Hello! I\'m Boris.</string>
