@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Shared or opened links no longer reopen the reader after Back and a screen rotation
+- Article URLs with percent-encoding (e.g. `%26`, `%2F`) no longer get double-decoded before fetch
 
 ## [0.75.0] - 2026-08-17
 

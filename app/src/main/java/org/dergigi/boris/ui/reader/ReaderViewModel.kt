@@ -40,8 +40,6 @@ import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
 import org.dergigi.boris.nostr.SignerResults
 import org.dergigi.boris.nostr.ZapSplits
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 data class PaintedHighlight(
     val id: String,
@@ -62,9 +60,10 @@ class ReaderViewModel(
     savedStateHandle: SavedStateHandle,
 ) : AndroidViewModel(application) {
     private val repository = ReaderRepository()
-    val url: String = decodeUrl(savedStateHandle.get<String>(URL_ARG).orEmpty())
+    // NavType.StringType already decodes query args once; do not URLDecoder again.
+    val url: String = savedStateHandle.get<String>(URL_ARG).orEmpty()
     val focusHighlightId: String =
-        decodeUrl(savedStateHandle.get<String>(HIGHLIGHT_ARG).orEmpty()).trim().lowercase()
+        savedStateHandle.get<String>(HIGHLIGHT_ARG).orEmpty().trim().lowercase()
 
     private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
@@ -1038,9 +1037,6 @@ class ReaderViewModel(
     companion object {
         const val URL_ARG = "url"
         const val HIGHLIGHT_ARG = "highlight"
-
-        fun decodeUrl(encoded: String): String =
-            URLDecoder.decode(encoded, StandardCharsets.UTF_8.name())
     }
 }
 

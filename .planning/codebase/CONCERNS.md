@@ -28,10 +28,9 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Fix approach: Add keep rules for those libraries first, enable minify on a debug-minified smoke build, then set `isMinifyEnabled = true` for release.
 
 **URL passed through `URLEncoder` plus Navigation decode plus `URLDecoder`:**
-- Issue: `Routes.reader` uses `URLEncoder.encode`. `NavType.StringType` decodes the query arg. `ReaderViewModel.decodeUrl` decodes again.
+- Status: Fixed — `ReaderViewModel` uses the Navigation-decoded arg as-is (no second `URLDecoder`). Covered by `ReaderRouteTest`.
+- Issue (historical): `Routes.reader` uses `URLEncoder.encode`. `NavType.StringType` decodes the query arg. A second decode changed `%26` / `%2F` in the article URL.
 - Files: `app/src/main/java/org/dergigi/boris/ui/BorisApp.kt`, `app/src/main/java/org/dergigi/boris/ui/reader/ReaderViewModel.kt`
-- Impact: Encoded characters in the original URL (`%26`, `%2F`, `+`) can change meaning before `fetch`. See Known Bugs.
-- Fix approach: Treat Navigation's already-decoded arg as the URL. Drop `decodeUrl`, or encode with a scheme that is not decoded twice (Base64 URL-safe). Add JVM tests for `Routes.reader` + decode on URLs that contain `%` and `+`.
 
 **HTML fallback is not a real HTML reader:**
 - Issue: If the Jina body lacks `Markdown Content:`, the full HTML is stored. `ReadableContent.body` runs `stripHtml` and the result is fed to the Markdown renderer. `imageUrls` is called on that stripped `body`, so `<img>` tags are already gone.
@@ -56,12 +55,11 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Root cause: `onCreate` always set `incomingUrl` from the same intent. `LaunchedEffect(incomingUrl)` navigated whenever composition restarted.
 
 **Double-decode changes article URLs:**
-- Symptoms: Articles whose path or query contains percent-encoded reserved characters fetch the wrong URL or 404.
+- Status: Fixed — Navigation already decodes once; `ReaderViewModel` no longer calls `URLDecoder` again (`ReaderRouteTest`).
+- Symptoms (historical): Articles whose path or query contains percent-encoded reserved characters fetch the wrong URL or 404.
 - Files: `app/src/main/java/org/dergigi/boris/ui/BorisApp.kt`, `app/src/main/java/org/dergigi/boris/ui/reader/ReaderViewModel.kt`
 - Trigger: Open `https://example.com/foo?q=a%26b` (or any URL with `%2F` in a path segment).
-- Workaround: None in-app.
-- Root cause: `URLEncoder.encode` then `NavType.StringType` decode then `URLDecoder.decode`. `%26` becomes `&` and splits the query.
-- Fix: Stop calling `decodeUrl` on an already-decoded Navigation arg. Cover with a JVM test.
+- Root cause: `URLEncoder.encode` then `NavType.StringType` decode then `URLDecoder.decode`. `%26` became `&`.
 
 **`http://` images fail under cleartext block:**
 - Symptoms: Gallery / inline images stay empty when the markdown still points at `http://`.
