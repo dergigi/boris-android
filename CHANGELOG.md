@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-08-17
+
 ### Changed
 
 - Splash circle uses the yellow highlighter (inset so the mask does not clip it); quote photo stays on the fullscreen cold-start screen
