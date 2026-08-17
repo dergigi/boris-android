@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.64.0] - 2026-08-17
+
+### Changed
+
+- Splash: television / books quote photo in the Android 12 circle icon
+- Cold start: fullscreen quote loading screen while relays fetch with no local highlights yet
+
 ## [0.63.0] - 2026-08-17
 
 ### Changed
