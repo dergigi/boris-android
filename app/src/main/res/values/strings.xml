@@ -36,8 +36,7 @@
     <string name="nav_search">Search</string>
     <string name="search_title">Search</string>
     <string name="search_placeholder">Highlights, articles, bookmarks…</string>
-    <string name="search_hint">Search your local cache: highlights, articles, bookmarks, and people you\'ve already seen.</string>
-    <string name="search_empty">No matches in your local cache.</string>
+    <string name="search_empty">No matches.</string>
     <string name="search_clear">Clear search</string>
     <string name="search_kind_highlight">Highlight</string>
     <string name="search_kind_article">Article</string>

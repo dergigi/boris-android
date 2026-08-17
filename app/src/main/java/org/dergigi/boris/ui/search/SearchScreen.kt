@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -135,7 +136,7 @@ fun SearchScreenContent(
                 onValueChange = onQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
                 placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = {
                     Icon(
@@ -154,13 +155,12 @@ fun SearchScreenContent(
                     }
                 },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
             )
             when {
-                query.trim().length < 2 -> {
-                    SearchHint(stringResource(R.string.search_hint))
-                }
+                query.trim().length < 2 -> Unit
                 results.isEmpty() -> {
                     SearchHint(stringResource(R.string.search_empty))
                 }
