@@ -33,6 +33,14 @@ class UrlExtractorTest {
     }
 
     @Test
+    fun viewStyleDataRejectsNonArticleStrings() {
+        // VIEW used to fall back to raw dataString; share already used extract.
+        assertNull(UrlExtractor.extract("not a url at all"))
+        assertNull(UrlExtractor.extract("javascript:alert(1)"))
+        assertNull(UrlExtractor.extract("ftp://files.example.com/a"))
+    }
+
+    @Test
     fun resolvesRelativeArticleLinks() {
         assertEquals(
             "https://www.citadel21.com/other",

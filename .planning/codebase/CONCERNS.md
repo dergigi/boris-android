@@ -78,12 +78,10 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Fix: Hold a `Job` and cancel it at the start of `load()`, or use a single `viewModelScope` collector.
 
 **VIEW intents skip `UrlExtractor`:**
-- Symptoms: A VIEW `dataString` that is not a clean http(s) article URL still becomes `incomingUrl`.
-- Files: `app/src/main/java/org/dergigi/boris/MainActivity.kt`, `app/src/main/AndroidManifest.xml`
-- Trigger: `ACTION_VIEW` with an unexpected `dataString` (extra fragments, non-article schemes that still used http/https).
-- Workaround: Paste the URL on Home instead.
-- Root cause: Share uses `UrlExtractor.extract`; VIEW uses `intent.dataString` raw.
-- Fix: Run VIEW through `UrlExtractor.extract` / `articleUrl` the same way as share.
+- Status: Fixed — VIEW uses `UrlExtractor.extract` like share; no raw `dataString` fallback (`UrlExtractorTest.viewStyleDataRejectsNonArticleStrings`).
+- Symptoms (historical): A VIEW `dataString` that is not a clean http(s) article URL still became `incomingUrl`.
+- Files: `app/src/main/java/org/dergigi/boris/MainActivity.kt`
+- Root cause: Share used `UrlExtractor.extract`; VIEW fell back to trimmed raw `dataString`.
 
 ## Security Considerations
 

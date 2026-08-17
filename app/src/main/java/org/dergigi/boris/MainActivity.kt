@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.dergigi.boris.data.CacheLimit
-import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OfflineDownloader
 import org.dergigi.boris.data.OfflineStore
 import org.dergigi.boris.data.OgPreviewCache
@@ -188,14 +187,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun urlFrom(intent: Intent): String? {
-        return when (intent.action) {
-            Intent.ACTION_SEND, Intent.ACTION_PROCESS_TEXT -> UrlExtractor.extract(textFrom(intent))
-            Intent.ACTION_VIEW -> {
-                val raw = intent.dataString ?: textFrom(intent)
-                NostrLink.parse(raw)?.uri ?: UrlExtractor.extract(raw) ?: raw?.trim()?.ifEmpty { null }
-            }
-            else -> UrlExtractor.extract(textFrom(intent))
+        val raw = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.dataString ?: textFrom(intent)
+            else -> textFrom(intent)
         }
+        return UrlExtractor.extract(raw)
     }
 
     private fun textFrom(intent: Intent): String? {
