@@ -23,6 +23,7 @@ object AboutLinks {
     const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"
     const val FEATURE_REQUEST = "$GITHUB/issues/new?template=feature_request.yml"
     const val VALUE = "https://dergigi.com/value/"
+    const val VISION = "https://dergigi.com/2023/04/04/purple-text-orange-highlights/"
     const val AUTHOR_NAME = "Gigi"
     const val AUTHOR_SITE = "https://dergigi.com"
     const val AUTHOR_NPUB =

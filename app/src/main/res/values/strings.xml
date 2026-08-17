@@ -311,6 +311,8 @@
     <string name="settings_about_tutorial_summary">Walk through what Boris can do</string>
     <string name="settings_about_support_summary">Thank the people who zap Boris</string>
     <string name="settings_about_links">Links</string>
+    <string name="settings_about_vision">Vision</string>
+    <string name="settings_about_vision_summary">Purple Text, Orange Highlights</string>
     <string name="settings_about_website">Website</string>
     <string name="settings_about_webapp">Web app</string>
     <string name="settings_about_github">Source code</string>

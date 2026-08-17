@@ -20,6 +20,10 @@ class AboutPagesTest {
         )
         assertEquals("https://njump.to/${AboutLinks.NPUB}", AboutLinks.nostrUrl)
         assertEquals("https://github.com/dergigi/boris-android", AboutLinks.GITHUB)
+        assertEquals(
+            "https://dergigi.com/2023/04/04/purple-text-orange-highlights/",
+            AboutLinks.VISION,
+        )
         assertTrue(ABOUT_FEATURES.isNotEmpty())
     }
 }

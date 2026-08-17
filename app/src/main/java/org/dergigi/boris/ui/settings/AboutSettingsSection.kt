@@ -31,7 +31,9 @@ import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.reader.openWeblink
+import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
+import org.dergigi.boris.ui.theme.HighlightOther
 
 @Composable
 fun AboutSettingsSection(
@@ -61,6 +63,16 @@ fun AboutSettingsSection(
             icon = Icons.AutoMirrored.Outlined.MenuBook,
             tint = linkTint,
             onClick = onOpenTutorial,
+        )
+        AboutActionRow(
+            label = stringResource(R.string.settings_about_vision),
+            subtitle = stringResource(R.string.settings_about_vision_summary),
+            icon = BorisIcons.Highlighter,
+            tint = HighlightOther,
+            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
+            onClick = {
+                openWeblink(AboutLinks.VISION, openInBoris, onOpenArticle, uriHandler::openUri)
+            },
         )
         AboutActionRow(
             label = stringResource(R.string.support_title),
