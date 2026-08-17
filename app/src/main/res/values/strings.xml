@@ -184,7 +184,9 @@
     <string name="highlight_delete_cancel">Cancel</string>
     <string name="highlight_deleted">Highlight deleted.</string>
     <string name="highlight_delete_cancelled">Deletion cancelled.</string>
+    <string name="feed_tab_all">All</string>
     <string name="feed_tab_rss">RSS</string>
+    <string name="feed_all_empty">Nothing in your feeds yet.</string>
     <string name="feed_rss_empty">No RSS items yet.</string>
     <string name="feed_rss_none_configured">Add RSS feeds in Settings to read them here.</string>
     <string name="feed_rss_open_settings">Open settings</string>
@@ -243,7 +245,9 @@
     <string name="settings_home_sections_intro">Order of sections on the Home screen. Empty sections are hidden.</string>
     <string name="settings_section_move_up">Move up</string>
     <string name="settings_section_move_down">Move down</string>
-    <string name="settings_feed_scope">Default Feed Scope</string>
+    <string name="settings_feed_scope">Default Feeds Scope</string>
+    <string name="settings_feed_default_view">Default view</string>
+    <string name="settings_feed_default_view_note">Opens this tab when you go to Feeds.</string>
     <string name="settings_airplane_mode">Airplane mode</string>
     <string name="settings_airplane_body">Boris is offline-first by design. You can read, create highlights, and browse your library without being connected to the internet. Boris will store changes locally and sync later.</string>
     <string name="settings_use_local_relay">Use local relays as cache</string>
@@ -295,7 +299,7 @@
     <string name="settings_media_summary">Full-width images</string>
     <string name="settings_highlights_summary">Style, colors, visibility</string>
     <string name="settings_home_summary">Sections, archived articles</string>
-    <string name="settings_feed_summary">Default scope, RSS feeds</string>
+    <string name="settings_feed_summary">Default view, scope, RSS feeds</string>
     <string name="settings_scroll_summary">Top bar, volume button scrolling</string>
     <string name="settings_airplane_summary">Downloads, storage, local relays</string>
     <string name="settings_relays">Relays</string>

@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -121,7 +122,9 @@ fun FeedScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
-    var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
+    var tab by rememberSaveable {
+        mutableStateOf(ContentTab.fromSettings(settings.defaultFeedView))
+    }
     FeedScreenContent(
         state = state,
         refreshing = refreshing,
@@ -248,82 +251,109 @@ fun FeedScreenContent(
                 tab = tab,
                 onSelect = onSelectTab,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                showAll = true,
                 showRss = true,
             )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                if (tab == ContentTab.Rss) {
-                    if (rssLoading && rssItems.isEmpty()) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                        )
-                    } else {
-                        PullToRefreshBox(
-                            isRefreshing = refreshing,
-                            onRefresh = onRefresh,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            FeedRssList(
-                                items = rssItems,
-                                emptyText = stringResource(
-                                    if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
-                                ),
-                                emptyActionLabel = stringResource(
-                                    if (hasRssFeeds) R.string.feed_retry else R.string.feed_rss_open_settings,
-                                ),
-                                onEmptyAction = if (hasRssFeeds) onRefresh else onOpenRssSettings,
-                                onOpenArticle = onOpenArticle,
-                            )
-                        }
-                    }
-                } else {
-                    when (state) {
-                        FeedUiState.Loading -> {
+                when (tab) {
+                    ContentTab.Rss -> {
+                        if (rssLoading && rssItems.isEmpty()) {
                             CircularProgressIndicator(
                                 modifier = Modifier.align(Alignment.Center),
                             )
-                        }
-                        FeedUiState.Empty -> {
-                            StatusMessage(
-                                text = emptyMessage(tab, filtered = false),
-                                onAction = onRefresh,
-                                modifier = Modifier.align(Alignment.Center),
-                            )
-                        }
-                        FeedUiState.Error -> {
-                            StatusMessage(
-                                text = stringResource(R.string.feed_error),
-                                onAction = onRefresh,
-                                modifier = Modifier.align(Alignment.Center),
-                            )
-                        }
-                        is FeedUiState.Ready -> {
+                        } else {
                             PullToRefreshBox(
                                 isRefreshing = refreshing,
                                 onRefresh = onRefresh,
                                 modifier = Modifier.fillMaxSize(),
                             ) {
-                                when (tab) {
-                                    ContentTab.Highlights -> FeedHighlightList(
-                                        items = state.highlights.filter { it.id !in deletedIds },
-                                        emptyText = emptyMessage(tab, filtered = state.hasHighlights),
-                                        levelColor = { level ->
-                                            when (level) {
-                                                FeedLevel.Mine -> mineColor
-                                                FeedLevel.Friends -> friendsColor
-                                                FeedLevel.Nostrverse -> nostrverseColor
-                                            }
-                                        },
-                                        onRefresh = onRefresh,
-                                        onOpenHighlight = onOpenHighlight,
-                                        menuFor = menuFor,
-                                    )
-                                    ContentTab.Writings -> FeedWritingList(
-                                        items = state.writings,
-                                        emptyText = emptyMessage(tab, filtered = state.hasWritings),
-                                        onRefresh = onRefresh,
-                                        onOpenArticle = onOpenArticle,
-                                    )
-                                    ContentTab.Rss -> Unit
+                                FeedRssList(
+                                    items = rssItems,
+                                    emptyText = stringResource(
+                                        if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
+                                    ),
+                                    emptyActionLabel = stringResource(
+                                        if (hasRssFeeds) R.string.feed_retry else R.string.feed_rss_open_settings,
+                                    ),
+                                    onEmptyAction = if (hasRssFeeds) onRefresh else onOpenRssSettings,
+                                    onOpenArticle = onOpenArticle,
+                                )
+                            }
+                        }
+                    }
+                    ContentTab.All -> {
+                        FeedAllPane(
+                            state = state,
+                            refreshing = refreshing,
+                            rssItems = rssItems,
+                            rssLoading = rssLoading,
+                            deletedIds = deletedIds,
+                            nostrverseColor = nostrverseColor,
+                            friendsColor = friendsColor,
+                            mineColor = mineColor,
+                            onRefresh = onRefresh,
+                            onOpenArticle = onOpenArticle,
+                            onOpenHighlight = onOpenHighlight,
+                            menuFor = menuFor,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    ContentTab.Highlights, ContentTab.Writings -> {
+                        when (state) {
+                            FeedUiState.Loading -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.align(Alignment.Center),
+                                )
+                            }
+                            FeedUiState.Empty -> {
+                                StatusMessage(
+                                    text = emptyMessage(tab, filtered = false),
+                                    onAction = onRefresh,
+                                    modifier = Modifier.align(Alignment.Center),
+                                )
+                            }
+                            FeedUiState.Error -> {
+                                StatusMessage(
+                                    text = stringResource(R.string.feed_error),
+                                    onAction = onRefresh,
+                                    modifier = Modifier.align(Alignment.Center),
+                                )
+                            }
+                            is FeedUiState.Ready -> {
+                                PullToRefreshBox(
+                                    isRefreshing = refreshing,
+                                    onRefresh = onRefresh,
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    when (tab) {
+                                        ContentTab.Highlights -> FeedHighlightList(
+                                            items = state.highlights.filter { it.id !in deletedIds },
+                                            emptyText = emptyMessage(
+                                                tab,
+                                                filtered = state.hasHighlights,
+                                            ),
+                                            levelColor = { level ->
+                                                when (level) {
+                                                    FeedLevel.Mine -> mineColor
+                                                    FeedLevel.Friends -> friendsColor
+                                                    FeedLevel.Nostrverse -> nostrverseColor
+                                                }
+                                            },
+                                            onRefresh = onRefresh,
+                                            onOpenHighlight = onOpenHighlight,
+                                            menuFor = menuFor,
+                                        )
+                                        ContentTab.Writings -> FeedWritingList(
+                                            items = state.writings,
+                                            emptyText = emptyMessage(
+                                                tab,
+                                                filtered = state.hasWritings,
+                                            ),
+                                            onRefresh = onRefresh,
+                                            onOpenArticle = onOpenArticle,
+                                        )
+                                        else -> Unit
+                                    }
                                 }
                             }
                         }
@@ -340,6 +370,159 @@ private fun emptyMessage(tab: ContentTab, filtered: Boolean): String {
     return stringResource(
         if (tab == ContentTab.Writings) R.string.feed_writings_empty else R.string.feed_empty,
     )
+}
+
+private sealed class FeedMergedItem {
+    abstract val sortAt: Long
+    abstract val key: String
+
+    data class Highlight(val item: FeedItem) : FeedMergedItem() {
+        override val sortAt: Long get() = item.createdAt
+        override val key: String get() = "h:${item.id}"
+    }
+
+    data class Writing(val item: FeedWriting) : FeedMergedItem() {
+        override val sortAt: Long get() = item.publishedAt
+        override val key: String get() = "w:${item.id}"
+    }
+
+    data class Rss(val item: RssItem) : FeedMergedItem() {
+        override val sortAt: Long get() = item.publishedAt
+        override val key: String get() = "r:${item.link}"
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FeedAllPane(
+    state: FeedUiState,
+    refreshing: Boolean,
+    rssItems: List<RssItem>,
+    rssLoading: Boolean,
+    deletedIds: Set<String>,
+    nostrverseColor: Color,
+    friendsColor: Color,
+    mineColor: Color,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    menuFor: (FeedItem) -> HighlightCardMenu?,
+    modifier: Modifier = Modifier,
+) {
+    val highlights = (state as? FeedUiState.Ready)?.highlights.orEmpty()
+        .filter { it.id !in deletedIds }
+    val writings = (state as? FeedUiState.Ready)?.writings.orEmpty()
+    val merged = remember(highlights, writings, rssItems) {
+        buildList {
+            highlights.forEach { add(FeedMergedItem.Highlight(it)) }
+            writings.forEach { add(FeedMergedItem.Writing(it)) }
+            rssItems.forEach { add(FeedMergedItem.Rss(it)) }
+        }.sortedByDescending { it.sortAt }
+    }
+    val waiting = state is FeedUiState.Loading && rssLoading && merged.isEmpty()
+    Box(modifier = modifier) {
+        when {
+            waiting -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            state is FeedUiState.Error && merged.isEmpty() -> {
+                StatusMessage(
+                    text = stringResource(R.string.feed_error),
+                    onAction = onRefresh,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+            else -> {
+                PullToRefreshBox(
+                    isRefreshing = refreshing || (rssLoading && rssItems.isEmpty()),
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    FeedAllList(
+                        items = merged,
+                        emptyText = stringResource(R.string.feed_all_empty),
+                        levelColor = { level ->
+                            when (level) {
+                                FeedLevel.Mine -> mineColor
+                                FeedLevel.Friends -> friendsColor
+                                FeedLevel.Nostrverse -> nostrverseColor
+                            }
+                        },
+                        onRefresh = onRefresh,
+                        onOpenArticle = onOpenArticle,
+                        onOpenHighlight = onOpenHighlight,
+                        menuFor = menuFor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedAllList(
+    items: List<FeedMergedItem>,
+    emptyText: String,
+    levelColor: (FeedLevel) -> Color,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    menuFor: (FeedItem) -> HighlightCardMenu?,
+) {
+    if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            StatusMessage(
+                text = emptyText,
+                onAction = onRefresh,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxSize()
+                .align(Alignment.TopCenter),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(items, key = { it.key }) { entry ->
+                when (entry) {
+                    is FeedMergedItem.Highlight -> {
+                        val item = entry.item
+                        HighlightCard(
+                            quote = item.quote,
+                            context = item.context,
+                            color = levelColor(item.level),
+                            createdAt = item.createdAt,
+                            authorName = item.authorName,
+                            host = item.host,
+                            authorPicture = item.authorPicture,
+                            maxQuoteLines = 8,
+                            onClick = item.url?.let { url ->
+                                { onOpenHighlight(url, item.id, item.quote) }
+                            },
+                            menu = menuFor(item),
+                        )
+                    }
+                    is FeedMergedItem.Writing -> {
+                        FeedWritingRow(
+                            item = entry.item,
+                            onOpenArticle = onOpenArticle,
+                        )
+                    }
+                    is FeedMergedItem.Rss -> {
+                        FeedRssRow(
+                            item = entry.item,
+                            onOpenArticle = onOpenArticle,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

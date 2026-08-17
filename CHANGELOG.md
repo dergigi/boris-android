@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Bottom nav and Feeds screen title use “Feeds” instead of “Feed”
+- Feeds adds an All tab (default) that merges Highlights, Writings, and RSS; default tab is configurable in settings with the same pill chips as the screen
 
 ## [0.72.0] - 2026-08-17
 

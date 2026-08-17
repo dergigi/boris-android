@@ -2,6 +2,8 @@ package org.dergigi.boris.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,14 +24,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.ContentTab
+import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.FeedScope
 import org.dergigi.boris.ui.feed.FeedScopeStore
 import org.dergigi.boris.ui.feed.withExploreScope
+import org.dergigi.boris.ui.icon
+import org.dergigi.boris.ui.label
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FeedSettingsSection(
     settings: UserSettings,
@@ -37,6 +45,7 @@ fun FeedSettingsSection(
 ) {
     val context = LocalContext.current
     val scope = FeedScope.fromSettings(settings)
+    val defaultView = ContentTab.fromSettings(settings.defaultFeedView)
     fun toggle(level: FeedLevel) {
         val next = scope.toggle(level)
         if (next == scope) return
@@ -45,8 +54,35 @@ fun FeedSettingsSection(
     }
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.settings_feed_default_view),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ContentTab.feedEntries.forEach { entry ->
+                    ContentTabChip(
+                        selected = defaultView == entry,
+                        label = entry.label(),
+                        icon = entry.icon(),
+                        onClick = {
+                            onUpdate(settings.withString("defaultFeedView", entry.name))
+                        },
+                    )
+                }
+            }
+            Text(
+                text = stringResource(R.string.settings_feed_default_view_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         SettingRow(stringResource(R.string.settings_feed_scope)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),

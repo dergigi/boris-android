@@ -56,6 +56,7 @@ class UserSettings internal constructor(
             "Archive" -> BookmarkBucket.Archive
             else -> BookmarkBucket.Public
         }
+    val defaultFeedView: String get() = string("defaultFeedView", "All")
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
     val syncReadingPosition: Boolean get() = bool("syncReadingPosition", true)
     val autoScrollToReadingPosition: Boolean get() = bool("autoScrollToReadingPosition", true)

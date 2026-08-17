@@ -252,7 +252,7 @@ fun YouHighlightsContent(
                                 }
                             }
                         }
-                        ContentTab.Rss -> Unit
+                        ContentTab.Rss, ContentTab.All -> Unit
                     }
                 }
             }
