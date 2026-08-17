@@ -9,6 +9,22 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-08-17
+
+### Added
+
+- Settings About section with tutorial, Support Boris, and website/GitHub/author links
+- Profile and You overflow menus: Copy Link (npub), Share (njump URL), plus open with njump or native app
+- Reader highlights pane: 3-dot menu on highlight cards (go to quote, profile, njump, delete)
+
+### Changed
+
+- Highlights pane header: visibility toggle before settings
+
+### Fixed
+
+- Article list titles no longer inherit oversized reader body typography when wrapping
+
 ## [0.57.0] - 2026-08-17
 
 ### Changed
