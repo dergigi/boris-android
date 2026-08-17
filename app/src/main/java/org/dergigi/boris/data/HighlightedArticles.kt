@@ -35,11 +35,16 @@ object HighlightedArticles {
         return out
     }
 
-    /** Articles ranked by number of distinct highlight events; needs at least two to rank. */
-    fun mostHighlighted(events: List<Nip01Event>, limit: Int): List<HighlightedArticle> {
+    /** Articles ranked by highlight count in the last week; needs at least two to rank. */
+    fun mostHighlighted(
+        events: List<Nip01Event>,
+        limit: Int,
+        since: Long = System.currentTimeMillis() / 1000 - WEEK_SECONDS,
+    ): List<HighlightedArticle> {
         val counts = LinkedHashMap<String, MutableList<Nip01Event>>()
         val seen = HashSet<String>()
         for (event in events) {
+            if (event.createdAt < since) continue
             if (!seen.add(event.id)) continue
             val raw = Nip84.articleUrl(event) ?: continue
             val target = NostrLink.parse(raw)
@@ -64,6 +69,8 @@ object HighlightedArticles {
                 decorate(HighlightedArticle(url, host, host, null, hits.maxOf { it.createdAt }))
             }
     }
+
+    private const val WEEK_SECONDS = 7L * 24 * 60 * 60
 
     /** Fetches kind-30023 events that are not in the cache, then re-applies titles and covers. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {

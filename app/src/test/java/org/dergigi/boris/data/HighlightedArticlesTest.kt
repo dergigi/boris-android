@@ -132,15 +132,16 @@ class HighlightedArticlesTest {
 
     @Test
     fun mostHighlightedRanksByCountAndNeedsAtLeastTwo() {
+        val now = 1_700_000_000L
         val events = listOf(
-            highlight("https://example.com/popular", createdAt = 1),
-            highlight("https://example.com/popular", createdAt = 2),
-            highlight("https://example.com/popular", createdAt = 3),
-            highlight("https://example.com/runner-up", createdAt = 4),
-            highlight("https://example.com/runner-up", createdAt = 5),
-            highlight("https://example.com/lonely", createdAt = 6),
+            highlight("https://example.com/popular", createdAt = now - 10),
+            highlight("https://example.com/popular", createdAt = now - 9),
+            highlight("https://example.com/popular", createdAt = now - 8),
+            highlight("https://example.com/runner-up", createdAt = now - 7),
+            highlight("https://example.com/runner-up", createdAt = now - 6),
+            highlight("https://example.com/lonely", createdAt = now - 5),
         )
-        val articles = HighlightedArticles.mostHighlighted(events, limit = 12)
+        val articles = HighlightedArticles.mostHighlighted(events, limit = 12, since = now - 7 * 24 * 60 * 60)
         assertEquals(
             listOf(
                 "https://example.com/popular",
@@ -151,11 +152,27 @@ class HighlightedArticlesTest {
     }
 
     @Test
+    fun mostHighlightedIgnoresOlderThanAWeek() {
+        val now = 1_700_000_000L
+        val week = 7L * 24 * 60 * 60
+        val events = listOf(
+            highlight("https://example.com/old", createdAt = now - week - 1),
+            highlight("https://example.com/old", createdAt = now - week - 2),
+            highlight("https://example.com/old", createdAt = now - week - 3),
+            highlight("https://example.com/fresh", createdAt = now - 10),
+            highlight("https://example.com/fresh", createdAt = now - 9),
+        )
+        val articles = HighlightedArticles.mostHighlighted(events, limit = 12, since = now - week)
+        assertEquals(listOf("https://example.com/fresh"), articles.map { it.url })
+    }
+
+    @Test
     fun mostHighlightedDedupesEventIds() {
-        val duplicate = highlight("https://example.com/one", createdAt = 1)
+        val duplicate = highlight("https://example.com/one", createdAt = 1_700_000_000L)
         val articles = HighlightedArticles.mostHighlighted(
             listOf(duplicate, duplicate, duplicate),
             limit = 12,
+            since = 0,
         )
         assertEquals(emptyList<String>(), articles.map { it.url })
     }
