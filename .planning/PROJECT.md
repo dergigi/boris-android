@@ -59,7 +59,7 @@ Companion webapp (bookmarks, highlights, Nostr) is `/Users/gigi/Development/vibe
 ## Constraints
 
 - **Stack**: Kotlin, Jetpack Compose, no Hilt/Koin, no Room. Prefer DataStore or SharedPreferences for the tiny login record.
-- **Versions**: Stay on `0.x.y` until 1.0.0 is explicitly requested.
+- **Versions**: Semantic versioning; `1.0.0` is the first stable release.
 - **Security**: Never log or persist private keys. Boris must not request an `nsec`.
 - **Compatibility**: `minSdk` 26. Amber login needs a `nostrsigner` app. Bunker login needs a `bunker://` token and network.
 - **Placement**: New code under `app/src/main/java/org/dergigi/boris/` (e.g. `data/` or a small `nostr/` package). Match existing file-per-concern style.

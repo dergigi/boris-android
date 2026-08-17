@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-17
+
+First stable release: Android reader with Amber/bunker login, NIP-84 highlights, Feeds, Library, and Search.
+
 ### Fixed
 
 - Shared or opened links no longer reopen the reader after Back and a screen rotation
