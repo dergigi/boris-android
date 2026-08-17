@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Cold-start quote screen fades out gently instead of cutting away
+
 ## [0.70.0] - 2026-08-17
 
 ### Fixed
