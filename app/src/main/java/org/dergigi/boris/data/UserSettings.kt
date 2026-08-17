@@ -49,12 +49,13 @@ class UserSettings internal constructor(
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", false)
     val homeSectionOrder: List<String> get() = stringList("homeSectionOrder")
     val defaultLibraryView: BookmarkBucket
-        get() = when (string("defaultLibraryView", "Public")) {
+        get() = when (string("defaultLibraryView", "All")) {
             "Private" -> BookmarkBucket.Private
+            "Public" -> BookmarkBucket.Public
             "Web" -> BookmarkBucket.Web
             "Look" -> BookmarkBucket.Look
             "Archive" -> BookmarkBucket.Archive
-            else -> BookmarkBucket.Public
+            else -> BookmarkBucket.All
         }
     val defaultFeedView: String get() = string("defaultFeedView", "All")
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)

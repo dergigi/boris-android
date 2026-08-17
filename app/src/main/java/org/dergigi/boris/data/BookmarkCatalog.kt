@@ -10,6 +10,7 @@ import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
 
 enum class BookmarkBucket {
+    All,
     Private,
     Public,
     Web,
@@ -36,12 +37,21 @@ data class BookmarkShelves(
     val privateLocked: Boolean = false,
 ) {
     fun items(bucket: BookmarkBucket): List<BookmarkItem> = when (bucket) {
+        BookmarkBucket.All -> merged()
         BookmarkBucket.Private -> private
         BookmarkBucket.Public -> public
         BookmarkBucket.Web -> web
         BookmarkBucket.Look -> look
         BookmarkBucket.Archive -> archive
     }
+
+    /** Time-sorted union of every shelf; duplicates keep the newest copy. */
+    fun merged(): List<BookmarkItem> =
+        (private + public + web + look + archive)
+            .groupBy { it.id }
+            .values
+            .map { group -> group.maxBy { it.createdAt } }
+            .sortedByDescending { it.createdAt }
 }
 
 object BookmarkCatalog {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Info
@@ -256,7 +257,14 @@ private fun ReadyLibrary(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            ShelfChip(
+                selected = bucket == BookmarkBucket.All,
+                label = stringResource(R.string.library_all),
+                icon = Icons.Outlined.Apps,
+                onClick = { onSelect(BookmarkBucket.All) },
+            )
             ShelfChip(
                 selected = bucket == BookmarkBucket.Private,
                 label = stringResource(R.string.library_private),

@@ -1,29 +1,31 @@
 package org.dergigi.boris.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.theme.BorisIcons
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,8 +48,9 @@ fun LibrarySettingsSection(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             BookmarkBucket.entries.forEach { bucket ->
-                ShelfButton(
+                ShelfChip(
                     label = stringResource(bucket.labelRes),
+                    icon = bucket.icon,
                     selected = settings.defaultLibraryView == bucket,
                     onClick = {
                         onUpdate(settings.withString("defaultLibraryView", bucket.name))
@@ -65,6 +68,7 @@ fun LibrarySettingsSection(
 
 private val BookmarkBucket.labelRes: Int
     get() = when (this) {
+        BookmarkBucket.All -> R.string.library_all
         BookmarkBucket.Private -> R.string.library_private
         BookmarkBucket.Public -> R.string.library_public
         BookmarkBucket.Web -> R.string.library_web
@@ -72,34 +76,36 @@ private val BookmarkBucket.labelRes: Int
         BookmarkBucket.Archive -> R.string.library_archive
     }
 
+private val BookmarkBucket.icon: ImageVector
+    get() = when (this) {
+        BookmarkBucket.All -> Icons.Outlined.Apps
+        BookmarkBucket.Private -> Icons.Outlined.Lock
+        BookmarkBucket.Public -> Icons.Outlined.Public
+        BookmarkBucket.Web -> Icons.Outlined.Language
+        BookmarkBucket.Look -> Icons.Outlined.Visibility
+        BookmarkBucket.Archive -> BorisIcons.Books
+    }
+
 @Composable
-private fun ShelfButton(
+private fun ShelfChip(
     label: String,
+    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(8.dp)
-    val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val fg = if (selected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val border = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline
-    Box(
-        modifier = Modifier
-            .height(36.dp)
-            .clip(shape)
-            .background(bg)
-            .border(1.dp, border, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = fg,
-        )
-    }
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    )
 }

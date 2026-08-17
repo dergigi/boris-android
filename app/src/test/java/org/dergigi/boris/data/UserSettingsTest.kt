@@ -129,7 +129,7 @@ class UserSettingsTest {
     @Test
     fun defaultLibraryViewReadsAndFallsBack() {
         assertEquals(
-            BookmarkBucket.Public,
+            BookmarkBucket.All,
             UserSettings.defaults().defaultLibraryView,
         )
         assertEquals(
@@ -137,11 +137,15 @@ class UserSettingsTest {
             UserSettings.parse("""{"defaultLibraryView":"Private"}""").defaultLibraryView,
         )
         assertEquals(
+            BookmarkBucket.Public,
+            UserSettings.parse("""{"defaultLibraryView":"Public"}""").defaultLibraryView,
+        )
+        assertEquals(
             BookmarkBucket.Look,
             UserSettings.parse("""{"defaultLibraryView":"Look"}""").defaultLibraryView,
         )
         assertEquals(
-            BookmarkBucket.Public,
+            BookmarkBucket.All,
             UserSettings.parse("""{"defaultLibraryView":"nope"}""").defaultLibraryView,
         )
         val updated = UserSettings.defaults().withString("defaultLibraryView", "Archive")
