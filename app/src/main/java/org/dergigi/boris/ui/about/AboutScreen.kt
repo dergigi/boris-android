@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.about
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -141,6 +143,13 @@ fun AboutScreen(
 @Composable
 private fun IntroPage() {
     AboutPageColumn {
+        Image(
+            painter = painterResource(R.drawable.ic_boris_logo),
+            contentDescription = stringResource(R.string.about_title),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(140.dp),
+        )
+        Spacer(Modifier.height(28.dp))
         Text(
             text = stringResource(R.string.about_intro_title),
             style = MaterialTheme.typography.headlineMedium.copy(
