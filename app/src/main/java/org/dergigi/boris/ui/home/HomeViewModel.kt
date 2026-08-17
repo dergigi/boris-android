@@ -127,35 +127,27 @@ class HomeViewModel(
                                 ),
                             )
                         }
-                        val previews = loadPreviews(
-                            (rawYours + rawFriends + rawOthers + rawContinue + rawMost + rawRandom)
-                                .map { it.url }
-                                .distinct(),
-                        )
                         LoadedRows(
-                            applyPreviews(rawYours, previews),
-                            applyPreviews(rawFriends, previews),
-                            applyPreviews(rawOthers, previews),
+                            rawYours,
+                            rawFriends,
+                            rawOthers,
                             archivedKeys,
-                            applyPreviews(rawContinue, previews),
-                            applyPreviews(rawMost, previews),
-                            applyPreviews(rawRandom, previews),
+                            rawContinue,
+                            rawMost,
+                            rawRandom,
                         )
                     }
                 }
-                _highlights.value = if (rows.isEmpty()) {
-                    HomeHighlightsState.Empty
+                if (rows.isEmpty()) {
+                    _highlights.value = HomeHighlightsState.Empty
                 } else {
-                    HomeHighlightsState.Ready(
-                        rows.yours,
-                        rows.friends,
-                        rows.others,
-                        loggedIn = pubkey != null,
-                        archivedKeys = rows.archivedKeys,
-                        continueReading = rows.continueReading,
-                        mostHighlighted = rows.mostHighlighted,
-                        randomArticles = rows.randomArticles,
-                    )
+                    // Show rows right away with whatever previews are cached;
+                    // OG metadata fetches decorate them in a second pass.
+                    _highlights.value = rows.toReady(pubkey, emptyMap())
+                    val previews = withContext(Dispatchers.IO) {
+                        loadPreviews(rows.urls())
+                    }
+                    _highlights.value = rows.toReady(pubkey, previews)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -322,7 +314,26 @@ class HomeViewModel(
         fun isEmpty(): Boolean =
             yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
                 continueReading.isEmpty() && mostHighlighted.isEmpty() && randomArticles.isEmpty()
+
+        fun urls(): List<String> =
+            (yours + friends + others + continueReading + mostHighlighted + randomArticles)
+                .map { it.url }
+                .distinct()
     }
+
+    private fun LoadedRows.toReady(
+        pubkey: String?,
+        previews: Map<String, OgPreview?>,
+    ): HomeHighlightsState.Ready = HomeHighlightsState.Ready(
+        applyPreviews(yours, previews),
+        applyPreviews(friends, previews),
+        applyPreviews(others, previews),
+        loggedIn = pubkey != null,
+        archivedKeys = archivedKeys,
+        continueReading = applyPreviews(continueReading, previews),
+        mostHighlighted = applyPreviews(mostHighlighted, previews),
+        randomArticles = applyPreviews(randomArticles, previews),
+    )
 
     companion object {
         private const val HIGHLIGHT_LIMIT = 80

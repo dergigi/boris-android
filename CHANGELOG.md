@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Home loading “Connecting…” shows briefly once, then cycles the later status lines
+- Home shows results much sooner: rows render before link previews finish, and relay queries no longer wait the full timeout for one slow relay
 
 ## [0.71.0] - 2026-08-17
 

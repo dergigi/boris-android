@@ -747,7 +747,18 @@ object RelayQuery {
             )
         }
         try {
-            eose.await(QUERY_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            // Fast relays answer in well under a second. Once most have EOSE'd,
+            // give stragglers only a short grace instead of the full timeout.
+            if (!eose.await(QUERY_MAJORITY_WAIT_MS, TimeUnit.MILLISECONDS)) {
+                val done = reachable.size - eose.count.toInt()
+                val majority = done >= (reachable.size + 1) / 2
+                val extra = if (majority) {
+                    QUERY_STRAGGLER_GRACE_MS
+                } else {
+                    QUERY_TIMEOUT_MS - QUERY_MAJORITY_WAIT_MS
+                }
+                eose.await(extra, TimeUnit.MILLISECONDS)
+            }
         } catch (_: Exception) {
         }
         active.forEach { (relay, subId) -> relay.unsubscribe(subId) }
@@ -817,6 +828,8 @@ object RelayQuery {
     private val ZAP_RELAYS = listOf("wss://relay.getalby.com/v1")
 
     private const val QUERY_TIMEOUT_MS = 8_000L
+    private const val QUERY_MAJORITY_WAIT_MS = 2_000L
+    private const val QUERY_STRAGGLER_GRACE_MS = 500L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
     private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
     private const val PROFILE_CHUNK = 25
