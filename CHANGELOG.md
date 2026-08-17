@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.74.0] - 2026-08-17
+
 ### Changed
 
 - Search: drop the local-cache intro copy, nudge the field down a bit, and round it like Home article cards
