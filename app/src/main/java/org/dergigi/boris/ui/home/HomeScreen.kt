@@ -563,10 +563,13 @@ private fun HomeLoadingIndicator(modifier: Modifier = Modifier) {
     val messages = stringArrayResource(R.array.home_loading_status)
     var index by remember { mutableIntStateOf(0) }
     LaunchedEffect(messages) {
-        if (messages.isEmpty()) return@LaunchedEffect
+        if (messages.size <= 1) return@LaunchedEffect
+        // Connecting is quick; show it once, then loop the rest.
+        delay(HOME_LOADING_CONNECT_MS)
+        index = 1
         while (true) {
             delay(HOME_LOADING_STATUS_MS)
-            index = (index + 1) % messages.size
+            index = if (index >= messages.lastIndex) 1 else index + 1
         }
     }
     Column(
@@ -597,6 +600,7 @@ private fun HomeLoadingIndicator(modifier: Modifier = Modifier) {
     }
 }
 
+private const val HOME_LOADING_CONNECT_MS = 800L
 private const val HOME_LOADING_STATUS_MS = 2_200L
 
 @Composable

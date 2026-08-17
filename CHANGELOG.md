@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Home loading “Connecting…” shows briefly once, then cycles the later status lines
+
 ## [0.71.0] - 2026-08-17
 
 ### Changed
