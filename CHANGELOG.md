@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.61.0] - 2026-08-17
+
+### Added
+
+- Settings About: Vision link to Purple Text, Orange Highlights
+
+### Changed
+
+- Feed settings category uses the RSS feed icon
+- Zapstore description: “What highlighter was supposed to be.”
+
 ## [0.60.0] - 2026-08-17
 
 ### Added
