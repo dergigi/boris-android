@@ -1,6 +1,7 @@
 package org.dergigi.boris.ui
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -29,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.HighlightShare
 import org.dergigi.boris.nostr.NeventPointer
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
@@ -47,17 +50,24 @@ private const val NJUMP_BASE = "https://njump.to"
 
 @Composable
 fun HighlightCardMenuButton(
-    menu: HighlightCardMenu,
+    menu: HighlightCardMenu? = null,
     modifier: Modifier = Modifier,
+    shareUrl: String? = null,
+    shareQuote: String = "",
 ) {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val nevent = remember(menu.highlightId, menu.authorHex) {
+    val shareLabel = stringResource(R.string.action_share)
+    val shareTarget = remember(shareUrl, shareQuote) {
+        shareUrl?.takeIf { it.isNotBlank() }?.let { HighlightShare.url(it, shareQuote) }
+    }
+    val nevent = remember(menu?.highlightId, menu?.authorHex) {
+        val id = menu?.highlightId ?: return@remember null
         runCatching {
             Nip19.neventEncode(
                 NeventPointer(
-                    eventId = menu.highlightId,
+                    eventId = id,
                     relays = RelayList.FALLBACK.take(3),
                     author = menu.authorHex,
                     kind = Nip01Event.KIND_HIGHLIGHT,
@@ -81,13 +91,23 @@ fun HighlightCardMenuButton(
             expanded = open,
             onDismissRequest = { open = false },
         ) {
-            menu.onGoToQuote?.let { action ->
+            shareTarget?.let { target ->
+                MenuItem(R.string.action_share, Icons.Outlined.Share) {
+                    open = false
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, target)
+                    }
+                    context.startActivity(Intent.createChooser(intent, shareLabel))
+                }
+            }
+            menu?.onGoToQuote?.let { action ->
                 MenuItem(R.string.highlight_menu_go_to_quote, Icons.Outlined.FormatQuote) {
                     open = false
                     action()
                 }
             }
-            menu.onViewProfile?.let { action ->
+            menu?.onViewProfile?.let { action ->
                 MenuItem(R.string.highlight_menu_view_profile, Icons.Outlined.Person) {
                     open = false
                     action()
@@ -103,7 +123,7 @@ fun HighlightCardMenuButton(
                     openExternal(context, "nostr:$nevent")
                 }
             }
-            menu.onDelete?.let {
+            menu?.onDelete?.let {
                 MenuItem(R.string.highlight_menu_delete, Icons.Outlined.Delete) {
                     open = false
                     confirmDelete = true
@@ -120,7 +140,7 @@ fun HighlightCardMenuButton(
                 TextButton(
                     onClick = {
                         confirmDelete = false
-                        menu.onDelete?.invoke()
+                        menu?.onDelete?.invoke()
                     },
                 ) {
                     Text(

@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Profile search field is smaller and quieter
+- Highlight share lives in the card's overflow menu instead of a separate icon
 
 ## [1.3.0] - 2026-08-18
 

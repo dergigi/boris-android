@@ -1,6 +1,5 @@
 package org.dergigi.boris.ui
 
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,20 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FormatQuote
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
@@ -44,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
-import org.dergigi.boris.data.HighlightShare
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.nostr.QuoteMatch
@@ -234,42 +228,14 @@ fun HighlightCard(
                 picture = authorPicture,
                 modifier = Modifier.weight(1f, fill = false),
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!url.isNullOrBlank()) {
-                    HighlightShareButton(url = url, quote = quote)
-                }
-                if (menu != null) {
-                    HighlightCardMenuButton(menu = menu)
-                }
+            if (menu != null || !url.isNullOrBlank()) {
+                HighlightCardMenuButton(
+                    menu = menu,
+                    shareUrl = url,
+                    shareQuote = quote,
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun HighlightShareButton(
-    url: String,
-    quote: String,
-) {
-    val context = LocalContext.current
-    val shareLabel = stringResource(R.string.action_share)
-    val shareUrl = remember(url, quote) { HighlightShare.url(url, quote) }
-    IconButton(
-        onClick = {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, shareUrl)
-            }
-            context.startActivity(Intent.createChooser(intent, shareLabel))
-        },
-        modifier = Modifier.size(28.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Share,
-            contentDescription = shareLabel,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp),
-        )
     }
 }
 
