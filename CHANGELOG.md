@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-18
+
 ### Added
 
 - "Load more" at the end of a profile's highlights list pages in older highlights (NIP-01 `until`) until the relays have nothing left
@@ -17,6 +19,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Home rows (recently highlighted by you/friends/others, continue reading, most highlighted, random) show up to 21 articles instead of 12, backed by a larger highlight pool
 - Profile pull-to-refresh only re-queries the visible tab's kind (writings or highlights); profile, relation, and the other tab stay on cache
+- Renamed the "Random articles" home row to "Random unreads"
 
 ## [1.0.1] - 2026-08-17
 
