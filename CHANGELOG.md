@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-17
+
 ### Fixed
 
 - Reader no longer lags or freezes on articles with many highlights: quote positions are matched once per paragraph instead of on every drawn frame
