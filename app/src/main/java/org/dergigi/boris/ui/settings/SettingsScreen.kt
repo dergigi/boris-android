@@ -25,13 +25,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CellTower
-import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -92,7 +92,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
         SettingsCategory.Home -> Icons.Outlined.Home
         SettingsCategory.Library -> Icons.Outlined.LocalLibrary
-        SettingsCategory.Feed -> Icons.Outlined.DynamicFeed
+        SettingsCategory.Feed -> Icons.Outlined.RssFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
         SettingsCategory.Relays -> Icons.Outlined.CellTower
         SettingsCategory.Airplane -> Icons.Outlined.Flight
