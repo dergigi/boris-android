@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.60.0] - 2026-08-17
+
+### Added
+
+- Settings: import RSS feeds from an OPML file
+
 ## [0.59.0] - 2026-08-17
 
 ### Added
