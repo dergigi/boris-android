@@ -12,7 +12,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OfflineDownloader
@@ -29,6 +33,8 @@ import org.dergigi.boris.nostr.OfflineSync
 import org.dergigi.boris.nostr.RelayHealth
 import org.dergigi.boris.nostr.RelayPool
 import org.dergigi.boris.ui.BorisApp
+import org.dergigi.boris.ui.home.HomeHighlightsState
+import org.dergigi.boris.ui.home.HomeViewModel
 import org.dergigi.boris.ui.reader.VolumeKeys
 import org.dergigi.boris.ui.shell.LoadingScreen
 import org.dergigi.boris.ui.theme.BorisTheme
@@ -43,8 +49,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         OfflineSync.bind(this)
         EventCache.init(File(filesDir, "event_cache"))
-        // Keep the system circle only until Compose can draw the fullscreen
-        // loading screen (or the app, if the cache is already warm).
+        // Hold the system circle until Compose is ready to show either the app
+        // or the fullscreen cold-start loading screen.
         var composeDrawn = false
         splash.setKeepOnScreenCondition { !composeDrawn }
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
@@ -58,22 +64,39 @@ class MainActivity : ComponentActivity() {
         applyIntent(intent)
         enableEdgeToEdge()
         setContent {
-            var cacheReady by remember { mutableStateOf(EventCache.isReady()) }
+            val homeViewModel: HomeViewModel = viewModel()
+            // Fullscreen quote while a cold start has nothing local and home is
+            // still talking to relays. Warm starts (cached highlights) skip it.
+            var coldStartLoading by remember { mutableStateOf(false) }
+            var appReady by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
-                composeDrawn = true
-                while (!EventCache.isReady()) {
-                    delay(32)
+                withContext(Dispatchers.IO) { EventCache.awaitReady() }
+                val deepLink = !incomingUrl.isNullOrBlank() || !incomingBunker.isNullOrBlank()
+                val hasLocal = withContext(Dispatchers.IO) { EventCache.hasHighlights() }
+                if (hasLocal || deepLink) {
+                    composeDrawn = true
+                    appReady = true
+                    return@LaunchedEffect
                 }
-                cacheReady = true
+                coldStartLoading = true
+                composeDrawn = true
+                homeViewModel.refresh()
+                withTimeoutOrNull(BOOT_FETCH_TIMEOUT_MS) {
+                    homeViewModel.highlights.first { it !is HomeHighlightsState.Loading }
+                }
+                coldStartLoading = false
+                appReady = true
             }
             BorisTheme {
-                if (cacheReady) {
-                    BorisApp(
+                when {
+                    coldStartLoading -> LoadingScreen()
+                    appReady -> BorisApp(
                         incomingUrl = incomingUrl,
                         incomingBunker = incomingBunker,
+                        homeViewModel = homeViewModel,
                     )
-                } else {
-                    LoadingScreen()
+                    // System splash still covers this while we decide.
+                    else -> LoadingScreen()
                 }
             }
         }
@@ -146,5 +169,9 @@ class MainActivity : ComponentActivity() {
         if (clip.itemCount == 0) return null
         val item = clip.getItemAt(0)
         return item.text?.toString() ?: item.uri?.toString()
+    }
+
+    companion object {
+        private const val BOOT_FETCH_TIMEOUT_MS = 20_000L
     }
 }

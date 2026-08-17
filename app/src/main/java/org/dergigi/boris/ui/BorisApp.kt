@@ -26,6 +26,7 @@ import org.dergigi.boris.ui.support.SupportScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
+import org.dergigi.boris.ui.home.HomeViewModel
 import org.dergigi.boris.ui.library.LibraryScreen
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.reader.ReaderFocus
@@ -74,6 +75,7 @@ fun BorisApp(
     incomingUrl: String? = null,
     incomingBunker: String? = null,
     authViewModel: AuthViewModel = viewModel(),
+    homeViewModel: HomeViewModel = viewModel(),
 ) {
     val navController = rememberNavController()
     val pictureUrl by authViewModel.pictureUrl.collectAsStateWithLifecycle()
@@ -140,6 +142,7 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        viewModel = homeViewModel,
                         authViewModel = authViewModel,
                     )
                 }

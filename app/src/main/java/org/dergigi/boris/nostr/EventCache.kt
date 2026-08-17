@@ -46,6 +46,13 @@ object EventCache {
     /** True once the initial disk load finished (or never started). */
     fun isReady(): Boolean = !initialized || loadedLatch.count == 0L
 
+    /** Blocks until [isReady], or [timeoutMs] elapses. */
+    fun awaitReady(timeoutMs: Long = 30_000L): Boolean =
+        !initialized || loadedLatch.await(timeoutMs, TimeUnit.MILLISECONDS)
+
+    /** Local highlights already on disk (warm start / returning user). */
+    fun hasHighlights(): Boolean = byKind(Nip01Event.KIND_HIGHLIGHT).isNotEmpty()
+
     fun put(event: Nip01Event) {
         awaitLoaded()
         if (putInternal(event)) scheduleSave(event.kind)
