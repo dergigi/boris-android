@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Search box on your profile and other people's profiles filters the visible highlights or writings
+- Profile pages show public bookmarks (NIP-51) and web bookmarks (NIP-B0) as extra tabs
 
 ## [1.2.0] - 2026-08-18
 

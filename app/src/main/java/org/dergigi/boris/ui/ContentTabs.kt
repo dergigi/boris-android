@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -26,6 +28,8 @@ enum class ContentTab {
     All,
     Highlights,
     Writings,
+    Public,
+    Web,
     Rss,
     ;
 
@@ -47,6 +51,8 @@ fun ContentTab.label(): String = when (this) {
     ContentTab.All -> stringResource(R.string.feed_tab_all)
     ContentTab.Highlights -> stringResource(R.string.you_tab_highlights)
     ContentTab.Writings -> stringResource(R.string.you_tab_writings)
+    ContentTab.Public -> stringResource(R.string.library_public)
+    ContentTab.Web -> stringResource(R.string.library_web)
     ContentTab.Rss -> stringResource(R.string.feed_tab_rss)
 }
 
@@ -54,6 +60,8 @@ fun ContentTab.icon(): ImageVector = when (this) {
     ContentTab.All -> Icons.Outlined.Apps
     ContentTab.Highlights -> BorisIcons.Highlighter
     ContentTab.Writings -> Icons.Outlined.Edit
+    ContentTab.Public -> Icons.Outlined.Public
+    ContentTab.Web -> Icons.Outlined.Language
     ContentTab.Rss -> Icons.Outlined.RssFeed
 }
 
@@ -65,6 +73,7 @@ fun ContentTabs(
     modifier: Modifier = Modifier,
     showRss: Boolean = false,
     showAll: Boolean = false,
+    showBookmarks: Boolean = false,
 ) {
     FlowRow(
         modifier = modifier.fillMaxWidth(),
@@ -91,6 +100,20 @@ fun ContentTabs(
             icon = ContentTab.Writings.icon(),
             onClick = { onSelect(ContentTab.Writings) },
         )
+        if (showBookmarks) {
+            ContentTabChip(
+                selected = tab == ContentTab.Public,
+                label = ContentTab.Public.label(),
+                icon = ContentTab.Public.icon(),
+                onClick = { onSelect(ContentTab.Public) },
+            )
+            ContentTabChip(
+                selected = tab == ContentTab.Web,
+                label = ContentTab.Web.label(),
+                icon = ContentTab.Web.icon(),
+                onClick = { onSelect(ContentTab.Web) },
+            )
+        }
         if (showRss) {
             ContentTabChip(
                 selected = tab == ContentTab.Rss,

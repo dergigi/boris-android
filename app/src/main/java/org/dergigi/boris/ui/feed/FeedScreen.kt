@@ -298,6 +298,7 @@ fun FeedScreenContent(
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
+                    ContentTab.Public, ContentTab.Web -> Unit
                     ContentTab.Highlights, ContentTab.Writings -> {
                         when (state) {
                             FeedUiState.Loading -> {

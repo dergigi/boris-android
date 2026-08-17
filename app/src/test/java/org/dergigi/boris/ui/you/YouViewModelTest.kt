@@ -54,6 +54,23 @@ class YouViewModelTest {
     }
 
     @Test
+    fun bookmarkMatchesTitleHostAndUrl() {
+        val item = org.dergigi.boris.data.BookmarkItem(
+            id = "r:https://example.com/post",
+            title = "A public bookmark",
+            url = "https://example.com/post",
+            host = "example.com",
+            imageUrl = null,
+            createdAt = 1,
+            bucket = org.dergigi.boris.data.BookmarkBucket.Public,
+        )
+        assertTrue(item.matchesQuery("public"))
+        assertTrue(item.matchesQuery("EXAMPLE"))
+        assertTrue(item.matchesQuery("post"))
+        assertTrue(!item.matchesQuery("bitcoin"))
+    }
+
+    @Test
     fun writingFromSkipsEventsWithoutADtag() {
         val event = article(d = null, title = "Nope")
         assertNull(YouViewModel.writingFrom(event))

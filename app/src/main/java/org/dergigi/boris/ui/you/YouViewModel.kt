@@ -13,12 +13,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.BookmarkCatalog
+import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.NostrArticle
+import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.BookmarkRefKind
+import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
+import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.Nip84
+import org.dergigi.boris.nostr.NipB0
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
@@ -59,11 +67,21 @@ internal fun YouWriting.matchesQuery(query: String): Boolean {
         summary.orEmpty().contains(q, ignoreCase = true)
 }
 
+internal fun BookmarkItem.matchesQuery(query: String): Boolean {
+    val q = query.trim()
+    if (q.isEmpty()) return true
+    return title.contains(q, ignoreCase = true) ||
+        host.orEmpty().contains(q, ignoreCase = true) ||
+        url.orEmpty().contains(q, ignoreCase = true)
+}
+
 sealed interface YouUiState {
     data object Loading : YouUiState
     data class Ready(
         val highlights: List<YouHighlight>,
         val writings: List<YouWriting>,
+        val publicBookmarks: List<BookmarkItem> = emptyList(),
+        val webBookmarks: List<BookmarkItem> = emptyList(),
     ) : YouUiState
     data object Error : YouUiState
 }
@@ -129,7 +147,12 @@ class YouViewModel(
                 if (cached != null) {
                     _profile.value = cached.profile
                     _relation.value = cached.relation
-                    _state.value = YouUiState.Ready(cached.highlights, cached.writings)
+                    _state.value = YouUiState.Ready(
+                        cached.highlights,
+                        cached.writings,
+                        cached.publicBookmarks,
+                        cached.webBookmarks,
+                    )
                     showing = true
                 }
             }
@@ -149,6 +172,8 @@ class YouViewModel(
                     }.distinct()
                     val wantHighlights = tab == null || tab == ContentTab.Highlights
                     val wantWritings = tab == null || tab == ContentTab.Writings
+                    val wantPublic = tab == null || tab == ContentTab.Public
+                    val wantWeb = tab == null || tab == ContentTab.Web
                     val shown = if (keepItems) _state.value as? YouUiState.Ready else null
                     coroutineScope {
                         val highlights = async {
@@ -168,18 +193,60 @@ class YouViewModel(
                                 cachedWritings(key)
                             }
                         }
+                        val bookmarks = async {
+                            if (wantPublic || wantWeb) {
+                                val list = if (wantPublic) {
+                                    RelayQuery.fetchBookmarkList(key, relays)
+                                } else {
+                                    EventCache.latest(Nip01Event.KIND_BOOKMARKS, key)
+                                }
+                                val web = if (wantWeb) {
+                                    RelayQuery.fetchWebBookmarks(key, relays)
+                                } else {
+                                    RelayQuery.cachedWebBookmarks(key)
+                                }
+                                val hydrated = hydrateBookmarks(list, web, remote = true)
+                                val publicItems = if (wantPublic) {
+                                    hydrated.first
+                                } else {
+                                    shown?.publicBookmarks ?: hydrated.first
+                                }
+                                val webItems = if (wantWeb) {
+                                    hydrated.second
+                                } else {
+                                    shown?.webBookmarks ?: hydrated.second
+                                }
+                                publicItems to webItems
+                            } else {
+                                (shown?.publicBookmarks ?: emptyList()) to
+                                    (shown?.webBookmarks ?: emptyList())
+                            }
+                        }
                         // A tab-scoped pull only re-queries that tab's kind;
                         // profile and relation stay on cache.
                         val profile = async {
                             if (tab == null) RelayQuery.fetchProfile(key) else _profile.value ?: RelayQuery.fetchProfile(key)
                         }
                         val relation = async { relationFor(key, remote = tab == null) }
-                        Loaded(highlights.await(), writings.await(), profile.await(), relation.await())
+                        val (publicBookmarks, webBookmarks) = bookmarks.await()
+                        Loaded(
+                            highlights.await(),
+                            writings.await(),
+                            publicBookmarks,
+                            webBookmarks,
+                            profile.await(),
+                            relation.await(),
+                        )
                     }
                 }
                 _profile.value = loaded.profile
                 _relation.value = loaded.relation
-                _state.value = YouUiState.Ready(loaded.highlights, loaded.writings)
+                _state.value = YouUiState.Ready(
+                    loaded.highlights,
+                    loaded.writings,
+                    loaded.publicBookmarks,
+                    loaded.webBookmarks,
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -237,9 +304,69 @@ class YouViewModel(
     private fun loadCached(key: String): Loaded? {
         val highlights = cachedHighlights(key)
         val writings = cachedWritings(key)
+        val (publicBookmarks, webBookmarks) = hydrateBookmarks(
+            EventCache.latest(Nip01Event.KIND_BOOKMARKS, key),
+            RelayQuery.cachedWebBookmarks(key),
+            remote = false,
+        )
         val profile = RelayQuery.cachedProfiles(listOf(key))[key]
-        if (highlights.isEmpty() && writings.isEmpty() && profile == null) return null
-        return Loaded(highlights, writings, profile, relationFor(key, remote = false))
+        if (highlights.isEmpty() && writings.isEmpty() &&
+            publicBookmarks.isEmpty() && webBookmarks.isEmpty() && profile == null
+        ) {
+            return null
+        }
+        return Loaded(
+            highlights,
+            writings,
+            publicBookmarks,
+            webBookmarks,
+            profile,
+            relationFor(key, remote = false),
+        )
+    }
+
+    private fun hydrateBookmarks(
+        list: Nip01Event?,
+        web: List<Nip01Event>,
+        remote: Boolean,
+    ): Pair<List<BookmarkItem>, List<BookmarkItem>> {
+        val refs = list?.let { Nip51.publicRefs(it) }.orEmpty()
+        val articles = linkedMapOf<String, Nip01Event>()
+        for (ref in refs.filter { it.kind == BookmarkRefKind.Article }.distinctBy { it.value }.take(ARTICLE_LIMIT)) {
+            val article = NostrArticle.fromCoordinate(ref.value) ?: continue
+            val event = if (remote) {
+                RelayQuery.fetchArticle(article.pointer)
+            } else {
+                EventCache.latest(article.pointer.kind, article.pointer.pubkey, article.pointer.identifier)
+            }
+            if (event != null) articles[ref.value] = event
+        }
+        val noteIds = refs.filter { it.kind == BookmarkRefKind.Note }
+            .map { it.value.lowercase() }
+            .distinct()
+            .take(NOTE_LIMIT)
+        val notes = if (remote && noteIds.isNotEmpty()) {
+            RelayQuery.fetchEvents(noteIds)
+        } else {
+            noteIds.mapNotNull { id -> EventCache.event(id)?.let { id to it } }.toMap()
+        }
+        val httpUrls = buildList {
+            refs.filter { it.kind == BookmarkRefKind.Url }.forEach { add(it.value) }
+            web.forEach { event -> NipB0.url(event)?.let(::add) }
+        }.distinct().take(PREVIEW_LIMIT)
+        val previews = httpUrls.associateWith { url ->
+            ArticlePreview.get(url)
+                ?: if (remote) runCatching { OgMetaClient.fetch(url) }.getOrNull() else null
+        }
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = web,
+            articles = articles,
+            notes = notes,
+            previews = previews,
+        )
+        return shelves.public to shelves.web
     }
 
     private fun cachedHighlights(key: String): List<YouHighlight> =
@@ -273,6 +400,8 @@ class YouViewModel(
     private data class Loaded(
         val highlights: List<YouHighlight>,
         val writings: List<YouWriting>,
+        val publicBookmarks: List<BookmarkItem>,
+        val webBookmarks: List<BookmarkItem>,
         val profile: Profile?,
         val relation: FeedLevel,
     )
@@ -280,6 +409,9 @@ class YouViewModel(
     companion object {
         private const val HIGHLIGHT_LIMIT = 80
         private const val WRITING_LIMIT = 200
+        private const val ARTICLE_LIMIT = 48
+        private const val NOTE_LIMIT = 48
+        private const val PREVIEW_LIMIT = 20
         private const val UNTITLED = "Untitled"
 
         internal fun writingFrom(event: Nip01Event): YouWriting? {

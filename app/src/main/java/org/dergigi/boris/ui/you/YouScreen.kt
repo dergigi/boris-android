@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,7 +60,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
-import org.dergigi.boris.data.RelativeTime
+import org.dergigi.boris.data.BookmarkItem
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
@@ -201,7 +205,7 @@ fun YouHighlightsContent(
                 )
             }
             item(key = "tabs") {
-                ContentTabs(tab = tab, onSelect = { tab = it })
+                ContentTabs(tab = tab, onSelect = { tab = it }, showBookmarks = true)
             }
             if (state is YouUiState.Ready) {
                 item(key = "search") {
@@ -297,12 +301,77 @@ fun YouHighlightsContent(
                                 }
                             }
                         }
+                        ContentTab.Public -> {
+                            profileBookmarkItems(
+                                items = state.publicBookmarks,
+                                query = query,
+                                emptyRes = R.string.you_public_empty,
+                                onRefresh = { onRefresh(tab) },
+                                onOpenArticle = onOpenArticle,
+                            )
+                        }
+                        ContentTab.Web -> {
+                            profileBookmarkItems(
+                                items = state.webBookmarks,
+                                query = query,
+                                emptyRes = R.string.you_web_empty,
+                                onRefresh = { onRefresh(tab) },
+                                onOpenArticle = onOpenArticle,
+                            )
+                        }
                         ContentTab.Rss, ContentTab.All -> Unit
                     }
                 }
             }
         }
     }
+}
+
+private fun LazyListScope.profileBookmarkItems(
+    items: List<BookmarkItem>,
+    query: String,
+    emptyRes: Int,
+    onRefresh: () -> Unit,
+    onOpenArticle: (String) -> Unit,
+) {
+    val visible = items.filter { it.matchesQuery(query) }
+    if (visible.isEmpty()) {
+        item(key = "empty-$emptyRes") {
+            if (items.isEmpty()) {
+                StatusMessage(
+                    text = stringResource(emptyRes),
+                    onRetry = onRefresh,
+                )
+            } else {
+                NoSearchMatches()
+            }
+        }
+    } else {
+        items(visible, key = { it.id }) { item ->
+            YouBookmarkCard(item = item, onOpenArticle = onOpenArticle)
+        }
+    }
+}
+
+@Composable
+private fun YouBookmarkCard(
+    item: BookmarkItem,
+    onOpenArticle: (String) -> Unit,
+) {
+    val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
+    ArticleRow(
+        title = item.title,
+        imageUrl = item.imageUrl,
+        imageFallbackIcon = if (note) {
+            Icons.AutoMirrored.Outlined.StickyNote2
+        } else {
+            Icons.Outlined.Bookmark
+        },
+        byline = item.host,
+        url = item.url,
+        enabled = item.url != null,
+        onClick = { item.url?.let(onOpenArticle) },
+    )
 }
 
 @Composable
