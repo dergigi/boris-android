@@ -25,17 +25,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.ui.theme.SourceSerif
@@ -95,19 +99,51 @@ fun HighlightQuoteText(
     maxLines: Int = Int.MAX_VALUE,
 ) {
     val (before, marked, after) = highlightContextParts(quote, context)
-    Text(
-        text = buildAnnotatedString {
-            if (before.isNotEmpty()) append(before)
-            withStyle(
+    val (beforeText, beforeLinks) = MarkdownInline.flatten(before)
+    val (markedText, markedLinks) = MarkdownInline.flatten(marked)
+    val (afterText, afterLinks) = MarkdownInline.flatten(after)
+    val linkStyle = TextLinkStyles(
+        style = SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+        ),
+    )
+    val uriHandler = LocalUriHandler.current
+    val annotated = buildAnnotatedString {
+        append(beforeText)
+        val markStart = length
+        append(markedText)
+        val markEnd = length
+        if (markStart < markEnd) {
+            addStyle(
                 SpanStyle(
                     background = color.copy(alpha = 0.45f),
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
-            ) {
-                append(marked)
+                markStart,
+                markEnd,
+            )
+        }
+        append(afterText)
+        fun addLinks(links: List<MarkdownInline.Link>, offset: Int) {
+            for (link in links) {
+                addLink(
+                    LinkAnnotation.Url(
+                        url = link.url,
+                        styles = linkStyle,
+                        linkInteractionListener = { uriHandler.openUri(link.url) },
+                    ),
+                    start = offset + link.start,
+                    end = offset + link.end,
+                )
             }
-            if (after.isNotEmpty()) append(after)
-        },
+        }
+        addLinks(beforeLinks, 0)
+        addLinks(markedLinks, beforeText.length)
+        addLinks(afterLinks, beforeText.length + markedText.length)
+    }
+    Text(
+        text = annotated,
         style = MaterialTheme.typography.bodyMedium.copy(
             fontFamily = SourceSerif,
             fontSize = 17.sp,
