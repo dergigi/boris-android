@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.62.0] - 2026-08-17
+
+### Added
+
+- Airplane mode: show human-readable offline cache size next to download progress
+
+### Fixed
+
+- Highlight cards: render markdown links as labels instead of raw `[text](url)`
+- Reader: space between blockquotes and following images
+
 ## [0.61.0] - 2026-08-17
 
 ### Added
