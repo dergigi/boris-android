@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.68.0] - 2026-08-17
+
 ### Changed
 
 - Cold-start quote screen lasts at most 5 seconds
