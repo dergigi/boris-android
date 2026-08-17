@@ -22,6 +22,7 @@ import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.classifyFeedLevel
 
@@ -70,7 +71,11 @@ class YouViewModel(
     private var loadJob: Job? = null
     private var pubkeyHex: String = ""
 
-    fun refresh(pubkeyHex: String = this.pubkeyHex) {
+    /**
+     * [tab] scopes a pull-to-refresh to the visible tab's kind; null (initial
+     * load, error retry) refreshes everything on the page.
+     */
+    fun refresh(pubkeyHex: String = this.pubkeyHex, tab: ContentTab? = null) {
         val key = pubkeyHex.trim().lowercase().takeIf { it.length == 64 }
             ?: SessionStore.load(getApplication())?.pubkeyHex
         if (key.isNullOrBlank()) {
@@ -115,27 +120,31 @@ class YouViewModel(
                         addAll(list.write)
                         addAll(list.read)
                     }.distinct()
+                    val wantHighlights = tab == null || tab == ContentTab.Highlights
+                    val wantWritings = tab == null || tab == ContentTab.Writings
                     coroutineScope {
                         val highlights = async {
-                            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, key)
-                                .map { event ->
-                                    val url = Nip84.articleUrl(event)
-                                    YouHighlight(
-                                        id = event.id,
-                                        quote = event.content.trim(),
-                                        context = event.tagValue("context"),
-                                        url = url,
-                                        host = url?.let { ArticleUrl.host(it) },
-                                        createdAt = event.createdAt,
-                                    )
-                                }
+                            if (wantHighlights) {
+                                RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, key)
+                                    .map { event -> highlightFrom(event) }
+                            } else {
+                                cachedHighlights(key)
+                            }
                         }
                         val writings = async {
-                            RelayQuery.fetchLongFormArticles(key, relays)
-                                .mapNotNull { event -> writingFrom(event) }
+                            if (wantWritings) {
+                                RelayQuery.fetchLongFormArticles(key, relays)
+                                    .mapNotNull { event -> writingFrom(event) }
+                            } else {
+                                cachedWritings(key)
+                            }
                         }
-                        val profile = async { RelayQuery.fetchProfile(key) }
-                        val relation = async { relationFor(key, remote = true) }
+                        // A tab-scoped pull only re-queries that tab's kind;
+                        // profile and relation stay on cache.
+                        val profile = async {
+                            if (tab == null) RelayQuery.fetchProfile(key) else _profile.value ?: RelayQuery.fetchProfile(key)
+                        }
+                        val relation = async { relationFor(key, remote = tab == null) }
                         Loaded(highlights.await(), writings.await(), profile.await(), relation.await())
                     }
                 }
@@ -155,23 +164,29 @@ class YouViewModel(
     }
 
     private fun loadCached(key: String): Loaded? {
-        val highlights = RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, key).map { event ->
-            val url = Nip84.articleUrl(event)
-            YouHighlight(
-                id = event.id,
-                quote = event.content.trim(),
-                context = event.tagValue("context"),
-                url = url,
-                host = url?.let { ArticleUrl.host(it) },
-                createdAt = event.createdAt,
-            )
-        }
-        val writings = RelayQuery.cachedRecentWritings(WRITING_LIMIT, key).mapNotNull { event ->
-            writingFrom(event)
-        }
+        val highlights = cachedHighlights(key)
+        val writings = cachedWritings(key)
         val profile = RelayQuery.cachedProfiles(listOf(key))[key]
         if (highlights.isEmpty() && writings.isEmpty() && profile == null) return null
         return Loaded(highlights, writings, profile, relationFor(key, remote = false))
+    }
+
+    private fun cachedHighlights(key: String): List<YouHighlight> =
+        RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, key).map { event -> highlightFrom(event) }
+
+    private fun cachedWritings(key: String): List<YouWriting> =
+        RelayQuery.cachedRecentWritings(WRITING_LIMIT, key).mapNotNull { event -> writingFrom(event) }
+
+    private fun highlightFrom(event: Nip01Event): YouHighlight {
+        val url = Nip84.articleUrl(event)
+        return YouHighlight(
+            id = event.id,
+            quote = event.content.trim(),
+            context = event.tagValue("context"),
+            url = url,
+            host = url?.let { ArticleUrl.host(it) },
+            createdAt = event.createdAt,
+        )
     }
 
     private fun relationFor(profileHex: String, remote: Boolean): FeedLevel {

@@ -121,7 +121,7 @@ fun YouHighlights(
         about = shown?.about,
         pictureUrl = shown?.picture,
         highlightColor = highlightColor,
-        onRefresh = viewModel::refresh,
+        onRefresh = { tab -> viewModel.refresh(tab = tab) },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
         deletedIds = deletedIds,
@@ -152,7 +152,7 @@ fun YouHighlightsContent(
     about: String?,
     pictureUrl: String?,
     highlightColor: Color,
-    onRefresh: () -> Unit,
+    onRefresh: (ContentTab?) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -162,7 +162,7 @@ fun YouHighlightsContent(
     var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
     PullToRefreshBox(
         isRefreshing = refreshing,
-        onRefresh = onRefresh,
+        onRefresh = { onRefresh(tab) },
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
@@ -202,7 +202,7 @@ fun YouHighlightsContent(
                     item(key = "error") {
                         StatusMessage(
                             text = stringResource(R.string.feed_error),
-                            onRetry = onRefresh,
+                            onRetry = { onRefresh(null) },
                         )
                     }
                 }
@@ -214,7 +214,7 @@ fun YouHighlightsContent(
                                 item(key = "empty-highlights") {
                                     StatusMessage(
                                         text = stringResource(R.string.you_highlights_empty),
-                                        onRetry = onRefresh,
+                                        onRetry = { onRefresh(tab) },
                                     )
                                 }
                             } else {
@@ -240,7 +240,7 @@ fun YouHighlightsContent(
                                 item(key = "empty-writings") {
                                     StatusMessage(
                                         text = stringResource(R.string.you_writings_empty),
-                                        onRetry = onRefresh,
+                                        onRetry = { onRefresh(tab) },
                                     )
                                 }
                             } else {

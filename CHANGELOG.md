@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Profile pull-to-refresh only re-queries the visible tab's kind (writings or highlights); profile, relation, and the other tab stay on cache
+
 ## [1.0.1] - 2026-08-17
 
 ### Fixed
