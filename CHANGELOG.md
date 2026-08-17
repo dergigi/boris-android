@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Profile search field is smaller and quieter
+
 ## [1.3.0] - 2026-08-18
 
 ### Added

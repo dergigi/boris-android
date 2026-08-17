@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -29,9 +32,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -380,31 +381,58 @@ private fun ProfileSearchField(
     onQueryChange: (String) -> Unit,
 ) {
     val focus = LocalFocusManager.current
-    OutlinedTextField(
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val shape = RoundedCornerShape(8.dp)
+    val textStyle = MaterialTheme.typography.bodySmall.copy(
+        fontFamily = FontFamily.SansSerif,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    BasicTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(R.string.you_search_placeholder)) },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = null,
-            )
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
+        singleLine = true,
+        textStyle = textStyle,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(36.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), shape)
+            .clip(shape)
+            .padding(horizontal = 10.dp),
+        decorationBox = { inner ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    tint = muted,
+                    modifier = Modifier.size(16.dp),
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.you_search_placeholder),
+                            style = textStyle,
+                            color = muted.copy(alpha = 0.7f),
+                        )
+                    }
+                    inner()
+                }
+                if (query.isNotEmpty()) {
                     Icon(
                         imageVector = Icons.Outlined.Clear,
                         contentDescription = stringResource(R.string.search_clear),
+                        tint = muted,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onQueryChange("") },
                     )
                 }
             }
         },
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
     )
 }
 
