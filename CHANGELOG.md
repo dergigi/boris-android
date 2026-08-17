@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader no longer lags or freezes on articles with many highlights: quote positions are matched once per paragraph instead of on every drawn frame
+
 ## [1.0.0] - 2026-08-17
 
 First stable release: Android reader with Amber/bunker login, NIP-84 highlights, Feeds, Library, and Search.

@@ -27,6 +27,32 @@ object HighlightMarks {
         JustifiedLayout.highlightRects(layout, start, end)
 }
 
+/** One matched occurrence of a highlight's painted mark within a text block. */
+data class HighlightSpan(
+    val item: PaintedHighlight,
+    val start: Int,
+    val end: Int,
+)
+
+/**
+ * Quote-to-position matching is O(text length × highlights) with string
+ * allocations, so it must run once per (text, highlights) — never per frame
+ * in the draw phase. Callers cache the result with remember().
+ */
+fun matchHighlightSpans(
+    displayed: String,
+    highlights: List<PaintedHighlight>,
+): List<HighlightSpan> {
+    if (displayed.isEmpty() || highlights.isEmpty()) return emptyList()
+    return highlights.flatMap { item ->
+        QuoteMatch.occurrences(
+            displayed,
+            highlightMark(item.quote, item.context),
+            ignoreCase = item.ignoreCase,
+        ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
+    }
+}
+
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()
     return filter { item ->
@@ -41,8 +67,7 @@ fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighl
 
 fun Modifier.drawHighlightMarks(
     layout: TextLayoutResult?,
-    displayed: String,
-    highlights: List<PaintedHighlight>,
+    spans: List<HighlightSpan>,
     mineColor: Color = HighlightMine,
     friendsColor: Color = HighlightFriends,
     otherColor: Color = HighlightOther,
@@ -50,28 +75,19 @@ fun Modifier.drawHighlightMarks(
     findColor: Color = FindMark,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
-    if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
-    fun paint(items: List<PaintedHighlight>, fill: Color, asUnderline: Boolean, alpha: Float = HighlightMarks.HighlightMarkAlpha) {
-        items.forEach { item ->
-            QuoteMatch.occurrences(
-                displayed,
-                highlightMark(item.quote, item.context),
-                ignoreCase = item.ignoreCase,
-            ).forEach { range ->
-                paintHighlight(result, range.first, range.last + 1, fill, asUnderline, alpha)
+    if (spans.isEmpty()) return@drawBehind
+    fun paint(matches: (PaintedHighlight) -> Boolean, fill: Color, asUnderline: Boolean, alpha: Float = HighlightMarks.HighlightMarkAlpha) {
+        spans.forEach { span ->
+            if (matches(span.item)) {
+                paintHighlight(result, span.start, span.end, fill, asUnderline, alpha)
             }
         }
     }
     // Find matches always use a filled selection-like mark, never underline.
-    paint(
-        highlights.filter { it.find },
-        findColor,
-        asUnderline = false,
-        alpha = HighlightMarks.FindMarkAlpha,
-    )
-    paint(highlights.filter { !it.find && !it.mine && !it.friend }, otherColor, underline)
-    paint(highlights.filter { !it.find && it.friend && !it.mine }, friendsColor, underline)
-    paint(highlights.filter { !it.find && it.mine }, mineColor, underline)
+    paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
+    paint({ !it.find && !it.mine && !it.friend }, otherColor, underline)
+    paint({ !it.find && it.friend && !it.mine }, friendsColor, underline)
+    paint({ !it.find && it.mine }, mineColor, underline)
 }
 
 fun DrawScope.paintHighlight(

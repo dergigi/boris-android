@@ -15,7 +15,6 @@ import androidx.compose.ui.text.TextLayoutResult
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
-import org.dergigi.boris.nostr.QuoteMatch
 import kotlin.math.roundToInt
 
 data class HighlightStop(
@@ -34,18 +33,23 @@ object HighlightJump {
         localTopAt: (start: Int, end: Int) -> Float?,
     ): List<HighlightStop> {
         if (text.isEmpty() || highlights.isEmpty()) return emptyList()
-        return highlights.flatMap { item ->
-            QuoteMatch.occurrences(text, item.quote, ignoreCase = item.ignoreCase).mapNotNull { range ->
-                val end = range.last + 1
-                val top = localTopAt(range.first, end) ?: return@mapNotNull null
-                HighlightStop(
-                    highlightId = item.id,
-                    owner = owner,
-                    start = range.first,
-                    end = end,
-                    localTop = top,
-                )
-            }
+        return stopsFromSpans(owner, matchHighlightSpans(text, highlights), localTopAt)
+    }
+
+    fun stopsFromSpans(
+        owner: Any,
+        spans: List<HighlightSpan>,
+        localTopAt: (start: Int, end: Int) -> Float?,
+    ): List<HighlightStop> {
+        return spans.mapNotNull { span ->
+            val top = localTopAt(span.start, span.end) ?: return@mapNotNull null
+            HighlightStop(
+                highlightId = span.item.id,
+                owner = owner,
+                start = span.start,
+                end = span.end,
+                localTop = top,
+            )
         }.sortedBy { it.start }
     }
 
@@ -170,10 +174,9 @@ class HighlightNavigator {
 
 fun Modifier.highlightAnchors(
     owner: Any,
-    text: String,
+    spans: List<HighlightSpan>,
     layout: TextLayoutResult?,
     coordinates: LayoutCoordinates?,
-    highlights: List<PaintedHighlight>,
     navigator: HighlightNavigator,
 ): Modifier = composed {
     DisposableEffect(owner) {
@@ -185,7 +188,7 @@ fun Modifier.highlightAnchors(
         val stops = if (laid == null || coords == null || !coords.isAttached) {
             emptyList()
         } else {
-            HighlightJump.stopsInText(owner, text, highlights) { start, end ->
+            HighlightJump.stopsFromSpans(owner, spans) { start, end ->
                 HighlightMarks.highlightRects(laid, start, end).firstOrNull()?.top
             }
         }

@@ -924,6 +924,9 @@ private fun ArticleBody(
                 var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                 var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
                 val titleOwner = remember { Any() }
+                val titleSpans = remember(content.title, painted) {
+                    matchHighlightSpans(content.title, painted)
+                }
                 Text(
                     text = content.title,
                     style = headingFamily,
@@ -933,8 +936,7 @@ private fun ArticleBody(
                         .padding(top = 8.dp, bottom = 12.dp)
                         .drawHighlightMarks(
                             titleLayout,
-                            content.title,
-                            painted,
+                            titleSpans,
                             mineColor,
                             friendsColor,
                             otherColor,
@@ -942,10 +944,9 @@ private fun ArticleBody(
                         )
                         .highlightAnchors(
                             owner = titleOwner,
-                            text = content.title,
+                            spans = titleSpans,
                             layout = titleLayout,
                             coordinates = titleCoords,
-                            highlights = painted,
                             navigator = navigator,
                         )
                         .readerSelectable(
@@ -1173,6 +1174,10 @@ private fun HighlightedMarkdownNode(
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
+    // Match once per (text, highlights); the draw phase only paints cached spans.
+    val spans = remember(styledText.text, highlights) {
+        matchHighlightSpans(styledText.text, highlights)
+    }
     MarkdownText(
         content = styledText,
         style = style,
@@ -1180,8 +1185,7 @@ private fun HighlightedMarkdownNode(
             .fillMaxWidth()
             .drawHighlightMarks(
                 layout,
-                styledText.text,
-                highlights,
+                spans,
                 mineColor,
                 friendsColor,
                 otherColor,
@@ -1189,10 +1193,9 @@ private fun HighlightedMarkdownNode(
             )
             .highlightAnchors(
                 owner = owner,
-                text = styledText.text,
+                spans = spans,
                 layout = layout,
                 coordinates = coords,
-                highlights = highlights,
                 navigator = navigator,
             )
             .readerSelectable(
