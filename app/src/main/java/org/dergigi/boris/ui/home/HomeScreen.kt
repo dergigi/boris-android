@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -307,13 +308,19 @@ fun HomeScreenContent(
                     highlights.archivedKeys,
                     hideArchived,
                 )
+                val randomArticles = ArchivedArticles.visible(
+                    highlights.randomArticles,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-                        continueReading.isEmpty() && mostHighlighted.isEmpty()
+                        continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+                        randomArticles.isEmpty()
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             StatusMessage(
@@ -387,6 +394,16 @@ fun HomeScreenContent(
                                             items = mostHighlighted,
                                             rowKey = "most",
                                             tint = nostrverseColor,
+                                            onRead = onRead,
+                                        )
+                                    }
+                                    HomeSections.RANDOM -> if (randomArticles.isNotEmpty()) {
+                                        HighlightedRow(
+                                            title = stringResource(R.string.home_random_articles),
+                                            items = randomArticles,
+                                            rowKey = "random",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            icon = Icons.Outlined.Shuffle,
                                             onRead = onRead,
                                         )
                                     }

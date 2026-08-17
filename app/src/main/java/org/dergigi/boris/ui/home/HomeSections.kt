@@ -6,8 +6,9 @@ object HomeSections {
     const val FRIENDS = "friends"
     const val OTHERS = "others"
     const val MOST = "most"
+    const val RANDOM = "random"
 
-    val DEFAULT = listOf(CONTINUE, YOURS, FRIENDS, OTHERS, MOST)
+    val DEFAULT = listOf(CONTINUE, YOURS, FRIENDS, OTHERS, MOST, RANDOM)
 
     /** Saved order sanitized: unknown ids dropped, missing ids appended in default order. */
     fun order(saved: List<String>): List<String> {

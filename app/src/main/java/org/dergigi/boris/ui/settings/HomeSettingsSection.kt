@@ -107,6 +107,7 @@ private fun sectionLabel(id: String): String = stringResource(
         HomeSections.YOURS -> R.string.home_recently_highlighted_by_you
         HomeSections.FRIENDS -> R.string.home_recently_highlighted_by_friends
         HomeSections.MOST -> R.string.home_most_highlighted
+        HomeSections.RANDOM -> R.string.home_random_articles
         else -> R.string.home_recently_highlighted_by_others
     },
 )

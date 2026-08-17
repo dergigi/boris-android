@@ -16,15 +16,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
+import org.dergigi.boris.data.BookmarkCatalog
 import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
+import org.dergigi.boris.data.RandomArticles
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 
@@ -40,6 +45,7 @@ sealed interface HomeHighlightsState {
         val archivedKeys: Set<String> = emptySet(),
         val continueReading: List<HighlightedArticle> = emptyList(),
         val mostHighlighted: List<HighlightedArticle> = emptyList(),
+        val randomArticles: List<HighlightedArticle> = emptyList(),
     ) : HomeHighlightsState
 }
 
@@ -108,8 +114,17 @@ class HomeViewModel(
                             ARTICLE_LIMIT,
                         )
                         val archivedKeys = archiveDeferred.await()
+                        val rawRandom = if (pubkey == null) {
+                            emptyList()
+                        } else {
+                            RandomArticles.articles(
+                                libraryItems(pubkey, relays),
+                                archivedKeys,
+                                ARTICLE_LIMIT,
+                            )
+                        }
                         val previews = loadPreviews(
-                            (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
+                            (rawYours + rawFriends + rawOthers + rawContinue + rawMost + rawRandom)
                                 .map { it.url }
                                 .distinct(),
                         )
@@ -120,6 +135,7 @@ class HomeViewModel(
                             archivedKeys,
                             applyPreviews(rawContinue, previews),
                             applyPreviews(rawMost, previews),
+                            applyPreviews(rawRandom, previews),
                         )
                     }
                 }
@@ -134,6 +150,7 @@ class HomeViewModel(
                         archivedKeys = rows.archivedKeys,
                         continueReading = rows.continueReading,
                         mostHighlighted = rows.mostHighlighted,
+                        randomArticles = rows.randomArticles,
                     )
                 }
             } catch (e: CancellationException) {
@@ -180,20 +197,29 @@ class HomeViewModel(
             EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
             ARTICLE_LIMIT,
         )
-        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-            continueReading.isEmpty() && mostHighlighted.isEmpty()
-        ) {
-            return null
-        }
-        val previews = (yours + friends + others + continueReading + mostHighlighted)
-            .map { it.url }
-            .distinct()
-            .associateWith { ArticlePreview.get(it) }
         val archivedKeys = if (pubkey == null) {
             emptySet()
         } else {
             ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
         }
+        val randomArticles = if (pubkey == null) {
+            emptyList()
+        } else {
+            RandomArticles.articles(
+                cachedLibraryItems(pubkey),
+                archivedKeys,
+                ARTICLE_LIMIT,
+            )
+        }
+        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+            continueReading.isEmpty() && mostHighlighted.isEmpty() && randomArticles.isEmpty()
+        ) {
+            return null
+        }
+        val previews = (yours + friends + others + continueReading + mostHighlighted + randomArticles)
+            .map { it.url }
+            .distinct()
+            .associateWith { ArticlePreview.get(it) }
         return HomeHighlightsState.Ready(
             applyPreviews(yours, previews),
             applyPreviews(friends, previews),
@@ -202,6 +228,7 @@ class HomeViewModel(
             archivedKeys = archivedKeys,
             continueReading = applyPreviews(continueReading, previews),
             mostHighlighted = applyPreviews(mostHighlighted, previews),
+            randomArticles = applyPreviews(randomArticles, previews),
         )
     }
 
@@ -224,6 +251,40 @@ class HomeViewModel(
         val events = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
             .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys) }
         return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
+    }
+
+    /** Public + web library shelves (private stays locked until Library unlocks it). */
+    private fun libraryItems(pubkeyHex: String, relays: List<String>) =
+        BookmarkCatalog.build(
+            listEvent = RelayQuery.fetchBookmarkList(pubkeyHex, relays),
+            hiddenTags = null,
+            webEvents = RelayQuery.fetchWebBookmarks(pubkeyHex, relays),
+            articles = cachedArticlesFor(pubkeyHex),
+            notes = emptyMap(),
+            previews = emptyMap(),
+        ).let { it.public + it.web }
+
+    private fun cachedLibraryItems(pubkeyHex: String) =
+        BookmarkCatalog.build(
+            listEvent = EventCache.latest(Nip01Event.KIND_BOOKMARKS, pubkeyHex),
+            hiddenTags = null,
+            webEvents = RelayQuery.cachedWebBookmarks(pubkeyHex),
+            articles = cachedArticlesFor(pubkeyHex),
+            notes = emptyMap(),
+            previews = emptyMap(),
+        ).let { it.public + it.web }
+
+    private fun cachedArticlesFor(pubkeyHex: String): Map<String, Nip01Event> {
+        val list = EventCache.latest(Nip01Event.KIND_BOOKMARKS, pubkeyHex) ?: return emptyMap()
+        return Nip51.publicRefs(list)
+            .filter { it.kind == BookmarkRefKind.Article }
+            .distinctBy { it.value }
+            .mapNotNull { ref ->
+                val article = NostrArticle.fromCoordinate(ref.value) ?: return@mapNotNull null
+                EventCache.latest(article.pointer.kind, article.pointer.pubkey, article.pointer.identifier)
+                    ?.let { ref.value to it }
+            }
+            .toMap()
     }
 
     private suspend fun loadPreviews(urls: List<String>): Map<String, OgPreview?> = coroutineScope {
@@ -252,10 +313,11 @@ class HomeViewModel(
         val archivedKeys: Set<String>,
         val continueReading: List<HighlightedArticle>,
         val mostHighlighted: List<HighlightedArticle>,
+        val randomArticles: List<HighlightedArticle>,
     ) {
         fun isEmpty(): Boolean =
             yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-                continueReading.isEmpty() && mostHighlighted.isEmpty()
+                continueReading.isEmpty() && mostHighlighted.isEmpty() && randomArticles.isEmpty()
     }
 
     companion object {
