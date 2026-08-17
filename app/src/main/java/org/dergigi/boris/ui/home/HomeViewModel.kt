@@ -336,8 +336,10 @@ class HomeViewModel(
     )
 
     companion object {
-        private const val HIGHLIGHT_LIMIT = 80
-        private const val ARTICLE_LIMIT = 12
+        // Raw highlight pool per row; many highlights share an article, so
+        // this needs headroom above ARTICLE_LIMIT to fill a row.
+        private const val HIGHLIGHT_LIMIT = 160
+        private const val ARTICLE_LIMIT = 21
     }
 }
 

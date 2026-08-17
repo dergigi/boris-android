@@ -15,6 +15,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Changed
 
+- Home rows (recently highlighted by you/friends/others, continue reading, most highlighted, random) show up to 21 articles instead of 12, backed by a larger highlight pool
 - Profile pull-to-refresh only re-queries the visible tab's kind (writings or highlights); profile, relation, and the other tab stay on cache
 
 ## [1.0.1] - 2026-08-17
