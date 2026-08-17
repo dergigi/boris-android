@@ -30,8 +30,8 @@
     <string name="library_info_look">Notes and articles you reacted to with 👀. Lookmarks are public too. A lookmark is a kind 7 reaction, less official than a bookmark.</string>
     <string name="library_info_archive">Articles and pages you moved to archive with 📚. These are public reactions: kind 7 for nostr, kind 17 for the web.</string>
     <string name="library_info_close">Got it</string>
-    <string name="nav_feed">Feed</string>
-    <string name="feed_title">Feed</string>
+    <string name="nav_feed">Feeds</string>
+    <string name="feed_title">Feeds</string>
     <string name="nav_search">Search</string>
     <string name="search_title">Search</string>
     <string name="search_placeholder">Highlights, articles, bookmarks…</string>

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Bottom nav and Feeds screen title use “Feeds” instead of “Feed”
+
 ## [0.72.0] - 2026-08-17
 
 ### Changed
