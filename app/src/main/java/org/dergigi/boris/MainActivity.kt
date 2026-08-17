@@ -6,11 +6,18 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
@@ -85,19 +92,30 @@ class MainActivity : ComponentActivity() {
                 withTimeoutOrNull(COLD_START_SPLASH_MS) {
                     homeViewModel.highlights.first { it !is HomeHighlightsState.Loading }
                 }
-                coldStartLoading = false
+                // App underneath first, then fade the quote out.
                 appReady = true
+                coldStartLoading = false
             }
             BorisTheme {
-                when {
-                    coldStartLoading -> LoadingScreen()
-                    appReady -> BorisApp(
-                        incomingUrl = incomingUrl,
-                        incomingBunker = incomingBunker,
-                        homeViewModel = homeViewModel,
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    if (appReady) {
+                        BorisApp(
+                            incomingUrl = incomingUrl,
+                            incomingBunker = incomingBunker,
+                            homeViewModel = homeViewModel,
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = coldStartLoading,
+                        enter = EnterTransition.None,
+                        exit = fadeOut(animationSpec = tween(durationMillis = COLD_START_FADE_MS)),
+                    ) {
+                        LoadingScreen()
+                    }
                     // System splash still covers this while we decide.
-                    else -> LoadingScreen()
+                    if (!appReady && !coldStartLoading) {
+                        LoadingScreen()
+                    }
                 }
             }
         }
@@ -174,5 +192,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val COLD_START_SPLASH_MS = 5_000L
+        private const val COLD_START_FADE_MS = 700
     }
 }
