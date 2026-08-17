@@ -137,6 +137,7 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenLogin = { goToTab(MainTab.You) },
                         onOpenHomeSettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Home)) {
                                 launchSingleTop = true

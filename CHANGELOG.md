@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Home: dismissible “First time?” section that opens the About Boris walkthrough
+- Home: dismissible “Connect?” section that opens login on You (hidden when already logged in)
 
 ## [0.67.0] - 2026-08-17
 

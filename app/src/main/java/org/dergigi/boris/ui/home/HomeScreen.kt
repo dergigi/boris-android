@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Close
@@ -89,6 +90,7 @@ import org.dergigi.boris.ui.theme.HighlightOther
 fun HomeScreen(
     onRead: (String) -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenLogin: () -> Unit = {},
     onOpenHomeSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
@@ -106,8 +108,12 @@ fun HomeScreen(
     val windowInfo = LocalWindowInfo.current
     var clipboardUrl by remember { mutableStateOf<String?>(null) }
     var showFirstTime by remember {
-        mutableStateOf(!HomeOnboardingStore.isDismissed(context))
+        mutableStateOf(!HomeOnboardingStore.isFirstTimeDismissed(context))
     }
+    var loginPromptDismissed by remember {
+        mutableStateOf(HomeOnboardingStore.isLoginDismissed(context))
+    }
+    val showLoginPrompt = !loggedIn && !loginPromptDismissed
     LaunchedEffect(Unit) {
         snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
             if (focused) clipboardUrl = ClipboardLink.read(context)
@@ -199,10 +205,16 @@ fun HomeScreen(
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {
-                    HomeOnboardingStore.dismiss(context)
+                    HomeOnboardingStore.dismissFirstTime(context)
                     showFirstTime = false
                 },
                 onOpenAbout = onOpenAbout,
+                showLoginPrompt = showLoginPrompt,
+                onDismissLoginPrompt = {
+                    HomeOnboardingStore.dismissLogin(context)
+                    loginPromptDismissed = true
+                },
+                onOpenLogin = onOpenLogin,
                 onRefresh = viewModel::refresh,
                 onRead = onRead,
                 modifier = Modifier.weight(1f),
@@ -276,7 +288,11 @@ fun HomeScreenContent(
     showFirstTime: Boolean = false,
     onDismissFirstTime: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
+    showLoginPrompt: Boolean = false,
+    onDismissLoginPrompt: () -> Unit = {},
+    onOpenLogin: () -> Unit = {},
 ) {
+    val hasPrompts = showFirstTime || showLoginPrompt
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -291,12 +307,14 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
-                    if (showFirstTime) {
-                        FirstTimeSection(
-                            onOpenAbout = onOpenAbout,
-                            onDismiss = onDismissFirstTime,
-                        )
-                    }
+                    HomePromptSections(
+                        showFirstTime = showFirstTime,
+                        onDismissFirstTime = onDismissFirstTime,
+                        onOpenAbout = onOpenAbout,
+                        showLoginPrompt = showLoginPrompt,
+                        onDismissLoginPrompt = onDismissLoginPrompt,
+                        onOpenLogin = onOpenLogin,
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -315,12 +333,14 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
-                    if (showFirstTime) {
-                        FirstTimeSection(
-                            onOpenAbout = onOpenAbout,
-                            onDismiss = onDismissFirstTime,
-                        )
-                    }
+                    HomePromptSections(
+                        showFirstTime = showFirstTime,
+                        onDismissFirstTime = onDismissFirstTime,
+                        onOpenAbout = onOpenAbout,
+                        showLoginPrompt = showLoginPrompt,
+                        onDismissLoginPrompt = onDismissLoginPrompt,
+                        onOpenLogin = onOpenLogin,
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -342,12 +362,14 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
-                    if (showFirstTime) {
-                        FirstTimeSection(
-                            onOpenAbout = onOpenAbout,
-                            onDismiss = onDismissFirstTime,
-                        )
-                    }
+                    HomePromptSections(
+                        showFirstTime = showFirstTime,
+                        onDismissFirstTime = onDismissFirstTime,
+                        onOpenAbout = onOpenAbout,
+                        showLoginPrompt = showLoginPrompt,
+                        onDismissLoginPrompt = onDismissLoginPrompt,
+                        onOpenLogin = onOpenLogin,
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -400,7 +422,7 @@ fun HomeScreenContent(
                     val empty = yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
                         continueReading.isEmpty() && mostHighlighted.isEmpty() &&
                         randomArticles.isEmpty()
-                    if (empty && !showFirstTime) {
+                    if (empty && !hasPrompts) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             StatusMessage(
                                 text = stringResource(
@@ -422,12 +444,14 @@ fun HomeScreenContent(
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {
-                            if (showFirstTime) {
-                                FirstTimeSection(
-                                    onOpenAbout = onOpenAbout,
-                                    onDismiss = onDismissFirstTime,
-                                )
-                            }
+                            HomePromptSections(
+                                showFirstTime = showFirstTime,
+                                onDismissFirstTime = onDismissFirstTime,
+                                onOpenAbout = onOpenAbout,
+                                showLoginPrompt = showLoginPrompt,
+                                onDismissLoginPrompt = onDismissLoginPrompt,
+                                onOpenLogin = onOpenLogin,
+                            )
                             if (empty) {
                                 Box(
                                     modifier = Modifier
@@ -523,8 +547,46 @@ fun HomeScreenContent(
 }
 
 @Composable
-private fun FirstTimeSection(
+private fun HomePromptSections(
+    showFirstTime: Boolean,
+    onDismissFirstTime: () -> Unit,
     onOpenAbout: () -> Unit,
+    showLoginPrompt: Boolean,
+    onDismissLoginPrompt: () -> Unit,
+    onOpenLogin: () -> Unit,
+) {
+    if (showFirstTime) {
+        HomePromptSection(
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+            title = stringResource(R.string.home_first_time_title),
+            body = stringResource(R.string.home_first_time_body),
+            cta = stringResource(R.string.home_first_time_cta),
+            dismissContentDescription = stringResource(R.string.home_first_time_dismiss),
+            onCta = onOpenAbout,
+            onDismiss = onDismissFirstTime,
+        )
+    }
+    if (showLoginPrompt) {
+        HomePromptSection(
+            icon = Icons.AutoMirrored.Outlined.Login,
+            title = stringResource(R.string.home_login_title),
+            body = stringResource(R.string.home_login_body),
+            cta = stringResource(R.string.home_login_cta),
+            dismissContentDescription = stringResource(R.string.home_login_dismiss),
+            onCta = onOpenLogin,
+            onDismiss = onDismissLoginPrompt,
+        )
+    }
+}
+
+@Composable
+private fun HomePromptSection(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    cta: String,
+    dismissContentDescription: String,
+    onCta: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     Column(
@@ -539,13 +601,13 @@ private fun FirstTimeSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
             )
             Text(
-                text = stringResource(R.string.home_first_time_title),
+                text = title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.SemiBold,
@@ -556,7 +618,7 @@ private fun FirstTimeSection(
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
-                    contentDescription = stringResource(R.string.home_first_time_dismiss),
+                    contentDescription = dismissContentDescription,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -566,16 +628,16 @@ private fun FirstTimeSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = stringResource(R.string.home_first_time_body),
+                text = body,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
-                onClick = onOpenAbout,
+                onClick = onCta,
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.home_first_time_cta),
+                    text = cta,
                     fontFamily = FontFamily.SansSerif,
                 )
             }
