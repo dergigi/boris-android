@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.75.0] - 2026-08-17
+
 ### Changed
 
 - About Boris intro page shows the Boris logo (same asset as Zapstore)
