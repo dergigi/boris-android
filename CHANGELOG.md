@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Share button on highlight cards: web highlights include a scroll-to-text fragment (`#:~:text=`); nostr-native highlights share the public article URL
+
 ### Changed
 
 - Home cards for nostr-native articles show the author name instead of the d-tag

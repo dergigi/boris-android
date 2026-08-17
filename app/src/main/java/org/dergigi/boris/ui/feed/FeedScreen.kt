@@ -499,6 +499,7 @@ private fun FeedAllList(
                             createdAt = item.createdAt,
                             authorName = item.authorName,
                             host = item.host,
+                            url = item.url,
                             authorPicture = item.authorPicture,
                             maxQuoteLines = 8,
                             onClick = item.url?.let { url ->
@@ -561,6 +562,7 @@ private fun FeedHighlightList(
                     createdAt = item.createdAt,
                     authorName = item.authorName,
                     host = item.host,
+                    url = item.url,
                     authorPicture = item.authorPicture,
                     maxQuoteLines = 8,
                     onClick = item.url?.let { url ->

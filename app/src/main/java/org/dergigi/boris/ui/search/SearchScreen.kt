@@ -238,6 +238,7 @@ private fun SearchHighlightCard(
         createdAt = hit.sortAt,
         authorName = hit.authorName,
         host = hit.host,
+        url = hit.url,
         authorPicture = hit.authorPicture,
         maxQuoteLines = 8,
         onClick = hit.url?.let { onOpen },

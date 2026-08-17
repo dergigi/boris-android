@@ -1104,6 +1104,7 @@ private fun ArticleBody(
             onToggleMarks = {
                 SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
             },
+            articleUrl = content.url,
             menuFor = { item ->
                 HighlightCardMenu(
                     highlightId = item.id,

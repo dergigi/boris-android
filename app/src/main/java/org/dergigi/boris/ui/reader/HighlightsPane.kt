@@ -92,6 +92,7 @@ fun HighlightsPane(
     onSelect: (PaintedHighlight) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onToggleMarks: () -> Unit,
+    articleUrl: String? = null,
     menuFor: (PaintedHighlight) -> HighlightCardMenu,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
@@ -181,6 +182,7 @@ fun HighlightsPane(
                                     createdAt = item.createdAt,
                                     authorName = name,
                                     context = item.context,
+                                    url = articleUrl,
                                     authorPicture = item.authorPicture,
                                     selected = item.id == selectedId,
                                     onClick = { onSelect(item) },
