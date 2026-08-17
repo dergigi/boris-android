@@ -68,7 +68,11 @@ class MainActivity : ComponentActivity() {
         RssRepository.init(File(filesDir, "rss_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
         OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
-        applyIntent(intent)
+        // Only seed deep links on a fresh start. Config change keeps the same
+        // share/VIEW Intent; re-applying it would re-open the reader after Back.
+        if (savedInstanceState == null) {
+            applyIntent(intent)
+        }
         enableEdgeToEdge()
         setContent {
             val homeViewModel: HomeViewModel = viewModel()
@@ -102,6 +106,8 @@ class MainActivity : ComponentActivity() {
                         BorisApp(
                             incomingUrl = incomingUrl,
                             incomingBunker = incomingBunker,
+                            onIncomingUrlConsumed = { markIncomingIntentConsumed() },
+                            onIncomingBunkerConsumed = { markIncomingIntentConsumed() },
                             homeViewModel = homeViewModel,
                         )
                     }
@@ -149,6 +155,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyIntent(intent: Intent) {
+        if (intent.getBooleanExtra(EXTRA_INTENT_CONSUMED, false)) {
+            incomingUrl = null
+            incomingBunker = null
+            return
+        }
         val bunker = bunkerFrom(intent)
         if (bunker != null) {
             incomingBunker = bunker
@@ -157,6 +168,13 @@ class MainActivity : ComponentActivity() {
             incomingUrl = urlFrom(intent)
             incomingBunker = null
         }
+    }
+
+    /** Marks the current Activity intent so recreate/share replay cannot re-open it. */
+    private fun markIncomingIntentConsumed() {
+        intent.putExtra(EXTRA_INTENT_CONSUMED, true)
+        incomingUrl = null
+        incomingBunker = null
     }
 
     private fun bunkerFrom(intent: Intent): String? {
@@ -191,6 +209,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_INTENT_CONSUMED = "org.dergigi.boris.INTENT_CONSUMED"
         private const val COLD_START_SPLASH_MS = 5_000L
         private const val COLD_START_FADE_MS = 700
     }

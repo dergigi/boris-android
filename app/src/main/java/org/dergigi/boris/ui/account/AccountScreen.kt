@@ -65,6 +65,7 @@ fun AccountScreen(
         onOpenArticle(url)
     },
     incomingBunker: String? = null,
+    onIncomingBunkerConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
 ) {
@@ -72,6 +73,7 @@ fun AccountScreen(
     LaunchedEffect(incomingBunker) {
         if (!incomingBunker.isNullOrBlank()) {
             bunkerUri = incomingBunker
+            onIncomingBunkerConsumed()
         }
     }
     val authState by viewModel.state.collectAsStateWithLifecycle()

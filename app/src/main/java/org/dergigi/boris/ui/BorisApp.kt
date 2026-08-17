@@ -74,6 +74,8 @@ object Routes {
 fun BorisApp(
     incomingUrl: String? = null,
     incomingBunker: String? = null,
+    onIncomingUrlConsumed: () -> Unit = {},
+    onIncomingBunkerConsumed: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(),
     homeViewModel: HomeViewModel = viewModel(),
 ) {
@@ -99,6 +101,7 @@ fun BorisApp(
             navController.navigate(Routes.reader(incomingUrl)) {
                 launchSingleTop = true
             }
+            onIncomingUrlConsumed()
         }
     }
     LaunchedEffect(incomingBunker) {
@@ -192,6 +195,7 @@ fun BorisApp(
                 composable(Routes.YOU) {
                     AccountScreen(
                         incomingBunker = incomingBunker,
+                        onIncomingBunkerConsumed = onIncomingBunkerConsumed,
                         viewModel = authViewModel,
                         onOpenSettings = {
                             navController.navigate(Routes.settings()) {

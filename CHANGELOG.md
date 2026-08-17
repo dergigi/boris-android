@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Shared or opened links no longer reopen the reader after Back and a screen rotation
+
 ## [0.75.0] - 2026-08-17
 
 ### Changed

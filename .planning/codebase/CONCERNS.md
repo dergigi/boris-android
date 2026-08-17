@@ -49,12 +49,11 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 ## Known Bugs
 
 **Share or VIEW URL re-opens after Back, then rotate:**
-- Symptoms: User opens a shared link, presses Back to Home, rotates the device, and the reader opens again.
+- Status: Fixed — deep-link intents are applied only on a fresh Activity start, then marked consumed after navigation (or bunker field fill) so config change cannot replay them.
+- Symptoms (historical): User opens a shared link, presses Back to Home, rotates the device, and the reader opens again.
 - Files: `app/src/main/java/org/dergigi/boris/MainActivity.kt`, `app/src/main/java/org/dergigi/boris/ui/BorisApp.kt`
 - Trigger: `ACTION_SEND` or `ACTION_VIEW` into Boris, Back to Home, configuration change.
-- Workaround: Leave the reader on screen, or force-stop the app.
-- Root cause: `onCreate` always sets `incomingUrl` from the same intent. `LaunchedEffect(incomingUrl)` navigates whenever composition restarts. `launchSingleTop` does not help once the user has popped to Home.
-- Fix: Consume the URL once (clear `incomingUrl` after navigate, or store a handled-intent extra / `savedInstanceState` flag). Only navigate from `onNewIntent`, not from every `onCreate` after the first.
+- Root cause: `onCreate` always set `incomingUrl` from the same intent. `LaunchedEffect(incomingUrl)` navigated whenever composition restarted.
 
 **Double-decode changes article URLs:**
 - Symptoms: Articles whose path or query contains percent-encoded reserved characters fetch the wrong URL or 404.
