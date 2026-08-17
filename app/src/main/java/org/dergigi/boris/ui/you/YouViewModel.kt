@@ -44,6 +44,21 @@ data class YouWriting(
     val publishedAt: Long,
 )
 
+internal fun YouHighlight.matchesQuery(query: String): Boolean {
+    val q = query.trim()
+    if (q.isEmpty()) return true
+    return quote.contains(q, ignoreCase = true) ||
+        context.orEmpty().contains(q, ignoreCase = true) ||
+        host.orEmpty().contains(q, ignoreCase = true)
+}
+
+internal fun YouWriting.matchesQuery(query: String): Boolean {
+    val q = query.trim()
+    if (q.isEmpty()) return true
+    return title.contains(q, ignoreCase = true) ||
+        summary.orEmpty().contains(q, ignoreCase = true)
+}
+
 sealed interface YouUiState {
     data object Loading : YouUiState
     data class Ready(

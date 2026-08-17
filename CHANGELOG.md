@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Search box on your profile and other people's profiles filters the visible highlights or writings
+
 ## [1.2.0] - 2026-08-18
 
 ### Added

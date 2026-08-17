@@ -357,6 +357,7 @@
     <string name="you_logged_out_body">Connect, and they show up here.</string>
     <string name="you_highlights_empty">No highlights yet.</string>
     <string name="you_load_more">Load more</string>
+    <string name="you_search_placeholder">Search…</string>
     <string name="you_writings_empty">No articles written yet.</string>
     <string name="you_tab_highlights">Highlights</string>
     <string name="you_tab_writings">Writings</string>

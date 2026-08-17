@@ -22,6 +22,38 @@ class YouViewModelTest {
     }
 
     @Test
+    fun highlightMatchesQuoteContextAndHost() {
+        val item = YouHighlight(
+            id = "1",
+            quote = "Purple text, orange highlights",
+            context = "A longer paragraph about reading.",
+            url = "https://example.com/post",
+            host = "example.com",
+            createdAt = 1,
+        )
+        assertTrue(item.matchesQuery("orange"))
+        assertTrue(item.matchesQuery("READING"))
+        assertTrue(item.matchesQuery("example"))
+        assertTrue(!item.matchesQuery("bitcoin"))
+        assertTrue(item.matchesQuery("  "))
+    }
+
+    @Test
+    fun writingMatchesTitleAndSummary() {
+        val item = YouWriting(
+            id = "1",
+            title = "I Left the Future",
+            summary = "Arrived at home.",
+            imageUrl = null,
+            url = "nostr:naddr1qq",
+            publishedAt = 1,
+        )
+        assertTrue(item.matchesQuery("future"))
+        assertTrue(item.matchesQuery("HOME"))
+        assertTrue(!item.matchesQuery("bitcoin"))
+    }
+
+    @Test
     fun writingFromSkipsEventsWithoutADtag() {
         val event = article(d = null, title = "Nope")
         assertNull(YouViewModel.writingFrom(event))

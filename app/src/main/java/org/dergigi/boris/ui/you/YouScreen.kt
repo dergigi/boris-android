@@ -18,12 +18,18 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -40,9 +46,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -168,6 +177,7 @@ fun YouHighlightsContent(
     menuFor: (YouHighlight) -> HighlightCardMenu? = { null },
 ) {
     var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
+    var query by rememberSaveable { mutableStateOf("") }
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = { onRefresh(tab) },
@@ -193,6 +203,14 @@ fun YouHighlightsContent(
             item(key = "tabs") {
                 ContentTabs(tab = tab, onSelect = { tab = it })
             }
+            if (state is YouUiState.Ready) {
+                item(key = "search") {
+                    ProfileSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                    )
+                }
+            }
             when (state) {
                 YouUiState.Loading -> {
                     item(key = "loading") {
@@ -217,13 +235,18 @@ fun YouHighlightsContent(
                 is YouUiState.Ready -> {
                     when (tab) {
                         ContentTab.Highlights -> {
-                            val visible = state.highlights.filter { it.id !in deletedIds }
+                            val visible = state.highlights
+                                .filter { it.id !in deletedIds && it.matchesQuery(query) }
                             if (visible.isEmpty()) {
                                 item(key = "empty-highlights") {
-                                    StatusMessage(
-                                        text = stringResource(R.string.you_highlights_empty),
-                                        onRetry = { onRefresh(tab) },
-                                    )
+                                    if (state.highlights.none { it.id !in deletedIds }) {
+                                        StatusMessage(
+                                            text = stringResource(R.string.you_highlights_empty),
+                                            onRetry = { onRefresh(tab) },
+                                        )
+                                    } else {
+                                        NoSearchMatches()
+                                    }
                                 }
                             } else {
                                 items(visible, key = { it.id }) { item ->
@@ -242,26 +265,31 @@ fun YouHighlightsContent(
                                         menu = menuFor(item),
                                     )
                                 }
-                                if (!endReached) {
-                                    item(key = "load-more") {
-                                        LoadMoreRow(
-                                            loading = loadingMore,
-                                            onLoadMore = onLoadMore,
-                                        )
-                                    }
+                            }
+                            if (!endReached && state.highlights.isNotEmpty()) {
+                                item(key = "load-more") {
+                                    LoadMoreRow(
+                                        loading = loadingMore,
+                                        onLoadMore = onLoadMore,
+                                    )
                                 }
                             }
                         }
                         ContentTab.Writings -> {
-                            if (state.writings.isEmpty()) {
+                            val visible = state.writings.filter { it.matchesQuery(query) }
+                            if (visible.isEmpty()) {
                                 item(key = "empty-writings") {
-                                    StatusMessage(
-                                        text = stringResource(R.string.you_writings_empty),
-                                        onRetry = { onRefresh(tab) },
-                                    )
+                                    if (state.writings.isEmpty()) {
+                                        StatusMessage(
+                                            text = stringResource(R.string.you_writings_empty),
+                                            onRetry = { onRefresh(tab) },
+                                        )
+                                    } else {
+                                        NoSearchMatches()
+                                    }
                                 }
                             } else {
-                                items(state.writings, key = { it.id }) { item ->
+                                items(visible, key = { it.id }) { item ->
                                     YouWritingCard(
                                         item = item,
                                         onOpenArticle = onOpenArticle,
@@ -275,6 +303,53 @@ fun YouHighlightsContent(
             }
         }
     }
+}
+
+@Composable
+private fun ProfileSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    val focus = LocalFocusManager.current
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text(stringResource(R.string.you_search_placeholder)) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = null,
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Clear,
+                        contentDescription = stringResource(R.string.search_clear),
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+    )
+}
+
+@Composable
+private fun NoSearchMatches() {
+    Text(
+        text = stringResource(R.string.search_empty),
+        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+    )
 }
 
 @Composable
