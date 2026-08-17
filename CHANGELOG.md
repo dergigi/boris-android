@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-08-17
+
+### Added
+
+- Settings About: link to the web app at read.withboris.com
+
+### Changed
+
+- Settings category colors are grouped and muted (one tint per card), with circular icon wells
+- About shows the shared version · commit footer at the bottom
+
 ## [0.58.0] - 2026-08-17
 
 ### Added
