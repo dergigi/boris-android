@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.69.0] - 2026-08-17
+
 ### Changed
 
 - Home “First time?” section dismisses automatically after the About Boris walkthrough reaches the last screen
