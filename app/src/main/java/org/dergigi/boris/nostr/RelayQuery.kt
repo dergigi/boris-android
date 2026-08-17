@@ -180,6 +180,39 @@ object RelayQuery {
         return cachedRecentHighlights(limit, pubkeyHex, authors)
     }
 
+    /**
+     * Fetches highlights by [pubkeyHex] created at or before [until] (NIP-01
+     * "until" pagination). Returns the cache page so callers can dedupe
+     * against what they already show.
+     */
+    fun fetchHighlightsBefore(
+        readRelays: List<String>,
+        pubkeyHex: String,
+        until: Long,
+        limit: Int = 80,
+    ): List<Nip01Event> {
+        val urls = relayUrls(readRelays)
+        val key = pubkeyHex.lowercase()
+        if (urls.isNotEmpty()) {
+            val filter = highlightFilter(limit, listOf(key)).put("until", until)
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_HIGHLIGHT &&
+                        event.content.isNotBlank() &&
+                        event.pubkey.lowercase() == key
+                }
+            EventCache.putAll(remote)
+        }
+        return EventCache.byKind(Nip01Event.KIND_HIGHLIGHT)
+            .filter { event ->
+                event.content.isNotBlank() &&
+                    event.pubkey.lowercase() == key &&
+                    event.createdAt <= until
+            }
+            .sortedByDescending { it.createdAt }
+            .take(limit)
+    }
+
     fun cachedRecentHighlights(
         limit: Int = 80,
         pubkeyHex: String? = null,

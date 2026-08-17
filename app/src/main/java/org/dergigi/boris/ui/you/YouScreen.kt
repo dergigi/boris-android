@@ -114,6 +114,8 @@ fun YouHighlights(
         val hex = runCatching { Nip19.npubDecode(npub) }.getOrNull() ?: return@LaunchedEffect
         viewModel.refresh(hex)
     }
+    val loadingMore by viewModel.loadingMore.collectAsStateWithLifecycle()
+    val endReached by viewModel.endReached.collectAsStateWithLifecycle()
     YouHighlightsContent(
         state = state,
         refreshing = refreshing,
@@ -122,6 +124,9 @@ fun YouHighlights(
         pictureUrl = shown?.picture,
         highlightColor = highlightColor,
         onRefresh = { tab -> viewModel.refresh(tab = tab) },
+        loadingMore = loadingMore,
+        endReached = endReached,
+        onLoadMore = { viewModel.loadMoreHighlights() },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
         deletedIds = deletedIds,
@@ -156,6 +161,9 @@ fun YouHighlightsContent(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     modifier: Modifier = Modifier,
+    loadingMore: Boolean = false,
+    endReached: Boolean = false,
+    onLoadMore: () -> Unit = {},
     deletedIds: Set<String> = emptySet(),
     menuFor: (YouHighlight) -> HighlightCardMenu? = { null },
 ) {
@@ -233,6 +241,14 @@ fun YouHighlightsContent(
                                         menu = menuFor(item),
                                     )
                                 }
+                                if (!endReached) {
+                                    item(key = "load-more") {
+                                        LoadMoreRow(
+                                            loading = loadingMore,
+                                            onLoadMore = onLoadMore,
+                                        )
+                                    }
+                                }
                             }
                         }
                         ContentTab.Writings -> {
@@ -255,6 +271,27 @@ fun YouHighlightsContent(
                         ContentTab.Rss, ContentTab.All -> Unit
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadMoreRow(
+    loading: Boolean,
+    onLoadMore: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (loading) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+        } else {
+            TextButton(onClick = onLoadMore) {
+                Text(text = stringResource(R.string.you_load_more))
             }
         }
     }

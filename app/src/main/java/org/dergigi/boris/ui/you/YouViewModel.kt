@@ -68,7 +68,14 @@ class YouViewModel(
     private val _relation = MutableStateFlow(FeedLevel.Nostrverse)
     val relation: StateFlow<FeedLevel> = _relation.asStateFlow()
 
+    private val _loadingMore = MutableStateFlow(false)
+    val loadingMore: StateFlow<Boolean> = _loadingMore.asStateFlow()
+
+    private val _endReached = MutableStateFlow(false)
+    val endReached: StateFlow<Boolean> = _endReached.asStateFlow()
+
     private var loadJob: Job? = null
+    private var moreJob: Job? = null
     private var pubkeyHex: String = ""
 
     /**
@@ -80,6 +87,7 @@ class YouViewModel(
             ?: SessionStore.load(getApplication())?.pubkeyHex
         if (key.isNullOrBlank()) {
             loadJob?.cancel()
+            moreJob?.cancel()
             this.pubkeyHex = ""
             _profile.value = null
             _relation.value = FeedLevel.Nostrverse
@@ -95,6 +103,10 @@ class YouViewModel(
         _relation.value = relationFor(key, remote = false)
         val keepItems = samePerson && _state.value is YouUiState.Ready
         loadJob?.cancel()
+        moreJob?.cancel()
+        if (tab == null || tab == ContentTab.Highlights) {
+            _endReached.value = false
+        }
         loadJob = viewModelScope.launch {
             var showing = keepItems
             if (!keepItems) {
@@ -122,13 +134,15 @@ class YouViewModel(
                     }.distinct()
                     val wantHighlights = tab == null || tab == ContentTab.Highlights
                     val wantWritings = tab == null || tab == ContentTab.Writings
+                    val shown = if (keepItems) _state.value as? YouUiState.Ready else null
                     coroutineScope {
                         val highlights = async {
                             if (wantHighlights) {
                                 RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, key)
                                     .map { event -> highlightFrom(event) }
                             } else {
-                                cachedHighlights(key)
+                                // Keep paged-in items instead of truncating to the first page.
+                                shown?.highlights ?: cachedHighlights(key)
                             }
                         }
                         val writings = async {
@@ -159,6 +173,48 @@ class YouViewModel(
                 }
             } finally {
                 _refreshing.value = false
+            }
+        }
+    }
+
+    /**
+     * Pages in highlights older than the oldest one currently shown, using a
+     * NIP-01 "until" filter. Marks the end once a page brings nothing new.
+     */
+    fun loadMoreHighlights() {
+        val key = pubkeyHex.takeIf { it.isNotBlank() } ?: return
+        val ready = _state.value as? YouUiState.Ready ?: return
+        val oldest = ready.highlights.minOfOrNull { it.createdAt } ?: return
+        if (_loadingMore.value || _endReached.value) return
+        moreJob = viewModelScope.launch {
+            _loadingMore.value = true
+            try {
+                val older = withContext(Dispatchers.IO) {
+                    val list = RelayQuery.fetchRelayList(key)
+                    val relays = buildList {
+                        addAll(RelayList.FALLBACK)
+                        addAll(list.write)
+                        addAll(list.read)
+                    }.distinct()
+                    RelayQuery.fetchHighlightsBefore(relays, key, until = oldest, limit = HIGHLIGHT_LIMIT)
+                        .map { event -> highlightFrom(event) }
+                }
+                val current = _state.value as? YouUiState.Ready ?: return@launch
+                val known = current.highlights.mapTo(mutableSetOf()) { it.id }
+                val fresh = older.filter { it.id !in known }
+                if (fresh.isEmpty()) {
+                    _endReached.value = true
+                } else {
+                    _state.value = current.copy(
+                        highlights = (current.highlights + fresh).sortedByDescending { it.createdAt },
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Keep what we have; tapping the button again retries.
+            } finally {
+                _loadingMore.value = false
             }
         }
     }

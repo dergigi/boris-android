@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- "Load more" at the end of a profile's highlights list pages in older highlights (NIP-01 `until`) until the relays have nothing left
+
 ### Changed
 
 - Profile pull-to-refresh only re-queries the visible tab's kind (writings or highlights); profile, relation, and the other tab stay on cache
