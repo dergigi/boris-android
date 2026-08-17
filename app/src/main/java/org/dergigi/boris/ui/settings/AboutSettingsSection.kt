@@ -93,6 +93,16 @@ fun AboutSettingsSection(
             },
         )
         AboutActionRow(
+            label = stringResource(R.string.settings_about_webapp),
+            subtitle = AboutLinks.WEBAPP.removePrefix("https://").trimEnd('/'),
+            icon = Icons.Outlined.Language,
+            tint = Color(0xFF14B8A6),
+            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
+            onClick = {
+                openWeblink(AboutLinks.WEBAPP, openInBoris, onOpenArticle, uriHandler::openUri)
+            },
+        )
+        AboutActionRow(
             label = stringResource(R.string.settings_about_github),
             subtitle = "dergigi/boris-android",
             icon = Icons.Outlined.Code,

@@ -309,6 +309,7 @@
     <string name="settings_about_support_summary">Thank the people who zap Boris</string>
     <string name="settings_about_links">Links</string>
     <string name="settings_about_website">Website</string>
+    <string name="settings_about_webapp">Web app</string>
     <string name="settings_about_github">Source code</string>
     <string name="settings_about_author">Author</string>
     <string name="settings_about_author_nostr">Author on Nostr</string>

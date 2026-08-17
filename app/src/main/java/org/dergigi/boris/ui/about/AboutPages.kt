@@ -17,6 +17,7 @@ internal sealed class AboutPage {
 
 object AboutLinks {
     const val WEBSITE = "https://readwithboris.com/"
+    const val WEBAPP = "https://read.withboris.com/"
     const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x"
     const val GITHUB = "https://github.com/dergigi/boris-android"
     const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"
