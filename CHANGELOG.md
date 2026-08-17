@@ -9,6 +9,22 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-08-17
+
+### Added
+
+- Reading position sync via Nostr (kind 39802), with scroll settings for sync, auto-scroll to saved position, and auto-archive at 100%
+- Home: Random articles section from unread public/web library bookmarks
+- Profile overflow menu: open with njump or native app
+
+### Changed
+
+- Most Highlighted ranks highlights from the last 7 days only (section title: Most highlighted this week)
+
+### Fixed
+
+- About/Support: spaces preserved around inline links (`send me sats`, `zaps`)
+
 ## [0.55.0] - 2026-08-17
 
 ### Added
