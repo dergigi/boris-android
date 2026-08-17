@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.70.0] - 2026-08-17
+
 ### Fixed
 
 - Settings can be opened while logged out (they no longer bounce back immediately)
