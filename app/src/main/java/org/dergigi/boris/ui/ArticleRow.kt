@@ -26,8 +26,10 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.ui.reader.CardReadingProgress
@@ -88,9 +90,13 @@ fun ArticleRow(
         ) {
             Text(
                 text = title,
+                // bodyLarge is reader-tuned (36sp / justify); list titles need tight wrap.
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    lineHeight = 20.sp,
+                    textAlign = TextAlign.Start,
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
