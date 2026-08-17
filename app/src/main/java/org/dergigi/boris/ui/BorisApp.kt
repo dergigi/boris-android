@@ -237,7 +237,6 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
-                        authViewModel = authViewModel,
                         initialCategory = entry.arguments?.getString(Routes.SETTINGS_CATEGORY_ARG),
                     )
                 }

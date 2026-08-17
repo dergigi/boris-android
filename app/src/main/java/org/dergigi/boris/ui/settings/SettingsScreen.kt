@@ -60,8 +60,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
-import org.dergigi.boris.ui.auth.AuthUiState
-import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.theme.BorisIcons
 
 enum class SettingsCategory(
@@ -126,11 +124,9 @@ fun SettingsScreen(
     onOpenTutorial: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
-    authViewModel: AuthViewModel,
     initialCategory: String? = null,
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
-    val authState by authViewModel.state.collectAsStateWithLifecycle()
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val signIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
@@ -152,9 +148,6 @@ fun SettingsScreen(
         val text = settingsMessage ?: return@LaunchedEffect
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         settingsViewModel.consumeMessage()
-    }
-    LaunchedEffect(authState) {
-        if (authState !is AuthUiState.LoggedIn) onBack()
     }
     BackHandler(enabled = category != null) { openCategory = null }
 
