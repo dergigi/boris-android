@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.63.0] - 2026-08-17
+
+### Changed
+
+- App icon: full yellow highlighter on a transparent background (no circular crop)
+
 ## [0.62.0] - 2026-08-17
 
 ### Added
