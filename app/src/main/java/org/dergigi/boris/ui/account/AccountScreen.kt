@@ -53,6 +53,7 @@ import org.dergigi.boris.ui.auth.NstartFooter
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.you.YouHighlights
 import org.dergigi.boris.ui.you.YouLoggedOut
+import org.dergigi.boris.ui.you.profileLinkMenuItems
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,13 +132,12 @@ fun AccountScreen(
                         )
                     }
                     if (loggedIn) {
+                        val npub = (authState as AuthUiState.LoggedIn).npub
                         TopBarMoreMenu(
-                            items = listOf(
-                                TopBarMenuItem(
-                                    label = stringResource(R.string.auth_sign_out),
-                                    icon = Icons.AutoMirrored.Outlined.Logout,
-                                    onClick = { confirmSignOut = true },
-                                ),
+                            items = profileLinkMenuItems(npub) + TopBarMenuItem(
+                                label = stringResource(R.string.auth_sign_out),
+                                icon = Icons.AutoMirrored.Outlined.Logout,
+                                onClick = { confirmSignOut = true },
                             ),
                         )
                     }

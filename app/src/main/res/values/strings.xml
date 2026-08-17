@@ -213,6 +213,9 @@
     <string name="settings_library_default_view">Default shelf</string>
     <string name="settings_library_default_view_note">Opens this shelf when you go to Your Library.</string>
     <string name="action_more">More</string>
+    <string name="action_copy_link">Copy Link</string>
+    <string name="action_share">Share</string>
+    <string name="action_copied">Copied.</string>
     <string name="home_settings">Home settings</string>
     <string name="feed_settings">Feed settings</string>
     <string name="library_settings">Library settings</string>
