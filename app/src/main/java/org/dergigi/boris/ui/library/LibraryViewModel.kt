@@ -323,7 +323,14 @@ class LibraryViewModel(
                 event?.let { coordinate to it }
             }
             .toMap()
-        Hydrated(fetchedArticles, notesJob.await(), previewJobs.awaitAll().toMap())
+        val notes = notesJob.await()
+        val noteAuthors = notes.values.map { it.pubkey }.distinct()
+        if (noteAuthors.isNotEmpty()) {
+            runCatching {
+                RelayQuery.fetchProfiles(RelayList.FALLBACK, noteAuthors)
+            }
+        }
+        Hydrated(fetchedArticles, notes, previewJobs.awaitAll().toMap())
     }
 
     private fun openAuthUrl(url: String) {

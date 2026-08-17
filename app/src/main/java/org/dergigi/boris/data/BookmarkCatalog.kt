@@ -144,20 +144,15 @@ object BookmarkCatalog {
                 val event = notes[eventId]
                 BookmarkItem(
                     id = "e:$eventId",
-                    title = noteTitle(event),
+                    title = NoteCover.title(event),
                     url = "nostr:$encoded",
                     host = "nostr",
-                    imageUrl = null,
+                    imageUrl = NoteCover.image(event),
                     createdAt = event?.createdAt ?: createdAt,
                     bucket = bucket,
                 )
             }
         }
-    }
-
-    private fun noteTitle(event: Nip01Event?): String {
-        val line = event?.content?.lineSequence()?.firstOrNull { it.isNotBlank() } ?: return "Note"
-        return if (line.length <= 80) line else line.take(79).trimEnd() + "…"
     }
 
     private fun itemFromWeb(

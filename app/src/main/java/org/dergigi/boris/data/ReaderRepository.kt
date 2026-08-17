@@ -106,7 +106,11 @@ class ReaderRepository(
         }
         val title = event.content.lineSequence()
             .map { it.trim() }
-            .firstOrNull { it.isNotBlank() && !UrlExtractor.isImageUrl(it.trimEnd('.', ',', ';')) }
+            .firstOrNull { line ->
+                if (line.isBlank()) return@firstOrNull false
+                val bare = line.trimEnd('.', ',', ';')
+                !(bare.startsWith("http", ignoreCase = true) && UrlExtractor.isImageUrl(bare))
+            }
             ?.let { line ->
                 if (line.length <= 80) line else line.take(79).trimEnd() + "…"
             } ?: "Note"

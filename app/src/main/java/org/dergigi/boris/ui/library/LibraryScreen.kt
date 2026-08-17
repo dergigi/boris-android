@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
@@ -74,6 +75,8 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -357,10 +360,11 @@ private fun BookmarkRow(
     item: BookmarkItem,
     onOpenArticle: (String) -> Unit,
 ) {
+    val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
     ArticleRow(
         title = item.title,
         imageUrl = item.imageUrl,
-        imageFallbackIcon = Icons.Outlined.Bookmark,
+        imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
         byline = item.host,
         url = item.url,
         enabled = item.url != null,

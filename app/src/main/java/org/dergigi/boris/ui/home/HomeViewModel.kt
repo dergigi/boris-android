@@ -108,19 +108,23 @@ class HomeViewModel(
                         val rawYours = HighlightedArticles.hydrate(yoursDeferred.await())
                         val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
                         val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
-                        val rawContinue = ContinueReading.articles(ARTICLE_LIMIT)
-                        val rawMost = HighlightedArticles.mostHighlighted(
-                            EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
-                            ARTICLE_LIMIT,
+                        val rawContinue = HighlightedArticles.hydrate(ContinueReading.articles(ARTICLE_LIMIT))
+                        val rawMost = HighlightedArticles.hydrate(
+                            HighlightedArticles.mostHighlighted(
+                                EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
+                                ARTICLE_LIMIT,
+                            ),
                         )
                         val archivedKeys = archiveDeferred.await()
                         val rawRandom = if (pubkey == null) {
                             emptyList()
                         } else {
-                            RandomArticles.articles(
-                                libraryItems(pubkey, relays),
-                                archivedKeys,
-                                ARTICLE_LIMIT,
+                            HighlightedArticles.hydrate(
+                                RandomArticles.articles(
+                                    libraryItems(pubkey, relays),
+                                    archivedKeys,
+                                    ARTICLE_LIMIT,
+                                ),
                             )
                         }
                         val previews = loadPreviews(

@@ -20,8 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Settings
@@ -66,6 +68,8 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -489,8 +493,13 @@ private fun HighlightedArticleCard(
             contentAlignment = Alignment.Center,
         ) {
             if (article.imageUrl.isNullOrBlank()) {
+                val note = NostrLink.parse(article.url) is NostrTarget.Note
                 Icon(
-                    imageVector = BorisIcons.Highlighter,
+                    imageVector = if (note) {
+                        Icons.AutoMirrored.Outlined.StickyNote2
+                    } else {
+                        Icons.AutoMirrored.Outlined.Article
+                    },
                     contentDescription = null,
                     tint = fallbackTint,
                     modifier = Modifier.size(28.dp),

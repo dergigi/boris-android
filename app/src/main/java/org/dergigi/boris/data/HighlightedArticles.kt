@@ -4,6 +4,7 @@ import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
+import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayQuery
 
 data class HighlightedArticle(
@@ -72,13 +73,30 @@ object HighlightedArticles {
 
     private const val WEEK_SECONDS = 7L * 24 * 60 * 60
 
-    /** Fetches kind-30023 events that are not in the cache, then re-applies titles and covers. */
+    /** Fetches missing article/note events (and note author profiles), then re-decorates. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {
+        val notes = ArrayList<NostrTarget.Note>()
         for (item in items) {
-            val article = NostrLink.parse(item.url) as? NostrTarget.Article ?: continue
-            val pointer = article.ref.pointer
-            if (EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier) == null) {
-                RelayQuery.fetchArticle(pointer)
+            when (val target = NostrLink.parse(item.url)) {
+                is NostrTarget.Article -> {
+                    val pointer = target.ref.pointer
+                    if (EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier) == null) {
+                        RelayQuery.fetchArticle(pointer)
+                    }
+                }
+                is NostrTarget.Note -> notes.add(target)
+                null -> Unit
+            }
+        }
+        for (note in notes) {
+            if (EventCache.event(note.eventId) == null) {
+                runCatching { RelayQuery.fetchEvent(note.eventId, note.relays) }
+            }
+        }
+        val authors = notes.mapNotNull { EventCache.event(it.eventId)?.pubkey }.distinct()
+        for (pubkey in authors) {
+            if (EventCache.latest(Nip01Event.KIND_METADATA, pubkey) == null) {
+                runCatching { RelayQuery.fetchProfile(pubkey) }
             }
         }
         return items.map { decorate(it) }
@@ -88,10 +106,23 @@ object HighlightedArticles {
         article: HighlightedArticle,
         preview: OgPreview? = ArticlePreview.get(article.url),
     ): HighlightedArticle {
-        val target = NostrLink.parse(article.url)
-        val event = (target as? NostrTarget.Article)?.ref?.pointer?.let { pointer ->
-            EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
+        return when (val target = NostrLink.parse(article.url)) {
+            is NostrTarget.Article -> decorateArticle(article, target, preview)
+            is NostrTarget.Note -> decorateNote(article, target, preview)
+            null -> decorateWeb(article, preview)
         }
+    }
+
+    private fun decorateArticle(
+        article: HighlightedArticle,
+        target: NostrTarget.Article,
+        preview: OgPreview?,
+    ): HighlightedArticle {
+        val event = EventCache.latest(
+            target.ref.pointer.kind,
+            target.ref.pointer.pubkey,
+            target.ref.pointer.identifier,
+        )
         val title = event?.let { Nip23.title(it) }
             ?: preview?.title?.takeIf { it.isNotBlank() }
             ?: article.title.takeUnless { it == article.host }
@@ -100,6 +131,39 @@ object HighlightedArticles {
             ?: event?.content?.let { ArticleCover.firstMarkdownImage(it) }
             ?: preview?.imageUrl
             ?: article.imageUrl
+        val host = preview?.siteName?.takeIf { it.isNotBlank() } ?: article.host
+        return article.copy(title = title, imageUrl = image, host = host)
+    }
+
+    private fun decorateNote(
+        article: HighlightedArticle,
+        target: NostrTarget.Note,
+        preview: OgPreview?,
+    ): HighlightedArticle {
+        val event = EventCache.event(target.eventId)
+        val title = event?.let(NoteCover::title)
+            ?: preview?.title?.takeIf { it.isNotBlank() }
+            ?: article.title.takeUnless { it == article.host || it == "nostr" }
+            ?: article.title
+        val image = NoteCover.image(event)
+            ?: preview?.imageUrl
+            ?: article.imageUrl
+        val host = event?.let { ev ->
+            val profile = EventCache.latest(Nip01Event.KIND_METADATA, ev.pubkey)
+                ?.let { Profile.parse(it.content) }
+            Profile.displayName(ev.pubkey, profile)
+        } ?: article.host
+        return article.copy(title = title, imageUrl = image, host = host)
+    }
+
+    private fun decorateWeb(
+        article: HighlightedArticle,
+        preview: OgPreview?,
+    ): HighlightedArticle {
+        val title = preview?.title?.takeIf { it.isNotBlank() }
+            ?: article.title.takeUnless { it == article.host }
+            ?: article.title
+        val image = preview?.imageUrl ?: article.imageUrl
         val host = preview?.siteName?.takeIf { it.isNotBlank() } ?: article.host
         return article.copy(title = title, imageUrl = image, host = host)
     }
