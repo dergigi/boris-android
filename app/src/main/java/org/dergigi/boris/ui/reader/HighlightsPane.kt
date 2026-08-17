@@ -251,18 +251,18 @@ private fun HighlightsPaneHeader(
                 )
             }
         }
-        IconButton(onClick = onOpenHighlightSettings) {
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = stringResource(R.string.reader_highlights_settings),
-            )
-        }
         IconButton(onClick = onToggleMarks) {
             Icon(
                 imageVector = if (showMarks) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                 contentDescription = stringResource(
                     if (showMarks) R.string.reader_highlights_hide else R.string.reader_highlights_show,
                 ),
+            )
+        }
+        IconButton(onClick = onOpenHighlightSettings) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.reader_highlights_settings),
             )
         }
     }
