@@ -679,7 +679,7 @@ private fun ArticleBody(
         focusHighlightId,
         focusQuote,
     ) + listOfNotNull(
-        ArticleFind.painted(findQuery).takeIf { findOpen },
+        ArticleFind.painted(findQuery),
     )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
@@ -730,13 +730,9 @@ private fun ArticleBody(
     }
     LaunchedEffect(findOpen) {
         if (findOpen) paneOpen = false
-        else {
-            findQuery = ""
-            findIndex = 0
-        }
     }
-    LaunchedEffect(findJump, findQuery, painted, findOpen) {
-        if (!findOpen || findQuery.isBlank()) return@LaunchedEffect
+    LaunchedEffect(findJump, findQuery, painted) {
+        if (findQuery.isBlank()) return@LaunchedEffect
         val stop = withTimeoutOrNull(10_000L) {
             snapshotFlow {
                 if (scrollViewport?.isAttached != true) return@snapshotFlow null
@@ -1141,10 +1137,17 @@ private fun ArticleBody(
                 findIndex = 0
                 findJump++
             },
-            onDismiss = { onFindOpenChange(false) },
+            onDismiss = {
+                findQuery = ""
+                findIndex = 0
+                onFindOpenChange(false)
+            },
             onPrevious = { stepFind(-1) },
             onNext = { stepFind(1) },
-            onSelect = { goFind(it) },
+            onSelect = { index ->
+                goFind(index)
+                onFindOpenChange(false)
+            },
         )
     }
 }

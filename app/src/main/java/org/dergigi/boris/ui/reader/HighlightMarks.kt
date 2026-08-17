@@ -21,6 +21,7 @@ import org.dergigi.boris.ui.theme.HighlightOther
 
 object HighlightMarks {
     const val HighlightMarkAlpha = 0.45f
+    const val FindMarkAlpha = 0.38f
 
     fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> =
         JustifiedLayout.highlightRects(layout, start, end)
@@ -50,21 +51,27 @@ fun Modifier.drawHighlightMarks(
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (highlights.isEmpty() || displayed.isEmpty()) return@drawBehind
-    fun paint(items: List<PaintedHighlight>, fill: Color) {
+    fun paint(items: List<PaintedHighlight>, fill: Color, asUnderline: Boolean, alpha: Float = HighlightMarks.HighlightMarkAlpha) {
         items.forEach { item ->
             QuoteMatch.occurrences(
                 displayed,
                 highlightMark(item.quote, item.context),
                 ignoreCase = item.ignoreCase,
             ).forEach { range ->
-                paintHighlight(result, range.first, range.last + 1, fill, underline)
+                paintHighlight(result, range.first, range.last + 1, fill, asUnderline, alpha)
             }
         }
     }
-    paint(highlights.filter { it.find }, findColor)
-    paint(highlights.filter { !it.find && !it.mine && !it.friend }, otherColor)
-    paint(highlights.filter { !it.find && it.friend && !it.mine }, friendsColor)
-    paint(highlights.filter { !it.find && it.mine }, mineColor)
+    // Find matches always use a filled selection-like mark, never underline.
+    paint(
+        highlights.filter { it.find },
+        findColor,
+        asUnderline = false,
+        alpha = HighlightMarks.FindMarkAlpha,
+    )
+    paint(highlights.filter { !it.find && !it.mine && !it.friend }, otherColor, underline)
+    paint(highlights.filter { !it.find && it.friend && !it.mine }, friendsColor, underline)
+    paint(highlights.filter { !it.find && it.mine }, mineColor, underline)
 }
 
 fun DrawScope.paintHighlight(
@@ -73,6 +80,7 @@ fun DrawScope.paintHighlight(
     end: Int,
     fill: Color,
     underline: Boolean,
+    alpha: Float = HighlightMarks.HighlightMarkAlpha,
 ) {
     val padXPx = 5.dp.toPx()
     val padYPx = 3.dp.toPx()
@@ -89,7 +97,7 @@ fun DrawScope.paintHighlight(
             )
         } else {
             drawRoundRect(
-                color = fill.copy(alpha = HighlightMarks.HighlightMarkAlpha),
+                color = fill.copy(alpha = alpha),
                 topLeft = Offset(box.left - padXPx, box.top - padYPx),
                 size = Size(box.width + padXPx * 2, box.height + padYPx * 2),
                 cornerRadius = corner,
