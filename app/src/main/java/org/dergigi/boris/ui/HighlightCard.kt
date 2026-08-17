@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -131,15 +132,18 @@ fun HighlightCard(
     host: String? = null,
     authorPicture: String? = null,
     maxQuoteLines: Int = Int.MAX_VALUE,
+    selected: Boolean = false,
     onClick: (() -> Unit)? = null,
     menu: HighlightCardMenu? = null,
 ) {
     val shape = RoundedCornerShape(8.dp)
+    val border = color.copy(alpha = if (selected) 0.95f else 0.55f)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, color.copy(alpha = 0.55f), shape)
+            .border(1.dp, border, shape)
             .clip(shape)
+            .background(if (selected) color.copy(alpha = 0.08f) else Color.Transparent)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

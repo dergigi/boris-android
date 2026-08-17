@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,15 +17,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
@@ -46,17 +42,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
-import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.ui.HighlightAuthor
-import org.dergigi.boris.ui.HighlightQuoteText
+import org.dergigi.boris.ui.HighlightCard
+import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.FeedScope
 
@@ -96,9 +90,9 @@ fun HighlightsPane(
     otherColor: Color,
     onDismiss: () -> Unit,
     onSelect: (PaintedHighlight) -> Unit,
-    onOpenProfile: (String) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onToggleMarks: () -> Unit,
+    menuFor: (PaintedHighlight) -> HighlightCardMenu,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
     val visible = remember(highlights, filter) { highlights.filter(filter::shows) }
@@ -174,18 +168,23 @@ fun HighlightsPane(
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             items(visible, key = { it.id }) { item ->
-                                HighlightPaneCard(
-                                    item = item,
-                                    selected = item.id == selectedId,
+                                val name = item.authorName.ifBlank {
+                                    Profile.displayName(item.pubkey, null)
+                                }
+                                HighlightCard(
+                                    quote = item.quote,
                                     color = when {
                                         item.mine -> mineColor
                                         item.friend -> friendsColor
                                         else -> otherColor
                                     },
+                                    createdAt = item.createdAt,
+                                    authorName = name,
+                                    context = item.context,
+                                    authorPicture = item.authorPicture,
+                                    selected = item.id == selectedId,
                                     onClick = { onSelect(item) },
-                                    onOpenProfile = {
-                                        if (item.pubkey.isNotBlank()) onOpenProfile(item.pubkey)
-                                    },
+                                    menu = menuFor(item),
                                 )
                             }
                         }
@@ -282,62 +281,6 @@ private fun FilterIcon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = if (on) tint else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-        )
-    }
-}
-
-@Composable
-private fun HighlightPaneCard(
-    item: PaintedHighlight,
-    selected: Boolean,
-    color: Color,
-    onClick: () -> Unit,
-    onOpenProfile: () -> Unit,
-) {
-    val shape = RoundedCornerShape(8.dp)
-    val border = color.copy(alpha = if (selected) 0.95f else 0.55f)
-    val name = item.authorName.ifBlank { Profile.displayName(item.pubkey, null) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, border, shape)
-            .clip(shape)
-            .background(
-                if (selected) color.copy(alpha = 0.08f) else Color.Transparent,
-            )
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.FormatQuote,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(18.dp),
-            )
-            if (item.createdAt > 0L) {
-                Text(
-                    text = RelativeTime.label(item.createdAt),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        HighlightQuoteText(
-            quote = item.quote,
-            context = item.context,
-            color = color,
-        )
-        HighlightAuthor(
-            name = name,
-            color = color,
-            picture = item.authorPicture,
-            modifier = Modifier.clickable(onClick = onOpenProfile),
         )
     }
 }

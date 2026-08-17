@@ -137,6 +137,8 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
@@ -165,6 +167,7 @@ fun ReaderScreen(
     onOpenReaderSettings: () -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     viewModel: ReaderViewModel = viewModel(),
+    menuViewModel: HighlightMenuViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gallery by viewModel.gallery.collectAsStateWithLifecycle()
@@ -178,6 +181,9 @@ fun ReaderScreen(
     val author by viewModel.author.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val deletedIds by menuViewModel.deleted.collectAsStateWithLifecycle()
+    val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
+    val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
@@ -185,20 +191,38 @@ fun ReaderScreen(
     ) { result ->
         viewModel.onSignerResult(result.resultCode, result.data)
     }
+    val menuLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        menuViewModel.onSignerResult(result.resultCode, result.data)
+    }
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
+    }
+    LaunchedEffect(menuMessage) {
+        val text = menuMessage ?: return@LaunchedEffect
+        menuViewModel.consumeMessage()
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
     }
     LaunchedEffect(signIntent) {
         val intent = signIntent ?: return@LaunchedEffect
         viewModel.consumeSignIntent()
         launcher.launch(intent)
     }
+    LaunchedEffect(menuSignIntent) {
+        val intent = menuSignIntent ?: return@LaunchedEffect
+        menuViewModel.consumeSignIntent()
+        menuLauncher.launch(intent)
+    }
+    val visibleHighlights = remember(highlights, deletedIds) {
+        highlights.filter { it.id !in deletedIds }
+    }
     ReaderScreenContent(
         state = state,
         gallery = gallery,
-        highlights = highlights,
+        highlights = visibleHighlights,
         highlightCount = highlightCount,
         highlightsLoaded = highlightsLoaded,
         focusHighlightId = viewModel.focusHighlightId,
@@ -226,6 +250,8 @@ fun ReaderScreen(
         onArchive = {
             viewModel.archive()?.let(launcher::launch)
         },
+        canDeleteHighlight = menuViewModel::canDelete,
+        onDeleteHighlight = menuViewModel::delete,
     )
 }
 
@@ -321,6 +347,8 @@ fun ReaderScreenContent(
     onHighlight: (String) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: () -> Unit,
+    canDeleteHighlight: (String?) -> Boolean = { false },
+    onDeleteHighlight: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -551,6 +579,8 @@ fun ReaderScreenContent(
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
                     onArchive = onArchive,
+                    canDeleteHighlight = canDeleteHighlight,
+                    onDeleteHighlight = onDeleteHighlight,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -583,6 +613,8 @@ private fun ArticleBody(
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
     onArchive: () -> Unit,
+    canDeleteHighlight: (String?) -> Boolean = { false },
+    onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
     onFindOpenChange: (Boolean) -> Unit,
     volumeScroll: Boolean = true,
@@ -1068,16 +1100,34 @@ private fun ArticleBody(
                 pendingJumpId = item.id
                 paneOpen = false
             },
-            onOpenProfile = { pubkey ->
-                paneOpen = false
-                onOpenProfile(pubkey)
-            },
             onOpenHighlightSettings = {
                 paneOpen = false
                 onOpenHighlightSettings()
             },
             onToggleMarks = {
                 SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
+            },
+            menuFor = { item ->
+                HighlightCardMenu(
+                    highlightId = item.id,
+                    authorHex = item.pubkey.ifBlank { null },
+                    onGoToQuote = {
+                        selectedId = item.id
+                        pendingJumpId = item.id
+                        paneOpen = false
+                    },
+                    onViewProfile = item.pubkey.takeIf { it.isNotBlank() }?.let { hex ->
+                        {
+                            paneOpen = false
+                            onOpenProfile(hex)
+                        }
+                    },
+                    onDelete = if (canDeleteHighlight(item.pubkey)) {
+                        { onDeleteHighlight(item.id) }
+                    } else {
+                        null
+                    },
+                )
             },
         )
         FindPane(
