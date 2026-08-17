@@ -15,6 +15,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Article URLs with percent-encoding (e.g. `%26`, `%2F`) no longer get double-decoded before fetch
 - Open-with / VIEW links go through the same URL extractor as share (no raw `dataString` fallback)
 
+### Changed
+
+- Gradle resolves `google()` / `mavenCentral()` before the Huawei Maven mirror (mirror kept as fallback)
+
 ## [0.75.0] - 2026-08-17
 
 ### Changed

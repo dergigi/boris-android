@@ -39,11 +39,9 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Fix approach: Run `UrlExtractor.imageUrls` on raw `html` before strip. Or render HTML with a dedicated path instead of Markdown. Add parse tests for an HTML page that contains `<img>`.
 
 **Huawei Maven listed first:**
-- Issue: Plugin and dependency repos resolve `https://repo.huaweicloud.com/repository/maven/` before `google()` and `mavenCentral()`.
+- Status: Fixed — `google()` / `mavenCentral()` (and plugin portal) are first; Huawei mirror is last as unreachable-Google fallback.
+- Issue (historical): Plugin and dependency repos resolved Huawei before Google/Maven Central.
 - Files: `settings.gradle.kts`
-- Why: Comment says `dl.google.com` is not always reachable.
-- Impact: Stale or divergent artifacts can win over Google Maven. Supply-chain trust sits on a third-party mirror.
-- Fix approach: Keep the mirror as a fallback, not the first repo. Prefer `google()` / `mavenCentral()` and only add the Huawei repo when a build actually cannot reach Google.
 
 ## Known Bugs
 

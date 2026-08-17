@@ -1,19 +1,20 @@
 pluginManagement {
     repositories {
-        // Huawei mirrors Google Maven; dl.google.com is not always reachable.
-        maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }
         google()
         mavenCentral()
         gradlePluginPortal()
+        // Fallback when dl.google.com is unreachable.
+        maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }
     }
 }
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        mavenCentral()
-        maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }
         google()
+        mavenCentral()
+        // Fallback when Google Maven is unreachable.
+        maven { url = uri("https://repo.huaweicloud.com/repository/maven/") }
     }
 }
 
