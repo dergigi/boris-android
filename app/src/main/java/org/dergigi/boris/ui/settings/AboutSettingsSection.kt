@@ -28,7 +28,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.dergigi.boris.BuildConfig
 import org.dergigi.boris.R
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.reader.openWeblink
@@ -53,12 +52,6 @@ fun AboutSettingsSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp),
-        )
-        Text(
-            text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
         )
 
         AboutActionRow(
@@ -128,6 +121,12 @@ fun AboutSettingsSection(
             painter = painterResource(R.drawable.ic_nostr),
             tint = Color(0xFF9333EA),
             onClick = onOpenAuthorProfile,
+        )
+
+        SettingsVersionFooter(
+            openInBoris = openInBoris,
+            onOpenArticle = onOpenArticle,
+            modifier = Modifier.padding(top = 16.dp),
         )
     }
 }

@@ -52,20 +52,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.dergigi.boris.BuildConfig
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
-import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
-import org.dergigi.boris.ui.reader.openWeblink
 import org.dergigi.boris.ui.theme.BorisIcons
 
 enum class SettingsCategory(
@@ -342,57 +337,5 @@ private fun SettingsCategoryDetail(
                 onOpenAuthorProfile = onOpenAuthorProfile,
             )
         }
-    }
-}
-
-private const val GITHUB_REPO = AboutLinks.GITHUB
-
-@Composable
-private fun SettingsVersionFooter(
-    openInBoris: Boolean,
-    onOpenArticle: (String) -> Unit,
-) {
-    val uriHandler = LocalUriHandler.current
-    val version = BuildConfig.VERSION_NAME
-    val commit = BuildConfig.GIT_COMMIT
-    val shortCommit = if (commit.length > 7) commit.take(7) else commit
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, top = 4.dp, bottom = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.settings_version, version),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.clickable {
-                openWeblink(
-                    "$GITHUB_REPO/releases/tag/v$version",
-                    openInBoris,
-                    onOpenArticle,
-                    uriHandler::openUri,
-                )
-            },
-        )
-        Text(
-            text = "·",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = shortCommit,
-            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.clickable(enabled = commit != "unknown") {
-                openWeblink(
-                    "$GITHUB_REPO/commit/$commit",
-                    openInBoris,
-                    onOpenArticle,
-                    uriHandler::openUri,
-                )
-            },
-        )
     }
 }
