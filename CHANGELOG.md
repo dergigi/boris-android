@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Home “First time?” section dismisses automatically after the About Boris walkthrough reaches the last screen
+- Home “Connect?” copy focuses on publishing highlights and discovering friends’ highlights
 
 ## [0.68.0] - 2026-08-17
 

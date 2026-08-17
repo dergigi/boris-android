@@ -62,7 +62,7 @@
     <string name="home_first_time_cta">About Boris</string>
     <string name="home_first_time_dismiss">Dismiss welcome</string>
     <string name="home_login_title">Connect?</string>
-    <string name="home_login_body">Optional. Link a Nostr account to publish highlights and see them on You.</string>
+    <string name="home_login_body">Optional. Link a Nostr account to publish highlights and discover what your friends found interesting enough to highlight.</string>
     <string name="home_login_cta">Log in</string>
     <string name="home_login_dismiss">Dismiss login prompt</string>
     <string name="about_title">About Boris</string>
