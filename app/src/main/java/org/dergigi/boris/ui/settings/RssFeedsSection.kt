@@ -1,9 +1,13 @@
 package org.dergigi.boris.ui.settings
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,11 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.RssFeed
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,12 +29,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.Opml
 import org.dergigi.boris.data.UserSettings
 
 @Composable
@@ -39,6 +47,26 @@ fun RssFeedsSection(
 ) {
     val feeds = settings.rssFeeds
     var input by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val xml = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+        }.getOrNull()
+        val imported = xml?.let { runCatching { Opml.feedUrls(it) }.getOrNull() }.orEmpty()
+        val new = imported.filter { it !in feeds }
+        if (new.isNotEmpty()) {
+            onUpdate(settings.withStringList("rssFeeds", feeds + new))
+        }
+        val message = if (new.isEmpty()) {
+            context.getString(R.string.settings_rss_import_none)
+        } else {
+            context.getString(R.string.settings_rss_import_result, new.size)
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
     fun add() {
         val url = normalizeFeedUrl(input) ?: return
         if (url !in feeds) {
@@ -114,6 +142,17 @@ fun RssFeedsSection(
                     contentDescription = stringResource(R.string.settings_rss_add),
                 )
             }
+        }
+        TextButton(onClick = { importLauncher.launch("*/*") }) {
+            Icon(
+                imageVector = Icons.Outlined.UploadFile,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(R.string.settings_rss_import),
+                modifier = Modifier.padding(start = 8.dp),
+            )
         }
         Text(
             text = stringResource(R.string.settings_rss_note),

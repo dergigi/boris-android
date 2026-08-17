@@ -176,6 +176,9 @@
     <string name="settings_rss_url_hint">Feed URL</string>
     <string name="settings_rss_add">Add feed</string>
     <string name="settings_rss_remove">Remove feed</string>
+    <string name="settings_rss_import">Import OPML</string>
+    <string name="settings_rss_import_result">%1$d feeds imported.</string>
+    <string name="settings_rss_import_none">No new feeds found.</string>
     <string name="settings_rss_note">Items show up in the RSS tab of your feed. Articles open in Boris and can be highlighted like any web page.</string>
     <string name="feed_error">Could not load the feed.</string>
     <string name="feed_retry">Try again</string>
