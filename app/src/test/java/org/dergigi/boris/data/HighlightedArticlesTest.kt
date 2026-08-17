@@ -4,6 +4,7 @@ import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip01Event.Companion.KIND_HIGHLIGHT
 import org.dergigi.boris.nostr.Nip01Event.Companion.KIND_LONG_FORM
+import org.dergigi.boris.nostr.Profile
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -50,8 +51,41 @@ class HighlightedArticlesTest {
             limit = 12,
         )
         assertEquals(1, articles.size)
-        assertEquals("my-article", articles[0].host)
+        assertEquals(
+            Profile.displayName(
+                "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+                null,
+            ),
+            articles[0].host,
+        )
         assertEquals("nostr:", articles[0].url.take(6))
+    }
+
+    @Test
+    fun usesAuthorNameAsHostForNostrArticles() {
+        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        EventCache.put(
+            Nip01Event(
+                id = "33".repeat(32),
+                pubkey = pubkey,
+                createdAt = 1,
+                kind = Nip01Event.KIND_METADATA,
+                tags = emptyList(),
+                content = """{"name":"Gigi","picture":"https://cdn.example.com/gigi.png"}""",
+                sig = "44".repeat(32),
+            ),
+        )
+        val articles = HighlightedArticles.fromEvents(
+            listOf(
+                highlight(
+                    "ignored",
+                    createdAt = 5,
+                    tags = listOf(listOf("a", "30023:$pubkey:my-article")),
+                ),
+            ),
+            limit = 12,
+        )
+        assertEquals("Gigi", articles[0].host)
     }
 
     @Test

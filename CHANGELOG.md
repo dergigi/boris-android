@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Home cards for nostr-native articles show the author name instead of the d-tag
+
 ## [1.1.0] - 2026-08-18
 
 ### Added

@@ -26,7 +26,7 @@ object HighlightedArticles {
             if (target == null && !url.startsWith("http")) continue
             if (!seen.add(url)) continue
             val host = when (target) {
-                is NostrTarget.Article -> target.ref.pointer.identifier.ifBlank { "nostr" }
+                is NostrTarget.Article -> authorHost(target.ref.pointer.pubkey)
                 is NostrTarget.Note -> "nostr"
                 null -> ArticleUrl.host(url) ?: continue
             }
@@ -63,7 +63,7 @@ object HighlightedArticles {
             .mapNotNull { (url, hits) ->
                 val target = NostrLink.parse(url)
                 val host = when (target) {
-                    is NostrTarget.Article -> target.ref.pointer.identifier.ifBlank { "nostr" }
+                    is NostrTarget.Article -> authorHost(target.ref.pointer.pubkey)
                     is NostrTarget.Note -> "nostr"
                     null -> ArticleUrl.host(url) ?: return@mapNotNull null
                 }
@@ -73,13 +73,15 @@ object HighlightedArticles {
 
     private const val WEEK_SECONDS = 7L * 24 * 60 * 60
 
-    /** Fetches missing article/note events (and note author profiles), then re-decorates. */
+    /** Fetches missing article/note events and author profiles, then re-decorates. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {
         val notes = ArrayList<NostrTarget.Note>()
+        val authorKeys = LinkedHashSet<String>()
         for (item in items) {
             when (val target = NostrLink.parse(item.url)) {
                 is NostrTarget.Article -> {
                     val pointer = target.ref.pointer
+                    authorKeys.add(pointer.pubkey)
                     if (EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier) == null) {
                         RelayQuery.fetchArticle(pointer)
                     }
@@ -93,8 +95,8 @@ object HighlightedArticles {
                 runCatching { RelayQuery.fetchEvent(note.eventId, note.relays) }
             }
         }
-        val authors = notes.mapNotNull { EventCache.event(it.eventId)?.pubkey }.distinct()
-        for (pubkey in authors) {
+        notes.mapNotNull { EventCache.event(it.eventId)?.pubkey }.forEach { authorKeys.add(it) }
+        for (pubkey in authorKeys) {
             if (EventCache.latest(Nip01Event.KIND_METADATA, pubkey) == null) {
                 runCatching { RelayQuery.fetchProfile(pubkey) }
             }
@@ -131,8 +133,7 @@ object HighlightedArticles {
             ?: event?.content?.let { ArticleCover.firstMarkdownImage(it) }
             ?: preview?.imageUrl
             ?: article.imageUrl
-        val host = preview?.siteName?.takeIf { it.isNotBlank() } ?: article.host
-        return article.copy(title = title, imageUrl = image, host = host)
+        return article.copy(title = title, imageUrl = image, host = authorHost(target.ref.pointer.pubkey))
     }
 
     private fun decorateNote(
@@ -166,5 +167,12 @@ object HighlightedArticles {
         val image = preview?.imageUrl ?: article.imageUrl
         val host = preview?.siteName?.takeIf { it.isNotBlank() } ?: article.host
         return article.copy(title = title, imageUrl = image, host = host)
+    }
+
+    /** Author name for nostr-native cards; short npub when metadata is missing. */
+    private fun authorHost(pubkeyHex: String): String {
+        val profile = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex)
+            ?.let { Profile.parse(it.content) }
+        return Profile.displayName(pubkeyHex, profile)
     }
 }
