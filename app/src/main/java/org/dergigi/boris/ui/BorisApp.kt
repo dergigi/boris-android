@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.support.SupportScreen
@@ -217,6 +218,21 @@ fun BorisApp(
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenTutorial = {
+                            navController.navigate(Routes.ABOUT) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenSupport = {
+                            navController.navigate(Routes.SUPPORT) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenAuthorProfile = {
+                            navController.navigate(Routes.profile(AboutLinks.AUTHOR_NPUB)) {
+                                launchSingleTop = true
+                            }
+                        },
                         authViewModel = authViewModel,
                         initialCategory = entry.arguments?.getString(Routes.SETTINGS_CATEGORY_ARG),
                     )

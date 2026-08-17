@@ -298,6 +298,17 @@
     <string name="settings_offline_limit_note">Applies to the article and image caches. Takes effect on the next launch.</string>
     <string name="settings_zap_splits">Zap Splits</string>
     <string name="settings_zap_summary">Shares for you, authors, and Boris</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_summary">Boris, tutorial, support, links</string>
+    <string name="settings_about_blurb">Boris is a nostr-native reader for highlighting and calm long-form reading. Free and open source.</string>
+    <string name="settings_about_tutorial">Tutorial</string>
+    <string name="settings_about_tutorial_summary">Walk through what Boris can do</string>
+    <string name="settings_about_support_summary">Thank the people who zap Boris</string>
+    <string name="settings_about_links">Links</string>
+    <string name="settings_about_website">Website</string>
+    <string name="settings_about_github">Source code</string>
+    <string name="settings_about_author">Author</string>
+    <string name="settings_about_author_nostr">Author on Nostr</string>
     <string name="settings_zap_enabled">Add zap splits to highlights</string>
     <string name="settings_zap_presets">Presets</string>
     <string name="settings_zap_preset_default">Default</string>

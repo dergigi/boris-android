@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.SwapVert
@@ -61,6 +62,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.BuildConfig
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.openWeblink
@@ -82,6 +84,7 @@ enum class SettingsCategory(
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
     Relays(R.string.settings_relays, R.string.settings_relays_summary, Color(0xFF06B6D4)),
     Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, Color(0xFFEF4444)),
+    About(R.string.settings_about, R.string.settings_about_summary, Color(0xFF8B5CF6)),
 }
 
 private val SettingsCategory.icon: ImageVector
@@ -97,6 +100,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
         SettingsCategory.Relays -> Icons.Outlined.CellTower
         SettingsCategory.Airplane -> Icons.Outlined.Flight
+        SettingsCategory.About -> Icons.Outlined.Info
     }
 
 private val CATEGORY_GROUPS = listOf(
@@ -115,6 +119,7 @@ private val CATEGORY_GROUPS = listOf(
         SettingsCategory.Relays,
         SettingsCategory.Airplane,
     ),
+    listOf(SettingsCategory.About),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,6 +127,9 @@ private val CATEGORY_GROUPS = listOf(
 fun SettingsScreen(
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenTutorial: () -> Unit,
+    onOpenSupport: () -> Unit,
+    onOpenAuthorProfile: () -> Unit,
     authViewModel: AuthViewModel,
     initialCategory: String? = null,
     settingsViewModel: SettingsViewModel = viewModel(),
@@ -199,6 +207,9 @@ fun SettingsScreen(
                         settings = settings,
                         onUpdate = { next -> settingsViewModel.update { next } },
                         onOpenArticle = onOpenArticle,
+                        onOpenTutorial = onOpenTutorial,
+                        onOpenSupport = onOpenSupport,
+                        onOpenAuthorProfile = onOpenAuthorProfile,
                     )
                 }
             }
@@ -283,6 +294,9 @@ private fun SettingsCategoryDetail(
     settings: UserSettings,
     onUpdate: (UserSettings) -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenTutorial: () -> Unit,
+    onOpenSupport: () -> Unit,
+    onOpenAuthorProfile: () -> Unit,
 ) {
     val darkTheme = settings.isDark(isSystemInDarkTheme())
     Column(
@@ -320,11 +334,18 @@ private fun SettingsCategoryDetail(
                 )
                 OfflineSection(settings = settings, onUpdate = onUpdate)
             }
+            SettingsCategory.About -> AboutSettingsSection(
+                openInBoris = settings.openLinksInReader,
+                onOpenArticle = onOpenArticle,
+                onOpenTutorial = onOpenTutorial,
+                onOpenSupport = onOpenSupport,
+                onOpenAuthorProfile = onOpenAuthorProfile,
+            )
         }
     }
 }
 
-private const val GITHUB_REPO = "https://github.com/dergigi/boris-android"
+private const val GITHUB_REPO = AboutLinks.GITHUB
 
 @Composable
 private fun SettingsVersionFooter(
