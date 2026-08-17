@@ -9,9 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-18
+
 ### Added
 
-- Search box on your profile and other people's profiles filters the visible highlights or writings
+- Search box on your profile and other people's profiles filters the visible highlights, writings, or bookmarks
 - Profile pages show public bookmarks (NIP-51) and web bookmarks (NIP-B0) as extra tabs
 
 ## [1.2.0] - 2026-08-18
