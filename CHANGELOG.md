@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.66.0] - 2026-08-17
+
 ### Changed
 
 - Cold-start screen picks a random quote photo from the splash set
