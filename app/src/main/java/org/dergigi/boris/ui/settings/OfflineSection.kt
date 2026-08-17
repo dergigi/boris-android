@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,8 +41,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ByteSize
 import org.dergigi.boris.data.CacheLimit
+import org.dergigi.boris.data.CacheUsage
 import org.dergigi.boris.data.OfflineDownloader
 import org.dergigi.boris.data.OfflineShelf
 import org.dergigi.boris.data.UserSettings
@@ -72,7 +77,11 @@ fun OfflineSection(
 ) {
     val context = LocalContext.current
     val progress by OfflineDownloader.progress.collectAsStateWithLifecycle()
+    var usedBytes by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) { OfflineDownloader.kickoff(context) }
+    LaunchedEffect(progress) {
+        usedBytes = withContext(Dispatchers.IO) { CacheUsage.bytes(context) }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -94,13 +103,14 @@ fun OfflineSection(
                 enabled = settings.offlineDownloadEnabled(shelf.settingsKey),
                 total = progress[shelf]?.total ?: 0,
                 downloaded = progress[shelf]?.downloaded ?: 0,
+                bytes = progress[shelf]?.bytes ?: 0L,
                 onToggle = { on ->
                     onUpdate(settings.withBoolean(shelf.settingsKey, on))
                     if (on) OfflineDownloader.kickoff(context)
                 },
             )
         }
-        StorageLimit()
+        StorageLimit(usedBytes = usedBytes)
     }
 }
 
@@ -110,8 +120,20 @@ private fun ShelfRow(
     enabled: Boolean,
     total: Int,
     downloaded: Int,
+    bytes: Long,
     onToggle: (Boolean) -> Unit,
 ) {
+    val shownDownloaded = if (enabled) downloaded else 0
+    val progressLabel = if (enabled && bytes > 0L) {
+        stringResource(
+            R.string.settings_offline_progress_sized,
+            shownDownloaded,
+            total,
+            ByteSize.format(bytes),
+        )
+    } else {
+        stringResource(R.string.settings_offline_progress, shownDownloaded, total)
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -146,11 +168,7 @@ private fun ShelfRow(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                text = stringResource(
-                    R.string.settings_offline_progress,
-                    if (enabled) downloaded else 0,
-                    total,
-                ),
+                text = progressLabel,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -160,7 +178,7 @@ private fun ShelfRow(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StorageLimit() {
+private fun StorageLimit(usedBytes: Long) {
     val context = LocalContext.current
     var limitMb by remember { mutableIntStateOf(CacheLimit.megabytes(context)) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -169,6 +187,13 @@ private fun StorageLimit() {
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onBackground,
         )
+        if (usedBytes > 0L) {
+            Text(
+                text = stringResource(R.string.settings_offline_using, ByteSize.format(usedBytes)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

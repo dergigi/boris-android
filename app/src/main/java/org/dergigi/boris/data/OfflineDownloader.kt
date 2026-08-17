@@ -36,6 +36,7 @@ enum class OfflineShelf(val settingsKey: String) {
 data class OfflineProgress(
     val total: Int = 0,
     val downloaded: Int = 0,
+    val bytes: Long = 0L,
     val running: Boolean = false,
 )
 
@@ -73,7 +74,11 @@ object OfflineDownloader {
         }.distinct()
         val shelves = collectShelves(pubkey, readRelays)
         _progress.value = shelves.mapValues { (_, urls) ->
-            OfflineProgress(urls.size, OfflineStore.downloadedCount(urls))
+            OfflineProgress(
+                total = urls.size,
+                downloaded = OfflineStore.downloadedCount(urls),
+                bytes = downloadedBytes(urls),
+            )
         }
         for ((shelf, urls) in shelves) {
             if (!enabled(shelf)) continue
@@ -85,15 +90,51 @@ object OfflineDownloader {
                     val content = repository.fetch(url)
                     content.imageUrl?.let { prefetchImage(app, it) }
                 }
-                update(shelf) { it.copy(downloaded = OfflineStore.downloadedCount(urls)) }
+                val added = estimatedBytes(url)
+                update(shelf) {
+                    it.copy(
+                        downloaded = OfflineStore.downloadedCount(urls),
+                        bytes = it.bytes + added,
+                    )
+                }
                 delay(100)
             }
             update(shelf) {
-                it.copy(downloaded = OfflineStore.downloadedCount(urls), running = false)
+                it.copy(
+                    downloaded = OfflineStore.downloadedCount(urls),
+                    bytes = downloadedBytes(urls),
+                    running = false,
+                )
             }
         }
     }
 
+    private fun downloadedBytes(urls: List<String>): Long {
+        var total = 0L
+        for (url in urls) {
+            if (!OfflineStore.isDownloaded(url)) continue
+            total += estimatedBytes(url)
+        }
+        return total
+    }
+
+    private fun estimatedBytes(url: String): Long {
+        when (val target = NostrLink.parse(url)) {
+            is NostrTarget.Article -> {
+                val event = EventCache.latest(
+                    Nip01Event.KIND_LONG_FORM,
+                    target.ref.pointer.pubkey,
+                    target.ref.pointer.identifier,
+                ) ?: return 0L
+                return event.content.toByteArray(Charsets.UTF_8).size.toLong()
+            }
+            is NostrTarget.Note -> {
+                val event = EventCache.event(target.eventId) ?: return 0L
+                return event.content.toByteArray(Charsets.UTF_8).size.toLong()
+            }
+            null -> return ReaderRepository.cachedBodyBytes(url)
+        }
+    }
     private fun enabled(shelf: OfflineShelf): Boolean =
         SettingsSync.settings.value.offlineDownloadEnabled(shelf.settingsKey)
 

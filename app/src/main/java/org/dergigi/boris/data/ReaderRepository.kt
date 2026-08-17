@@ -219,6 +219,30 @@ class ReaderRepository(
             httpCacheBytes = maxBytes
         }
 
+        /** Bytes of a FORCE_CACHE hit for [url] (or its jina proxy), or 0 if uncached. */
+        fun cachedBodyBytes(url: String): Long {
+            val normalized = UrlExtractor.normalize(url)
+            val candidates = listOf(
+                "https://r.jina.ai/$normalized",
+                normalized,
+            ).distinct()
+            for (candidate in candidates) {
+                val request = Request.Builder()
+                    .url(candidate)
+                    .cacheControl(CacheControl.FORCE_CACHE)
+                    .get()
+                    .build()
+                val length = runCatching {
+                    defaultClient.newCall(request).execute().use { response ->
+                        if (!response.isSuccessful) return@use -1L
+                        response.body?.contentLength() ?: -1L
+                    }
+                }.getOrDefault(-1L)
+                if (length > 0) return length
+            }
+            return 0L
+        }
+
         private val defaultClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
                 .connectTimeout(20, TimeUnit.SECONDS)

@@ -300,6 +300,8 @@
     <string name="settings_offline_archive">Archive</string>
     <string name="settings_offline_highlights">Highlights</string>
     <string name="settings_offline_progress">%1$d of %2$d downloaded</string>
+    <string name="settings_offline_progress_sized">%1$d of %2$d downloaded · %3$s</string>
+    <string name="settings_offline_using">Using %1$s</string>
     <string name="settings_offline_limit">Storage limit</string>
     <string name="settings_offline_limit_note">Applies to the article and image caches. Takes effect on the next launch.</string>
     <string name="settings_zap_splits">Zap Splits</string>

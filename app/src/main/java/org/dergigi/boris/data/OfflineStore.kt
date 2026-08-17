@@ -3,6 +3,7 @@ package org.dergigi.boris.data
 import android.content.Context
 import org.json.JSONArray
 import java.io.File
+import java.util.Locale
 
 /** Persistent record of article URLs whose text has been cached for offline reading. */
 object OfflineStore {
@@ -58,5 +59,38 @@ object CacheLimit {
             .edit()
             .putInt(KEY_MB, megabytes)
             .apply()
+    }
+}
+
+/** On-disk size of the caches that [CacheLimit] covers, plus RSS. */
+object CacheUsage {
+    fun bytes(context: Context): Long {
+        val roots = listOf(
+            File(context.filesDir, "event_cache"),
+            File(context.filesDir, "reader_http_cache"),
+            File(context.filesDir, "rss_http_cache"),
+            File(context.cacheDir, "image_cache"),
+        )
+        return roots.sumOf(::directorySize)
+    }
+
+    private fun directorySize(root: File): Long {
+        if (!root.exists()) return 0L
+        if (root.isFile) return root.length()
+        return root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    }
+}
+
+/** Short human-readable byte label: 512 B, 12 KB, 3.4 MB, 1.2 GB. */
+object ByteSize {
+    fun format(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        if (bytes < 1024L * 1024L) return "${bytes / 1024} KB"
+        val mb = bytes / (1024.0 * 1024.0)
+        if (mb < 1024) {
+            return if (mb < 10) String.format(Locale.US, "%.1f MB", mb) else "${mb.toInt()} MB"
+        }
+        val gb = mb / 1024.0
+        return String.format(Locale.US, "%.1f GB", gb)
     }
 }
