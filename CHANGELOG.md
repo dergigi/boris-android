@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Search: drop the local-cache intro copy, nudge the field down a bit, and round it like Home article cards
+- Find in page: same field styling; drop the “Type to search this article” copy
 
 ## [0.73.0] - 2026-08-17
 

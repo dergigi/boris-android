@@ -101,39 +101,36 @@ fun FindPane(
                         onPrevious = onPrevious,
                         onNext = onNext,
                     )
-                    if (query.isBlank()) {
-                        Text(
-                            text = stringResource(R.string.reader_find_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(24.dp),
-                        )
-                    } else if (hits.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.reader_find_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(24.dp),
-                        )
-                    } else {
-                        val listState = rememberLazyListState()
-                        LaunchedEffect(activeIndex, hits) {
-                            if (activeIndex in hits.indices) {
-                                listState.animateScrollToItem(activeIndex)
-                            }
+                    when {
+                        query.isBlank() -> Unit
+                        hits.isEmpty() -> {
+                            Text(
+                                text = stringResource(R.string.reader_find_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(24.dp),
+                            )
                         }
-                        LazyColumn(
-                            state = listState,
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            items(hits, key = { it.index }) { hit ->
-                                FindHitRow(
-                                    hit = hit,
-                                    selected = hit.index == activeIndex,
-                                    onClick = { onSelect(hit.index) },
-                                )
+                        else -> {
+                            val listState = rememberLazyListState()
+                            LaunchedEffect(activeIndex, hits) {
+                                if (activeIndex in hits.indices) {
+                                    listState.animateScrollToItem(activeIndex)
+                                }
+                            }
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                items(hits, key = { it.index }) { hit ->
+                                    FindHitRow(
+                                        hit = hit,
+                                        selected = hit.index == activeIndex,
+                                        onClick = { onSelect(hit.index) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -199,6 +196,7 @@ private fun FindPaneHeader(
             value = query,
             onValueChange = onQueryChange,
             singleLine = true,
+            shape = RoundedCornerShape(12.dp),
             leadingIcon = {
                 Icon(Icons.Outlined.Search, contentDescription = null)
             },
@@ -207,7 +205,7 @@ private fun FindPaneHeader(
             keyboardActions = KeyboardActions(onSearch = { onNext() }),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 8.dp)
                 .focusRequester(focus),
         )
         if (query.isNotBlank()) {

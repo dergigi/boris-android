@@ -288,7 +288,6 @@
     <string name="reader_find">Find in article</string>
     <string name="reader_find_title">Find</string>
     <string name="reader_find_placeholder">Search in article</string>
-    <string name="reader_find_hint">Type to search this article.</string>
     <string name="reader_find_empty">No matches</string>
     <string name="reader_find_count">%1$d of %2$d</string>
     <string name="reader_find_close">Close find</string>
