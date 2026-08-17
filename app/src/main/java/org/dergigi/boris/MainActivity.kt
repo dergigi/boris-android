@@ -6,10 +6,13 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.coroutines.delay
 import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OfflineDownloader
@@ -27,6 +30,7 @@ import org.dergigi.boris.nostr.RelayHealth
 import org.dergigi.boris.nostr.RelayPool
 import org.dergigi.boris.ui.BorisApp
 import org.dergigi.boris.ui.reader.VolumeKeys
+import org.dergigi.boris.ui.shell.LoadingScreen
 import org.dergigi.boris.ui.theme.BorisTheme
 import java.io.File
 
@@ -39,11 +43,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         OfflineSync.bind(this)
         EventCache.init(File(filesDir, "event_cache"))
-        // Hold splash only while the event cache loads online. Offline and
-        // warm starts exit immediately so we never invent a wait.
-        splash.setKeepOnScreenCondition {
-            OfflineSync.hasNetwork() && !EventCache.isReady()
-        }
+        // Keep the system circle only until Compose can draw the fullscreen
+        // loading screen (or the app, if the cache is already warm).
+        var composeDrawn = false
+        splash.setKeepOnScreenCondition { !composeDrawn }
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         RelayHealth.init(File(filesDir, "relay_health.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
@@ -55,11 +58,23 @@ class MainActivity : ComponentActivity() {
         applyIntent(intent)
         enableEdgeToEdge()
         setContent {
+            var cacheReady by remember { mutableStateOf(EventCache.isReady()) }
+            LaunchedEffect(Unit) {
+                composeDrawn = true
+                while (!EventCache.isReady()) {
+                    delay(32)
+                }
+                cacheReady = true
+            }
             BorisTheme {
-                BorisApp(
-                    incomingUrl = incomingUrl,
-                    incomingBunker = incomingBunker,
-                )
+                if (cacheReady) {
+                    BorisApp(
+                        incomingUrl = incomingUrl,
+                        incomingBunker = incomingBunker,
+                    )
+                } else {
+                    LoadingScreen()
+                }
             }
         }
     }
