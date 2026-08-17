@@ -173,6 +173,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val COLD_START_SPLASH_MS = 2_000L
+        private const val COLD_START_SPLASH_MS = 5_000L
     }
 }
