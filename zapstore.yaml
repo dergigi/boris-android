@@ -5,7 +5,7 @@ release_notes: ./CHANGELOG.md
 name: Boris
 summary: Nostr-native offline reader with highlights and other stuff
 description: |
-  Nostr-native offline reader with highlights and other stuff. No ads, no trackers, no paywalls, no bullshit.
+  Nostr-native offline reader with highlights and other stuff. No ads, no trackers, no paywalls, no bullshit. What highlighter was supposed to be.
 
   https://readwithboris.com/
 
