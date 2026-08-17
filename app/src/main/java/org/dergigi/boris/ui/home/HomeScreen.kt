@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,6 +69,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
@@ -103,6 +105,9 @@ fun HomeScreen(
     val context = LocalContext.current
     val windowInfo = LocalWindowInfo.current
     var clipboardUrl by remember { mutableStateOf<String?>(null) }
+    var showFirstTime by remember {
+        mutableStateOf(!HomeOnboardingStore.isDismissed(context))
+    }
     LaunchedEffect(Unit) {
         snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
             if (focused) clipboardUrl = ClipboardLink.read(context)
@@ -192,6 +197,12 @@ fun HomeScreen(
                 mineColor = hexColor(settings.highlightColorMine, HighlightMine),
                 friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
+                showFirstTime = showFirstTime,
+                onDismissFirstTime = {
+                    HomeOnboardingStore.dismiss(context)
+                    showFirstTime = false
+                },
+                onOpenAbout = onOpenAbout,
                 onRefresh = viewModel::refresh,
                 onRead = onRead,
                 modifier = Modifier.weight(1f),
@@ -262,6 +273,9 @@ fun HomeScreenContent(
     onRead: (String) -> Unit,
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
+    showFirstTime: Boolean = false,
+    onDismissFirstTime: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
 ) {
     Box(
         modifier = modifier
@@ -270,21 +284,82 @@ fun HomeScreenContent(
     ) {
         when (highlights) {
             HomeHighlightsState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 20.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
+                    if (showFirstTime) {
+                        FirstTimeSection(
+                            onOpenAbout = onOpenAbout,
+                            onDismiss = onDismissFirstTime,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
             HomeHighlightsState.Empty -> {
-                StatusMessage(
-                    text = stringResource(R.string.feed_empty),
-                    onRetry = onRefresh,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 20.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
+                    if (showFirstTime) {
+                        FirstTimeSection(
+                            onOpenAbout = onOpenAbout,
+                            onDismiss = onDismissFirstTime,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        StatusMessage(
+                            text = stringResource(R.string.feed_empty),
+                            onRetry = onRefresh,
+                        )
+                    }
+                }
             }
             HomeHighlightsState.Error -> {
-                StatusMessage(
-                    text = stringResource(R.string.feed_error),
-                    onRetry = onRefresh,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 20.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
+                    if (showFirstTime) {
+                        FirstTimeSection(
+                            onOpenAbout = onOpenAbout,
+                            onDismiss = onDismissFirstTime,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        StatusMessage(
+                            text = stringResource(R.string.feed_error),
+                            onRetry = onRefresh,
+                        )
+                    }
+                }
             }
             is HomeHighlightsState.Ready -> {
                 val yours = ArchivedArticles.visible(
@@ -322,10 +397,10 @@ fun HomeScreenContent(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+                    val empty = yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
                         continueReading.isEmpty() && mostHighlighted.isEmpty() &&
                         randomArticles.isEmpty()
-                    ) {
+                    if (empty && !showFirstTime) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             StatusMessage(
                                 text = stringResource(
@@ -347,75 +422,162 @@ fun HomeScreenContent(
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {
-                            sectionOrder.forEach { section ->
-                                when (section) {
-                                    HomeSections.CONTINUE -> if (continueReading.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(R.string.home_continue_reading),
-                                            items = continueReading,
-                                            rowKey = "continue",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            icon = Icons.AutoMirrored.Outlined.MenuBook,
-                                            onRead = onRead,
-                                        )
-                                    }
-                                    HomeSections.YOURS -> if (yours.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(R.string.home_recently_highlighted_by_you),
-                                            items = yours,
-                                            rowKey = "you",
-                                            tint = mineColor,
-                                            onRead = onRead,
-                                        )
-                                    }
-                                    HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(R.string.home_recently_highlighted_by_friends),
-                                            items = friends,
-                                            rowKey = "friends",
-                                            tint = friendsColor,
-                                            onRead = onRead,
-                                        )
-                                    }
-                                    HomeSections.OTHERS -> if (others.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(
-                                                if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
-                                                    R.string.home_recently_highlighted_by_others
-                                                } else {
-                                                    R.string.home_recently_highlighted
-                                                },
-                                            ),
-                                            items = others,
-                                            rowKey = "others",
-                                            tint = nostrverseColor,
-                                            onRead = onRead,
-                                        )
-                                    }
-                                    HomeSections.MOST -> if (mostHighlighted.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(R.string.home_most_highlighted),
-                                            items = mostHighlighted,
-                                            rowKey = "most",
-                                            tint = nostrverseColor,
-                                            onRead = onRead,
-                                        )
-                                    }
-                                    HomeSections.RANDOM -> if (randomArticles.isNotEmpty()) {
-                                        HighlightedRow(
-                                            title = stringResource(R.string.home_random_articles),
-                                            items = randomArticles,
-                                            rowKey = "random",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            icon = Icons.Outlined.Shuffle,
-                                            onRead = onRead,
-                                        )
+                            if (showFirstTime) {
+                                FirstTimeSection(
+                                    onOpenAbout = onOpenAbout,
+                                    onDismiss = onDismissFirstTime,
+                                )
+                            }
+                            if (empty) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 48.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    StatusMessage(
+                                        text = stringResource(
+                                            if (hideArchived && highlights.archivedKeys.isNotEmpty()) {
+                                                R.string.home_empty_archived
+                                            } else {
+                                                R.string.feed_empty
+                                            },
+                                        ),
+                                        onRetry = onRefresh,
+                                    )
+                                }
+                            } else {
+                                sectionOrder.forEach { section ->
+                                    when (section) {
+                                        HomeSections.CONTINUE -> if (continueReading.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_continue_reading),
+                                                items = continueReading,
+                                                rowKey = "continue",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                                onRead = onRead,
+                                            )
+                                        }
+                                        HomeSections.YOURS -> if (yours.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_recently_highlighted_by_you),
+                                                items = yours,
+                                                rowKey = "you",
+                                                tint = mineColor,
+                                                onRead = onRead,
+                                            )
+                                        }
+                                        HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_recently_highlighted_by_friends),
+                                                items = friends,
+                                                rowKey = "friends",
+                                                tint = friendsColor,
+                                                onRead = onRead,
+                                            )
+                                        }
+                                        HomeSections.OTHERS -> if (others.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(
+                                                    if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
+                                                        R.string.home_recently_highlighted_by_others
+                                                    } else {
+                                                        R.string.home_recently_highlighted
+                                                    },
+                                                ),
+                                                items = others,
+                                                rowKey = "others",
+                                                tint = nostrverseColor,
+                                                onRead = onRead,
+                                            )
+                                        }
+                                        HomeSections.MOST -> if (mostHighlighted.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_most_highlighted),
+                                                items = mostHighlighted,
+                                                rowKey = "most",
+                                                tint = nostrverseColor,
+                                                onRead = onRead,
+                                            )
+                                        }
+                                        HomeSections.RANDOM -> if (randomArticles.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_random_articles),
+                                                items = randomArticles,
+                                                rowKey = "random",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                icon = Icons.Outlined.Shuffle,
+                                                onRead = onRead,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FirstTimeSection(
+    onOpenAbout: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = stringResource(R.string.home_first_time_title),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.home_first_time_dismiss),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_first_time_body),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onOpenAbout,
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.home_first_time_cta),
+                    fontFamily = FontFamily.SansSerif,
+                )
             }
         }
     }

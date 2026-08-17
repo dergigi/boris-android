@@ -57,6 +57,10 @@
     <string name="home_show_archived">Show archived</string>
     <string name="home_empty_archived">Everything here is already archived.</string>
     <string name="home_about">About Boris</string>
+    <string name="home_first_time_title">First time?</string>
+    <string name="home_first_time_body">A short walk through of what Boris is and how highlighting works.</string>
+    <string name="home_first_time_cta">About Boris</string>
+    <string name="home_first_time_dismiss">Dismiss welcome</string>
     <string name="about_title">About Boris</string>
     <string name="about_back">Back</string>
     <string name="about_intro_title">Hello! I\'m Boris.</string>

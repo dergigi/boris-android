@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Cold-start quote screen lasts at most 5 seconds
 
+### Added
+
+- Home: dismissible “First time?” section that opens the About Boris walkthrough
+
 ## [0.67.0] - 2026-08-17
 
 ### Fixed
