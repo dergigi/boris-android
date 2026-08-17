@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-08-17
+
+### Changed
+
+- Note cards: cover prefers an image from the note, then the author's picture, then a sticky-note icon; articles/web use an article icon instead of the highlighter
+
 ## [0.56.0] - 2026-08-17
 
 ### Added
