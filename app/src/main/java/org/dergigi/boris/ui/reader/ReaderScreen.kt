@@ -1476,12 +1476,13 @@ private class ClickableCoilImageTransformer(
 ) : ImageTransformer {
     @Composable
     override fun transform(link: String): ImageData {
-        val data = Coil3ImageTransformerImpl.transform(link)
+        val https = UrlExtractor.preferHttps(link)
+        val data = Coil3ImageTransformerImpl.transform(https)
         return data.copy(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(6.dp))
-                .clickable { onImageClick(link) },
+                .clickable { onImageClick(https) },
             contentScale = ContentScale.Fit,
             alignment = Alignment.Center,
         )

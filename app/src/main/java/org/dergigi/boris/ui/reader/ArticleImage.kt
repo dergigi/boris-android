@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
+import org.dergigi.boris.data.UrlExtractor
 
 @Composable
 internal fun ArticleImage(
@@ -30,10 +31,11 @@ internal fun ArticleImage(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var aspect by remember(url) { mutableStateOf<Float?>(null) }
+    val httpsUrl = remember(url) { UrlExtractor.preferHttps(url) }
+    var aspect by remember(httpsUrl) { mutableStateOf<Float?>(null) }
     AsyncImage(
         model = ImageRequest.Builder(context)
-            .data(url)
+            .data(httpsUrl)
             .size(Size.ORIGINAL)
             .build(),
         contentDescription = null,
@@ -50,6 +52,6 @@ internal fun ArticleImage(
             .then(aspect?.let { Modifier.aspectRatio(it) } ?: Modifier)
             .then(if (fullWidth) Modifier else Modifier.heightIn(max = maxHeight))
             .clip(RoundedCornerShape(6.dp))
-            .clickable { onClick(url) },
+            .clickable { onClick(httpsUrl) },
     )
 }

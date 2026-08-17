@@ -27,6 +27,42 @@ class UrlExtractorTest {
     }
 
     @Test
+    fun preferHttpsUpgradesCleartextImageHosts() {
+        assertEquals(
+            "https://cdn.example.com/a.jpg",
+            UrlExtractor.preferHttps("http://cdn.example.com/a.jpg"),
+        )
+        assertEquals(
+            "https://cdn.example.com/a.jpg",
+            UrlExtractor.preferHttps("HTTP://cdn.example.com/a.jpg"),
+        )
+        assertEquals(
+            "https://cdn.example.com/a.jpg",
+            UrlExtractor.preferHttps("https://cdn.example.com/a.jpg"),
+        )
+    }
+
+    @Test
+    fun imageUrlsUpgradeHttpToHttps() {
+        assertEquals(
+            listOf("https://cdn.example.com/a.jpg"),
+            UrlExtractor.imageUrls("![x](http://cdn.example.com/a.jpg)"),
+        )
+    }
+
+    @Test
+    fun upgradeImageHttpUrlsRewritesMarkdownAndHtml() {
+        assertEquals(
+            "![x](https://cdn.example.com/a.jpg)",
+            UrlExtractor.upgradeImageHttpUrls("![x](http://cdn.example.com/a.jpg)"),
+        )
+        assertEquals(
+            """<img src="https://cdn.example.com/a.jpg">""",
+            UrlExtractor.upgradeImageHttpUrls("""<img src="http://cdn.example.com/a.jpg">"""),
+        )
+    }
+
+    @Test
     fun returnsNullWhenEmpty() {
         assertNull(UrlExtractor.extract("   "))
         assertNull(UrlExtractor.extract(null))

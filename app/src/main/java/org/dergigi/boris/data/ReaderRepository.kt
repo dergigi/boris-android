@@ -142,9 +142,9 @@ class ReaderRepository(
         return ReadableContent(
             url = item.link,
             title = item.title,
-            markdown = body,
+            markdown = UrlExtractor.upgradeImageHttpUrls(body),
             publishedAt = item.publishedAt.takeIf { it > 0 },
-            imageUrl = item.imageUrl,
+            imageUrl = item.imageUrl?.let(UrlExtractor::preferHttps),
             summary = item.summary,
         )
     }
@@ -169,9 +169,9 @@ class ReaderRepository(
             ReadableContent(
                 url = targetUrl,
                 title = title,
-                markdown = markdown,
+                markdown = markdown?.let(UrlExtractor::upgradeImageHttpUrls),
                 publishedAt = PublishedTime.fromJinaHeader(text),
-                imageUrl = image,
+                imageUrl = image?.let(UrlExtractor::preferHttps),
                 summary = ArticleCover.descriptionFromJina(text),
             )
         } else {
@@ -182,7 +182,7 @@ class ReaderRepository(
                 title = preview.title ?: title,
                 html = text,
                 publishedAt = PublishedTime.fromHtml(text),
-                imageUrl = preview.imageUrl,
+                imageUrl = preview.imageUrl?.let(UrlExtractor::preferHttps),
                 summary = preview.description,
             )
         }
@@ -198,9 +198,9 @@ class ReaderRepository(
             content.markdown
         }
         return content.copy(
-            imageUrl = image,
+            imageUrl = image?.let(UrlExtractor::preferHttps),
             summary = content.summary ?: preview.description,
-            markdown = markdown,
+            markdown = markdown?.let(UrlExtractor::upgradeImageHttpUrls),
         )
     }
 

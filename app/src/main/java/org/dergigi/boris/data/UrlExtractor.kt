@@ -27,6 +27,19 @@ object UrlExtractor {
         }
     }
 
+    /**
+     * Cleartext HTTP is blocked app-wide. Image GETs (Coil, gallery, save) must use HTTPS.
+     * Article opens still keep `http://` for Jina; only image fetches call this.
+     */
+    fun preferHttps(url: String): String {
+        val trimmed = url.trim()
+        return if (trimmed.startsWith("http://", ignoreCase = true)) {
+            "https://" + trimmed.substring(7)
+        } else {
+            trimmed
+        }
+    }
+
     fun looksLikeUrl(value: String): Boolean {
         val candidate = value.trim()
         if (candidate.contains(' ') || candidate.contains('\n')) return false
@@ -64,16 +77,32 @@ object UrlExtractor {
     }
 
     fun embedImageLinks(markdown: String): String {
-        val linked = markdownLinkRegex.replace(markdown) { match ->
+        val prepared = upgradeImageHttpUrls(markdown)
+        val linked = markdownLinkRegex.replace(prepared) { match ->
             val url = match.groupValues[2]
-            if (isImageUrl(url)) "![${match.groupValues[1]}]($url)" else match.value
+            if (isImageUrl(url)) {
+                "![${match.groupValues[1]}](${preferHttps(url)})"
+            } else {
+                match.value
+            }
         }
         return urlRegex.replace(linked) { match ->
             if (alreadyLinked(linked, match.range.first)) return@replace match.value
             val raw = match.value.trimEnd('.', ',', ';', ')', ']', '"', '\'')
             val suffix = match.value.removePrefix(raw)
-            if (isImageUrl(raw)) "![]($raw)$suffix" else match.value
+            if (isImageUrl(raw)) "![](${preferHttps(raw)})$suffix" else match.value
         }
+    }
+
+    /** Rewrite http:// image srcs in markdown/HTML so Coil can fetch them. */
+    fun upgradeImageHttpUrls(markdown: String): String {
+        var out = markdownImageRegex.replace(markdown) { match ->
+            replaceUrlInMatch(match.value, match.groupValues[1])
+        }
+        out = htmlImgRegex.replace(out) { match ->
+            replaceUrlInMatch(match.value, match.groupValues[1])
+        }
+        return out
     }
 
     fun imageUrls(markdown: String, baseUrl: String? = null): List<String> {
@@ -85,8 +114,13 @@ object UrlExtractor {
             if (isImageUrl(url)) hits += match.range.first to url
         }
         return hits.sortedBy { it.first }
-            .mapNotNull { articleUrl(it.second, baseUrl) }
+            .mapNotNull { articleUrl(it.second, baseUrl)?.let(::preferHttps) }
             .distinct()
+    }
+
+    private fun replaceUrlInMatch(whole: String, url: String): String {
+        val upgraded = preferHttps(url)
+        return if (upgraded == url) whole else whole.replace(url, upgraded)
     }
 
     private fun alreadyLinked(text: String, urlStart: Int): Boolean {

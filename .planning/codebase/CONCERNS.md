@@ -60,12 +60,10 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Root cause: `URLEncoder.encode` then `NavType.StringType` decode then `URLDecoder.decode`. `%26` became `&`.
 
 **`http://` images fail under cleartext block:**
-- Symptoms: Gallery / inline images stay empty when the markdown still points at `http://`.
-- Files: `app/src/main/AndroidManifest.xml` (`usesCleartextTraffic="false"`), `app/src/main/java/org/dergigi/boris/data/UrlExtractor.kt`, `app/src/main/java/org/dergigi/boris/data/ImageStore.kt`, `app/src/main/java/org/dergigi/boris/ui/reader/ImageGallery.kt`
-- Trigger: Article whose image URLs are `http://` (normalize only adds `https://` when the scheme is missing; it does not upgrade `http://`).
-- Workaround: Open original in a browser.
-- Root cause: Coil and `ImageStore.fetch` hit the origin URL. Cleartext is disabled app-wide.
-- Fix: Upgrade extracted image URLs to `https://` when the host supports it, or proxy images through the same HTTPS path as articles.
+- Status: Fixed — `UrlExtractor.preferHttps` upgrades image URLs; applied in `imageUrls`, markdown rewrite, Coil, gallery, and `ImageStore`.
+- Symptoms (historical): Gallery / inline images stayed empty when the markdown pointed at `http://`.
+- Files: `UrlExtractor.kt`, `ReaderRepository.kt`, `ImageStore.kt`, reader image UI
+- Root cause: Cleartext disabled app-wide; normalize only added `https://` when the scheme was missing.
 
 **In-flight `load()` is not cancelled:**
 - Status: Fixed — `load()` cancels the previous `loadJob` (and highlight/membership/archive/author jobs) before starting a new fetch; `CancellationException` is rethrown so cancel is not shown as an error.

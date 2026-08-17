@@ -338,7 +338,7 @@ private fun ZoomableImage(
     }
 
     AsyncImage(
-        model = url,
+        model = UrlExtractor.preferHttps(url),
         contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = Modifier

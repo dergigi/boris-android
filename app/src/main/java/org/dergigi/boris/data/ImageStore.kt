@@ -75,7 +75,7 @@ object ImageStore {
     }
 
     private fun fetch(url: String, index: Int): FetchedImage {
-        val request = Request.Builder().url(url).get().build()
+        val request = Request.Builder().url(UrlExtractor.preferHttps(url)).get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IOException("Failed to download image (${response.code})")

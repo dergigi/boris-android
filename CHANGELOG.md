@@ -15,6 +15,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Article URLs with percent-encoding (e.g. `%26`, `%2F`) no longer get double-decoded before fetch
 - Open-with / VIEW links go through the same URL extractor as share (no raw `dataString` fallback)
 - Reader “Try again” cancels the previous in-flight fetch so an older response cannot overwrite a newer load
+- Inline and gallery images that use `http://` are fetched over `https://` (cleartext is blocked)
 
 ### Changed
 
