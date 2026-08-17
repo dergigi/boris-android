@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-18
+
 ### Added
 
 - Share button on highlight cards: web highlights include a scroll-to-text fragment (`#:~:text=`); nostr-native highlights share the public article URL
