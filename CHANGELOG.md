@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Bunker login: wait for NIP-42 AUTH, subscribe after auth, and republish on `auth-required` (Amber connect was timing out)
+
 ## [0.66.0] - 2026-08-17
 
 ### Changed

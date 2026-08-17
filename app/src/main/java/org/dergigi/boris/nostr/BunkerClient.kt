@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -53,15 +54,16 @@ class BunkerClient(
         val keypair = ClientKeypair.generate()
         val sockets = mutableListOf<RelaySocket>()
         val inbox = LinkedBlockingQueue<Nip01Event>()
+        val lastEvent = ConcurrentHashMap<RelaySocket, String>()
         val seenAuthUrls = mutableSetOf<String>()
         val subId = newId()
         try {
-            if (!openSockets(parsed.relays, keypair, parsed.remoteSignerPubkey, subId, sockets, inbox)) {
+            if (!openSockets(parsed.relays, keypair, parsed.remoteSignerPubkey, subId, sockets, inbox, lastEvent)) {
                 return BunkerResult.RelayTimeout
             }
             val secret = parsed.secret?.takeIf { it.isNotEmpty() }
             val connectId = newId()
-            publishConnect(sockets, keypair, parsed.remoteSignerPubkey, connectId, secret)
+            publishConnect(sockets, keypair, parsed.remoteSignerPubkey, connectId, secret, lastEvent)
             val connectOutcome = awaitRpc(
                 inbox,
                 connectId,
@@ -79,6 +81,7 @@ class BunkerClient(
                 keypair,
                 parsed.remoteSignerPubkey,
                 rpcJson(gpId, "get_public_key", JSONArray()),
+                lastEvent,
             )
             val gpOutcome = awaitRpc(
                 inbox,
@@ -103,11 +106,12 @@ class BunkerClient(
         val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return
         val sockets = mutableListOf<RelaySocket>()
         val inbox = LinkedBlockingQueue<Nip01Event>()
+        val lastEvent = ConcurrentHashMap<RelaySocket, String>()
         val subId = newId()
         try {
-            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) return
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox, lastEvent)) return
             val id = newId()
-            publish(sockets, keypair, remoteSignerPubkey, rpcJson(id, "logout", JSONArray()))
+            publish(sockets, keypair, remoteSignerPubkey, rpcJson(id, "logout", JSONArray()), lastEvent)
             awaitRpc(
                 inbox,
                 id,
@@ -131,10 +135,11 @@ class BunkerClient(
         val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerSignResult.Rejected
         val sockets = mutableListOf<RelaySocket>()
         val inbox = LinkedBlockingQueue<Nip01Event>()
+        val lastEvent = ConcurrentHashMap<RelaySocket, String>()
         val seenAuthUrls = mutableSetOf<String>()
         val subId = newId()
         try {
-            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox, lastEvent)) {
                 return BunkerSignResult.RelayTimeout
             }
             val id = newId()
@@ -143,6 +148,7 @@ class BunkerClient(
                 keypair,
                 remoteSignerPubkey,
                 rpcJson(id, "sign_event", JSONArray().put(unsignedJson)),
+                lastEvent,
             )
             val outcome = awaitRpc(
                 inbox,
@@ -177,10 +183,11 @@ class BunkerClient(
         val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerDecryptResult.Rejected
         val sockets = mutableListOf<RelaySocket>()
         val inbox = LinkedBlockingQueue<Nip01Event>()
+        val lastEvent = ConcurrentHashMap<RelaySocket, String>()
         val seenAuthUrls = mutableSetOf<String>()
         val subId = newId()
         try {
-            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox, lastEvent)) {
                 return BunkerDecryptResult.RelayTimeout
             }
             val id = newId()
@@ -190,6 +197,7 @@ class BunkerClient(
                 keypair,
                 remoteSignerPubkey,
                 rpcJson(id, method, JSONArray().put(peerPubkeyHex).put(ciphertext)),
+                lastEvent,
             )
             val outcome = awaitRpc(
                 inbox,
@@ -220,10 +228,11 @@ class BunkerClient(
         val keypair = ClientKeypair.fromPrivkey(clientPrivkey) ?: return BunkerEncryptResult.Rejected
         val sockets = mutableListOf<RelaySocket>()
         val inbox = LinkedBlockingQueue<Nip01Event>()
+        val lastEvent = ConcurrentHashMap<RelaySocket, String>()
         val seenAuthUrls = mutableSetOf<String>()
         val subId = newId()
         try {
-            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox)) {
+            if (!openSockets(relays, keypair, remoteSignerPubkey, subId, sockets, inbox, lastEvent)) {
                 return BunkerEncryptResult.RelayTimeout
             }
             val id = newId()
@@ -232,6 +241,7 @@ class BunkerClient(
                 keypair,
                 remoteSignerPubkey,
                 rpcJson(id, "nip44_encrypt", JSONArray().put(peerPubkeyHex).put(plaintext)),
+                lastEvent,
             )
             val outcome = awaitRpc(
                 inbox,
@@ -259,6 +269,7 @@ class BunkerClient(
         subId: String,
         sockets: MutableList<RelaySocket>,
         inbox: LinkedBlockingQueue<Nip01Event>,
+        lastEvent: ConcurrentHashMap<RelaySocket, String>,
     ): Boolean {
         val wssCount = relays.count { it.startsWith("wss://", ignoreCase = true) }
         val opened = CountDownLatch(wssCount.coerceAtLeast(1))
@@ -272,13 +283,17 @@ class BunkerClient(
             }
             try {
                 socket.open(
-                    onOpen = {
-                        socket.send(reqMessage(keypair.pubkeyHex, subId))
-                        signal()
-                    },
+                    onOpen = { signal() },
                     onMessage = { text ->
-                        answerAuth(text, socket, keypair)
-                        incomingEvent(text, keypair.pubkeyHex, remoteSigner)?.let { inbox.offer(it) }
+                        handleRelayMessage(
+                            text = text,
+                            socket = socket,
+                            keypair = keypair,
+                            remoteSigner = remoteSigner,
+                            subId = subId,
+                            inbox = inbox,
+                            lastEvent = lastEvent,
+                        )
                     },
                     onFailure = { signal() },
                 )
@@ -288,16 +303,61 @@ class BunkerClient(
         }
         opened.await(RELAY_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         if (sockets.none { it.isOpen }) return false
+        // Amethyst/nak: let NIP-42 AUTH arrive and complete before the first REQ.
+        Thread.sleep(AUTH_SETTLE_MS)
+        for (socket in sockets) {
+            if (socket.isOpen) socket.send(reqMessage(keypair.pubkeyHex, subId))
+        }
+        // Brief pause so REQ is accepted after any late AUTH.
         Thread.sleep(AUTH_SETTLE_MS)
         return sockets.any { it.isOpen }
     }
 
-    private fun answerAuth(text: String, socket: RelaySocket, keypair: ClientKeypair) {
+    private fun handleRelayMessage(
+        text: String,
+        socket: RelaySocket,
+        keypair: ClientKeypair,
+        remoteSigner: String,
+        subId: String,
+        inbox: LinkedBlockingQueue<Nip01Event>,
+        lastEvent: ConcurrentHashMap<RelaySocket, String>,
+    ) {
         try {
             val arr = JSONArray(text)
-            if (arr.optString(0) != "AUTH") return
-            val challenge = arr.optString(1)
-            if (challenge.isEmpty()) return
+            when (arr.optString(0)) {
+                "AUTH" -> {
+                    if (answerAuth(arr.optString(1), socket, keypair)) {
+                        // Subscriptions issued before AUTH are dropped by auth relays.
+                        socket.send(reqMessage(keypair.pubkeyHex, subId))
+                        lastEvent[socket]?.let { socket.send(it) }
+                    }
+                }
+                "OK" -> {
+                    val ok = arr.optBoolean(2)
+                    val message = arr.optString(3)
+                    if (!ok && message.contains("auth-required", ignoreCase = true)) {
+                        // Challenge may already have been answered; re-REQ + republish.
+                        socket.send(reqMessage(keypair.pubkeyHex, subId))
+                        lastEvent[socket]?.let { socket.send(it) }
+                    }
+                }
+                "CLOSED" -> {
+                    val message = arr.optString(2)
+                    if (message.contains("auth-required", ignoreCase = true)) {
+                        socket.send(reqMessage(keypair.pubkeyHex, subId))
+                    }
+                }
+                "EVENT" -> {
+                    incomingEvent(text, keypair.pubkeyHex, remoteSigner)?.let { inbox.offer(it) }
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun answerAuth(challenge: String, socket: RelaySocket, keypair: ClientKeypair): Boolean {
+        if (challenge.isEmpty()) return false
+        return try {
             val event = Nip01Event.sign(
                 privkey = keypair.privkey,
                 pubkeyHex = keypair.pubkeyHex,
@@ -309,7 +369,9 @@ class BunkerClient(
                 content = "",
             )
             socket.send(JSONArray().put("AUTH").put(JSONObject(event.toJsonString())).toString())
+            true
         } catch (_: Exception) {
+            false
         }
     }
 
@@ -319,13 +381,14 @@ class BunkerClient(
         remoteSignerPubkey: String,
         id: String,
         secret: String?,
+        lastEvent: ConcurrentHashMap<RelaySocket, String>,
     ) {
         val params = JSONArray()
             .put(remoteSignerPubkey)
             .put(secret.orEmpty())
             .put("")
             .put(CLIENT_METADATA)
-        publish(sockets, keypair, remoteSignerPubkey, rpcJson(id, "connect", params))
+        publish(sockets, keypair, remoteSignerPubkey, rpcJson(id, "connect", params), lastEvent)
     }
 
     private fun publish(
@@ -333,6 +396,7 @@ class BunkerClient(
         keypair: ClientKeypair,
         remoteSignerPubkey: String,
         plaintext: String,
+        lastEvent: ConcurrentHashMap<RelaySocket, String>,
     ) {
         val event = Nip01Event.sign(
             privkey = keypair.privkey,
@@ -342,7 +406,10 @@ class BunkerClient(
             content = Nip44.encrypt(plaintext, keypair.privkey, remoteSignerPubkey),
         )
         val message = JSONArray().put("EVENT").put(JSONObject(event.toJsonString())).toString()
-        sockets.forEach { it.send(message) }
+        sockets.forEach { socket ->
+            lastEvent[socket] = message
+            socket.send(message)
+        }
     }
 
     private fun awaitRpc(
@@ -429,7 +496,7 @@ class BunkerClient(
 
         private const val RELAY_CONNECT_TIMEOUT_MS = 15_000L
         private const val RPC_TIMEOUT_MS = 65_000L
-        private const val AUTH_SETTLE_MS = 500L
+        private const val AUTH_SETTLE_MS = 750L
         private const val LOGOUT_TIMEOUT_MS = 8_000L
         private const val CLIENT_METADATA =
             """{"name":"Boris","url":"https://github.com/dergigi/boris-android"}"""
@@ -437,6 +504,7 @@ class BunkerClient(
         private val defaultClient: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.SECONDS)
+            .pingInterval(30, TimeUnit.SECONDS)
             .build()
     }
 }
