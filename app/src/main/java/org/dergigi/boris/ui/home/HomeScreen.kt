@@ -101,12 +101,7 @@ fun HomeScreen(
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val loggedIn = authState is AuthUiState.LoggedIn
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refresh()
-    }
     val context = LocalContext.current
-    val windowInfo = LocalWindowInfo.current
-    var clipboardUrl by remember { mutableStateOf<String?>(null) }
     var showFirstTime by remember {
         mutableStateOf(!HomeOnboardingStore.isFirstTimeDismissed(context))
     }
@@ -114,6 +109,14 @@ fun HomeScreen(
         mutableStateOf(HomeOnboardingStore.isLoginDismissed(context))
     }
     val showLoginPrompt = !loggedIn && !loginPromptDismissed
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refresh()
+        if (HomeOnboardingStore.isFirstTimeDismissed(context)) {
+            showFirstTime = false
+        }
+    }
+    val windowInfo = LocalWindowInfo.current
+    var clipboardUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
             if (focused) clipboardUrl = ClipboardLink.read(context)

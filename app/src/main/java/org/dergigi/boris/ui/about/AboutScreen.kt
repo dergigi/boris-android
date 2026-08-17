@@ -39,7 +39,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +68,7 @@ import coil3.request.ImageRequest
 import coil3.svg.SvgDecoder
 import kotlinx.coroutines.launch
 import org.dergigi.boris.R
+import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.SourceSerif
 
@@ -74,8 +77,16 @@ import org.dergigi.boris.ui.theme.SourceSerif
 fun AboutScreen(
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { ABOUT_PAGES.size })
     val scope = rememberCoroutineScope()
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            if (page == ABOUT_PAGES.lastIndex) {
+                HomeOnboardingStore.dismissFirstTime(context)
+            }
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
