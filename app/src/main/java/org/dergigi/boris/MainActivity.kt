@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity() {
                 coldStartLoading = true
                 composeDrawn = true
                 homeViewModel.refresh()
-                withTimeoutOrNull(BOOT_FETCH_TIMEOUT_MS) {
+                // Cap the quote screen; home keeps fetching under the app UI.
+                withTimeoutOrNull(COLD_START_SPLASH_MS) {
                     homeViewModel.highlights.first { it !is HomeHighlightsState.Loading }
                 }
                 coldStartLoading = false
@@ -172,6 +173,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val BOOT_FETCH_TIMEOUT_MS = 20_000L
+        private const val COLD_START_SPLASH_MS = 2_000L
     }
 }

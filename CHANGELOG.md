@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Splash circle uses the yellow highlighter (inset so the mask does not clip it); quote photo stays on the fullscreen cold-start screen
+- Cold-start quote screen lasts at most 2 seconds
 
 ## [0.64.0] - 2026-08-17
 
