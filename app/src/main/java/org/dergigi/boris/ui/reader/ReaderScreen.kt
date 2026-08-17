@@ -1042,7 +1042,7 @@ private fun ArticleBody(
                             listItemTop = 4.dp,
                             listItemBottom = 4.dp,
                             codeBlock = PaddingValues(16.dp),
-                            blockQuote = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                            blockQuote = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                         ),
                         imageTransformer = imageTransformer,
                         components = highlightedComponents,

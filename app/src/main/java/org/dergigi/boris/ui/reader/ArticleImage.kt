@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,6 +46,7 @@ internal fun ArticleImage(
         },
         modifier = modifier
             .fillMaxWidth()
+            .padding(vertical = 12.dp)
             .then(aspect?.let { Modifier.aspectRatio(it) } ?: Modifier)
             .then(if (fullWidth) Modifier else Modifier.heightIn(max = maxHeight))
             .clip(RoundedCornerShape(6.dp))
