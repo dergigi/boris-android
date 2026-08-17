@@ -43,6 +43,7 @@ fun AboutSettingsSection(
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
+    val linkTint = SettingsTints.About
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -58,7 +59,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_tutorial),
             subtitle = stringResource(R.string.settings_about_tutorial_summary),
             icon = Icons.AutoMirrored.Outlined.MenuBook,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = linkTint,
             onClick = onOpenTutorial,
         )
         AboutActionRow(
@@ -79,7 +80,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_website),
             subtitle = AboutLinks.WEBSITE.removePrefix("https://").trimEnd('/'),
             icon = Icons.Outlined.Language,
-            tint = Color(0xFF0EA5E9),
+            tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
             onClick = {
                 openWeblink(AboutLinks.WEBSITE, openInBoris, onOpenArticle, uriHandler::openUri)
@@ -89,7 +90,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_webapp),
             subtitle = AboutLinks.WEBAPP.removePrefix("https://").trimEnd('/'),
             icon = Icons.Outlined.Language,
-            tint = Color(0xFF14B8A6),
+            tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
             onClick = {
                 openWeblink(AboutLinks.WEBAPP, openInBoris, onOpenArticle, uriHandler::openUri)
@@ -99,7 +100,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_github),
             subtitle = "dergigi/boris-android",
             icon = Icons.Outlined.Code,
-            tint = Color(0xFF64748B),
+            tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
             onClick = {
                 openWeblink(AboutLinks.GITHUB, openInBoris, onOpenArticle, uriHandler::openUri)
@@ -109,7 +110,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_author),
             subtitle = "${AboutLinks.AUTHOR_NAME} · dergigi.com",
             icon = Icons.Outlined.Person,
-            tint = Color(0xFFEC4899),
+            tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
             onClick = {
                 openWeblink(AboutLinks.AUTHOR_SITE, openInBoris, onOpenArticle, uriHandler::openUri)
@@ -119,7 +120,7 @@ fun AboutSettingsSection(
             label = stringResource(R.string.settings_about_author_nostr),
             subtitle = AboutLinks.AUTHOR_NPUB.take(16) + "…",
             painter = painterResource(R.drawable.ic_nostr),
-            tint = Color(0xFF9333EA),
+            tint = linkTint,
             onClick = onOpenAuthorProfile,
         )
 

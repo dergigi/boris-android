@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -68,18 +69,18 @@ enum class SettingsCategory(
     val subtitleRes: Int,
     val tint: Color,
 ) {
-    Appearance(R.string.settings_appearance, R.string.settings_appearance_summary, Color(0xFF3B82F6)),
-    Reading(R.string.settings_reading, R.string.settings_reading_summary, Color(0xFF22C55E)),
-    Media(R.string.settings_media, R.string.settings_media_summary, Color(0xFFF97316)),
-    Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, Color(0xFFEAB308)),
-    ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, Color(0xFF6366F1)),
-    Home(R.string.settings_home, R.string.settings_home_summary, Color(0xFFEC4899)),
-    Library(R.string.settings_library, R.string.settings_library_summary, Color(0xFF0EA5E9)),
-    Feed(R.string.feed_title, R.string.settings_feed_summary, Color(0xFF9333EA)),
-    Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, Color(0xFF14B8A6)),
-    Relays(R.string.settings_relays, R.string.settings_relays_summary, Color(0xFF06B6D4)),
-    Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, Color(0xFFEF4444)),
-    About(R.string.settings_about, R.string.settings_about_summary, Color(0xFF8B5CF6)),
+    Appearance(R.string.settings_appearance, R.string.settings_appearance_summary, SettingsTints.Look),
+    Reading(R.string.settings_reading, R.string.settings_reading_summary, SettingsTints.Look),
+    Media(R.string.settings_media, R.string.settings_media_summary, SettingsTints.Look),
+    Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, SettingsTints.Look),
+    ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, SettingsTints.Look),
+    Home(R.string.settings_home, R.string.settings_home_summary, SettingsTints.Places),
+    Library(R.string.settings_library, R.string.settings_library_summary, SettingsTints.Places),
+    Feed(R.string.feed_title, R.string.settings_feed_summary, SettingsTints.Places),
+    Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, SettingsTints.Places),
+    Relays(R.string.settings_relays, R.string.settings_relays_summary, SettingsTints.Places),
+    Airplane(R.string.settings_airplane_mode, R.string.settings_airplane_summary, SettingsTints.Places),
+    About(R.string.settings_about, R.string.settings_about_summary, SettingsTints.About),
 }
 
 private val SettingsCategory.icon: ImageVector
@@ -256,9 +257,9 @@ private fun SettingsCategoryRow(
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(category.tint.copy(alpha = 0.18f)),
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(category.tint.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
