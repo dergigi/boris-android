@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- README and Zapstore listing include app screenshots
+
 ## [1.4.7] - 2026-08-18
 
 ### Added
