@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Pull requests run Android Lint and JVM unit tests
 
+### Changed
+
+- TTS paragraph controls use rewind and fast-forward style icons
+
 ## [1.4.4] - 2026-08-18
 
 ### Added
