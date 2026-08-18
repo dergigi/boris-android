@@ -184,7 +184,7 @@ class ReaderRepository(
             val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
             ReadableContent(
                 url = targetUrl,
-                title = preview.title ?: title,
+                title = preview.title ?: title?.let(HtmlToMarkdown::decode),
                 markdown = cover?.let { image ->
                     markdown?.let { ArticleCover.stripLeadingImage(it, image) }
                 } ?: markdown,

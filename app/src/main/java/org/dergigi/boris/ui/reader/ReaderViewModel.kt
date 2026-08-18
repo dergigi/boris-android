@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticlePreview
+import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReaderRepository
@@ -1091,7 +1092,7 @@ internal fun readerLoadingState(url: String): ReaderUiState.Loading {
     val preview = ArticlePreview.get(url)
     return ReaderUiState.Loading(
         url = url,
-        title = preview?.title?.trim()?.takeIf { it.isNotEmpty() },
+        title = preview?.title?.let { HtmlToMarkdown.decode(it) }?.trim()?.takeIf { it.isNotEmpty() },
         imageUrl = preview?.imageUrl?.trim()?.takeIf { it.isNotEmpty() },
     )
 }

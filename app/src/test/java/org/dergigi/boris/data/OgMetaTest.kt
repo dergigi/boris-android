@@ -53,4 +53,13 @@ class OgMetaTest {
         assertEquals("Foo & Bar", preview.title)
         assertEquals("https://cdn.example/a.png", preview.imageUrl)
     }
+
+    @Test
+    fun parseDecodesHexNumericEntitiesInTitle() {
+        val html = """
+            <meta property="og:title" content="When random.bytes() runs but doesn&#x27;t work">
+        """.trimIndent()
+        val preview = OgMeta.parse(html, "https://example.com/post")
+        assertEquals("When random.bytes() runs but doesn't work", preview.title)
+    }
 }

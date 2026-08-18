@@ -48,14 +48,7 @@ object OgMeta {
 
     private fun unescape(value: String?): String? {
         if (value.isNullOrBlank()) return null
-        return value
-            .replace("&amp;", "&")
-            .replace("&quot;", "\"")
-            .replace("&#39;", "'")
-            .replace("&apos;", "'")
-            .replace("&nbsp;", " ")
-            .trim()
-            .ifEmpty { null }
+        return HtmlToMarkdown.decode(value).trim().ifEmpty { null }
     }
 
     private fun absoluteUrl(raw: String, baseUrl: String): String? {

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader loading title decodes HTML entities such as apostrophes
+
 ### Changed
 
 - README screenshot section splits reading (light), highlights (dark), and settings

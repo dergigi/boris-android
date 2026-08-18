@@ -39,6 +39,19 @@ class ReaderPreviewTest {
     }
 
     @Test
+    fun loadingStateDecodesHtmlEntitiesInCachedTitle() {
+        val url = "https://example.com/random-bytes"
+        ArticlePreview.remember(
+            ReadableContent(
+                url = url,
+                title = "When random.bytes() runs but doesn&#x27;t work",
+            ),
+        )
+        val state = readerLoadingState(url)
+        assertEquals("When random.bytes() runs but doesn't work", state.title)
+    }
+
+    @Test
     fun loadingStateWithoutCacheKeepsSpinnerOnly() {
         val state = readerLoadingState("https://unknown.example/post")
         assertEquals("https://unknown.example/post", state.url)
