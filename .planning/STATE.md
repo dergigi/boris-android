@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
-status: researched
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-08-18T08:59:37.272Z"
+status: planned
+stopped_at: Phase 4 planned
+last_updated: "2026-08-18T11:15:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 04 UI-SPEC drafted
+last_activity_desc: Phase 04 plans created
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 3
+  total_plans: 6
   completed_plans: 3
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 4 Listen to articles — UI-SPEC drafted, ready to plan
+**Current focus:** Phase 4 Listen to articles — planned, ready to execute
 
 ## Current Position
 
 Phase: 04 of 4 (Listen to articles)
-Plan: Not started
-Status: Research complete — UI-SPEC drafted, ready to plan
-Last activity: 2026-08-18 — Phase 04 UI-SPEC drafted
+Plan: 04-01 (not started)
+Status: Planned — 3 plans, wave 1 then parallel wave 2
+Last activity: 2026-08-18 — Phase 04 plans created
 
 Progress: [███████░░░] 75%
 
@@ -117,6 +117,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T08:59:37.264Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-listen-to-articles/04-UI-SPEC.md
+Last session: 2026-08-18T11:15:00.000Z
+Stopped at: Phase 4 planned
+Resume file: .planning/phases/04-listen-to-articles/04-01-PLAN.md

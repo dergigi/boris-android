@@ -63,7 +63,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
-| 4. Listen to articles | 0/0 | Not planned | |
+| 4. Listen to articles | 0/3 | Planned | |
 
 ### Phase 3: Nostr highlights
 
@@ -99,11 +99,13 @@ Plans:
   5. Follow-along highlights and auto-scrolls the spoken paragraph, on by default, disableable; play starts near the saved reading position
   6. Listening works logged out; reading still works if TTS is missing
 
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 4 to break down)
+- [ ] 04-01-PLAN.md — Listen from the reader through on-device TTS and a media foreground service
+- [ ] 04-02-PLAN.md — Webapp-matched TTS settings with NIP-78 sync and preview
+- [ ] 04-03-PLAN.md — Follow-along mark and in-app mini player
 
 ## Backlog
 
