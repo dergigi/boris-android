@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.7] - 2026-08-18
+
 ### Added
 
 - Nostr highlight cards can share the article's njump link scrolled to the quote
@@ -1002,7 +1004,67 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v0.34.1...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.7...HEAD
+[1.4.7]: https://github.com/dergigi/boris-android/releases/tag/v1.4.7
+[1.4.6]: https://github.com/dergigi/boris-android/releases/tag/v1.4.6
+[1.4.5]: https://github.com/dergigi/boris-android/releases/tag/v1.4.5
+[1.4.4]: https://github.com/dergigi/boris-android/releases/tag/v1.4.4
+[1.4.3]: https://github.com/dergigi/boris-android/releases/tag/v1.4.3
+[1.4.2]: https://github.com/dergigi/boris-android/releases/tag/v1.4.2
+[1.4.1]: https://github.com/dergigi/boris-android/releases/tag/v1.4.1
+[1.4.0]: https://github.com/dergigi/boris-android/releases/tag/v1.4.0
+[1.3.3]: https://github.com/dergigi/boris-android/releases/tag/v1.3.3
+[1.3.2]: https://github.com/dergigi/boris-android/releases/tag/v1.3.2
+[1.3.1]: https://github.com/dergigi/boris-android/releases/tag/v1.3.1
+[1.3.0]: https://github.com/dergigi/boris-android/releases/tag/v1.3.0
+[1.2.0]: https://github.com/dergigi/boris-android/releases/tag/v1.2.0
+[1.1.0]: https://github.com/dergigi/boris-android/releases/tag/v1.1.0
+[1.0.1]: https://github.com/dergigi/boris-android/releases/tag/v1.0.1
+[1.0.0]: https://github.com/dergigi/boris-android/releases/tag/v1.0.0
+[0.75.0]: https://github.com/dergigi/boris-android/releases/tag/v0.75.0
+[0.74.0]: https://github.com/dergigi/boris-android/releases/tag/v0.74.0
+[0.73.0]: https://github.com/dergigi/boris-android/releases/tag/v0.73.0
+[0.72.0]: https://github.com/dergigi/boris-android/releases/tag/v0.72.0
+[0.71.0]: https://github.com/dergigi/boris-android/releases/tag/v0.71.0
+[0.70.0]: https://github.com/dergigi/boris-android/releases/tag/v0.70.0
+[0.69.0]: https://github.com/dergigi/boris-android/releases/tag/v0.69.0
+[0.68.0]: https://github.com/dergigi/boris-android/releases/tag/v0.68.0
+[0.67.0]: https://github.com/dergigi/boris-android/releases/tag/v0.67.0
+[0.66.0]: https://github.com/dergigi/boris-android/releases/tag/v0.66.0
+[0.65.0]: https://github.com/dergigi/boris-android/releases/tag/v0.65.0
+[0.64.0]: https://github.com/dergigi/boris-android/releases/tag/v0.64.0
+[0.63.0]: https://github.com/dergigi/boris-android/releases/tag/v0.63.0
+[0.62.0]: https://github.com/dergigi/boris-android/releases/tag/v0.62.0
+[0.61.0]: https://github.com/dergigi/boris-android/releases/tag/v0.61.0
+[0.60.0]: https://github.com/dergigi/boris-android/releases/tag/v0.60.0
+[0.59.0]: https://github.com/dergigi/boris-android/releases/tag/v0.59.0
+[0.58.0]: https://github.com/dergigi/boris-android/releases/tag/v0.58.0
+[0.57.0]: https://github.com/dergigi/boris-android/releases/tag/v0.57.0
+[0.56.0]: https://github.com/dergigi/boris-android/releases/tag/v0.56.0
+[0.55.0]: https://github.com/dergigi/boris-android/releases/tag/v0.55.0
+[0.54.0]: https://github.com/dergigi/boris-android/releases/tag/v0.54.0
+[0.53.0]: https://github.com/dergigi/boris-android/releases/tag/v0.53.0
+[0.52.0]: https://github.com/dergigi/boris-android/releases/tag/v0.52.0
+[0.51.0]: https://github.com/dergigi/boris-android/releases/tag/v0.51.0
+[0.50.0]: https://github.com/dergigi/boris-android/releases/tag/v0.50.0
+[0.49.0]: https://github.com/dergigi/boris-android/releases/tag/v0.49.0
+[0.48.0]: https://github.com/dergigi/boris-android/releases/tag/v0.48.0
+[0.47.0]: https://github.com/dergigi/boris-android/releases/tag/v0.47.0
+[0.46.0]: https://github.com/dergigi/boris-android/releases/tag/v0.46.0
+[0.45.1]: https://github.com/dergigi/boris-android/releases/tag/v0.45.1
+[0.45.0]: https://github.com/dergigi/boris-android/releases/tag/v0.45.0
+[0.44.0]: https://github.com/dergigi/boris-android/releases/tag/v0.44.0
+[0.43.0]: https://github.com/dergigi/boris-android/releases/tag/v0.43.0
+[0.42.0]: https://github.com/dergigi/boris-android/releases/tag/v0.42.0
+[0.41.2]: https://github.com/dergigi/boris-android/releases/tag/v0.41.2
+[0.41.1]: https://github.com/dergigi/boris-android/releases/tag/v0.41.1
+[0.41.0]: https://github.com/dergigi/boris-android/releases/tag/v0.41.0
+[0.40.0]: https://github.com/dergigi/boris-android/releases/tag/v0.40.0
+[0.39.0]: https://github.com/dergigi/boris-android/releases/tag/v0.39.0
+[0.38.0]: https://github.com/dergigi/boris-android/releases/tag/v0.38.0
+[0.37.0]: https://github.com/dergigi/boris-android/releases/tag/v0.37.0
+[0.36.0]: https://github.com/dergigi/boris-android/releases/tag/v0.36.0
+[0.35.0]: https://github.com/dergigi/boris-android/releases/tag/v0.35.0
 [0.34.1]: https://github.com/dergigi/boris-android/releases/tag/v0.34.1
 [0.34.0]: https://github.com/dergigi/boris-android/releases/tag/v0.34.0
 [0.33.1]: https://github.com/dergigi/boris-android/releases/tag/v0.33.1
