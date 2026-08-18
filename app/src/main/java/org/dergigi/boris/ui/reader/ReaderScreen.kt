@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -154,6 +155,7 @@ import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -1071,7 +1073,7 @@ private fun ArticleBody(
         referenceLinkHandler = referenceLinkHandler,
     )
     val ttsMiniPlayerVisible = ttsSession?.url?.isNotBlank() == true
-    val bottomChromePadding = if (ttsMiniPlayerVisible) 112.dp else 48.dp
+    val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     BackHandler(enabled = selection.hasSelection) { selection.clear() }
 
     Box(
@@ -1251,12 +1253,20 @@ private fun ArticleBody(
                 }
             }
         }
-        ReadingProgressBar(
-            percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (ttsMiniPlayerVisible) 56.dp else 0.dp),
-        )
+                .navigationBarsPadding(),
+        ) {
+            TtsMiniPlayerHost(
+                currentArticleUrl = content.url,
+                onOpenArticle = onOpenArticle,
+                showCurrentArticle = true,
+            )
+            ReadingProgressBar(
+                percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
+            )
+        }
         HighlightTextToolbar(
             selection = selection,
             showHighlight = loggedIn,

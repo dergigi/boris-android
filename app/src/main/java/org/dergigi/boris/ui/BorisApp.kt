@@ -336,13 +336,12 @@ fun BorisApp(
                     )
                 }
             }
-            // Off-tab screens (a different article's reader, Settings, …) have no
-            // bottom bar; overlay the mini player above system gesture insets.
-            if (selectedTab == null) {
+            // Off-tab screens without a bottom bar overlay the mini player, except
+            // the reader: it stacks the player above the progress bar itself.
+            if (selectedTab == null && currentRoute != Routes.READER) {
                 TtsMiniPlayerHost(
                     currentArticleUrl = currentArticleUrl,
                     onOpenArticle = ::openSpeakingArticle,
-                    showCurrentArticle = currentRoute == Routes.READER,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding(),
