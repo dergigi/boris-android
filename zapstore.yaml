@@ -20,6 +20,18 @@ license: MIT
 website: https://readwithboris.com/
 icon: ./zapstore-icon.png
 images:
+  - ./screenshots/read-1.png
+  - ./screenshots/read-2.png
+  - ./screenshots/read-3.png
+  - ./screenshots/read-4.png
+  - ./screenshots/settings-1.png
+  - ./screenshots/settings-2.png
+  - ./screenshots/settings-3.png
+  - ./screenshots/settings-4.png
+  - ./screenshots/dark-1.png
+  - ./screenshots/dark-2.png
+  - ./screenshots/dark-3.png
+  - ./screenshots/dark-4.png
   - ./screenshots/about-1.png
   - ./screenshots/about-2.png
   - ./screenshots/about-3.png
@@ -28,23 +40,11 @@ images:
   - ./screenshots/about-6.png
   - ./screenshots/about-7.png
   - ./screenshots/about-8.png
-  - ./screenshots/read-1.png
-  - ./screenshots/read-2.png
-  - ./screenshots/read-3.png
-  - ./screenshots/read-4.png
-  - ./screenshots/dark-1.png
-  - ./screenshots/dark-2.png
-  - ./screenshots/dark-3.png
-  - ./screenshots/dark-4.png
   - ./screenshots/1-home.png
   - ./screenshots/2-library.png
   - ./screenshots/3-feeds.png
   - ./screenshots/4-search.png
   - ./screenshots/5-you.png
-  - ./screenshots/settings-1.png
-  - ./screenshots/settings-2.png
-  - ./screenshots/settings-3.png
-  - ./screenshots/settings-4.png
 
 metadata_sources:
   - github

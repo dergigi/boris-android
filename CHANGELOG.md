@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Zapstore gallery order is reading, settings, dark, About, then the main tabs
+
 ## [1.4.13] - 2026-08-19
 
 ### Added
