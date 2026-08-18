@@ -1,8 +1,10 @@
 package org.dergigi.boris.data
 
 import org.dergigi.boris.nostr.EventCache
+import org.dergigi.boris.nostr.HintedRelays
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.nostr.NprofilePointer
 import org.dergigi.boris.nostr.Profile
 
 object NostrMentions {
@@ -41,21 +43,22 @@ object NostrMentions {
 
     private fun replacementFor(match: MatchResult): String {
         val encoded = match.groupValues[1].lowercase()
-        val pubkeyHex = decodePubkey(encoded)
-        if (pubkeyHex == null) {
+        val pointer = decodeProfile(encoded)
+        if (pointer == null) {
             return match.value.take(20) + "…"
         }
-        val cached = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex)
+        HintedRelays.remember(pointer.pubkey, pointer.relays)
+        val cached = EventCache.latest(Nip01Event.KIND_METADATA, pointer.pubkey)
             ?.let { Profile.parse(it.content) }
-        val label = "@" + Profile.displayName(pubkeyHex, cached)
+        val label = "@" + Profile.displayName(pointer.pubkey, cached)
         return "[$label](nostr:$encoded)"
     }
 
-    private fun decodePubkey(encoded: String): String? {
+    private fun decodeProfile(encoded: String): NprofilePointer? {
         return try {
             when {
-                encoded.startsWith("nprofile1") -> Nip19.nprofileDecode(encoded).pubkey
-                encoded.startsWith("npub1") -> Nip19.npubDecode(encoded)
+                encoded.startsWith("nprofile1") -> Nip19.nprofileDecode(encoded)
+                encoded.startsWith("npub1") -> NprofilePointer(Nip19.npubDecode(encoded))
                 else -> null
             }
         } catch (_: Exception) {

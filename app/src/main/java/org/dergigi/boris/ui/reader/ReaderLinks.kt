@@ -3,6 +3,7 @@ package org.dergigi.boris.ui.reader
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.nostr.HintedRelays
 
 sealed interface ReaderLinkAction {
     data object Ignore : ReaderLinkAction
@@ -17,7 +18,10 @@ internal fun readerLinkAction(
     openInReader: Boolean,
 ): ReaderLinkAction {
     when (val target = NostrLink.parse(uri)) {
-        is NostrTarget.Profile -> return ReaderLinkAction.OpenProfile(target.pubkeyHex)
+        is NostrTarget.Profile -> {
+            HintedRelays.remember(target.pubkeyHex, target.relays)
+            return ReaderLinkAction.OpenProfile(target.pubkeyHex)
+        }
         is NostrTarget.Article, is NostrTarget.Note, null -> Unit
     }
     val article = UrlExtractor.articleUrl(uri, currentUrl)
