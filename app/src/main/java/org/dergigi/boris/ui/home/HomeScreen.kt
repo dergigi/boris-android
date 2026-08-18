@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Login
@@ -99,6 +100,7 @@ import org.dergigi.boris.ui.theme.HighlightOther
 fun HomeScreen(
     onRead: (String) -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenSupport: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenHomeSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -135,7 +137,16 @@ fun HomeScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.home_title)) },
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onOpenSupport) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = stringResource(R.string.support_title),
+                            tint = HighlightFriends,
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = onOpenAbout) {
                         Icon(

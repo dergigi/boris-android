@@ -180,6 +180,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenSupport = {
+                            navController.navigate(Routes.SUPPORT) {
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenLogin = { goToTab(MainTab.You) },
                         onOpenHomeSettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Home)) {
