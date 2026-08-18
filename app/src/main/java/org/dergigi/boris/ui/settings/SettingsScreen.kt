@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.SwapVert
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,6 +70,7 @@ enum class SettingsCategory(
 ) {
     Appearance(R.string.settings_appearance, R.string.settings_appearance_summary, SettingsTints.Look),
     Reading(R.string.settings_reading, R.string.settings_reading_summary, SettingsTints.Look),
+    Tts(R.string.tts_section_title, R.string.settings_tts_summary, SettingsTints.Look),
     Media(R.string.settings_media, R.string.settings_media_summary, SettingsTints.Look),
     Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, SettingsTints.Look),
     ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, SettingsTints.Look),
@@ -85,6 +87,7 @@ private val SettingsCategory.icon: ImageVector
     @Composable get() = when (this) {
         SettingsCategory.Appearance -> Icons.Outlined.Palette
         SettingsCategory.Reading -> Icons.AutoMirrored.Outlined.MenuBook
+        SettingsCategory.Tts -> Icons.Outlined.VolumeUp
         SettingsCategory.Media -> Icons.Outlined.Image
         SettingsCategory.Highlights -> BorisIcons.Highlighter
         SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
@@ -101,6 +104,7 @@ private val CATEGORY_GROUPS = listOf(
     listOf(
         SettingsCategory.Appearance,
         SettingsCategory.Reading,
+        SettingsCategory.Tts,
         SettingsCategory.Media,
         SettingsCategory.Highlights,
         SettingsCategory.ZapSplits,
@@ -299,9 +303,9 @@ private fun SettingsCategoryDetail(
             }
             SettingsCategory.Reading -> {
                 ReadingSection(settings = settings, darkTheme = darkTheme, onUpdate = onUpdate)
-                TtsSection(settings = settings, onUpdate = onUpdate)
                 ReadingPreview(settings = settings, darkTheme = darkTheme)
             }
+            SettingsCategory.Tts -> TtsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Media -> MediaSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Highlights -> {
                 HighlightsSection(settings = settings, onUpdate = onUpdate)

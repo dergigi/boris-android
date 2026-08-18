@@ -53,7 +53,7 @@ import org.dergigi.boris.tts.TtsSpeed
 import org.dergigi.boris.ui.reader.openTtsSettings
 
 /**
- * Webapp-shaped Text-to-Speech block inside the Reading category (D-06):
+ * Webapp-shaped Text-to-Speech settings (D-06):
  * speed cycle, speaker language, locked preview sentence, follow-along.
  * Writes go to the existing NIP-78 keys only (D-07, D-08, D-09, D-13).
  */
@@ -71,11 +71,6 @@ fun TtsSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            text = stringResource(R.string.tts_section_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
         SettingRow(stringResource(R.string.tts_speed_label)) {
             SpeedCycleChip(
                 rate = TtsSpeed.snap(settings.ttsDefaultSpeed),

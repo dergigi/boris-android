@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Text-to-Speech has its own settings category
+
 ## [1.4.2] - 2026-08-18
 
 ### Changed
