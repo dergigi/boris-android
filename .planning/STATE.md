@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 04
-current_phase_name: Listen to articles
-status: verifying
-stopped_at: Phase 5 plans written (05-01 tracer, 05-02 hinted relays)
-last_updated: "2026-08-18T15:50:00.000Z"
+current_phase: 05
+current_phase_name: Resolve nostr profile references
+status: in_progress
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-08-18T16:06:10.215Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 5 PLAN.md files written (mention tracer + HintedRelays persist)
+last_activity_desc: Phase 5 plan 01 complete (mention rewrite + OpenProfile routing)
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 5 Resolve nostr profile references — planned, ready to execute
+**Current focus:** Phase 5 Resolve nostr profile references — 05-01 complete, 05-02 next
 
 ## Current Position
 
-Phase: 04 of 4 (Listen to articles)
-Plan: 04-01, 04-02, 04-03 complete
-Status: Verifying — all plans executed, device UAT deferred to 1.4.0 release testing
-Last activity: 2026-08-18 — Phase 5 plans written (05-01 tracer, 05-02 HintedRelays)
+Phase: 05 of 5 (Resolve nostr profile references)
+Plan: 01 of 02 complete
+Status: In progress — 05-01 tracer shipped; 05-02 HintedRelays persist next
+Last activity: 2026-08-18 — Completed 05-01 (nprofile mentions → @name → OpenProfile)
 
-Progress: [███████░░░] 75%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [███████░░░] 75%
 |------|----------|-------|-------|
 | Phase 02-bunker-login-nip-46 P01 | 12min | 3 tasks | 23 files |
 | Phase 03-nostr-highlights P01 | 8min | 3 tasks | 21 files |
+| Phase 05 P01 | 6min | 2 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase ?]: D-08 locked: webapp NIP-84 tags (kind 9802, r, optional context, Android alt). No Lantern selector tags.
 - [Phase ?]: parseSignedEvent accepts a parsed Nip01Event on the JVM because org.json is stubbed in unit tests.
 - [Phase ?]: AuthViewModel handles SignerResult.Signed as a no-op so the sealed when still compiles.
+- [Phase 5]: Rewrite raw prefixed nprofile/npub after Footnotes.expand; markdown keyed only on content.body
+- [Phase 5]: entityRegex requires nostr scheme for nprofile/npub; bare ids stay plaintext (D-09)
+- [Phase 5]: Profile.relays carries decoded nprofile hints for 05-02 persist/fetch-union
 
 ### Roadmap Evolution
 
@@ -118,6 +122,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T15:31:21.662Z
-Stopped at: Phase 5 plans written (05-01 tracer, 05-02 hinted relays)
-Resume file: .planning/phases/05-resolve-nostr-profile-references/05-01-PLAN.md
+Last session: 2026-08-18T16:06:10.208Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None

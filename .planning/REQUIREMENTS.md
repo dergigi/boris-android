@@ -19,7 +19,7 @@
 - [x] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
 - [x] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
 - [ ] **TTS-01**: User can listen to the current article with on-device TTS (background playback, webapp-matched speed/language settings, follow-along in the reader). Login is not required. Reading still works if TTS is missing.
-- [ ] **READ-03**: `nostr:nprofile` references in article Markdown render as profile links that open the in-app profile screen. Existing note, event, and article nostr links still work. Login is not required.
+- [x] **READ-03**: `nostr:nprofile` references in article Markdown render as profile links that open the in-app profile screen. Existing note, event, and article nostr links still work. Login is not required.
 
 ## v2 Requirements
 
@@ -55,7 +55,7 @@ Deferred. Not in this roadmap.
 | AUTH-06 | Phase 3 | Complete |
 | HIGH-01 | Phase 3 | Complete |
 | TTS-01 | Phase 4 | Planned |
-| READ-03 | Phase 5 | Planned |
+| READ-03 | Phase 5 | Implemented (05-01; hinted-relay persist in 05-02) |
 
 **Coverage:**
 

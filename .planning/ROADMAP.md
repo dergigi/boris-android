@@ -65,7 +65,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 | 4. Listen to articles | 3/3 | Verifying | |
-| 5. Resolve nostr profile references | 0/0 | Not planned | |
+| 5. Resolve nostr profile references | 1/2 | In Progress|  |
 
 ### Phase 3: Nostr highlights
 
@@ -126,11 +126,11 @@ Plans:
   4. Existing note, event, and article nostr links keep working
   5. Reading still works logged out
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 
-- [ ] 05-01-PLAN.md — Decode nprofile/npub, rewrite raw prefixed mentions to @name, route OpenProfile, skip article fetch
+- [x] 05-01-PLAN.md — Decode nprofile/npub, rewrite raw prefixed mentions to @name, route OpenProfile, skip article fetch
 - [ ] 05-02-PLAN.md — Persist nprofile relay hints and union them into profile fetches
 
 ## Backlog
