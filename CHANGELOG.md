@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Feeds top bar has an info dialog for Nostrverse, Friends, and You filters
+- Slim TTS player can be dismissed from the mini player bar
 
 ### Changed
 

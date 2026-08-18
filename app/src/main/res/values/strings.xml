@@ -387,6 +387,7 @@
     <string name="tts_pause_playback">Pause playback</string>
     <string name="tts_resume_playback">Resume playback</string>
     <string name="tts_stop_playback">Stop playback</string>
+    <string name="tts_dismiss_player">Dismiss TTS player</string>
     <string name="tts_next_paragraph">Next paragraph</string>
     <string name="tts_previous_paragraph">Previous paragraph</string>
     <string name="tts_cycle_speed">Cycle speed</string>
