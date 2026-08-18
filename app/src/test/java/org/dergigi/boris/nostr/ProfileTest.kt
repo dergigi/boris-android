@@ -26,6 +26,17 @@ class ProfileTest {
     }
 
     @Test
+    fun parseUnescapesJsonStringValues() {
+        val profile = Profile.parse(
+            """{"name":"Uno","about":"REJECT THE ORDINARY.\n\nBeRetarded.com\t\u2713 \"quoted\""}""",
+        )
+        assertEquals(
+            "REJECT THE ORDINARY.\n\nBeRetarded.com\t✓ \"quoted\"",
+            profile.about,
+        )
+    }
+
+    @Test
     fun displayNameFallsBackToShortNpub() {
         val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
         assertEquals("Gigi", Profile.displayName(pubkey, Profile(name = "Gigi", picture = null)))
