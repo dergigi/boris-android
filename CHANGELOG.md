@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Article reader title scrolls back to the top when tapped
+
 ### Changed
 
 - Zapstore gallery uses the About Boris walkthrough shots plus You

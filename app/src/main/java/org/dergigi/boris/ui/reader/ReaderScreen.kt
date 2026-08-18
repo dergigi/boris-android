@@ -12,6 +12,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -531,7 +532,11 @@ fun ReaderScreenContent(
     }
     val ttsSession by TtsPlayback.session.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val snackbarScope = rememberCoroutineScope()
+    val readerScope = rememberCoroutineScope()
+    val articleScrollState = rememberScrollState()
+    LaunchedEffect(articleUrl) {
+        articleScrollState.scrollTo(0)
+    }
     val ttsError = ttsSession?.takeIf { it.url == articleUrl }?.errorMessage
     LaunchedEffect(ttsError) {
         val key = ttsError ?: return@LaunchedEffect
@@ -618,8 +623,18 @@ fun ReaderScreenContent(
                 title = {
                     val title = (state as? ReaderUiState.Ready)?.content?.title
                         ?: (state as? ReaderUiState.Loading)?.title
+                    val scrollTopLabel = stringResource(R.string.reader_scroll_to_top)
                     Text(
                         text = title.orEmpty(),
+                        modifier = if (title.isNullOrBlank()) {
+                            Modifier
+                        } else {
+                            Modifier.clickable(onClickLabel = scrollTopLabel) {
+                                readerScope.launch {
+                                    articleScrollState.animateScrollTo(0)
+                                }
+                            }
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
@@ -646,7 +661,7 @@ fun ReaderScreenContent(
                             author = author,
                             session = ttsSession,
                             onEmpty = {
-                                snackbarScope.launch {
+                                readerScope.launch {
                                     snackbarHostState.showSnackbar(
                                         message = context.getString(R.string.tts_empty_heading) +
                                             "\n" + context.getString(R.string.tts_empty_body),
@@ -863,6 +878,7 @@ fun ReaderScreenContent(
                     onArchive = onArchive,
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
+                    scrollState = articleScrollState,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -901,6 +917,7 @@ private fun ArticleBody(
     onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
     onFindOpenChange: (Boolean) -> Unit,
+    scrollState: ScrollState,
     ttsSession: TtsSession? = null,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
@@ -1044,7 +1061,6 @@ private fun ArticleBody(
     val navigator = remember { HighlightNavigator() }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
-    val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     var viewportHeight by remember { mutableIntStateOf(0) }
     var scrollViewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
