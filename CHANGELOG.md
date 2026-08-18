@@ -9,11 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.5] - 2026-08-18
+
 ### Added
 
-- Pull requests run Android Lint and JVM unit tests
 - Pasting or sharing an `npub` / `nprofile` opens that profile instead of the reader
 - HTML fallback articles keep inline images
+- Pull requests run Android Lint and JVM unit tests
 
 ## [1.4.4] - 2026-08-18
 
