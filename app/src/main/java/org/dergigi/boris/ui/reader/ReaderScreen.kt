@@ -1259,7 +1259,7 @@ private fun ArticleBody(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f)),
+                .background(MaterialTheme.colorScheme.background),
         ) {
             TtsMiniPlayerHost(
                 currentArticleUrl = content.url,
