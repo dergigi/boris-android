@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - README and Zapstore screenshot sets drop the article cover shot
+- Light-mode reading screenshots include an orange highlight and an updated TTS shot
 
 ## [1.4.10] - 2026-08-18
 
