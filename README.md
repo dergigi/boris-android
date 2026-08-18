@@ -59,6 +59,8 @@ Theme, type, TTS, and highlight colors, including separate palettes for you, fri
   <img src="screenshots/settings-4.png" width="180" alt="About" />
 </p>
 
+## Build
+
 ```bash
 ./gradlew :app:assembleDebug
 ```
