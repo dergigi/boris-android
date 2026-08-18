@@ -8,7 +8,7 @@ status: planned
 stopped_at: Phase 4 planned
 last_updated: "2026-08-18T11:15:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 04 plans created
+last_activity_desc: Phase 04 plans revised from checker
 progress:
   total_phases: 4
   completed_phases: 3
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 Phase: 04 of 4 (Listen to articles)
 Plan: 04-01 (not started)
 Status: Planned — 3 plans, wave 1 then parallel wave 2
-Last activity: 2026-08-18 — Phase 04 plans created
+Last activity: 2026-08-18 — Phase 04 plans revised from checker
 
 Progress: [███████░░░] 75%
 

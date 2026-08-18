@@ -606,19 +606,19 @@ Extend `UserSettingsTest.defaultsMatchWebappReadingDisplay` with the TTS default
 | A3 | Webapp will keep unknown JSON keys (including `ttsFollowAlong`) when it next saves. | Follow-along key | If the webapp later picks known keys, follow-along resets to default true after a web save. |
 | A4 | `Settings.ACTION_TEXT_TO_SPEECH_SETTINGS` is the right D-11 deep link on current OEMs. | D-11 | Some skins ignore it; fall back to `ACTION_INSTALL_TTS_DATA` then generic Settings. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Resume mid-paragraph vs restart the paragraph**
+1. **Resume mid-paragraph vs restart the paragraph** — RESOLVED
    - What we know: `UtteranceProgressListener.onRangeStart(utteranceId, start, end, frame)` exists. Pause has no platform API.
    - What's unclear: engine support for `onRangeStart` is uneven.
    - Recommendation: v1 resume restarts the current paragraph. Store range offsets if the callback fires, use them if present. Do not block the phase on perfect resume.
 
-2. **API 26–28 language detect quality**
+2. **API 26–28 language detect quality** — RESOLVED
    - What we know: `detectLanguage` is API 29. Webapp uses `tinyld`.
    - What's unclear: stopword lists will mis-label short English/Spanish mix.
    - Recommendation: heuristic is good enough; if detect returns null, fall through to system language (same as webapp).
 
-3. **Notification permission prompt**
+3. **Notification permission prompt** — RESOLVED
    - What we know: media-session notifications are exempt on Android 13; FGS still needs a notification object.
    - What's unclear: some OEMs still hide the shade entry without `POST_NOTIFICATIONS`.
    - Recommendation: declare the permission; request it once on first Play if `Build.VERSION.SDK_INT >= 33`. Never gate reading or in-app play on the result.
