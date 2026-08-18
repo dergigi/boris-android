@@ -14,6 +14,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Feeds top bar has an info dialog for Nostrverse, Friends, and You filters
 - Slim TTS player can be dismissed from the mini player bar
 
+### Fixed
+
+- TTS follow-along highlights the current sentence instead of the whole paragraph
+
 ### Changed
 
 - README and Zapstore screenshot sets drop the article cover shot
@@ -60,10 +64,6 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Profile metadata escapes render as text instead of literal JSON sequences
-
-### Fixed
-
-- TTS follow-along highlights the current sentence instead of the whole paragraph
 
 ## [1.4.7] - 2026-08-18
 
