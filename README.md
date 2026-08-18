@@ -15,7 +15,7 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
 
 ### Reading
 
-Light mode. Articles open as a serif page with source, read time, and how many marks are on the piece. Your highlights sit in the text. The player at the bottom reads from the current sentence, with speed on the bar.
+Light mode. Cream background, serif type. Marks in the article. TTS is the bar at the bottom.
 
 <p align="center">
   <img src="screenshots/read-1.png" width="180" alt="Reading in light mode" />
@@ -26,7 +26,7 @@ Light mode. Articles open as a serif page with source, read time, and how many m
 
 ### Dark
 
-Same reader at night. Covers stay with the article. A side panel shows friends' marks on the passage you are in. Open someone's npub to search their highlights, or keep listening with follow-along in the dark theme.
+Dark theme. Article with its cover, then a panel of other people's highlights on the same passage. A profile. TTS again.
 
 <p align="center">
   <img src="screenshots/dark-1.png" width="180" alt="Article in dark mode" />
@@ -37,7 +37,7 @@ Same reader at night. Covers stay with the article. A side panel shows friends' 
 
 ### Home
 
-The five tabs. Home is what people around you marked lately. Library is bookmarks, private and public. Feeds is writings and highlights from Nostrverse, friends, or you. Search looks through quote text. You is your own profile; it is on Zapstore, not in this row.
+Four of the five tabs: home, library, feeds, search. You is the last one. It's on Zapstore.
 
 <p align="center">
   <img src="screenshots/1-home.png" width="180" alt="Home" />
@@ -48,7 +48,7 @@ The five tabs. Home is what people around you marked lately. Library is bookmark
 
 ### Settings
 
-Theme, type, TTS, and highlight colors, including separate palettes for you, friends, and the rest of nostr. Airplane mode caches articles and talks to a local relay. About has the vision, support, and source.
+The settings list, highlight colors, airplane mode, About.
 
 <p align="center">
   <img src="screenshots/settings-1.png" width="180" alt="Settings" />
