@@ -108,8 +108,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02-PLAN.md — Webapp-matched TTS settings with NIP-78 sync and preview
-- [ ] 04-03-PLAN.md — Follow-along mark and in-app mini player
+- [x] 04-02-PLAN.md — Webapp-matched TTS settings with NIP-78 sync and preview (2026-08-18)
+- [x] 04-03-PLAN.md — Follow-along mark and in-app mini player (2026-08-18)
 
 ## Backlog
 

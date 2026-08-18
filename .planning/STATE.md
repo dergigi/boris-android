@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
-status: executing
-stopped_at: Plan 04-01 complete, wave 2 next
-last_updated: "2026-08-18T10:55:00.000Z"
+status: verifying
+stopped_at: All phase 4 plans complete, verification next
+last_updated: "2026-08-18T11:10:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Executed plan 04-01 (TTS engine tracer)
+last_activity_desc: Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 6
 ---
 
 # Project State
@@ -28,9 +28,9 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 ## Current Position
 
 Phase: 04 of 4 (Listen to articles)
-Plan: 04-01 complete; 04-02 and 04-03 next (wave 2)
-Status: Executing — wave 1 of 2 done
-Last activity: 2026-08-18 — Executed plan 04-01 (TTS engine tracer)
+Plan: 04-01, 04-02, 04-03 complete
+Status: Verifying — all plans executed, device UAT deferred to 1.4.0 release testing
+Last activity: 2026-08-18 — Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
 
 Progress: [███████░░░] 75%
 
