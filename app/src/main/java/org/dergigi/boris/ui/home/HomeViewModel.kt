@@ -1,6 +1,8 @@
 package org.dergigi.boris.ui.home
 
 import android.app.Application
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.BookmarkCatalog
@@ -22,16 +25,28 @@ import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.RandomArticles
+import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.SecretBox
+import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.Archive
+import org.dergigi.boris.nostr.BunkerClient
+import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.BookmarkRefKind
+import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
+import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.nostr.RemoteSignerBridge
+import org.dergigi.boris.nostr.SignerResult
+import org.dergigi.boris.nostr.SignerResults
 
 sealed interface HomeHighlightsState {
     data object Loading : HomeHighlightsState
@@ -58,7 +73,15 @@ class HomeViewModel(
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message.asStateFlow()
+
     private var loadJob: Job? = null
+    private var pendingArchive: PendingArchive? = null
+
+    fun consumeMessage() {
+        _message.value = null
+    }
 
     fun refresh() {
         loadJob?.cancel()
@@ -157,6 +180,69 @@ class HomeViewModel(
                 }
             } finally {
                 _refreshing.value = false
+            }
+        }
+    }
+
+    fun markAsRead(article: HighlightedArticle): Intent? {
+        val app = getApplication<Application>()
+        val session = SessionStore.load(app) ?: return null
+        val content = article.archiveContent()
+        val createdAt = System.currentTimeMillis() / 1000
+        val kind = Archive.kind(content)
+        val tags = Archive.tags(content)
+        if (kind == null || tags == null) {
+            failArchive(app.getString(R.string.reader_archive_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                val unsigned = Archive.unsignedJson(content, session.pubkeyHex, createdAt)
+                if (unsigned == null) {
+                    failArchive(app.getString(R.string.reader_archive_failed))
+                    return null
+                }
+                pendingArchive = PendingArchive(
+                    url = article.url,
+                    unsigned = PendingUnsignedEvent(
+                        pubkey = session.pubkeyHex,
+                        createdAt = createdAt,
+                        kind = kind,
+                        tags = tags,
+                        content = Archive.EMOJI,
+                    ),
+                )
+                RemoteSignerBridge.buildSignEventIntent(unsigned, session.signerPackage, session.pubkeyHex)
+            }
+            is Session.Bunker -> {
+                val unsigned = Archive.unsignedJson(content, pubkeyHex = null, createdAt)
+                if (unsigned == null) {
+                    failArchive(app.getString(R.string.reader_archive_failed))
+                    return null
+                }
+                viewModelScope.launch { signArchiveWithBunker(session, unsigned, article.url) }
+                null
+            }
+        }
+    }
+
+    fun onSignerResult(resultCode: Int, data: Intent?) {
+        val app = getApplication<Application>()
+        val session = SessionStore.load(app) ?: return
+        val pending = pendingArchive ?: return
+        pendingArchive = null
+        when (
+            val result = SignerResults.parseSignedEvent(
+                resultCode,
+                data,
+                session.pubkeyHex,
+                pending.unsigned,
+            )
+        ) {
+            is SignerResult.Signed -> onSignedArchive(session, result.event, pending.url)
+            SignerResult.Rejected -> failArchive(app.getString(R.string.reader_archive_rejected))
+            SignerResult.Cancelled, is SignerResult.Success -> {
+                failArchive(app.getString(R.string.reader_archive_cancelled))
             }
         }
     }
@@ -302,6 +388,70 @@ class HomeViewModel(
         HighlightedArticles.decorate(article, previews[article.url] ?: ArticlePreview.get(article.url))
     }
 
+    private suspend fun signArchiveWithBunker(
+        session: Session.Bunker,
+        unsignedJson: String,
+        url: String,
+    ) {
+        val app = getApplication<Application>()
+        val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
+        if (privkey == null) {
+            failArchive(app.getString(R.string.reader_archive_cancelled))
+            return
+        }
+        try {
+            val result = withContext(Dispatchers.IO) {
+                BunkerClient(onAuthUrl = ::openAuthUrl).signEvent(
+                    session.relays,
+                    session.remoteSignerPubkey,
+                    privkey,
+                    unsignedJson,
+                )
+            }
+            when (result) {
+                is BunkerSignResult.Signed -> onSignedArchive(session, result.event, url)
+                BunkerSignResult.Rejected -> failArchive(app.getString(R.string.reader_archive_rejected))
+                BunkerSignResult.RelayTimeout -> failArchive(app.getString(R.string.reader_archive_cancelled))
+            }
+        } finally {
+            privkey.fill(0)
+        }
+    }
+
+    private fun onSignedArchive(session: Session, event: Nip01Event, url: String) {
+        val app = getApplication<Application>()
+        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true) ||
+            !event.verify() ||
+            !Archive.isArchive(event)
+        ) {
+            failArchive(app.getString(R.string.reader_archive_failed))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            EventPublisher.publish(session.pubkeyHex, event)
+        }
+        val key = Archive.targetRef(event)?.let(ArchivedArticles::key) ?: ArchivedArticles.key(url)
+        val current = _highlights.value
+        if (key != null && current is HomeHighlightsState.Ready) {
+            _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)
+        }
+        _message.value = app.getString(R.string.reader_archived)
+    }
+
+    private fun failArchive(message: String) {
+        pendingArchive = null
+        _message.value = message
+    }
+
+    private fun openAuthUrl(url: String) {
+        val app = getApplication<Application>()
+        runCatching {
+            app.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
     private data class LoadedRows(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
@@ -320,6 +470,11 @@ class HomeViewModel(
                 .map { it.url }
                 .distinct()
     }
+
+    private data class PendingArchive(
+        val url: String,
+        val unsigned: PendingUnsignedEvent? = null,
+    )
 
     private fun LoadedRows.toReady(
         pubkey: String?,
@@ -342,6 +497,39 @@ class HomeViewModel(
         private const val ARTICLE_LIMIT = 21
     }
 }
+
+internal fun HighlightedArticle.archiveContent(): ReadableContent =
+    when (val target = NostrLink.parse(url)) {
+        is NostrTarget.Article -> {
+            val pointer = target.ref.pointer
+            val event = EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
+            ReadableContent(
+                url = target.uri,
+                title = title,
+                articleCoordinate = target.ref.coordinate,
+                eventId = event?.id,
+                authorPubkey = pointer.pubkey,
+                imageUrl = imageUrl,
+            )
+        }
+        is NostrTarget.Note -> {
+            val event = EventCache.event(target.eventId)
+            ReadableContent(
+                url = target.uri,
+                title = title,
+                eventId = target.eventId,
+                authorPubkey = event?.pubkey ?: target.author,
+                imageUrl = imageUrl,
+            )
+        }
+        is NostrTarget.Profile, null -> {
+            ReadableContent(
+                url = url,
+                title = title,
+                imageUrl = imageUrl,
+            )
+        }
+    }
 
 internal fun mergePreview(cached: OgPreview?, fetched: OgPreview?): OgPreview? {
     if (fetched == null) return cached

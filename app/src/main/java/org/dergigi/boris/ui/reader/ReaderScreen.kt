@@ -570,13 +570,15 @@ fun ReaderScreenContent(
             putExtra(Intent.EXTRA_TEXT, text)
             if (!title.isNullOrBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
         }
-        context.startActivity(Intent.createChooser(intent, "Share article"))
+        context.startActivity(
+            Intent.createChooser(intent, context.getString(R.string.reader_share_article)),
+        )
     }
 
     fun copyLink() {
         val url = articleUrl ?: return
         clipboard.setText(AnnotatedString(NostrLink.copyText(url)))
-        Toast.makeText(context, "Copied.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.reader_copied), Toast.LENGTH_SHORT).show()
     }
 
     val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -677,7 +679,7 @@ fun ReaderScreenContent(
                                 onDismissRequest = { menuOpen = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Share") },
+                                    text = { Text(stringResource(R.string.reader_share)) },
                                     leadingIcon = {
                                         Icon(Icons.Filled.Share, contentDescription = null)
                                     },
@@ -687,7 +689,7 @@ fun ReaderScreenContent(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Copy link") },
+                                    text = { Text(stringResource(R.string.reader_copy_link)) },
                                     leadingIcon = {
                                         Icon(Icons.Filled.ContentCopy, contentDescription = null)
                                     },
@@ -697,7 +699,7 @@ fun ReaderScreenContent(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Open original") },
+                                    text = { Text(stringResource(R.string.reader_open_original)) },
                                     leadingIcon = {
                                         Icon(Icons.Filled.OpenInBrowser, contentDescription = null)
                                     },
