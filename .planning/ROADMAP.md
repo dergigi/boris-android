@@ -102,8 +102,12 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 04-01-PLAN.md — Listen from the reader through on-device TTS and a media foreground service
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04-02-PLAN.md — Webapp-matched TTS settings with NIP-78 sync and preview
 - [ ] 04-03-PLAN.md — Follow-along mark and in-app mini player
 
