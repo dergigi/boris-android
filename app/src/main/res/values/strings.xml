@@ -111,6 +111,7 @@
     <string name="about_cta_start">Start reading!</string>
     <string name="about_page_indicator">Page %1$d of %2$d</string>
     <string name="support_title">Support Boris</string>
+    <string name="support_featured_supporter">Supporter %1$s</string>
     <string name="support_thank_you">Thank You!</string>
     <string name="support_subtitle_before">Your\u0020</string>
     <string name="support_subtitle_link">zaps</string>

@@ -185,6 +185,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
+                            }
+                        },
                         onOpenLogin = { goToTab(MainTab.You) },
                         onOpenHomeSettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Home)) {
@@ -250,6 +255,11 @@ fun BorisApp(
                         onOpenSupport = {
                             navController.navigate(Routes.SUPPORT) {
                                 launchSingleTop = true
+                            }
+                        },
+                        onOpenProfile = { pubkeyHex ->
+                            runCatching { Nip19.npubEncode(pubkeyHex) }.getOrNull()?.let { npub ->
+                                navController.navigate(Routes.profile(npub))
                             }
                         },
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },

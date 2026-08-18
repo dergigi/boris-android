@@ -25,7 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Login
@@ -90,6 +89,7 @@ import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
+import org.dergigi.boris.ui.support.SupportHeart
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -101,6 +101,7 @@ fun HomeScreen(
     onRead: (String) -> Unit,
     onOpenAbout: () -> Unit,
     onOpenSupport: () -> Unit = {},
+    onOpenProfile: (String) -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenHomeSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -139,13 +140,10 @@ fun HomeScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onOpenSupport) {
-                        Icon(
-                            imageVector = Icons.Filled.Favorite,
-                            contentDescription = stringResource(R.string.support_title),
-                            tint = HighlightFriends,
-                        )
-                    }
+                    SupportHeart(
+                        onOpenSupport = onOpenSupport,
+                        onOpenProfile = onOpenProfile,
+                    )
                 },
                 actions = {
                     IconButton(onClick = onOpenAbout) {
