@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Report a bug and Suggest a feature open GitHub issue templates in the browser instead of the reader
+- External https links include `CATEGORY_BROWSABLE` so installed apps (GitHub) can claim them
 
 ## [1.3.2] - 2026-08-18
 
