@@ -393,6 +393,9 @@ class ReaderViewModel(
     }
 
     private fun onSignedHighlight(session: Session, event: Nip01Event) {
+        val settings = SettingsSync.settings.value
+        val visibleSettings = settings.withOwnHighlightsVisible()
+        if (visibleSettings !== settings) SettingsSync.apply(visibleSettings)
         val painted = PaintedHighlight(
             id = event.id,
             quote = event.content,
