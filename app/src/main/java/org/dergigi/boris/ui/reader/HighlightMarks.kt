@@ -46,11 +46,37 @@ fun matchHighlightSpans(
 ): List<HighlightSpan> {
     if (displayed.isEmpty() || highlights.isEmpty()) return emptyList()
     return highlights.flatMap { item ->
-        QuoteMatch.occurrences(
-            displayed,
-            highlightMark(item.quote, item.context),
-            ignoreCase = item.ignoreCase,
-        ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
+        val spokenSpans = spokenContextSpans(displayed, item)
+        if (item.spoken && !item.context.isNullOrBlank()) {
+            spokenSpans
+        } else {
+            QuoteMatch.occurrences(
+                displayed,
+                highlightMark(item.quote, item.context),
+                ignoreCase = item.ignoreCase,
+            ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
+        }
+    }
+}
+
+private fun spokenContextSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
+    val context = item.context?.takeIf { item.spoken && it.isNotBlank() } ?: return emptyList()
+    val mark = highlightMark(item.quote, context)
+    if (mark.isBlank()) return emptyList()
+    return QuoteMatch.occurrences(
+        displayed,
+        context,
+        ignoreCase = item.ignoreCase,
+    ).flatMap { contextRange ->
+        val contextStart = contextRange.first
+        val contextText = displayed.substring(contextStart, contextRange.last + 1)
+        QuoteMatch.occurrences(contextText, mark, ignoreCase = item.ignoreCase).map { range ->
+            HighlightSpan(
+                item = item,
+                start = contextStart + range.first,
+                end = contextStart + range.last + 1,
+            )
+        }
     }
 }
 
@@ -85,7 +111,7 @@ fun Modifier.drawHighlightMarks(
             }
         }
     }
-    // Spoken paragraph (D-12) is a filled teal mark, never underline.
+    // Spoken sentence (D-12) is a filled teal mark, never underline.
     paint({ it.spoken }, spokenColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
     // Find matches always use a filled selection-like mark, never underline.
     paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
