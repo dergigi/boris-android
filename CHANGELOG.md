@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-18
+
 ### Added
 
 - Lock-screen TTS playback now shows the current article cover as media artwork when one is available
