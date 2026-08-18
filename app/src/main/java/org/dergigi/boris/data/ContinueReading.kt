@@ -16,6 +16,7 @@ object ContinueReading {
             val host = when (val target = NostrLink.parse(url)) {
                 is NostrTarget.Article -> target.ref.pointer.identifier.ifBlank { "nostr" }
                 is NostrTarget.Note -> "nostr"
+                is NostrTarget.Profile -> continue
                 null -> ArticleUrl.host(url) ?: continue
             }
             out.add(HighlightedArticles.decorate(HighlightedArticle(url, host, host, null, 0L)))

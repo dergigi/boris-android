@@ -48,6 +48,7 @@ object ReadingPositionStore {
     fun key(url: String): String = when (val target = NostrLink.parse(url)) {
         is NostrTarget.Article -> target.ref.coordinate
         is NostrTarget.Note -> target.eventId.lowercase()
+        is NostrTarget.Profile -> target.uri
         null -> UrlExtractor.normalize(url)
     }
 

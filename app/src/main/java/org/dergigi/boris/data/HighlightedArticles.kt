@@ -28,6 +28,7 @@ object HighlightedArticles {
             val host = when (target) {
                 is NostrTarget.Article -> authorHost(target.ref.pointer.pubkey)
                 is NostrTarget.Note -> "nostr"
+                is NostrTarget.Profile -> continue
                 null -> ArticleUrl.host(url) ?: continue
             }
             out.add(decorate(HighlightedArticle(url, host, host, null, event.createdAt)))
@@ -65,6 +66,7 @@ object HighlightedArticles {
                 val host = when (target) {
                     is NostrTarget.Article -> authorHost(target.ref.pointer.pubkey)
                     is NostrTarget.Note -> "nostr"
+                    is NostrTarget.Profile -> return@mapNotNull null
                     null -> ArticleUrl.host(url) ?: return@mapNotNull null
                 }
                 decorate(HighlightedArticle(url, host, host, null, hits.maxOf { it.createdAt }))
@@ -87,6 +89,7 @@ object HighlightedArticles {
                     }
                 }
                 is NostrTarget.Note -> notes.add(target)
+                is NostrTarget.Profile -> Unit
                 null -> Unit
             }
         }
@@ -111,6 +114,7 @@ object HighlightedArticles {
         return when (val target = NostrLink.parse(article.url)) {
             is NostrTarget.Article -> decorateArticle(article, target, preview)
             is NostrTarget.Note -> decorateNote(article, target, preview)
+            is NostrTarget.Profile -> article
             null -> decorateWeb(article, preview)
         }
     }

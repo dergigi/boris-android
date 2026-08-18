@@ -375,6 +375,8 @@
     <string name="tts_next_paragraph">Next paragraph</string>
     <string name="tts_previous_paragraph">Previous paragraph</string>
     <string name="tts_cycle_speed">Cycle speed</string>
+    <string name="tts_enable_follow_along">Turn follow-along on</string>
+    <string name="tts_disable_follow_along">Turn follow-along off</string>
     <string name="tts_section_title">Text-to-Speech</string>
     <string name="tts_speed_label">Default Playback Speed</string>
     <string name="tts_language_label">Speaker language</string>
