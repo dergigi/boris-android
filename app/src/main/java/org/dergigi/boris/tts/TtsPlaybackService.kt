@@ -25,11 +25,14 @@ import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.ServiceCompat
 import java.io.ByteArrayOutputStream
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -471,7 +474,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         artworkBitmap = null
         if (url == null) return
         artworkJob = scope.launch {
-            val bitmap = withContext(Dispatchers.IO) { fetchArtwork(url) }
+            val bitmap = fetchArtwork(url)
             if (TtsPlayback.session.value?.imageUrl != url) return@launch
             artworkBitmap = bitmap
             val current = TtsPlayback.session.value ?: return@launch
@@ -483,16 +486,29 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         }
     }
 
-    private fun fetchArtwork(url: String): Bitmap? = runCatching {
+    private suspend fun fetchArtwork(url: String): Bitmap? = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(UrlExtractor.preferHttps(url)).get().build()
-        artworkClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                null
-            } else {
-                response.body?.let(::readArtworkBytes)?.let(::decodeArtwork)
-            }
+        val call = artworkClient.newCall(request)
+        val cancelOnJobCancel = currentCoroutineContext()[Job]?.invokeOnCompletion { cause ->
+            if (cause is CancellationException) call.cancel()
         }
-    }.getOrNull()
+        try {
+            call.execute().use { response ->
+                if (!response.isSuccessful) {
+                    null
+                } else {
+                    response.body?.let(::readArtworkBytes)?.let(::decodeArtwork)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
+            null
+        } finally {
+            cancelOnJobCancel?.dispose()
+        }
+    }
 
     private fun readArtworkBytes(body: ResponseBody): ByteArray? {
         val length = body.contentLength()
