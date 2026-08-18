@@ -307,6 +307,8 @@ class ReaderViewModel(
         }
     }
 
+    fun archiveInFlight(): Boolean = archiving
+
     fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         val app = getApplication<Application>()
         if (saving || _inLibrary.value) return null

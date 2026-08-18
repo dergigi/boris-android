@@ -15,7 +15,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Zapstore gallery starts with Hello I'm Boris, then Read anywhere, Distraction-free, Airplane mode, and Social highlights
 - README uses Get it on Zap Store and Get it on GitHub badges
 - Slim TTS player speed chip opens a preset menu on long press
-- Reader archive button can close the article after archiving
+- Reader archive button can close the article after archiving and uses green completed styling when archived
 
 ### Fixed
 

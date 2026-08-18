@@ -177,5 +177,7 @@ class UserSettingsTest {
     fun archiveClosesReaderDefaultsOnAndCanBeDisabled() {
         assertTrue(UserSettings.defaults().archiveClosesReader)
         assertFalse(UserSettings.parse("""{"archiveClosesReader":false}""").archiveClosesReader)
+        val updated = UserSettings.defaults().withBoolean("archiveClosesReader", false)
+        assertFalse(UserSettings.parse(updated.toJson()).archiveClosesReader)
     }
 }
