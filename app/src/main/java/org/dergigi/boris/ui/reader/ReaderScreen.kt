@@ -1070,6 +1070,8 @@ private fun ArticleBody(
         parser = parser,
         referenceLinkHandler = referenceLinkHandler,
     )
+    val ttsMiniPlayerVisible = ttsSession?.url?.isNotBlank() == true
+    val bottomChromePadding = if (ttsMiniPlayerVisible) 112.dp else 48.dp
     BackHandler(enabled = selection.hasSelection) { selection.clear() }
 
     Box(
@@ -1106,7 +1108,7 @@ private fun ArticleBody(
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
-                .padding(bottom = 48.dp),
+                .padding(bottom = bottomChromePadding),
         ) {
             if (coverUrl == null && !content.title.isNullOrBlank()) {
                 var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
@@ -1251,7 +1253,9 @@ private fun ArticleBody(
         }
         ReadingProgressBar(
             percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = if (ttsMiniPlayerVisible) 56.dp else 0.dp),
         )
         HighlightTextToolbar(
             selection = selection,

@@ -57,6 +57,27 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsDropReferenceLinkDefinitions() {
+        val markdown = """
+            Read [Boris][boris] and [the docs][] today.
+
+            Last visible sentence.
+
+            [boris]: https://readwithboris.com/
+            [the docs]: https://example.com/docs
+                "Reference title"
+        """.trimIndent()
+        val content = ReadableContent(url = "https://example.com/ref", markdown = markdown)
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf("Read Boris and the docs today.", "Last visible sentence."),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("https://") })
+        assertFalse(paragraphs.any { it.contains("Reference title") })
+    }
+
+    @Test
     fun headingsAndListItemsAreOwnParagraphs() {
         val markdown = """
             # Heading One

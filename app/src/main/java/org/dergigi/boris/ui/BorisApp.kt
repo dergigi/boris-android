@@ -342,6 +342,7 @@ fun BorisApp(
                 TtsMiniPlayerHost(
                     currentArticleUrl = currentArticleUrl,
                     onOpenArticle = ::openSpeakingArticle,
+                    showCurrentArticle = currentRoute == Routes.READER,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding(),

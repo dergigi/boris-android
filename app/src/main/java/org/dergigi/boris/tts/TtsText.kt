@@ -53,14 +53,23 @@ object TtsText {
         val withoutFences = FENCE.replace(markdown, "\n")
         val blocks = mutableListOf<String>()
         val current = StringBuilder()
+        var droppingReferenceDefinition = false
         fun flush() {
             if (current.isNotBlank()) blocks += current.toString()
             current.setLength(0)
         }
         for (line in withoutFences.lines()) {
             val trimmed = line.trim()
+            if (droppingReferenceDefinition) {
+                if (isReferenceDefinitionContinuation(line)) continue
+                droppingReferenceDefinition = false
+            }
             when {
                 trimmed.isEmpty() -> flush()
+                isReferenceDefinition(line) -> {
+                    flush()
+                    droppingReferenceDefinition = true
+                }
                 isTableRow(trimmed) || isImageOnly(trimmed) || isRule(trimmed) -> flush()
                 isHeading(trimmed) || isListItem(trimmed) -> {
                     flush()
@@ -81,6 +90,7 @@ object TtsText {
         text = HEADING_MARK.replace(text, "")
         text = QUOTE_MARK.replace(text, "")
         text = LIST_MARK.replace(text, "")
+        text = REFERENCE_LINK.replace(text) { it.groupValues[1] }
         text = MarkdownInline.plain(text)
         text = EMPHASIS.replace(text, "")
         text = WHITESPACE.replace(text, " ").trim()
@@ -97,6 +107,14 @@ object TtsText {
     private fun isImageOnly(line: String): Boolean = IMAGE_ONLY.matches(line)
 
     private fun isRule(line: String): Boolean = RULE.matches(line)
+
+    private fun isReferenceDefinition(line: String): Boolean = REFERENCE_DEFINITION.matches(line)
+
+    private fun isReferenceDefinitionContinuation(line: String): Boolean {
+        val trimmed = line.trim()
+        return line.firstOrNull()?.isWhitespace() == true &&
+            (trimmed.startsWith("\"") || trimmed.startsWith("'") || trimmed.startsWith("("))
+    }
 
     private fun splitOnSpaces(sentence: String, maxLength: Int, out: MutableList<String>) {
         var start = 0
@@ -118,6 +136,8 @@ object TtsText {
     private val HEADING_MARK = Regex("""(?m)^#{1,6}\s+""")
     private val QUOTE_MARK = Regex("""(?m)^>\s?""")
     private val LIST_MARK = Regex("""^\s*(?:[-*+]|\d+[.)])\s+""")
+    private val REFERENCE_LINK = Regex("""\[([^\]\n]+)]\[[^\]\n]*]""")
+    private val REFERENCE_DEFINITION = Regex("""^[ \t]{0,3}\[(?!\^)[^\]\n]+]:[ \t]*.*$""")
     private val EMPHASIS = Regex("""[*_~`]+""")
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")

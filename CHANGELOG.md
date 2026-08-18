@@ -9,6 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Lock-screen TTS playback now shows the current article cover as media artwork when one is available
+- The slim TTS player now stays available at the bottom of the article reader
+
+### Fixed
+
+- TTS skips hidden Markdown reference link definitions instead of reading their URLs at the end of an article
+
 ## [1.4.0] - 2026-08-18
 
 ### Added

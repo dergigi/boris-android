@@ -8,6 +8,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Icon
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -21,14 +23,24 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.ServiceCompat
+import java.io.ByteArrayOutputStream
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.ResponseBody
 import org.dergigi.boris.R
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.data.UrlExtractor
 
 /**
  * mediaPlayback foreground service owning the TextToSpeech engine, MediaSession,
@@ -48,6 +60,10 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     private var lastChunkId: String? = null
     private var previewing = false
     private var foregrounded = false
+    private var artworkUrl: String? = null
+    private var artworkBitmap: Bitmap? = null
+    private var artworkJob: Job? = null
+    private val artworkClient = OkHttpClient()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -71,8 +87,10 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         scope.launch {
             TtsPlayback.session.collect { session ->
                 if (session == null) {
+                    clearArtwork()
                     if (!previewing && TtsPlayback.pendingPreview == null) stopPlaybackAndSelf()
                 } else {
+                    loadArtwork(session)
                     updateMediaSession(session)
                     if (foregrounded) {
                         getSystemService(NotificationManager::class.java)
@@ -107,6 +125,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     override fun onDestroy() {
         if (TtsPlayback.engine === this) TtsPlayback.engine = null
         scope.cancel()
+        artworkJob?.cancel()
         abandonFocus()
         mediaSession?.release()
         mediaSession = null
@@ -353,6 +372,10 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                 .putString(MediaMetadata.METADATA_KEY_TITLE, session.title)
                 .apply {
                     session.author?.let { putString(MediaMetadata.METADATA_KEY_ARTIST, it) }
+                    artworkFor(session)?.let { art ->
+                        putBitmap(MediaMetadata.METADATA_KEY_ART, art)
+                        putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, art)
+                    }
                 }
                 .build(),
         )
@@ -372,6 +395,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
 
     private fun stopPlaybackAndSelf() {
         tts?.stop()
+        clearArtwork()
         abandonFocus()
         mediaSession?.isActive = false
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -396,6 +420,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
             .setContentTitle(session?.title ?: getString(R.string.app_name))
             .setOngoing(session?.playing == true)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
+        session?.let { artworkFor(it) }?.let(builder::setLargeIcon)
         packageManager.getLaunchIntentForPackage(packageName)?.let { launch ->
             builder.setContentIntent(
                 PendingIntent.getActivity(
@@ -441,6 +466,96 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         return builder.build()
     }
 
+    private fun loadArtwork(session: TtsSession) {
+        val url = session.imageUrl?.takeIf { it.isNotBlank() }
+        if (url == artworkUrl) return
+        artworkJob?.cancel()
+        artworkUrl = url
+        artworkBitmap = null
+        if (url == null) return
+        artworkJob = scope.launch {
+            val bitmap = fetchArtwork(url)
+            if (TtsPlayback.session.value?.imageUrl != url) return@launch
+            artworkBitmap = bitmap
+            val current = TtsPlayback.session.value ?: return@launch
+            updateMediaSession(current)
+            if (foregrounded) {
+                getSystemService(NotificationManager::class.java)
+                    .notify(NOTIFICATION_ID, buildNotification(current))
+            }
+        }
+    }
+
+    private suspend fun fetchArtwork(url: String): Bitmap? = withContext(Dispatchers.IO) {
+        val request = Request.Builder().url(UrlExtractor.preferHttps(url)).get().build()
+        val call = artworkClient.newCall(request)
+        val cancelOnJobCancel = currentCoroutineContext()[Job]?.invokeOnCompletion { cause ->
+            if (cause is CancellationException) call.cancel()
+        }
+        try {
+            call.execute().use { response ->
+                if (!response.isSuccessful) {
+                    null
+                } else {
+                    response.body?.let(::readArtworkBytes)?.let(::decodeArtwork)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
+            null
+        } finally {
+            cancelOnJobCancel?.dispose()
+        }
+    }
+
+    private fun readArtworkBytes(body: ResponseBody): ByteArray? {
+        val length = body.contentLength()
+        if (length > MAX_ARTWORK_BYTES) return null
+        val out = ByteArrayOutputStream()
+        var total = 0L
+        body.byteStream().use { input ->
+            val buffer = ByteArray(8 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                total += read
+                if (total > MAX_ARTWORK_BYTES) return null
+                out.write(buffer, 0, read)
+            }
+        }
+        return out.toByteArray()
+    }
+
+    private fun decodeArtwork(bytes: ByteArray): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight)
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    }
+
+    private fun sampleSize(width: Int, height: Int): Int {
+        var size = 1
+        while ((width / size) > MAX_ARTWORK_SIZE || (height / size) > MAX_ARTWORK_SIZE) {
+            size *= 2
+        }
+        return size
+    }
+
+    private fun artworkFor(session: TtsSession): Bitmap? =
+        artworkBitmap?.takeIf { artworkUrl == session.imageUrl }
+
+    private fun clearArtwork() {
+        artworkJob?.cancel()
+        artworkJob = null
+        artworkUrl = null
+        artworkBitmap = null
+    }
+
     private fun action(icon: Int, label: Int, intentAction: String): Notification.Action {
         val intent = Intent(this, TtsPlaybackService::class.java).setAction(intentAction)
         val pending = PendingIntent.getService(
@@ -457,6 +572,8 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         const val SESSION_TAG = "BorisTts"
         const val CHANNEL_ID = "tts_playback"
         const val NOTIFICATION_ID = 41
+        const val MAX_ARTWORK_BYTES = 5L * 1024L * 1024L
+        const val MAX_ARTWORK_SIZE = 512
         const val PREVIEW_ID = "preview"
         const val ACTION_PLAY = "org.dergigi.boris.tts.PLAY"
         const val ACTION_PAUSE = "org.dergigi.boris.tts.PAUSE"
