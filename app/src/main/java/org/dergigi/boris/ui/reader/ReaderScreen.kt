@@ -710,6 +710,7 @@ fun ReaderScreenContent(
                     archived = archived,
                     author = author,
                     settings = settings,
+                    ttsSession = ttsSession,
                     // D-19: while TTS is speaking, volume keys change volume, not scroll.
                     volumeScroll = gallery == null && ttsSession?.playing != true,
                     findOpen = findOpen,
@@ -758,6 +759,7 @@ private fun ArticleBody(
     onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
     onFindOpenChange: (Boolean) -> Unit,
+    ttsSession: TtsSession? = null,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -815,12 +817,18 @@ private fun ArticleBody(
     val findHits = remember(findHaystack, findQuery) {
         ArticleFind.hits(findHaystack, findQuery)
     }
+    // D-12/D-13: transient spoken mark while this article speaks, honoring the
+    // live follow-along checkbox. Appended outside visibleFor (like Find) so it
+    // paints even when showHighlights is off. Never enters the NIP-84 publish path.
+    val spokenSession = ttsSession?.takeIf { it.url == content.url && settings.ttsFollowAlong }
+    val spokenParagraph = spokenSession?.paragraphs?.getOrNull(spokenSession.index)
     val painted = HighlightJump.withFocus(
         highlights.visibleFor(settings),
         focusHighlightId,
         focusQuote,
     ) + listOfNotNull(
         ArticleFind.painted(findQuery),
+        spokenParagraph?.let(ArticleFind::paintedSpoken),
     )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
@@ -896,6 +904,32 @@ private fun ArticleBody(
         pendingJumpId = null
         ReaderFocus.clear()
     }
+    // D-12/D-15 follow-along auto-scroll: bring the spoken paragraph on screen when
+    // the index changes, unless the user paused auto-scroll by scrolling themselves.
+    var followAlongScrolling by remember { mutableStateOf(false) }
+    val followAlongIndex = spokenSession
+        ?.takeIf { it.playing && !it.followAlongPaused }
+        ?.index
+    LaunchedEffect(followAlongIndex, content.url) {
+        if (followAlongIndex == null) return@LaunchedEffect
+        val stop = HighlightJump.awaitStop(navigator, ArticleFind.SPOKEN_ID) {
+            scrollViewport?.isAttached == true
+        } ?: return@LaunchedEffect
+        val coords = navigator.coordinates(stop.owner) ?: return@LaunchedEffect
+        val viewport = scrollViewport ?: return@LaunchedEffect
+        if (!coords.isAttached || !viewport.isAttached) return@LaunchedEffect
+        val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+        val pad = with(density) { 48.dp.toPx() }
+        val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
+        if (target != scrollState.value) {
+            followAlongScrolling = true
+            try {
+                scrollState.animateScrollTo(target)
+            } finally {
+                followAlongScrolling = false
+            }
+        }
+    }
     val appContext = LocalContext.current.applicationContext
     var positionRestored by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
@@ -920,6 +954,19 @@ private fun ArticleBody(
             if (max <= 0) return@collectLatest
             delay(400)
             ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
+        }
+    }
+    // D-15: a user scroll while this article speaks pauses auto-scroll only; speech
+    // continues and the mark stays. Our own animateScrollTo is excluded via the flag.
+    LaunchedEffect(content.url) {
+        snapshotFlow { scrollState.isScrollInProgress }.collect { inProgress ->
+            if (!inProgress || followAlongScrolling || !positionRestored) return@collect
+            val session = TtsPlayback.session.value
+            if (session != null && session.url == content.url &&
+                session.playing && !session.followAlongPaused
+            ) {
+                TtsPlayback.setFollowAlongPaused(true)
+            }
         }
     }
     DisposableEffect(content.url) {

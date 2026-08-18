@@ -18,6 +18,7 @@ import org.dergigi.boris.ui.theme.FindMark
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.SpokenMark
 
 object HighlightMarks {
     const val HighlightMarkAlpha = 0.45f
@@ -73,6 +74,7 @@ fun Modifier.drawHighlightMarks(
     otherColor: Color = HighlightOther,
     underline: Boolean = false,
     findColor: Color = FindMark,
+    spokenColor: Color = SpokenMark,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (spans.isEmpty()) return@drawBehind
@@ -83,11 +85,13 @@ fun Modifier.drawHighlightMarks(
             }
         }
     }
+    // Spoken paragraph (D-12) is a filled teal mark, never underline.
+    paint({ it.spoken }, spokenColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
     // Find matches always use a filled selection-like mark, never underline.
     paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
-    paint({ !it.find && !it.mine && !it.friend }, otherColor, underline)
-    paint({ !it.find && it.friend && !it.mine }, friendsColor, underline)
-    paint({ !it.find && it.mine }, mineColor, underline)
+    paint({ !it.find && !it.spoken && !it.mine && !it.friend }, otherColor, underline)
+    paint({ !it.find && !it.spoken && it.friend && !it.mine }, friendsColor, underline)
+    paint({ !it.find && !it.spoken && it.mine }, mineColor, underline)
 }
 
 fun DrawScope.paintHighlight(

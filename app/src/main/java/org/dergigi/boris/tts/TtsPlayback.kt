@@ -93,7 +93,8 @@ object TtsPlayback {
     fun resume() {
         val current = _session.value ?: return
         if (!current.paused) return
-        _session.value = current.copy(playing = true, paused = false)
+        // D-15: tapping play resumes follow-along auto-scroll after a user scroll.
+        _session.value = current.copy(playing = true, paused = false, followAlongPaused = false)
         engine?.play()
     }
 

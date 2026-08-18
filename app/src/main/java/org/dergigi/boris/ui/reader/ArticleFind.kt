@@ -12,6 +12,7 @@ data class ArticleFindHit(
 
 object ArticleFind {
     const val HIGHLIGHT_ID = "find"
+    const val SPOKEN_ID = "spoken"
 
     fun hits(haystack: String, query: String, contextChars: Int = 42): List<ArticleFindHit> {
         val q = query.trim()
@@ -37,6 +38,21 @@ object ArticleFind {
             mine = false,
             find = true,
             ignoreCase = true,
+        )
+    }
+
+    /**
+     * Transient follow-along mark for the currently spoken paragraph (D-12).
+     * Never published; never enters the NIP-84 sign path.
+     */
+    fun paintedSpoken(paragraph: String): PaintedHighlight? {
+        val p = paragraph.trim()
+        if (p.isEmpty()) return null
+        return PaintedHighlight(
+            id = SPOKEN_ID,
+            quote = p,
+            mine = false,
+            spoken = true,
         )
     }
 

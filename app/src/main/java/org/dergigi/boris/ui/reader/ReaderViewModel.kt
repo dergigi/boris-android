@@ -54,6 +54,7 @@ data class PaintedHighlight(
     val authorPicture: String? = null,
     val find: Boolean = false,
     val ignoreCase: Boolean = false,
+    val spoken: Boolean = false,
 )
 
 class ReaderViewModel(
