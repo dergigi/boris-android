@@ -45,14 +45,17 @@ data class BookmarkShelves(
         BookmarkBucket.Archive -> archive
     }
 
-    /** Time-sorted union of every shelf; duplicates keep the newest copy. */
+    /** Time-sorted union of every shelf; duplicate article targets keep the newest copy. */
     fun merged(): List<BookmarkItem> =
         (private + public + web + look + archive)
-            .groupBy { it.id }
+            .groupBy { it.targetKey() }
             .values
             .map { group -> group.maxBy { it.createdAt } }
             .sortedByDescending { it.createdAt }
 }
+
+private fun BookmarkItem.targetKey(): String =
+    url?.let { "url:${ArticleUrl.normalize(it)}" } ?: id
 
 object BookmarkCatalog {
     fun build(
