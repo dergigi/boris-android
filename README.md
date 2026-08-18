@@ -15,7 +15,7 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
 
 ### Reading
 
-Light mode. Cream background, serif type. Marks in the article. TTS is the bar at the bottom.
+Light mode. An article on cream paper, a mark in the text, Boris reading it aloud.
 
 <p align="center">
   <img src="screenshots/read-1.png" width="180" alt="Reading in light mode" />
@@ -26,7 +26,7 @@ Light mode. Cream background, serif type. Marks in the article. TTS is the bar a
 
 ### Dark
 
-Dark theme. Article with its cover, then a panel of other people's highlights on the same passage. A profile. TTS again.
+Dark mode. Cover on the article, other people's marks on the same passage, a profile, TTS.
 
 <p align="center">
   <img src="screenshots/dark-1.png" width="180" alt="Article in dark mode" />
@@ -37,7 +37,7 @@ Dark theme. Article with its cover, then a panel of other people's highlights on
 
 ### Home
 
-Four of the five tabs: home, library, feeds, search. You is the last one. It's on Zapstore.
+Home, library, feeds, search. You is the fifth tab; I left it off so the row stays four wide.
 
 <p align="center">
   <img src="screenshots/1-home.png" width="180" alt="Home" />
@@ -48,7 +48,7 @@ Four of the five tabs: home, library, feeds, search. You is the last one. It's o
 
 ### Settings
 
-The settings list, highlight colors, airplane mode, About.
+Settings, highlight colors, airplane mode, About.
 
 <p align="center">
   <img src="screenshots/settings-1.png" width="180" alt="Settings" />
