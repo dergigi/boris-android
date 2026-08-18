@@ -265,7 +265,11 @@ private fun ClipboardBanner(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = url.removePrefix("https://").removePrefix("http://"),
+                text = url
+                    .removePrefix("https://")
+                    .removePrefix("http://")
+                    .removePrefix("nostr://")
+                    .removePrefix("nostr:"),
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,

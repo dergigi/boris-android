@@ -51,6 +51,7 @@ object NostrLink {
         hexEventId(trimmed)?.let { id ->
             return NostrTarget.Note(eventId = id, encoded = Nip19.noteEncode(id))
         }
+        profilePath(trimmed)?.let { encoded -> return decode(encoded) }
         return null
     }
 
@@ -114,6 +115,9 @@ object NostrLink {
     private fun hexEventId(raw: String): String? =
         eventPathRegex.find(raw)?.groupValues?.getOrNull(1)?.lowercase()
 
+    private fun profilePath(raw: String): String? =
+        profilePathRegex.find(raw)?.groupValues?.getOrNull(1)?.lowercase()
+
     private val bech32Body = "023456789acdefghjklmnpqrstuvwxyz"
 
     private val entityRegex = Regex(
@@ -123,6 +127,11 @@ object NostrLink {
 
     private val eventPathRegex = Regex(
         """(?:njump\.to|readwithboris\.com)/e/([0-9a-f]{64})""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private val profilePathRegex = Regex(
+        """(?:njump\.to|readwithboris\.com)/(npub1[$bech32Body]+|nprofile1[$bech32Body]+)""",
         RegexOption.IGNORE_CASE,
     )
 }

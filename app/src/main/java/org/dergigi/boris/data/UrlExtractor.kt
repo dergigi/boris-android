@@ -11,13 +11,13 @@ object UrlExtractor {
         if (text.isNullOrBlank()) return null
         val trimmed = text.trim()
         when (val target = NostrLink.parse(trimmed)) {
-            is NostrTarget.Article, is NostrTarget.Note -> return target.uri
-            is NostrTarget.Profile -> return null
+            is NostrTarget.Article, is NostrTarget.Note, is NostrTarget.Profile -> return target.uri
             null -> Unit
         }
         if (looksLikeUrl(trimmed)) return normalize(trimmed)
         val match = urlRegex.find(trimmed)?.value?.trimEnd('.', ',', ';', ')', ']', '"', '\'')
-        return match?.let { normalize(it) }
+        match?.let { return normalize(it) }
+        return bareProfileUri(trimmed)
     }
 
     fun normalize(url: String): String {
@@ -74,7 +74,9 @@ object UrlExtractor {
         return when (val target = NostrLink.parse(absolute)) {
             is NostrTarget.Article, is NostrTarget.Note -> target.uri
             is NostrTarget.Profile -> null
-            null -> extract(absolute.substringBefore('#'))
+            null -> extract(absolute.substringBefore('#')).takeUnless {
+                NostrLink.parse(it) is NostrTarget.Profile
+            }
         }
     }
 
@@ -128,6 +130,13 @@ object UrlExtractor {
         return hits.sortedBy { it.first }
             .mapNotNull { articleUrl(it.second, baseUrl)?.let(::preferHttps) }
             .distinct()
+    }
+
+    private fun bareProfileUri(text: String): String? {
+        if (text.any { it.isWhitespace() }) return null
+        val token = text.lowercase()
+        if (!token.startsWith("npub1") && !token.startsWith("nprofile1")) return null
+        return (NostrLink.parse("nostr:$token") as? NostrTarget.Profile)?.uri
     }
 
     private fun replaceUrlInMatch(whole: String, url: String): String {

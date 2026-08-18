@@ -23,26 +23,29 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
+import org.dergigi.boris.nostr.HintedRelays
+import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
-import org.dergigi.boris.ui.support.SupportScreen
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
 import org.dergigi.boris.ui.home.HomeViewModel
 import org.dergigi.boris.ui.library.LibraryScreen
-import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.reader.ReaderFocus
 import org.dergigi.boris.ui.reader.ReaderScreen
 import org.dergigi.boris.ui.reader.ReaderViewModel
 import org.dergigi.boris.ui.search.SearchScreen
 import org.dergigi.boris.ui.settings.SettingsCategory
 import org.dergigi.boris.ui.settings.SettingsScreen
-import org.dergigi.boris.ui.you.ProfileScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
+import org.dergigi.boris.ui.support.SupportScreen
+import org.dergigi.boris.ui.you.ProfileScreen
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -70,6 +73,15 @@ object Routes {
     }
 
     fun profile(npub: String): String = "profile/$npub"
+
+    fun open(url: String): String =
+        when (val target = NostrLink.parse(url)) {
+            is NostrTarget.Profile -> {
+                HintedRelays.remember(target.pubkeyHex, target.relays)
+                profile(Nip19.npubEncode(target.pubkeyHex))
+            }
+            else -> reader(url)
+        }
 
     fun settings(category: SettingsCategory? = null): String =
         if (category == null) "settings" else "settings?category=${category.name}"
@@ -103,6 +115,12 @@ fun BorisApp(
         }
     }
 
+    fun openUrl(url: String, singleTop: Boolean = false) {
+        navController.navigate(Routes.open(url)) {
+            if (singleTop) launchSingleTop = true
+        }
+    }
+
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
             popUpTo(navController.graph.findStartDestination().id) {
@@ -115,9 +133,7 @@ fun BorisApp(
 
     LaunchedEffect(incomingUrl) {
         if (!incomingUrl.isNullOrBlank() && !incomingUrl.trim().startsWith("bunker:", ignoreCase = true)) {
-            navController.navigate(Routes.reader(incomingUrl)) {
-                launchSingleTop = true
-            }
+            openUrl(incomingUrl, singleTop = true)
             onIncomingUrlConsumed()
         }
     }
@@ -158,7 +174,7 @@ fun BorisApp(
             ) {
                 composable(Routes.HOME) {
                     HomeScreen(
-                        onRead = { url -> navController.navigate(Routes.reader(url)) },
+                        onRead = { url -> openUrl(url) },
                         onOpenAbout = {
                             navController.navigate(Routes.ABOUT) {
                                 launchSingleTop = true

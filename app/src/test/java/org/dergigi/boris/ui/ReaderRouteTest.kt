@@ -49,6 +49,16 @@ class ReaderRouteTest {
         assertEquals(url, navUrlArg(route))
     }
 
+    @Test
+    fun openSendsProfilesToTheProfileRoute() {
+        val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+        assertEquals("profile/$npub", Routes.open("nostr:$npub"))
+        assertEquals(
+            Routes.reader("https://example.com/article"),
+            Routes.open("https://example.com/article"),
+        )
+    }
+
     private fun assertRoundTrip(url: String) {
         assertEquals(url, navUrlArg(Routes.reader(url)))
     }

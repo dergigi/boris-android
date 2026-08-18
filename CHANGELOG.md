@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Pull requests run Android Lint and JVM unit tests
+- Pasting or sharing an `npub` / `nprofile` opens that profile instead of the reader
 
 ## [1.4.4] - 2026-08-18
 
