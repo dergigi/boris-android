@@ -197,26 +197,29 @@ private fun FeaturePage(feature: AboutFeature) {
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(Modifier.height(12.dp))
-        feature.paragraphs.forEach { paragraph ->
-            if (paragraph == R.string.about_free_2_before) {
-                FreeAsInBeerParagraph(modifier = Modifier.padding(bottom = 10.dp))
-            } else {
-                Text(
-                    text = stringResource(paragraph),
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 10.dp),
-                )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            feature.paragraphs.forEach { paragraph ->
+                if (paragraph == R.string.about_free_2_before) {
+                    FreeAsInBeerParagraph()
+                } else {
+                    Text(
+                        text = stringResource(paragraph),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = FontFamily.SansSerif,
+                            textAlign = TextAlign.Center,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun FreeAsInBeerParagraph(modifier: Modifier = Modifier) {
+private fun FreeAsInBeerParagraph() {
     val uriHandler = LocalUriHandler.current
     val linkStyle = TextLinkStyles(
         style = SpanStyle(
@@ -241,7 +244,6 @@ private fun FreeAsInBeerParagraph(modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier,
     )
 }
 
