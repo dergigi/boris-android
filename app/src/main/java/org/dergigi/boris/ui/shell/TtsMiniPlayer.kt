@@ -51,20 +51,21 @@ import org.dergigi.boris.tts.TtsSpeed
 import org.dergigi.boris.ui.settings.SettingsViewModel
 
 /**
- * Shows the slim mini player (D-17) while an article session is active and the
- * user is not on that article. Previews keep the session null, and only a
- * non-blank article url composes the bar, so Settings preview never shows it.
+ * Shows the slim mini player (D-17) while an article session is active. Previews
+ * keep the session null, and only a non-blank article url composes the bar, so
+ * Settings preview never shows it.
  */
 @Composable
 fun TtsMiniPlayerHost(
     currentArticleUrl: String?,
     onOpenArticle: (String) -> Unit,
     modifier: Modifier = Modifier,
+    showCurrentArticle: Boolean = false,
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val session by TtsPlayback.session.collectAsStateWithLifecycle()
     val active = session?.takeIf {
-        it.url.isNotBlank() && !isSameArticle(it.url, currentArticleUrl)
+        it.url.isNotBlank() && (showCurrentArticle || !isSameArticle(it.url, currentArticleUrl))
     }
     // Keep the last session around so the 200ms fade-out still has content.
     var shown by remember { mutableStateOf(active) }
