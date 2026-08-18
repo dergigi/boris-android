@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
 status: verifying
-stopped_at: Phase 5 context gathered
+stopped_at: Phase 5 research complete, ready to plan
 last_updated: "2026-08-18T15:31:21.671Z"
 last_activity: 2026-08-18
-last_activity_desc: Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
+last_activity_desc: Phase 5 research written (nprofile decode, mention rewrite, hint store)
 progress:
   total_phases: 5
   completed_phases: 4
@@ -119,5 +119,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-18T15:31:21.662Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-resolve-nostr-profile-references/05-CONTEXT.md
+Stopped at: Phase 5 research complete, ready to plan
+Resume file: .planning/phases/05-resolve-nostr-profile-references/05-RESEARCH.md
