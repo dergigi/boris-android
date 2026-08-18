@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-08-18
+
+### Added
+
+- Prefixed `nostr:nprofile` and `nostr:npub` mentions in articles render as tappable `@name` profile links
+- Relay hints on `nprofile` are remembered and used when fetching that profile later
+
 ## [1.4.2] - 2026-08-18
 
 ### Changed
