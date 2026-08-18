@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-08-18
+
 ### Changed
 
 - Reader highlight pane lists highlights in article order (first on the page at the top)
