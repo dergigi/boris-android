@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Settings About Vision opens the nostr-native Purple Text, Orange Highlights article
+- You tab orange heart sits in the top-left corner
 
 ## [1.4.8] - 2026-08-18
 

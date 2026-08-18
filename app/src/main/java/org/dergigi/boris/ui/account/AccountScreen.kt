@@ -119,7 +119,7 @@ fun AccountScreen(
         topBar = {
             TopAppBar(
                 title = {},
-                actions = {
+                navigationIcon = {
                     IconButton(onClick = onOpenSupport) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
@@ -127,6 +127,8 @@ fun AccountScreen(
                             tint = HighlightFriends,
                         )
                     }
+                },
+                actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
