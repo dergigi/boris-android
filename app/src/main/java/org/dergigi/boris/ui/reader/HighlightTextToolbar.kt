@@ -30,6 +30,7 @@ fun HighlightTextToolbar(
     showHighlight: Boolean,
     onCopy: () -> Unit,
     onHighlight: () -> Unit,
+    onTtsFromHere: () -> Unit,
     onSelectAll: () -> Unit,
 ) {
     if (!selection.toolbarReady) return
@@ -61,6 +62,10 @@ fun HighlightTextToolbar(
                         onClick = onHighlight,
                     )
                 }
+                ToolbarAction(
+                    label = stringResource(R.string.tts_from_here),
+                    onClick = onTtsFromHere,
+                )
                 ToolbarAction(
                     label = stringResource(android.R.string.selectAll),
                     onClick = onSelectAll,

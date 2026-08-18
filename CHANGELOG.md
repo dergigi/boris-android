@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Pull requests run Android Lint and JVM unit tests
+- Reader text selection can start TTS from the selected position
 
 ## [1.4.4] - 2026-08-18
 

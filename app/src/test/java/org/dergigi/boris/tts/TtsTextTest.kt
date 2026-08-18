@@ -127,6 +127,41 @@ class TtsTextTest {
     }
 
     @Test
+    fun startIndexForSelectionFindsBodyParagraph() {
+        val content = ReadableContent(
+            url = "https://example.com/selection",
+            title = "Title",
+            summary = "Summary",
+            markdown = "First paragraph.\n\nSecond paragraph with the chosen words.\n\nThird paragraph.",
+        )
+        assertEquals(
+            3,
+            TtsText.startIndexForSelection(
+                content,
+                ownerText = "Second paragraph with the chosen words.",
+                selectedText = "chosen words",
+            ),
+        )
+    }
+
+    @Test
+    fun startIndexForSelectionFindsTitle() {
+        val content = ReadableContent(
+            url = "https://example.com/title",
+            title = "A Selected Title",
+            markdown = "Body paragraph.",
+        )
+        assertEquals(
+            0,
+            TtsText.startIndexForSelection(
+                content,
+                ownerText = "A Selected Title",
+                selectedText = "Selected",
+            ),
+        )
+    }
+
+    @Test
     fun chunksSplitLongTextOnSentencesThenSpaces() {
         val sentence = "This is a sentence. " // 20 chars
         val long = sentence.repeat(10).trim()

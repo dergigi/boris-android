@@ -24,6 +24,27 @@ object TtsText {
         return (fraction * count).toInt().coerceIn(0, count - 1)
     }
 
+    fun startIndexForSelection(
+        content: ReadableContent,
+        ownerText: String,
+        selectedText: String,
+    ): Int {
+        val paragraphs = paragraphs(content)
+        if (paragraphs.isEmpty()) return 0
+        val owner = clean(ownerText)?.matchKey().orEmpty()
+        val selected = clean(selectedText)?.matchKey().orEmpty()
+        val ownerIndex = owner
+            .takeIf { it.isNotBlank() }
+            ?.let { key -> paragraphs.indexOfFirst { it.matchKey().contains(key) } }
+            ?: -1
+        if (ownerIndex >= 0) return ownerIndex
+        val selectedIndex = selected
+            .takeIf { it.isNotBlank() }
+            ?.let { key -> paragraphs.indexOfFirst { it.matchKey().contains(key) } }
+            ?: -1
+        return selectedIndex.coerceAtLeast(0)
+    }
+
     /**
      * Splits one logical paragraph into speakable sub-chunks that fit the engine's
      * input limit. Splits on sentence punctuation first, then on spaces.
@@ -87,6 +108,11 @@ object TtsText {
     }
 
     private fun addCleaned(out: MutableList<String>, raw: String) {
+        val text = clean(raw) ?: return
+        out += text
+    }
+
+    private fun clean(raw: String): String? {
         var text = raw
         text = HEADING_MARK.replace(text, "")
         text = QUOTE_MARK.replace(text, "")
@@ -95,8 +121,11 @@ object TtsText {
         text = MarkdownInline.plain(text)
         text = EMPHASIS.replace(text, "")
         text = WHITESPACE.replace(text, " ").trim()
-        if (text.isNotEmpty()) out += text
+        return text.takeIf { it.isNotEmpty() }
     }
+
+    private fun String.matchKey(): String =
+        WHITESPACE.replace(this, " ").trim().lowercase()
 
     private fun isHeading(line: String): Boolean = line.startsWith("#")
 

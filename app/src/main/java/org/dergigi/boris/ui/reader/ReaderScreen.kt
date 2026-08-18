@@ -886,6 +886,10 @@ private fun ArticleBody(
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
     val openLinksInReader = settings.openLinksInReader
+    val ttsContext = LocalContext.current
+    val ttsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
     val uriHandler = remember(content.url, onOpenArticle, onOpenProfile, defaultUriHandler, openLinksInReader) {
         object : UriHandler {
             override fun openUri(uri: String) {
@@ -971,6 +975,29 @@ private fun ArticleBody(
     val clipboard = LocalClipboardManager.current
     val density = LocalDensity.current
     val selection = remember { ReaderSelectionState() }
+    fun startTtsFromSelection() {
+        val selected = selection.selectedText
+        val ownerText = selection.text
+        val paragraphs = TtsText.paragraphs(content)
+        if (selected.isBlank() || paragraphs.isEmpty()) return
+        selection.clear()
+        requestNotificationPermissionOnce(ttsContext) {
+            ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        val authorName = content.authorPubkey?.trim()
+            ?.takeIf { it.length == 64 }
+            ?.let { Profile.displayName(it, author) }
+        TtsPlayback.start(
+            context = ttsContext,
+            content = content,
+            startIndex = TtsText.startIndexForSelection(
+                content = content,
+                ownerText = ownerText,
+                selectedText = selected,
+            ),
+            author = authorName,
+        )
+    }
     val navigator = remember { HighlightNavigator() }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
@@ -1405,6 +1432,7 @@ private fun ArticleBody(
                 selection.clear()
                 onHighlight(quote)
             },
+            onTtsFromHere = ::startTtsFromSelection,
             onSelectAll = {
                 val owner = selection.owner ?: return@HighlightTextToolbar
                 selection.selectAll(owner, selection.text)
