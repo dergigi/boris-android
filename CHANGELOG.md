@@ -17,6 +17,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Fixed
 
+- Reader shows cached title and cover immediately while the article body loads
 - Reader TTS bottom chrome no longer leaves article text visible through the navigation bar inset
 
 ## [1.4.3] - 2026-08-18

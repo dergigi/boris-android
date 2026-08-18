@@ -501,7 +501,7 @@ fun ReaderScreenContent(
     val articleUrl = when (state) {
         is ReaderUiState.Ready -> state.content.url
         is ReaderUiState.Error -> state.url
-        ReaderUiState.Loading -> null
+        is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
     }
     val ttsSession by TtsPlayback.session.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -601,6 +601,7 @@ fun ReaderScreenContent(
                 scrollBehavior = if (settings.hideTopBarOnScroll) topBarScroll else null,
                 title = {
                     val title = (state as? ReaderUiState.Ready)?.content?.title
+                        ?: (state as? ReaderUiState.Loading)?.title
                     Text(
                         text = title.orEmpty(),
                         maxLines = 1,
@@ -736,12 +737,47 @@ fun ReaderScreenContent(
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         when (state) {
-            ReaderUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
+            is ReaderUiState.Loading -> {
+                val hasPreview = !state.title.isNullOrBlank() || !state.imageUrl.isNullOrBlank()
+                if (!hasPreview) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(innerPadding),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        val coverUrl = state.imageUrl?.takeIf { it.isNotBlank() }
+                        if (coverUrl != null) {
+                            ArticleHero(
+                                imageUrl = coverUrl,
+                                title = state.title,
+                                summary = null,
+                                onClick = {},
+                            )
+                        } else if (!state.title.isNullOrBlank()) {
+                            Text(
+                                text = state.title,
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier
+                                    .widthIn(max = 720.dp)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 8.dp, bottom = 12.dp),
+                            )
+                        }
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(top = 32.dp, bottom = 48.dp),
+                        )
+                    }
                 }
             }
             is ReaderUiState.Error -> {

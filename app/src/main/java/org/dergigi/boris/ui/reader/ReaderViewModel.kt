@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReaderRepository
@@ -68,7 +69,7 @@ class ReaderViewModel(
     val focusHighlightId: String =
         savedStateHandle.get<String>(HIGHLIGHT_ARG).orEmpty().trim().lowercase()
 
-    private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
+    private val _state = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading())
     val state: StateFlow<ReaderUiState> = _state.asStateFlow()
 
     private val _gallery = MutableStateFlow<ImageGalleryState?>(null)
@@ -170,7 +171,7 @@ class ReaderViewModel(
         authorJob?.cancel()
         rssFeedJob?.cancel()
         loadJob = viewModelScope.launch {
-            _state.value = ReaderUiState.Loading
+            _state.value = readerLoadingState(url)
             _highlights.value = emptyList()
             _highlightCount.value = 0
             _highlightsLoaded.value = false
@@ -1075,9 +1076,22 @@ class ReaderViewModel(
 }
 
 sealed interface ReaderUiState {
-    data object Loading : ReaderUiState
+    data class Loading(
+        val url: String = "",
+        val title: String? = null,
+        val imageUrl: String? = null,
+    ) : ReaderUiState
     data class Ready(val content: ReadableContent) : ReaderUiState
     data class Error(val message: String, val url: String) : ReaderUiState
+}
+
+internal fun readerLoadingState(url: String): ReaderUiState.Loading {
+    val preview = ArticlePreview.get(url)
+    return ReaderUiState.Loading(
+        url = url,
+        title = preview?.title?.trim()?.takeIf { it.isNotEmpty() },
+        imageUrl = preview?.imageUrl?.trim()?.takeIf { it.isNotEmpty() },
+    )
 }
 
 private sealed class PendingLibrary {
