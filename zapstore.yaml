@@ -27,6 +27,7 @@ images:
   - ./screenshots/about-social.png
   - ./screenshots/home.png
   - ./screenshots/reader-cover.png
+  - ./screenshots/reader-highlight.png
   - ./screenshots/feeds.png
   - ./screenshots/you.png
   - ./screenshots/search.png
