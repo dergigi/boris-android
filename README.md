@@ -22,6 +22,7 @@ Light mode. Serif article view, marks in the text, TTS at the bottom.
 <p align="center">
   <img src="screenshots/reader-light.png" width="180" alt="Reading in light mode" />
   <img src="screenshots/reader-highlight.png" width="180" alt="Highlighted passage" />
+  <img src="screenshots/reader-orange.png" width="180" alt="Orange highlight in light mode" />
   <img src="screenshots/reader-tts.png" width="180" alt="Listening with on-device TTS" />
 </p>
 
