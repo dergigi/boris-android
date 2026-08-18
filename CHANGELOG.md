@@ -15,6 +15,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Zapstore gallery starts with Hello I'm Boris, then Read anywhere, Distraction-free, Airplane mode, and Social highlights
 - README uses Get it on Zap Store and Get it on GitHub badges
 
+### Fixed
+
+- Profile metadata escapes render as text instead of literal JSON sequences
+
 ## [1.4.7] - 2026-08-18
 
 ### Added
