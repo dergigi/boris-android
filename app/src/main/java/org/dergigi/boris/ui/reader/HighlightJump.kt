@@ -62,6 +62,32 @@ object HighlightJump {
         return (scrollValue + yInViewport - paddingPx).roundToInt().coerceIn(0, scrollMax.coerceAtLeast(0))
     }
 
+    /**
+     * Reading order: first occurrence in [texts] (title, then body) on top.
+     * Quotes that never match the article stay at the bottom.
+     */
+    fun inDocumentOrder(
+        highlights: List<PaintedHighlight>,
+        texts: List<String>,
+    ): List<PaintedHighlight> {
+        if (highlights.size <= 1) return highlights
+        val rank = HashMap<String, Int>(highlights.size)
+        var offset = 0
+        for (text in texts) {
+            if (text.isNotEmpty()) {
+                for (span in matchHighlightSpans(text, highlights)) {
+                    rank.putIfAbsent(span.item.id, offset + span.start)
+                }
+                offset += text.length + 1
+            }
+        }
+        if (rank.isEmpty()) return highlights
+        return highlights.sortedWith(
+            compareBy<PaintedHighlight> { rank[it.id] ?: Int.MAX_VALUE }
+                .thenBy { it.createdAt },
+        )
+    }
+
     fun withFocus(
         highlights: List<PaintedHighlight>,
         highlightId: String?,

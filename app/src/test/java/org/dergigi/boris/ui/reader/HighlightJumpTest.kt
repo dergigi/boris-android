@@ -56,6 +56,29 @@ class HighlightJumpTest {
     }
 
     @Test
+    fun inDocumentOrderFollowsFirstOccurrence() {
+        val late = PaintedHighlight("late", "end quote", mine = true, createdAt = 1)
+        val early = PaintedHighlight("early", "start quote", mine = false, createdAt = 9)
+        val missing = PaintedHighlight("ghost", "not in the article", mine = true, createdAt = 5)
+        val ordered = HighlightJump.inDocumentOrder(
+            listOf(late, missing, early),
+            listOf("Title with start quote", "Body then end quote."),
+        )
+        assertEquals(listOf("early", "late", "ghost"), ordered.map { it.id })
+    }
+
+    @Test
+    fun inDocumentOrderKeepsSingleOrUnmatchedLists() {
+        val only = listOf(PaintedHighlight("a", "x", mine = true))
+        assertEquals(only, HighlightJump.inDocumentOrder(only, listOf("hello")))
+        val none = listOf(
+            PaintedHighlight("a", "zzz", mine = true),
+            PaintedHighlight("b", "yyy", mine = false),
+        )
+        assertEquals(none, HighlightJump.inDocumentOrder(none, listOf("hello")))
+    }
+
+    @Test
     fun withFocusAddsAMissingHighlightFromTheQuote() {
         val existing = listOf(PaintedHighlight("aa", "kept", mine = true))
         val next = HighlightJump.withFocus(existing, "BB", "seeded")

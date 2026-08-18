@@ -1105,6 +1105,10 @@ private fun ArticleBody(
                 SettingsSync.apply(settings.withBoolean("showHighlights", !settings.showHighlights))
             },
             articleUrl = content.url,
+            articleTexts = listOfNotNull(
+                content.title?.takeIf { it.isNotBlank() },
+                content.body,
+            ),
             menuFor = { item ->
                 HighlightCardMenu(
                     highlightId = item.id,

@@ -93,10 +93,14 @@ fun HighlightsPane(
     onOpenHighlightSettings: () -> Unit = {},
     onToggleMarks: () -> Unit,
     articleUrl: String? = null,
+    articleTexts: List<String> = emptyList(),
     menuFor: (PaintedHighlight) -> HighlightCardMenu,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
-    val visible = remember(highlights, filter) { highlights.filter(filter::shows) }
+    val ordered = remember(highlights, articleTexts) {
+        HighlightJump.inDocumentOrder(highlights, articleTexts)
+    }
+    val visible = remember(ordered, filter) { ordered.filter(filter::shows) }
     LaunchedEffect(open, highlights) {
         if (!open || highlights.isEmpty() || highlights.any(filter::shows)) return@LaunchedEffect
         filter = highlightFilter(settings, highlights)
