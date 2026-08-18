@@ -29,5 +29,6 @@ class AboutPagesTest {
             AboutLinks.FEATURE_REQUEST,
         )
         assertTrue(ABOUT_FEATURES.isNotEmpty())
+        assertTrue(AboutLinks.VISION.startsWith("nostr:naddr1"))
     }
 }

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Settings About Vision opens the nostr-native Purple Text, Orange Highlights article
+
 ## [1.4.8] - 2026-08-18
 
 ### Added

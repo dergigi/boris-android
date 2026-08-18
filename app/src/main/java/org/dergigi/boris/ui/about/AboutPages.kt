@@ -23,7 +23,8 @@ object AboutLinks {
     const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"
     const val FEATURE_REQUEST = "$GITHUB/issues/new?template=feature_request.yml"
     const val VALUE = "https://dergigi.com/value/"
-    const val VISION = "https://dergigi.com/2023/04/04/purple-text-orange-highlights/"
+    const val VISION =
+        "nostr:naddr1qqxnzd3cxqmrzv3exgmr2wfeqy08wumn8ghj7mn0wd68yttsw43zuam9d3kx7unyv4ezumn9wshszyrhwden5te0dehhxarj9ekk7mf0qy88wumn8ghj7mn0wvhxcmmv9uq3zamnwvaz7tmwdaehgu3wwa5kuef0qy2hwumn8ghj7un9d3shjtnwdaehgu3wvfnj7q3qdergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsxpqqqp65wy2vhhv"
     const val AUTHOR_NAME = "Gigi"
     const val AUTHOR_SITE = "https://dergigi.com"
     const val AUTHOR_NPUB =
