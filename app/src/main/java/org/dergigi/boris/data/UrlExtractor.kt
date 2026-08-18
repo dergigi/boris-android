@@ -81,17 +81,24 @@ object UrlExtractor {
     }
 
     fun isImageUrl(url: String): Boolean {
-        val path = try {
-            java.net.URI(url.trim()).path.orEmpty()
+        val trimmed = url.trim()
+        val uri = try {
+            java.net.URI(trimmed)
         } catch (_: Exception) {
-            url.substringBefore('?').substringBefore('#')
+            null
+        }
+        val path = uri?.path.orEmpty().ifEmpty {
+            trimmed.substringBefore('?').substringBefore('#')
         }
         val ext = path.substringAfterLast('/').substringAfterLast('.', "").lowercase()
-        return ext in imageExtensions
+        if (ext in imageExtensions) return true
+        val host = uri?.host?.lowercase() ?: return false
+        return host in imageHosts
     }
 
     fun embedImageLinks(markdown: String): String {
-        val prepared = upgradeImageHttpUrls(markdown)
+        val (protected, restore) = protectCode(markdown)
+        val prepared = upgradeImageHttpUrls(protected)
         val linked = markdownLinkRegex.replace(prepared) { match ->
             val url = match.groupValues[2]
             if (isImageUrl(url)) {
@@ -100,12 +107,13 @@ object UrlExtractor {
                 match.value
             }
         }
-        return urlRegex.replace(linked) { match ->
+        val embedded = urlRegex.replace(linked) { match ->
             if (alreadyLinked(linked, match.range.first)) return@replace match.value
             val raw = match.value.trimEnd('.', ',', ';', ')', ']', '"', '\'')
             val suffix = match.value.removePrefix(raw)
             if (isImageUrl(raw)) "![](${preferHttps(raw)})$suffix" else match.value
         }
+        return restore(embedded)
     }
 
     /** Rewrite http:// image srcs in markdown/HTML so Coil can fetch them. */
@@ -159,7 +167,31 @@ object UrlExtractor {
         """<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']""",
         RegexOption.IGNORE_CASE,
     )
+    private fun protectCode(text: String): Pair<String, (String) -> String> {
+        val slots = mutableListOf<String>()
+        fun stash(match: MatchResult): String {
+            slots += match.value
+            return "\u0000${slots.lastIndex}\u0000"
+        }
+        val fenced = codeFenceRegex.replace(text, ::stash)
+        val protected = inlineCodeRegex.replace(fenced, ::stash)
+        return protected to { restored ->
+            var next = restored
+            slots.indices.reversed().forEach { i ->
+                next = next.replace("\u0000$i\u0000", slots[i])
+            }
+            next
+        }
+    }
+
     private val imageExtensions = setOf("jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "avif", "ico")
+    private val imageHosts = setOf(
+        "image.nostr.build",
+        "media.nostr.build",
+        "i.nostr.build",
+    )
+    private val codeFenceRegex = Regex("""(?s)(?:```|~~~)[^\n]*\n.*?(?:```|~~~)""")
+    private val inlineCodeRegex = Regex("""`+[^`]+`+""")
 
     private val nonHttpSchemes = setOf("mailto", "tel", "javascript", "sms", "geo", "blob", "data")
 }

@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Reader loading title decodes HTML entities such as apostrophes
 - Article images stay in flow and no longer cover the text above them
+- Bare image URLs in long-form articles, such as image.nostr.build links, render as pictures
 
 ### Changed
 

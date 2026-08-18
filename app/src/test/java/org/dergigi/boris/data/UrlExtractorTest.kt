@@ -133,6 +133,8 @@ class UrlExtractorTest {
     fun detectsImageUrlsByExtension() {
         assertEquals(true, UrlExtractor.isImageUrl("https://cdn.example.com/photo.JPG?w=800"))
         assertEquals(true, UrlExtractor.isImageUrl("https://cdn.example.com/a.webp"))
+        assertEquals(true, UrlExtractor.isImageUrl("https://image.nostr.build/abc.jpg"))
+        assertEquals(true, UrlExtractor.isImageUrl("https://image.nostr.build/abc.gif"))
         assertEquals(false, UrlExtractor.isImageUrl("https://example.com/article"))
         assertEquals(false, UrlExtractor.isImageUrl("https://example.com/file.pdf"))
     }
@@ -151,6 +153,37 @@ class UrlExtractorTest {
         assertEquals(true, out.contains("![caption](https://cdn.example.com/c.webp)"))
         assertEquals(true, out.contains("see https://example.com/post"))
         assertEquals(false, out.contains("![](https://example.com/post)"))
+    }
+
+    @Test
+    fun embedImageLinksTurnsBareNostrBuildUrlsIntoImages() {
+        val src = """
+            intro
+
+            https://image.nostr.build/3109eed06d708cfad1ec0c8f4a823b8d6c58b73d3a7f73a94cdcafe22554656f.jpg
+
+            outro
+        """.trimIndent()
+        val out = UrlExtractor.embedImageLinks(src)
+        assertEquals(
+            true,
+            out.contains("![](https://image.nostr.build/3109eed06d708cfad1ec0c8f4a823b8d6c58b73d3a7f73a94cdcafe22554656f.jpg)"),
+        )
+        assertEquals(false, out.contains("\nhttps://image.nostr.build/"))
+    }
+
+    @Test
+    fun embedImageLinksLeavesImageUrlsInsideCodeFences() {
+        val src = """
+            ```
+            https://image.nostr.build/abc.jpg
+            ```
+            `https://cdn.example.com/a.jpg`
+        """.trimIndent()
+        val out = UrlExtractor.embedImageLinks(src)
+        assertEquals(true, out.contains("```\nhttps://image.nostr.build/abc.jpg\n```"))
+        assertEquals(true, out.contains("`https://cdn.example.com/a.jpg`"))
+        assertEquals(false, out.contains("![]("))
     }
 
     @Test

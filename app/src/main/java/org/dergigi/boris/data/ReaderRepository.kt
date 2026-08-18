@@ -36,9 +36,10 @@ class ReaderRepository(
                 }
             }
         }
-        ArticlePreview.remember(content)
+        val ready = content.copy(markdown = content.markdown?.let(UrlExtractor::embedImageLinks))
+        ArticlePreview.remember(ready)
         OfflineStore.markDownloaded(url)
-        return content
+        return ready
     }
 
     private fun execute(request: Request): String =
