@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - README and Zapstore listing include app screenshots
+- Zapstore gallery starts with Hello I'm Boris, then Read anywhere, Distraction-free, Airplane mode, and Social highlights
 
 ## [1.4.7] - 2026-08-18
 
