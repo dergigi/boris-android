@@ -104,6 +104,11 @@ object TtsPlayback {
             } else {
                 TtsSpeed.snap(settings.ttsDefaultSpeed)
             },
+            followAlongPaused = if (restartingCurrentArticle) {
+                current?.followAlongPaused ?: false
+            } else {
+                false
+            },
         )
         engine?.play() ?: startService(context)
     }
