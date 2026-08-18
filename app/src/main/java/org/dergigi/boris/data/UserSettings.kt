@@ -107,6 +107,12 @@ class UserSettings internal constructor(
 
     fun visibleNostrverse(): Boolean = showHighlights && defaultHighlightVisibilityNostrverse
 
+    fun withOwnHighlightsVisible(): UserSettings {
+        if (showHighlights && defaultHighlightVisibilityMine) return this
+        return withBoolean("showHighlights", true)
+            .withBoolean("defaultHighlightVisibilityMine", true)
+    }
+
     private fun overlay(key: String, value: JsonValue): UserSettings {
         val next = LinkedHashMap(values)
         next[key] = value

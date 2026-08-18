@@ -90,6 +90,19 @@ class UserSettingsTest {
     }
 
     @Test
+    fun ownHighlightsVisibleEnablesGlobalAndMineOnly() {
+        val settings = UserSettings.parse(
+            """{"showHighlights":false,"defaultHighlightVisibilityMine":false,"defaultHighlightVisibilityFriends":false,"defaultHighlightVisibilityNostrverse":false}""",
+        )
+        val updated = settings.withOwnHighlightsVisible()
+        assertTrue(updated.showHighlights)
+        assertTrue(updated.defaultHighlightVisibilityMine)
+        assertFalse(updated.defaultHighlightVisibilityFriends)
+        assertFalse(updated.defaultHighlightVisibilityNostrverse)
+        assertTrue(updated.visibleMine())
+    }
+
+    @Test
     fun themeKeysMatchWebappDefaultsAndIds() {
         val loaded = UserSettings.parse(
             """{"theme":"dark","darkColorTheme":"black","lightColorTheme":"ivory"}""",
