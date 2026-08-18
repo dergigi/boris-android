@@ -163,7 +163,10 @@ import org.dergigi.boris.tts.TtsSession
 import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
+import org.dergigi.boris.ui.copyArticleLink
 import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.openOriginalArticle
+import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.settings.SettingsViewModel
@@ -549,9 +552,7 @@ fun ReaderScreenContent(
 
     fun openOriginal() {
         val url = articleUrl ?: return
-        val target = NostrLink.parse(url)?.publicUrl ?: url
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target))
-        context.startActivity(intent)
+        openOriginalArticle(context, url)
     }
 
     fun openNative() {
@@ -562,23 +563,13 @@ fun ReaderScreenContent(
 
     fun shareArticle() {
         val url = articleUrl ?: return
-        val shareUrl = NostrLink.parse(url)?.publicUrl ?: url
         val title = (state as? ReaderUiState.Ready)?.content?.title
-        val text = if (title.isNullOrBlank()) shareUrl else "$title\n$shareUrl"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-            if (!title.isNullOrBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
-        }
-        context.startActivity(
-            Intent.createChooser(intent, context.getString(R.string.reader_share_article)),
-        )
+        shareArticleLink(context, title, url)
     }
 
     fun copyLink() {
         val url = articleUrl ?: return
-        clipboard.setText(AnnotatedString(NostrLink.copyText(url)))
-        Toast.makeText(context, context.getString(R.string.reader_copied), Toast.LENGTH_SHORT).show()
+        copyArticleLink(context, clipboard, url)
     }
 
     val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()

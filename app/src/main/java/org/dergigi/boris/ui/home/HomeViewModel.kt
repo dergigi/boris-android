@@ -187,6 +187,10 @@ class HomeViewModel(
     fun markAsRead(article: HighlightedArticle): Intent? {
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return null
+        if (pendingArchive != null) {
+            _message.value = app.getString(R.string.reader_archive_failed)
+            return null
+        }
         val content = article.archiveContent()
         val createdAt = System.currentTimeMillis() / 1000
         val kind = Archive.kind(content)
@@ -220,6 +224,7 @@ class HomeViewModel(
                     failArchive(app.getString(R.string.reader_archive_failed))
                     return null
                 }
+                pendingArchive = PendingArchive(url = article.url)
                 viewModelScope.launch { signArchiveWithBunker(session, unsigned, article.url) }
                 null
             }
@@ -230,7 +235,6 @@ class HomeViewModel(
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return
         val pending = pendingArchive ?: return
-        pendingArchive = null
         when (
             val result = SignerResults.parseSignedEvent(
                 resultCode,
@@ -396,7 +400,7 @@ class HomeViewModel(
         val app = getApplication<Application>()
         val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
         if (privkey == null) {
-            failArchive(app.getString(R.string.reader_archive_cancelled))
+            failArchive(app.getString(R.string.reader_archive_failed))
             return
         }
         try {
@@ -411,7 +415,7 @@ class HomeViewModel(
             when (result) {
                 is BunkerSignResult.Signed -> onSignedArchive(session, result.event, url)
                 BunkerSignResult.Rejected -> failArchive(app.getString(R.string.reader_archive_rejected))
-                BunkerSignResult.RelayTimeout -> failArchive(app.getString(R.string.reader_archive_cancelled))
+                BunkerSignResult.RelayTimeout -> failArchive(app.getString(R.string.reader_archive_failed))
             }
         } finally {
             privkey.fill(0)
@@ -428,14 +432,19 @@ class HomeViewModel(
             return
         }
         viewModelScope.launch(Dispatchers.IO) {
-            EventPublisher.publish(session.pubkeyHex, event)
+            val result = EventPublisher.publish(session.pubkeyHex, event)
+            if (!result.accepted) {
+                failArchive(app.getString(R.string.reader_archive_failed))
+                return@launch
+            }
+            pendingArchive = null
+            val key = Archive.targetRef(event)?.let(ArchivedArticles::key) ?: ArchivedArticles.key(url)
+            val current = _highlights.value
+            if (key != null && current is HomeHighlightsState.Ready) {
+                _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)
+            }
+            _message.value = app.getString(R.string.reader_archived)
         }
-        val key = Archive.targetRef(event)?.let(ArchivedArticles::key) ?: ArchivedArticles.key(url)
-        val current = _highlights.value
-        if (key != null && current is HomeHighlightsState.Ready) {
-            _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)
-        }
-        _message.value = app.getString(R.string.reader_archived)
     }
 
     private fun failArchive(message: String) {

@@ -1,7 +1,5 @@
 package org.dergigi.boris.ui.home
 
-import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -79,7 +77,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -101,8 +98,11 @@ import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.copyArticleLink
 import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.openOriginalArticle
 import org.dergigi.boris.ui.reader.CardReadingProgress
+import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -836,6 +836,7 @@ private fun HighlightedArticleCard(
     val clipboard = LocalClipboardManager.current
     val target = remember(article.url) { NostrLink.parse(article.url) }
     val nativeUri = target?.uri
+    val actionMenuLabel = stringResource(R.string.home_article_actions)
     var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
     Box(modifier = Modifier.width(CardWidth)) {
@@ -845,6 +846,7 @@ private fun HighlightedArticleCard(
                 .combinedClickable(
                     onClick = onOpen,
                     onLongClick = { menuOpen = true },
+                    onLongClickLabel = actionMenuLabel,
                 ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -906,7 +908,7 @@ private fun HighlightedArticleCard(
                 },
                 onClick = {
                     menuOpen = false
-                    shareArticle(context, article)
+                    shareArticleLink(context, article.title, article.url)
                 },
             )
             DropdownMenuItem(
@@ -916,12 +918,7 @@ private fun HighlightedArticleCard(
                 },
                 onClick = {
                     menuOpen = false
-                    clipboard.setText(AnnotatedString(NostrLink.copyText(article.url)))
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.reader_copied),
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                    copyArticleLink(context, clipboard, article.url)
                 },
             )
             DropdownMenuItem(
@@ -982,24 +979,6 @@ private fun StatusMessage(
             Text(stringResource(R.string.feed_retry))
         }
     }
-}
-
-private fun shareArticle(context: Context, article: HighlightedArticle) {
-    val shareUrl = NostrLink.parse(article.url)?.publicUrl ?: article.url
-    val text = if (article.title.isBlank()) shareUrl else "${article.title}\n$shareUrl"
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, text)
-        if (article.title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, article.title)
-    }
-    context.startActivity(
-        Intent.createChooser(intent, context.getString(R.string.reader_share_article)),
-    )
-}
-
-private fun openOriginalArticle(context: Context, url: String) {
-    val target = NostrLink.parse(url)?.publicUrl ?: url
-    openExternalUri(context, target)
 }
 
 private val CardWidth = 140.dp
