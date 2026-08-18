@@ -10,7 +10,11 @@ object UrlExtractor {
     fun extract(text: String?): String? {
         if (text.isNullOrBlank()) return null
         val trimmed = text.trim()
-        NostrLink.parse(trimmed)?.uri?.let { return it }
+        when (val target = NostrLink.parse(trimmed)) {
+            is NostrTarget.Article, is NostrTarget.Note -> return target.uri
+            is NostrTarget.Profile -> return null
+            null -> Unit
+        }
         if (looksLikeUrl(trimmed)) return normalize(trimmed)
         val match = urlRegex.find(trimmed)?.value?.trimEnd('.', ',', ';', ')', ']', '"', '\'')
         return match?.let { normalize(it) }
@@ -49,7 +53,11 @@ object UrlExtractor {
     fun articleUrl(href: String?, baseUrl: String? = null): String? {
         if (href.isNullOrBlank()) return null
         val trimmed = href.trim()
-        NostrLink.parse(trimmed)?.uri?.let { return it }
+        when (val target = NostrLink.parse(trimmed)) {
+            is NostrTarget.Article, is NostrTarget.Note -> return target.uri
+            is NostrTarget.Profile -> return null
+            null -> Unit
+        }
         val scheme = trimmed.substringBefore(':', missingDelimiterValue = "").lowercase()
         if (scheme in nonHttpSchemes) return null
         if (trimmed.startsWith("#")) return null
@@ -63,7 +71,11 @@ object UrlExtractor {
         } catch (_: Exception) {
             trimmed
         }
-        return NostrLink.parse(absolute)?.uri ?: extract(absolute.substringBefore('#'))
+        return when (val target = NostrLink.parse(absolute)) {
+            is NostrTarget.Article, is NostrTarget.Note -> target.uri
+            is NostrTarget.Profile -> null
+            null -> extract(absolute.substringBefore('#'))
+        }
     }
 
     fun isImageUrl(url: String): Boolean {

@@ -35,6 +35,7 @@ object ArticlePreview {
                 keys.add(target.ref.publicUrl)
             }
             is NostrTarget.Note -> keys.add(target.uri)
+            is NostrTarget.Profile -> Unit
             null -> Unit
         }
         if (!coordinate.isNullOrBlank()) {

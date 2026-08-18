@@ -22,6 +22,7 @@ import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.EventCache
+import org.dergigi.boris.nostr.HintedRelays
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip51
@@ -169,6 +170,7 @@ class YouViewModel(
                         addAll(RelayList.FALLBACK)
                         addAll(list.write)
                         addAll(list.read)
+                        addAll(HintedRelays.forPubkey(key))
                     }.distinct()
                     val wantHighlights = tab == null || tab == ContentTab.Highlights
                     val wantWritings = tab == null || tab == ContentTab.Writings

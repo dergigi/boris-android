@@ -103,4 +103,62 @@ class Nip19Test {
         assertEquals(original.author, decoded.author)
         assertEquals(original.kind, decoded.kind)
     }
+
+    @Test
+    fun nprofileDecodeOfficialVector() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8gpp4mhxue69uhhytnc9e3k7mgpz4mhxue69uhkg6nzv9ejuumpv34kytnrdaksjlyr9p"
+        val pointer = Nip19.nprofileDecode(nprofile)
+        assertEquals("3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d", pointer.pubkey)
+        assertEquals(listOf("wss://r.x.com", "wss://djbas.sadkb.com"), pointer.relays)
+    }
+
+    @Test
+    fun nprofileRoundTrips() {
+        val original = NprofilePointer(
+            pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            relays = listOf("wss://r.x.com", "wss://djbas.sadkb.com"),
+        )
+        val decoded = Nip19.nprofileDecode(Nip19.nprofileEncode(original))
+        assertEquals(original.pubkey, decoded.pubkey)
+        assertEquals(original.relays, decoded.relays)
+    }
+
+    @Test
+    fun nprofileIgnoresUnknownTlvTypes() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8g9q9uqzrthwden5te0wgh8stnrdaksjwt76f"
+        val pointer = Nip19.nprofileDecode(nprofile)
+        assertEquals("3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d", pointer.pubkey)
+        assertEquals(listOf("wss://r.x.com"), pointer.relays)
+    }
+
+    @Test
+    fun nprofileGarbageType1StillReturnsPubkey() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8gpq0llalg9gjtcm"
+        val pointer = Nip19.nprofileDecode(nprofile)
+        assertEquals("3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d", pointer.pubkey)
+        assertEquals(1, pointer.relays.size)
+    }
+
+    @Test
+    fun normalizePubkeyAcceptsNprofile() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8gpp4mhxue69uhhytnc9e3k7mgpz4mhxue69uhkg6nzv9ejuumpv34kytnrdaksjlyr9p"
+        assertEquals(
+            "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            Nip19.normalizePubkey(nprofile),
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nprofileDecodeRejectsNpub() {
+        Nip19.nprofileDecode("npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nprofileDecodeRejectsSecretKeyHrp() {
+        Nip19.nprofileDecode("nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5")
+    }
 }

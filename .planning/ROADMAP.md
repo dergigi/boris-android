@@ -10,6 +10,7 @@ Boris already reads articles. This milestone adds optional identity on Home (Amb
 - [x] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
 - [x] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern (completed 2026-08-16)
 - [ ] **Phase 4: Listen to articles** - Speak the current article from the reader
+- [ ] **Phase 5: Resolve nostr profile references** - Turn `nostr:nprofile` mentions in articles into profile links
 
 ## Phase Details
 
@@ -63,7 +64,8 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
-| 4. Listen to articles | 0/3 | Planned | |
+| 4. Listen to articles | 3/3 | Verifying | |
+| 5. Resolve nostr profile references | 2/2 | In Progress|  |
 
 ### Phase 3: Nostr highlights
 
@@ -110,6 +112,26 @@ Plans:
 
 - [x] 04-02-PLAN.md — Webapp-matched TTS settings with NIP-78 sync and preview (2026-08-18)
 - [x] 04-03-PLAN.md — Follow-along mark and in-app mini player (2026-08-18)
+
+### Phase 5: Resolve nostr profile references
+
+**Goal:** `nostr:nprofile` references in article Markdown render as tappable profile links that open the in-app profile screen, without breaking existing note, event, and article nostr links.
+**Depends on:** Phase 4
+**Requirements:** READ-03, READ-01
+**Success Criteria** (what must be TRUE):
+
+  1. `nostr:nprofile...` in article Markdown renders as a profile link, not raw plaintext
+  2. Tapping the link opens the in-app profile screen for that pubkey
+  3. Relay hints in `nprofile` are parsed without breaking the profile target
+  4. Existing note, event, and article nostr links keep working
+  5. Reading still works logged out
+
+**Plans:** 2/2 plans executed
+
+Plans:
+
+- [x] 05-01-PLAN.md — Decode nprofile/npub, rewrite raw prefixed mentions to @name, route OpenProfile, skip article fetch
+- [x] 05-02-PLAN.md — Persist nprofile relay hints and union them into profile fetches
 
 ## Backlog
 
