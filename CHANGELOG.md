@@ -9,6 +9,20 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-18
+
+### Added
+
+- Listen to articles with on-device text-to-speech: play/pause from the reader top bar
+- Background playback with a media notification and lock-screen controls (play, pause, stop, paragraph skip)
+- Follow-along: the spoken paragraph is highlighted and kept on screen; scrolling by hand pauses auto-scroll, not speech
+- Mini player while browsing other screens: title, play/pause, paragraph skip, and speed cycle; tap the title to return to the article
+- Text-to-Speech settings matching the webapp: playback speed, speaker language, follow-along toggle, and a preview sentence with play
+- Speed and language sync with the webapp via Nostr settings (`ttsDefaultSpeed`, `ttsLanguageMode`)
+- Playback starts near the saved reading position and one article speaks at a time; playing another article switches over
+- While speaking, volume keys change volume instead of scrolling the article
+- If no TTS voice is installed, an error message links to system TTS settings; reading is never blocked
+
 ## [1.3.3] - 2026-08-18
 
 ### Added
