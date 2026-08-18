@@ -12,8 +12,10 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -77,6 +79,26 @@ fun AboutSettingsSection(
             icon = Icons.Filled.Favorite,
             tint = HighlightFriends,
             onClick = onOpenSupport,
+        )
+        AboutActionRow(
+            label = stringResource(R.string.about_cta_bug),
+            subtitle = stringResource(R.string.settings_about_github_issue),
+            icon = Icons.Outlined.BugReport,
+            tint = linkTint,
+            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
+            onClick = {
+                openWeblink(AboutLinks.BUG_REPORT, openInBoris, onOpenArticle, uriHandler::openUri)
+            },
+        )
+        AboutActionRow(
+            label = stringResource(R.string.about_cta_feature),
+            subtitle = stringResource(R.string.settings_about_github_issue),
+            icon = Icons.Outlined.Lightbulb,
+            tint = linkTint,
+            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
+            onClick = {
+                openWeblink(AboutLinks.FEATURE_REQUEST, openInBoris, onOpenArticle, uriHandler::openUri)
+            },
         )
 
         Text(
