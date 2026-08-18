@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
-status: context_gathered
-stopped_at: Phase 4 context gathered
-last_updated: "2026-08-18T08:37:02.634Z"
+status: researched
+stopped_at: Phase 4 research complete
+last_updated: "2026-08-18T08:50:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 04 context gathered
+last_activity_desc: Phase 04 research complete
 progress:
   total_phases: 4
   completed_phases: 3
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 4 Listen to articles — discussing before planning
+**Current focus:** Phase 4 Listen to articles — research complete, ready to plan
 
 ## Current Position
 
 Phase: 04 of 4 (Listen to articles)
 Plan: Not started
-Status: Context gathered — ready to plan
-Last activity: 2026-08-18 — Phase 04 context gathered
+Status: Research complete — ready to plan
+Last activity: 2026-08-18 — Phase 04 research complete
 
 Progress: [███████░░░] 75%
 
@@ -117,6 +117,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T08:37:02.626Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-listen-to-articles/04-CONTEXT.md
+Last session: 2026-08-18T08:50:00.000Z
+Stopped at: Phase 4 research complete
+Resume file: .planning/phases/04-listen-to-articles/04-RESEARCH.md
