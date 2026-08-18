@@ -19,6 +19,12 @@ tags:
 license: MIT
 website: https://readwithboris.com/
 icon: ./zapstore-icon.png
+images:
+  - ./screenshots/home.png
+  - ./screenshots/reader.png
+  - ./screenshots/feeds.png
+  - ./screenshots/you.png
+  - ./screenshots/search.png
 
 metadata_sources:
   - github

@@ -23,6 +23,7 @@ bin/
 gen/
 out/
 .externalNativeBuild
+/screenshots/incoming/
 *.log
 *.ipr
 *~

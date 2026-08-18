@@ -2,6 +2,14 @@
 
 A nostr-native app for reading and highlighting. Paste a URL, share one from the browser, or open an `http`/`https`/`nostr:` link (articles, notes, `npub`/`nprofile`). You get a calm article view, your marks, swarm highlights from friends and the rest of the nostrverse, and listen with on-device TTS. Bookmarks and RSS live in the library.
 
+<p align="center">
+  <img src="screenshots/home.png" alt="Home" width="160">
+  <img src="screenshots/reader.png" alt="Reader" width="160">
+  <img src="screenshots/feeds.png" alt="Feeds" width="160">
+  <img src="screenshots/you.png" alt="You" width="160">
+  <img src="screenshots/search.png" alt="Search" width="160">
+</p>
+
 No ads, no trackers, no paywalls, no subscriptions. Nostr is the backend, so your highlights travel with your npub. Pair a local relay like [Citrine](https://github.com/greenart7c3/Citrine) and keep reading in airplane mode.
 
 Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec`.

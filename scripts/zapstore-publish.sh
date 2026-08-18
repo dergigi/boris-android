@@ -98,14 +98,48 @@ trap cleanup EXIT
 
 NOTES="$ROOT/CHANGELOG.md"
 ICON="$ROOT/zapstore-icon.png"
-{
-  # Drop path fields so we can rewrite them as absolute paths. Relative paths
-  # are resolved from the temp config directory and break.
-  grep -vE '^(release_source|release_notes|icon):' zapstore.yaml || true
-  echo "release_notes: $NOTES"
-  echo "release_source: $APK"
-  echo "icon: $ICON"
-} > "$PUBLISH_CFG"
+python3 - "$ROOT" "$PUBLISH_CFG" "$NOTES" "$APK" "$ICON" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+out = Path(sys.argv[2])
+notes, apk, icon = sys.argv[3], sys.argv[4], sys.argv[5]
+lines = (root / "zapstore.yaml").read_text().splitlines()
+kept = []
+images = []
+in_images = False
+skip_keys = {"release_source", "release_notes", "icon"}
+for line in lines:
+    if in_images:
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            raw = stripped[2:].strip()
+            path = Path(raw)
+            if not path.is_absolute():
+                path = (root / raw).resolve()
+            images.append(str(path))
+            continue
+        in_images = False
+    key = line.split(":", 1)[0].strip()
+    if key == "images" and (line.strip() == "images:" or line.startswith("images:")):
+        in_images = True
+        continue
+    if key in skip_keys:
+        continue
+    kept.append(line)
+kept.extend(
+    [
+        f"release_notes: {notes}",
+        f"release_source: {apk}",
+        f"icon: {icon}",
+    ]
+)
+if images:
+    kept.append("images:")
+    kept.extend(f"  - {path}" for path in images)
+out.write_text("\n".join(kept) + "\n")
+PY
 
 echo "Publishing to Zapstore (notes from CHANGELOG.md via zapstore.yaml)…"
 echo "  APK: $APK"
