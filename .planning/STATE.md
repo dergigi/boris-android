@@ -5,14 +5,14 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
 status: verifying
-stopped_at: Phase 5 UI-SPEC drafted, ready for checker
-last_updated: "2026-08-18T15:45:00.000Z"
+stopped_at: Phase 5 plans written (05-01 tracer, 05-02 hinted relays)
+last_updated: "2026-08-18T15:50:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 5 UI-SPEC written (inline @name mentions, existing reader link style)
+last_activity_desc: Phase 5 PLAN.md files written (mention tracer + HintedRelays persist)
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 6
+  total_plans: 8
   completed_plans: 6
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 4 Listen to articles — planned, ready to execute
+**Current focus:** Phase 5 Resolve nostr profile references — planned, ready to execute
 
 ## Current Position
 
 Phase: 04 of 4 (Listen to articles)
 Plan: 04-01, 04-02, 04-03 complete
 Status: Verifying — all plans executed, device UAT deferred to 1.4.0 release testing
-Last activity: 2026-08-18 — Phase 5 UI-SPEC drafted (inline @name mentions, no new chrome)
+Last activity: 2026-08-18 — Phase 5 plans written (05-01 tracer, 05-02 HintedRelays)
 
 Progress: [███████░░░] 75%
 
@@ -119,5 +119,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-18T15:31:21.662Z
-Stopped at: Phase 5 UI-SPEC drafted, ready for checker
-Resume file: .planning/phases/05-resolve-nostr-profile-references/05-UI-SPEC.md
+Stopped at: Phase 5 plans written (05-01 tracer, 05-02 hinted relays)
+Resume file: .planning/phases/05-resolve-nostr-profile-references/05-01-PLAN.md

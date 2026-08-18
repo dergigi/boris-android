@@ -126,11 +126,12 @@ Plans:
   4. Existing note, event, and article nostr links keep working
   5. Reading still works logged out
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 5 to break down)
+- [ ] 05-01-PLAN.md — Decode nprofile/npub, rewrite raw prefixed mentions to @name, route OpenProfile, skip article fetch
+- [ ] 05-02-PLAN.md — Persist nprofile relay hints and union them into profile fetches
 
 ## Backlog
 

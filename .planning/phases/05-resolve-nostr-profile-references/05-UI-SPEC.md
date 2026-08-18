@@ -1,7 +1,8 @@
 ---
 phase: 5
 slug: resolve-nostr-profile-references
-status: draft
+status: approved
+reviewed_at: 2026-08-18
 shadcn_initialized: false
 preset: none
 created: 2026-08-18
