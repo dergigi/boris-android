@@ -31,7 +31,6 @@ Dark mode. Your marks, friends' marks, and the rest of the nostrverse.
 
 <p align="center">
   <img src="screenshots/home.png" width="180" alt="Home" />
-  <img src="screenshots/reader-cover.png" width="180" alt="Article with swarm highlights" />
   <img src="screenshots/feeds.png" width="180" alt="Highlights feed" />
   <img src="screenshots/you.png" width="180" alt="Your highlights" />
   <img src="screenshots/search-highlight.png" width="180" alt="Search highlights" />

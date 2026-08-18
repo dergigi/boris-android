@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- README and Zapstore screenshot sets drop the article cover shot
+
 ## [1.4.10] - 2026-08-18
 
 ### Fixed
