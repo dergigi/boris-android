@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - About Boris feature pages use clearer spacing between body paragraphs
+- Search tab uses a more compact search bar
 - README screenshot rows are Reading, Dark, Home, and Settings; Zapstore also includes You
 
 ## [1.4.11] - 2026-08-18
