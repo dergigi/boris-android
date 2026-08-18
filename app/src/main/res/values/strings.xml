@@ -160,6 +160,7 @@
     <string name="reader_save_rejected">Save rejected.</string>
     <string name="reader_save_failed">Could not save to library.</string>
     <string name="reader_archive">Move to Archive</string>
+    <string name="reader_archive_close">Move to Archive &amp; Close</string>
     <string name="reader_archived">Archived</string>
     <string name="reader_archive_cancelled">Archive cancelled.</string>
     <string name="reader_archive_rejected">Archive rejected.</string>
@@ -268,6 +269,7 @@
     <string name="settings_sync_reading_position">Sync reading position across devices</string>
     <string name="settings_auto_scroll_position">Auto-scroll to saved reading position</string>
     <string name="settings_auto_archive_complete">Automatically move to archive at 100%</string>
+    <string name="settings_archive_closes_reader">Archive button closes reader</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_light">Light theme</string>

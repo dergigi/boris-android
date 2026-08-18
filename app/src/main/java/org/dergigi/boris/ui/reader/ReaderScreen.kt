@@ -258,6 +258,17 @@ fun ReaderScreen(
         settingsViewModel.consumeSignIntent()
         settingsLauncher.launch(intent)
     }
+    var closeAfterArchive by remember { mutableStateOf(false) }
+    val readyArticleUrl = (state as? ReaderUiState.Ready)?.content?.url
+    LaunchedEffect(readyArticleUrl) {
+        closeAfterArchive = false
+    }
+    LaunchedEffect(archived, closeAfterArchive) {
+        if (closeAfterArchive && archived) {
+            closeAfterArchive = false
+            onBack()
+        }
+    }
     val visibleHighlights = remember(highlights, deletedIds) {
         highlights.filter { it.id !in deletedIds }
     }
@@ -290,7 +301,10 @@ fun ReaderScreen(
         onSave = { privateBookmark ->
             viewModel.saveToLibrary(privateBookmark)?.let(launcher::launch)
         },
-        onArchive = {
+        onArchive = { closeAfterSuccess ->
+            if (closeAfterSuccess && !archived) {
+                closeAfterArchive = true
+            }
             viewModel.archive()?.let(launcher::launch)
         },
         onAddRssFeed = { feedUrl ->
@@ -490,7 +504,7 @@ fun ReaderScreenContent(
     onGalleryPage: (Int) -> Unit,
     onHighlight: (String) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
-    onArchive: () -> Unit,
+    onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onAddRssFeed: (String) -> Unit,
     onDismissRssFeed: () -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
@@ -868,7 +882,7 @@ private fun ArticleBody(
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
-    onArchive: () -> Unit,
+    onArchive: (closeAfterSuccess: Boolean) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
@@ -1135,7 +1149,7 @@ private fun ArticleBody(
                 // Mirrors the webapp: complete only after holding 100% for 2s.
                 delay(2000)
                 ReadingPositionSync.publishAsync(appContext, content.url)
-                if (autoArchive && loggedIn && !archived) onArchive()
+                if (autoArchive && loggedIn && !archived) onArchive(false)
             }
     }
     val openFromStop = remember<(HighlightStop) -> Unit> {
@@ -1520,7 +1534,8 @@ private fun ArticleBody(
                     ) {
                         ArchiveButton(
                             archived = archived,
-                            onClick = onArchive,
+                            closeAfterArchive = settings.archiveClosesReader,
+                            onClick = { onArchive(settings.archiveClosesReader && !archived) },
                         )
                     }
                 }
@@ -1708,6 +1723,7 @@ private fun HighlightedMarkdownNode(
 @Composable
 private fun ArchiveButton(
     archived: Boolean,
+    closeAfterArchive: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1724,7 +1740,11 @@ private fun ArchiveButton(
         Spacer(Modifier.width(8.dp))
         Text(
             text = stringResource(
-                if (archived) R.string.reader_archived else R.string.reader_archive,
+                when {
+                    archived -> R.string.reader_archived
+                    closeAfterArchive -> R.string.reader_archive_close
+                    else -> R.string.reader_archive
+                },
             ),
         )
     }

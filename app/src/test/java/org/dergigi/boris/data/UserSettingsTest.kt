@@ -32,6 +32,7 @@ class UserSettingsTest {
         assertTrue(settings.openLinksInReader)
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
+        assertTrue(settings.archiveClosesReader)
         assertTrue(settings.useLocalRelayAsCache)
         assertFalse(settings.hideArchivedOnHome)
         assertEquals(2.1, settings.ttsDefaultSpeed, 0.0)
@@ -170,5 +171,11 @@ class UserSettingsTest {
         assertEquals(100, high.volumeButtonScrollPercent)
         val low = UserSettings.parse("""{"volumeButtonScrollPercent":10}""")
         assertEquals(25, low.volumeButtonScrollPercent)
+    }
+
+    @Test
+    fun archiveClosesReaderDefaultsOnAndCanBeDisabled() {
+        assertTrue(UserSettings.defaults().archiveClosesReader)
+        assertFalse(UserSettings.parse("""{"archiveClosesReader":false}""").archiveClosesReader)
     }
 }

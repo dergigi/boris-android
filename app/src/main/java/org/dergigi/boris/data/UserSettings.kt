@@ -62,6 +62,7 @@ class UserSettings internal constructor(
     val syncReadingPosition: Boolean get() = bool("syncReadingPosition", true)
     val autoScrollToReadingPosition: Boolean get() = bool("autoScrollToReadingPosition", true)
     val autoMarkAsReadOnCompletion: Boolean get() = bool("autoMarkAsReadOnCompletion", false)
+    val archiveClosesReader: Boolean get() = bool("archiveClosesReader", true)
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)
@@ -177,6 +178,7 @@ private const val DEFAULT_JSON = """{
   "syncReadingPosition":true,
   "autoScrollToReadingPosition":true,
   "autoMarkAsReadOnCompletion":false,
+  "archiveClosesReader":true,
   "hideBookmarksWithoutCreationDate":true,
   "ttsUseSystemLanguage":false,
   "ttsDetectContentLanguage":true,
