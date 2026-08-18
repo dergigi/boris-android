@@ -1,7 +1,8 @@
 ---
 phase: 4
 slug: listen-to-articles
-status: draft
+status: approved
+reviewed_at: 2026-08-18
 shadcn_initialized: false
 preset: none
 created: 2026-08-18
@@ -35,7 +36,7 @@ Declared values (must be multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon-to-label gap on the speed chip; spoken-mark rect padding stays 5dp/3dp from `HighlightMarks` (existing, do not restyle) |
+| xs | 4px | Icon-to-label gap on the speed chip |
 | sm | 8px | Settings row vertical padding; speed/language control inner padding; preview box corner radius; section title to first row |
 | md | 16px | Settings screen horizontal padding; mini-player inner horizontal padding; gap between mini-player controls |
 | lg | 24px | Gap between Reading font block and Text-to-Speech block (`SettingsCategoryDetail` already uses 24dp between sections) |
@@ -46,9 +47,11 @@ Declared values (must be multiples of 4):
 Exceptions:
 
 - 12dp label-to-control gap in `SettingRow` (existing; keep)
+- 12dp padding inside the TTS preview box (Surfaces §3; existing Settings preview-box pattern; keep)
 - 20dp reader column horizontal padding (existing; keep)
 - 40dp `SettingChipSize` for the settings speed chip height (existing chip; width hugs `{rate}x` + 16dp horizontal padding, min width 48dp)
 - 56dp mini-player row height (slim bar, still 48dp hit targets inside)
+- 5dp horizontal / 3dp vertical spoken-mark rect inset from existing `HighlightMarks` (`HighlightRectPaddingX` / `HighlightRectPaddingY`). Do not restyle this phase (D-12 reuse). Do not add 5 or 3 to the scale.
 
 ---
 
@@ -80,7 +83,7 @@ Preview paragraph: 16sp Regular, line-height 1.5, `onBackground`, wrap (never tr
 Dark is first-class. Light uses the paper column. Do not add a new theme.
 
 | Role | Value | Usage |
-|------|-------|-------|
+|-------|-------|-------|
 | Dominant (60%) | `#18181B` dark / `#FFFFFF` light | Reader and Settings backgrounds (`colorScheme.background`) |
 | Secondary (30%) | `#27272A` dark / `#F5F5F5` light | Mini player surface, TTS preview box (`surfaceVariant` / elevated fill). 1dp outline `#3F3F46` dark / `#E5E7EB` light |
 | Accent (10%) | `#6366F1` (`Indigo500`) | Reserved list below. Not for the spoken paragraph |
@@ -104,16 +107,23 @@ Spoken paragraph is a semantic state color, not a brand accent (same class as Fi
 
 `DESIGN.md` Two Loud Colors Rule still holds for brand chrome (indigo actions, yellow Home/NIP-84 marks). Find already added a transient blue. Spoken teal is the listen equivalent: fill like Find, never underline, never yellow.
 
+Focal point:
+
+- On the speaking article: the spoken-paragraph fill (`SpokenMark` `#2DD4BF` at `0.38f`) is the visual anchor. Top-bar Listen stays on-surface icon chrome (`colorScheme.onSurface`, 48dp `IconButton`, same size and tint as Back / More) and must not compete: no indigo, no badge, no larger hit target, no extra label next to the icon.
+- When the user is not on that article: mini-player title + transport is the visual anchor. Do not paint a spoken fill on Home, Library, Feed, Settings, or a different article.
+
 ---
 
 ## Copywriting Contract
 
+Visible listen chrome is icon-only. Verb + noun strings below are `contentDescription` / accessibility labels, not on-screen text.
+
 | Element | Copy |
 |---------|------|
-| Primary CTA | Listen |
-| Pause | Pause |
-| Resume | Resume |
-| Stop (notification / headset) | Stop |
+| Primary CTA | Listen to article |
+| Pause | Pause playback |
+| Resume | Resume playback |
+| Stop (notification / headset) | Stop playback |
 | Skip next | Next paragraph |
 | Skip previous | Previous paragraph |
 | Speed chip | `{rate}x` with the current preset (example: `2.1x`). contentDescription: Cycle speed |
@@ -192,8 +202,9 @@ Insert an `IconButton` in `actions` after Save (when present) and before overflo
 
 | State | Icon | contentDescription |
 |-------|------|--------------------|
-| Idle / paused / stopped | `Icons.Filled.PlayArrow` | Listen |
-| Speaking | `Icons.Filled.Pause` | Pause |
+| Idle / stopped | `Icons.Filled.PlayArrow` | Listen to article |
+| Paused | `Icons.Filled.PlayArrow` | Resume playback |
+| Speaking | `Icons.Filled.Pause` | Pause playback |
 
 Rules:
 
@@ -203,10 +214,11 @@ Rules:
 - Do not put Listen only in the overflow menu
 - Do not add skip or speed to the top bar (those live on the mini player and in Settings)
 - Loading / Error reader states: omit Listen (no article to speak)
+- While this article is speaking, this control is chrome only. The spoken-paragraph fill is the focal point; the top-bar icon must not compete
 
 ### 2. Mini player (D-17, D-18)
 
-Slim bar, always reachable while a session is active and the user is not on that article.
+Slim bar, always reachable while a session is active and the user is not on that article. Title + transport is the visual anchor on these screens.
 
 Placement:
 
@@ -222,8 +234,8 @@ Layout (56dp tall, `surface` / `surfaceVariant`, 1dp outline on the top edge, no
 
 - Title: `labelLarge` 14sp Medium, 1 line ellipsis, `weight(1f)`, contentDescription `Open article`. Tap navigates to `Routes.reader(url)`
 - Speed: outlined 8dp chip, sans 14sp Medium, `{rate}x`, contentDescription Cycle speed. Cycles the locked preset list and writes `ttsDefaultSpeed`
-- Prev / play / next: 48dp IconButtons, contentDescriptions Previous paragraph / Pause or Listen / Next paragraph
-- Play uses PlayArrow when paused; Pause when speaking
+- Prev / play / next: 48dp IconButtons, contentDescriptions Previous paragraph / Pause playback (speaking) or Resume playback (paused) / Next paragraph
+- Play uses PlayArrow when paused (`Resume playback`); Pause when speaking (`Pause playback`)
 - Do not show a progress bar, artwork, author line, or stop button on the in-app bar (Stop is on the system notification)
 
 Hide when the session is null or the article has ended.
@@ -238,7 +250,7 @@ Order:
 2. `SettingRow` Default Playback Speed → speed cycle chip (gauge/`Icons.Filled.Speed` 18dp + `{rate}x`)
 3. `SettingRow` Speaker language → `ExposedDropdownMenuBox` + read-only `OutlinedTextField`, 8dp corners, same pattern as `FontDropdown`, width fills the control slot
 4. Preview box: 12dp padding, 8dp corners, `surfaceVariant` fill, exact preview sentence, 16sp / 1.5
-5. Preview play: trailing `IconButton` PlayArrow/Pause, contentDescription Listen / Pause. One-shot utterance of the preview sentence. Does not open a mini player. If an article is speaking, preview stops it
+5. Preview play: trailing `IconButton` PlayArrow/Pause, contentDescription Listen to article / Pause playback. One-shot utterance of the preview sentence. Does not open a mini player. If an article is speaking, preview stops it
 6. `SettingCheckbox` Follow along while listening (default on)
 
 If TTS is missing, keep every control visible and add the error body plus a text button Open settings under the preview.
@@ -253,6 +265,7 @@ If TTS is missing, keep every control visible and add the error body plus a text
 - Manual scroll: stop auto-scroll, keep speaking, keep the mark
 - Play or skip: resume auto-scroll
 - Checkbox off: no mark, no auto-scroll
+- This fill is the reader’s visual anchor while speaking. Rect inset stays the existing `HighlightMarks` 5dp / 3dp; do not restyle
 
 ### 5. System media notification / lock screen (D-01, D-04)
 
@@ -261,7 +274,7 @@ Not Compose. Contract for what the user sees:
 - Title: article title, else URL
 - Artist: author if known, else omit
 - Compact: play/pause, previous paragraph, next paragraph
-- Expanded / headset: Stop as well
+- Expanded / headset: Stop as well (`Stop playback`)
 - Never put article body in the notification
 
 ### 6. Volume keys (D-19)
