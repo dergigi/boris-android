@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.6] - 2026-08-18
+
+### Added
+
+- Reader text selection can start TTS from the selected position
+
+### Changed
+
+- TTS paragraph controls use rewind and fast-forward style icons
+
 ## [1.4.5] - 2026-08-18
 
 ### Added
@@ -16,11 +26,6 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Pasting or sharing an `npub` / `nprofile` opens that profile instead of the reader
 - HTML fallback articles keep inline images
 - Pull requests run Android Lint and JVM unit tests
-- Reader text selection can start TTS from the selected position
-
-### Changed
-
-- TTS paragraph controls use rewind and fast-forward style icons
 
 ## [1.4.4] - 2026-08-18
 
