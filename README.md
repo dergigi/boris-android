@@ -17,7 +17,7 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
 
 ### Reading
 
-Light mode. Serif article view, marks in the text, TTS at the bottom.
+Light mode. Articles open as a serif page with source, read time, and how many marks are on the piece. Your highlights sit in the text. The player at the bottom reads from the current sentence, with speed on the bar.
 
 <p align="center">
   <img src="screenshots/read-1.png" width="180" alt="Reading in light mode" />
@@ -28,7 +28,7 @@ Light mode. Serif article view, marks in the text, TTS at the bottom.
 
 ### Dark
 
-Article view, swarm marks, a profile, TTS.
+Same reader at night. Covers stay with the article. A side panel shows friends' marks on the passage you are in. Open someone's npub to search their highlights, or keep listening with follow-along in the dark theme.
 
 <p align="center">
   <img src="screenshots/dark-1.png" width="180" alt="Article in dark mode" />
@@ -39,6 +39,8 @@ Article view, swarm marks, a profile, TTS.
 
 ### Home
 
+The five tabs. Home is what people around you marked lately. Library is bookmarks, private and public. Feeds is writings and highlights from Nostrverse, friends, or you. Search looks through quote text. You is your own profile; it is on Zapstore, not in this row.
+
 <p align="center">
   <img src="screenshots/1-home.png" width="180" alt="Home" />
   <img src="screenshots/2-library.png" width="180" alt="Library" />
@@ -48,7 +50,7 @@ Article view, swarm marks, a profile, TTS.
 
 ### Settings
 
-Light mode.
+Theme, type, TTS, and highlight colors, including separate palettes for you, friends, and the rest of nostr. Airplane mode caches articles and talks to a local relay. About has the vision, support, and source.
 
 <p align="center">
   <img src="screenshots/settings-1.png" width="180" alt="Settings" />
