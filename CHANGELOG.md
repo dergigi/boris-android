@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Reader highlight pane lists highlights in article order (first on the page at the top)
+- Settings About "Vision" always opens Purple Text, Orange Highlights in the reader
 
 ## [1.3.1] - 2026-08-18
 

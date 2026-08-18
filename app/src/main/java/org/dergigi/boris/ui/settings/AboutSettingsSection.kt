@@ -69,10 +69,7 @@ fun AboutSettingsSection(
             subtitle = stringResource(R.string.settings_about_vision_summary),
             icon = BorisIcons.Highlighter,
             tint = HighlightOther,
-            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
-            onClick = {
-                openWeblink(AboutLinks.VISION, openInBoris, onOpenArticle, uriHandler::openUri)
-            },
+            onClick = { onOpenArticle(AboutLinks.VISION) },
         )
         AboutActionRow(
             label = stringResource(R.string.support_title),
