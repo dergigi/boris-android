@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Nostr highlight cards can share the article's njump link scrolled to the quote
+
+### Changed
+
+- Highlight card Share is now Share quote when the source is a nostr article
+
 ## [1.4.6] - 2026-08-18
 
 ### Added

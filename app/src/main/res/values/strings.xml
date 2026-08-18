@@ -173,6 +173,8 @@
     <string name="feed_writings_empty">No writings yet.</string>
     <string name="feed_empty_filtered">Nothing matches these filters.</string>
     <string name="highlight_menu">Highlight options</string>
+    <string name="highlight_menu_share_quote">Share quote</string>
+    <string name="highlight_menu_share_article">Share article</string>
     <string name="highlight_menu_go_to_quote">Go to quote</string>
     <string name="highlight_menu_view_profile">View profile</string>
     <string name="highlight_menu_open_njump">Open with njump</string>

@@ -23,16 +23,44 @@ class HighlightShareTest {
 
     @Test
     fun nostrArticleSharesPublicUrlWithoutFragment() {
-        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
-        val naddr = Nip19.naddrEncode(
-            org.dergigi.boris.nostr.NaddrPointer(
-                identifier = "my-article",
-                pubkey = pubkey,
-                kind = 30023,
-            ),
-        )
+        val naddr = sampleNaddr()
         val url = HighlightShare.url("nostr:$naddr", "a chosen line")
         assertEquals(NostrLink.gatewayUrl(naddr), url)
         assertTrue(!url.contains(":~:text="))
     }
+
+    @Test
+    fun webHasNoSeparateArticleShare() {
+        assertEquals(null, HighlightShare.articleUrl("https://example.com/essay", "a chosen line"))
+    }
+
+    @Test
+    fun nostrArticleShareUsesNjumpAndTextFragment() {
+        val naddr = sampleNaddr()
+        val url = HighlightShare.articleUrl("nostr:$naddr", "a chosen line")
+        assertEquals("${NostrLink.gatewayUrl(naddr)}#:~:text=a%20chosen%20line", url)
+    }
+
+    @Test
+    fun nostrNoteShareUsesNjumpAndTextFragment() {
+        val note = Nip19.noteEncode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        val url = HighlightShare.articleUrl("nostr:$note", "[a chosen line](https://ignored.example)")
+        assertEquals("${NostrLink.gatewayUrl(note)}#:~:text=a%20chosen%20line", url)
+    }
+
+    @Test
+    fun profileHasNoArticleShare() {
+        val npub = Nip19.npubEncode(
+            "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+        )
+        assertEquals(null, HighlightShare.articleUrl("nostr:$npub", "a chosen line"))
+    }
+
+    private fun sampleNaddr(): String = Nip19.naddrEncode(
+        org.dergigi.boris.nostr.NaddrPointer(
+            identifier = "my-article",
+            pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            kind = 30023,
+        ),
+    )
 }

@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FormatQuote
@@ -58,9 +59,15 @@ fun HighlightCardMenuButton(
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    val shareQuoteLabel = stringResource(R.string.highlight_menu_share_quote)
+    val shareArticleLabel = stringResource(R.string.highlight_menu_share_article)
     val shareLabel = stringResource(R.string.action_share)
-    val shareTarget = remember(shareUrl, shareQuote) {
-        shareUrl?.takeIf { it.isNotBlank() }?.let { HighlightShare.url(it, shareQuote) }
+    val source = shareUrl?.takeIf { it.isNotBlank() }
+    val shareQuoteTarget = remember(source, shareQuote) {
+        source?.let { HighlightShare.url(it, shareQuote) }
+    }
+    val shareArticleTarget = remember(source, shareQuote) {
+        source?.let { HighlightShare.articleUrl(it, shareQuote) }
     }
     val nevent = remember(menu?.highlightId, menu?.authorHex) {
         val id = menu?.highlightId ?: return@remember null
@@ -91,14 +98,22 @@ fun HighlightCardMenuButton(
             expanded = open,
             onDismissRequest = { open = false },
         ) {
-            shareTarget?.let { target ->
-                MenuItem(R.string.action_share, Icons.Outlined.Share) {
+            shareQuoteTarget?.let { target ->
+                val quoteLabel = if (shareArticleTarget != null) {
+                    R.string.highlight_menu_share_quote
+                } else {
+                    R.string.action_share
+                }
+                val quoteChooser = if (shareArticleTarget != null) shareQuoteLabel else shareLabel
+                MenuItem(quoteLabel, Icons.Outlined.Share) {
                     open = false
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, target)
-                    }
-                    context.startActivity(Intent.createChooser(intent, shareLabel))
+                    sharePlainText(context, target, quoteChooser)
+                }
+            }
+            shareArticleTarget?.let { target ->
+                MenuItem(R.string.highlight_menu_share_article, Icons.AutoMirrored.Outlined.Article) {
+                    open = false
+                    sharePlainText(context, target, shareArticleLabel)
                 }
             }
             menu?.onGoToQuote?.let { action ->
@@ -169,6 +184,14 @@ private fun MenuItem(
         leadingIcon = { Icon(icon, contentDescription = null) },
         onClick = onClick,
     )
+}
+
+private fun sharePlainText(context: Context, text: String, chooserTitle: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    context.startActivity(Intent.createChooser(intent, chooserTitle))
 }
 
 private fun openExternal(context: Context, uri: String) {
