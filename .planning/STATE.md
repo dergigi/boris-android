@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: Resolve nostr profile references
 status: in_progress
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-08-18T16:06:10.215Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-08-18T16:12:44.512Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 5 plan 01 complete (mention rewrite + OpenProfile routing)
+last_activity_desc: Phase 5 plans executed (hinted relay persist + fetch union)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 5 Resolve nostr profile references — 05-01 complete, 05-02 next
+**Current focus:** Phase 5 Resolve nostr profile references — 05-01 and 05-02 executed, awaiting verify
 
 ## Current Position
 
 Phase: 05 of 5 (Resolve nostr profile references)
-Plan: 01 of 02 complete
-Status: In progress — 05-01 tracer shipped; 05-02 HintedRelays persist next
-Last activity: 2026-08-18 — Completed 05-01 (nprofile mentions → @name → OpenProfile)
+Plan: 02 of 02 complete
+Status: Executed — both plans done; HintedRelays persist unions into kind 0 fetch
+Last activity: 2026-08-18 — Completed 05-02 (hinted_relays.json + fetchProfile union)
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [█████████░] 88%
 | Phase 02-bunker-login-nip-46 P01 | 12min | 3 tasks | 23 files |
 | Phase 03-nostr-highlights P01 | 8min | 3 tasks | 21 files |
 | Phase 05 P01 | 6min | 2 tasks | 23 files |
+| Phase 05 P02 | 5min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 5]: Rewrite raw prefixed nprofile/npub after Footnotes.expand; markdown keyed only on content.body
 - [Phase 5]: entityRegex requires nostr scheme for nprofile/npub; bare ids stay plaintext (D-09)
 - [Phase 5]: Profile.relays carries decoded nprofile hints for 05-02 persist/fetch-union
+- [Phase ?]: D-08: hinted_relays.json keyed by lowercase 64-char pubkey hex, MAX_HINTS 8, MAX_ENTRIES 500
+- [Phase ?]: D-07: fetchProfileRemote unions extraRelays + HintedRelays.forPubkey + fetchRelayList.read; still calls fetchRelayList
+- [Phase ?]: Persist codec is hand-rolled JSON because org.json.JSONObject.put is stubbed on JVM unit tests
 
 ### Roadmap Evolution
 
@@ -122,6 +126,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T16:06:10.208Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-08-18T16:12:44.505Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
