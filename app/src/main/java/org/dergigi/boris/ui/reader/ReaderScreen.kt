@@ -822,7 +822,9 @@ private fun ArticleBody(
     // D-12/D-13: transient spoken mark while this article speaks, honoring the
     // live follow-along checkbox. Appended outside visibleFor (like Find) so it
     // paints even when showHighlights is off. Never enters the NIP-84 publish path.
-    val spokenSession = ttsSession?.takeIf { it.url == content.url && settings.ttsFollowAlong }
+    val spokenSession = ttsSession?.takeIf {
+        it.url == content.url && settings.ttsFollowAlong && it.followAlongEnabled
+    }
     val spokenParagraph = spokenSession?.paragraphs?.getOrNull(spokenSession.index)
     val painted = HighlightJump.withFocus(
         highlights.visibleFor(settings),
@@ -965,6 +967,7 @@ private fun ArticleBody(
             if (!inProgress || followAlongScrolling || !positionRestored) return@collect
             val session = TtsPlayback.session.value
             if (session != null && session.url == content.url &&
+                settings.ttsFollowAlong && session.followAlongEnabled &&
                 session.playing && !session.followAlongPaused
             ) {
                 TtsPlayback.setFollowAlongPaused(true)

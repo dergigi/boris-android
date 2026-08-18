@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Slim TTS player can toggle follow-along while listening
+
 ## [1.4.2] - 2026-08-18
 
 ### Changed
