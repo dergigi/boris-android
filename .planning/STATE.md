@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
 status: verifying
-stopped_at: All phase 4 plans complete, verification next
-last_updated: "2026-08-18T11:10:00.000Z"
+stopped_at: Phase 5 context gathered
+last_updated: "2026-08-18T15:31:21.671Z"
 last_activity: 2026-08-18
 last_activity_desc: Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
 progress:
-  total_phases: 4
-  completed_phases: 3
+  total_phases: 5
+  completed_phases: 4
   total_plans: 6
   completed_plans: 6
 ---
@@ -90,6 +90,7 @@ Recent decisions affecting current work:
 - Backlog 999.5 added: zap people, articles, and highlights (2026-08-16)
 - Backlog 999.6 added: friends-of-friends scope (2026-08-17)
 - Phase 4 added: Listen to articles
+- Phase 5 added: Resolve nostr profile references (GitHub #5)
 
 ### Pending Todos
 
@@ -117,6 +118,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T11:15:00.000Z
-Stopped at: Phase 4 planned
-Resume file: .planning/phases/04-listen-to-articles/04-01-PLAN.md
+Last session: 2026-08-18T15:31:21.662Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-resolve-nostr-profile-references/05-CONTEXT.md
