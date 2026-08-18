@@ -1,7 +1,10 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -9,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +42,7 @@ import org.dergigi.boris.ui.settings.SettingsScreen
 import org.dergigi.boris.ui.you.ProfileScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -85,6 +90,18 @@ fun BorisApp(
     val currentRoute = backStack?.destination?.route
     val selectedTab = MainTab.entries.firstOrNull { it.route == currentRoute }
     val showBar = selectedTab != null
+    // D-17: the speaking article's reader owns play/pause; hide the mini player there.
+    val currentArticleUrl = if (currentRoute == Routes.READER) {
+        backStack?.arguments?.getString(ReaderViewModel.URL_ARG)
+    } else {
+        null
+    }
+
+    fun openSpeakingArticle(url: String) {
+        navController.navigate(Routes.reader(url)) {
+            launchSingleTop = true
+        }
+    }
 
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
@@ -119,14 +136,21 @@ fun BorisApp(
             },
             bottomBar = {
                 if (selectedTab != null) {
-                    BorisBottomBar(
-                        selected = selectedTab,
-                        pictureUrl = pictureUrl,
-                        onSelect = ::goToTab,
-                    )
+                    Column {
+                        TtsMiniPlayerHost(
+                            currentArticleUrl = currentArticleUrl,
+                            onOpenArticle = ::openSpeakingArticle,
+                        )
+                        BorisBottomBar(
+                            selected = selectedTab,
+                            pictureUrl = pictureUrl,
+                            onSelect = ::goToTab,
+                        )
+                    }
                 }
             },
         ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
                 startDestination = Routes.HOME,
@@ -311,6 +335,18 @@ fun BorisApp(
                         },
                     )
                 }
+            }
+            // Off-tab screens (a different article's reader, Settings, …) have no
+            // bottom bar; overlay the mini player above system gesture insets.
+            if (selectedTab == null) {
+                TtsMiniPlayerHost(
+                    currentArticleUrl = currentArticleUrl,
+                    onOpenArticle = ::openSpeakingArticle,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding(),
+                )
+            }
             }
         }
     }
