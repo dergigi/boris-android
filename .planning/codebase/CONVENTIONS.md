@@ -43,7 +43,7 @@ Write new Kotlin under `org.dergigi.boris` only. Do not add files to `com.readwi
 **Linting:**
 - Android Lint only, configured in `app/build.gradle.kts`.
 - `NullSafeMutableLiveData` is disabled. Do not re-enable it without a reason.
-- Run: `./gradlew :app:lint`
+- Run: `./gradlew :app:lintDebug` (same task CI uses). Fatal errors fail the build; warnings do not.
 
 **Compose:**
 - Collect Flow in the screen wrapper; pass immutable state + lambdas into a `*Content` composable (`ReaderScreen` / `ReaderScreenContent` in `ReaderScreen.kt`).

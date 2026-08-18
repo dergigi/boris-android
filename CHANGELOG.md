@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Pull requests run Android Lint and JVM unit tests
+
 ## [1.4.4] - 2026-08-18
 
 ### Added

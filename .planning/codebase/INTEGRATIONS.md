@@ -87,7 +87,10 @@
 - Companion website (not an app backend): `https://readwithboris.com/`
 
 **CI Pipeline:**
-- None. No `.github/workflows` directory. Builds and publishes are local (`./gradlew :app:assembleDebug`, `./gradlew :app:assembleRelease`, then the Zapstore script)
+- GitHub Actions `.github/workflows/ci.yml` on pull requests and `master` pushes
+- One job, 15 minute cap: `./gradlew :app:lintDebug :app:testDebugUnitTest`
+- Android Lint only (no ktlint/detekt). Warnings do not fail. Fatal lint errors fail
+- No emulator, no `assembleRelease`, no Zapstore publish. Releases stay local (`./gradlew :app:assembleRelease`, then the Zapstore script)
 
 ## Environment Configuration
 

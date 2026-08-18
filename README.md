@@ -14,6 +14,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and s
 ./gradlew :app:assembleDebug
 ```
 
+Pull requests run Android Lint (debug) and JVM unit tests. Same checks locally:
+
+```bash
+./gradlew :app:lintDebug :app:testDebugUnitTest
+```
+
+Fatal lint errors fail the job. Warnings are reported and do not fail the build.
+
 ## Release build
 
 Signing uses a local upload keystore. Put these in gitignored `local.properties`:

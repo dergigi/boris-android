@@ -90,13 +90,24 @@ android {
     }
 
     lint {
-        disable += "NullSafeMutableLiveData"
+        abortOnError = true
+        warningsAsErrors = false
+        checkReleaseBuilds = false
+        lintConfig = file("lint.xml")
+        htmlReport = true
+        xmlReport = true
     }
 
     packaging {
         resources {
             excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
+    }
+}
+
+androidComponents {
+    beforeVariants { variant ->
+        variant.enableAndroidTest = false
     }
 }
 

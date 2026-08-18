@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Kept from the existing Gradle lint block. -->
+    <issue id="NullSafeMutableLiveData" severity="ignore" />
+    <!-- Version nags; they do not mean the PR is wrong. -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+</lint>
