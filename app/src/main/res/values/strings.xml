@@ -295,6 +295,7 @@
     <string name="reader_find_next">Next match</string>
     <string name="settings_appearance_summary">Theme, dark and light colors</string>
     <string name="settings_reading_summary">Font, size, alignment, weblinks</string>
+    <string name="settings_tts_summary">Speed, voice, preview, follow-along</string>
     <string name="settings_media_summary">Full-width images</string>
     <string name="settings_highlights_summary">Style, colors, visibility</string>
     <string name="settings_home_summary">Sections, archived articles</string>
