@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,6 +61,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -213,6 +215,7 @@ fun ReaderScreen(
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var closeAfterArchive by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -230,6 +233,7 @@ fun ReaderScreen(
     }
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
+        if (isArchiveFailureMessage(context, text)) closeAfterArchive = false
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
     }
@@ -257,6 +261,16 @@ fun ReaderScreen(
         val intent = settingsSignIntent ?: return@LaunchedEffect
         settingsViewModel.consumeSignIntent()
         settingsLauncher.launch(intent)
+    }
+    val readyArticleUrl = (state as? ReaderUiState.Ready)?.content?.url
+    LaunchedEffect(readyArticleUrl) {
+        closeAfterArchive = false
+    }
+    LaunchedEffect(archived, closeAfterArchive) {
+        if (closeAfterArchive && archived) {
+            closeAfterArchive = false
+            onBack()
+        }
     }
     val visibleHighlights = remember(highlights, deletedIds) {
         highlights.filter { it.id !in deletedIds }
@@ -290,8 +304,11 @@ fun ReaderScreen(
         onSave = { privateBookmark ->
             viewModel.saveToLibrary(privateBookmark)?.let(launcher::launch)
         },
-        onArchive = {
-            viewModel.archive()?.let(launcher::launch)
+        onArchive = { closeAfterSuccess ->
+            closeAfterArchive = closeAfterSuccess && !archived
+            val intent = viewModel.archive()
+            if (intent == null && !viewModel.archiveInFlight()) closeAfterArchive = false
+            intent?.let(launcher::launch)
         },
         onAddRssFeed = { feedUrl ->
             settingsViewModel.update { current ->
@@ -331,7 +348,11 @@ private fun SaveLibraryButton(
     )
     if (!canSave || archived) {
         IconButton(onClick = {}) {
-            Icon(icon, contentDescription = description)
+            Icon(
+                imageVector = icon,
+                contentDescription = description,
+                tint = if (archived) ArchiveGreen else MaterialTheme.colorScheme.onSurface,
+            )
         }
         return
     }
@@ -446,6 +467,7 @@ private fun requestNotificationPermissionOnce(context: Context, request: () -> U
 
 /** The SDK has no Settings.ACTION_TEXT_TO_SPEECH_SETTINGS constant; this is the settings action. */
 private const val ACTION_TEXT_TO_SPEECH_SETTINGS = "com.android.settings.TTS_SETTINGS"
+private val ArchiveGreen = Color(0xFF22C55E)
 
 /** D-11 fallback chain: TTS settings, then install-TTS-data, then generic settings. */
 internal fun openTtsSettings(context: Context) {
@@ -490,7 +512,7 @@ fun ReaderScreenContent(
     onGalleryPage: (Int) -> Unit,
     onHighlight: (String) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
-    onArchive: () -> Unit,
+    onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onAddRssFeed: (String) -> Unit,
     onDismissRssFeed: () -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
@@ -868,7 +890,7 @@ private fun ArticleBody(
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
-    onArchive: () -> Unit,
+    onArchive: (closeAfterSuccess: Boolean) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
@@ -1135,7 +1157,7 @@ private fun ArticleBody(
                 // Mirrors the webapp: complete only after holding 100% for 2s.
                 delay(2000)
                 ReadingPositionSync.publishAsync(appContext, content.url)
-                if (autoArchive && loggedIn && !archived) onArchive()
+                if (autoArchive && loggedIn && !archived) onArchive(false)
             }
     }
     val openFromStop = remember<(HighlightStop) -> Unit> {
@@ -1520,7 +1542,8 @@ private fun ArticleBody(
                     ) {
                         ArchiveButton(
                             archived = archived,
-                            onClick = onArchive,
+                            closeAfterArchive = settings.archiveClosesReader,
+                            onClick = { onArchive(settings.archiveClosesReader && !archived) },
                         )
                     }
                 }
@@ -1708,27 +1731,49 @@ private fun HighlightedMarkdownNode(
 @Composable
 private fun ArchiveButton(
     archived: Boolean,
+    closeAfterArchive: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedButton(
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
+        colors = if (archived) {
+            ButtonDefaults.outlinedButtonColors(
+                containerColor = ArchiveGreen.copy(alpha = 0.14f),
+                contentColor = ArchiveGreen,
+            )
+        } else {
+            ButtonDefaults.outlinedButtonColors()
+        },
+        border = BorderStroke(
+            1.dp,
+            if (archived) ArchiveGreen else MaterialTheme.colorScheme.outline,
+        ),
         modifier = modifier,
     ) {
         Icon(
-            imageVector = BorisIcons.Books,
+            imageVector = if (archived) Icons.Filled.CheckCircle else BorisIcons.Books,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(8.dp))
         Text(
             text = stringResource(
-                if (archived) R.string.reader_archived else R.string.reader_archive,
+                when {
+                    archived -> R.string.reader_archived
+                    closeAfterArchive -> R.string.reader_archive_close
+                    else -> R.string.reader_archive
+                },
             ),
         )
     }
 }
+
+private fun isArchiveFailureMessage(context: Context, message: String): Boolean =
+    message == context.getString(R.string.reader_archive_cancelled) ||
+        message == context.getString(R.string.reader_archive_rejected) ||
+        message == context.getString(R.string.reader_archive_failed)
 
 private fun readingColor(hex: String, fallback: Color): Color {
     val argb = HexColor.argb(hex) ?: return fallback

@@ -60,6 +60,11 @@ fun ScrollBehaviourSection(
             checked = settings.autoMarkAsReadOnCompletion,
             onCheckedChange = { onUpdate(settings.withBoolean("autoMarkAsReadOnCompletion", it)) },
         )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_archive_closes_reader),
+            checked = settings.archiveClosesReader,
+            onCheckedChange = { onUpdate(settings.withBoolean("archiveClosesReader", it)) },
+        )
         if (settings.volumeButtonScroll) {
             SettingRow(stringResource(R.string.settings_volume_scroll_amount)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
