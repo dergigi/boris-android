@@ -18,6 +18,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReaderRepository
+import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
@@ -97,6 +98,9 @@ class ReaderViewModel(
     private val _author = MutableStateFlow<Profile?>(null)
     val author: StateFlow<Profile?> = _author.asStateFlow()
 
+    private val _rssFeedSuggestion = MutableStateFlow<String?>(null)
+    val rssFeedSuggestion: StateFlow<String?> = _rssFeedSuggestion.asStateFlow()
+
     private val _signIntent = MutableStateFlow<Intent?>(null)
     val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
 
@@ -107,6 +111,7 @@ class ReaderViewModel(
     private var membershipJob: Job? = null
     private var archiveJob: Job? = null
     private var authorJob: Job? = null
+    private var rssFeedJob: Job? = null
     private var loadJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
@@ -163,12 +168,14 @@ class ReaderViewModel(
         membershipJob?.cancel()
         archiveJob?.cancel()
         authorJob?.cancel()
+        rssFeedJob?.cancel()
         loadJob = viewModelScope.launch {
             _state.value = ReaderUiState.Loading
             _highlights.value = emptyList()
             _highlightCount.value = 0
             _highlightsLoaded.value = false
             _inLibrary.value = false
+            _rssFeedSuggestion.value = null
             resetArchive()
             resetAuthor()
             publishSaveState()
@@ -179,6 +186,7 @@ class ReaderViewModel(
                 startMembershipCheck(content)
                 startArchiveCheck(content)
                 startAuthorFetch(content)
+                startRssFeedDiscovery(content)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -186,6 +194,7 @@ class ReaderViewModel(
                 membershipJob?.cancel()
                 archiveJob?.cancel()
                 authorJob?.cancel()
+                rssFeedJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
                 _highlightsLoaded.value = true
@@ -262,6 +271,10 @@ class ReaderViewModel(
                 return null
             }
         }
+    }
+
+    fun dismissRssFeedSuggestion() {
+        _rssFeedSuggestion.value = null
     }
 
     private fun zapSplitTags(content: ReadableContent, highlighterPubkey: String): List<List<String>> {
@@ -528,6 +541,17 @@ class ReaderViewModel(
                 RelayQuery.fetchProfile(pubkey)
             } catch (_: Exception) {
                 null
+            }
+        }
+    }
+
+    private fun startRssFeedDiscovery(content: ReadableContent) {
+        rssFeedJob?.cancel()
+        _rssFeedSuggestion.value = null
+        rssFeedJob = viewModelScope.launch(Dispatchers.IO) {
+            val feedUrl = RssRepository.discoverRootFeed(content.url) ?: return@launch
+            if (feedUrl !in SettingsSync.settings.value.rssFeeds) {
+                _rssFeedSuggestion.value = feedUrl
             }
         }
     }

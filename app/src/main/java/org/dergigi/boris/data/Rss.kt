@@ -46,9 +46,32 @@ object RssDates {
     )
 }
 
+data class RssParseResult(val isFeed: Boolean, val items: List<RssItem>)
+
+internal fun xmlRootLocalName(xml: String): String? {
+    var text = xml.trimStart('\uFEFF', ' ', '\n', '\r', '\t')
+    while (true) {
+        text = text.trimStart()
+        val skip = when {
+            text.startsWith("<?") -> text.indexOf("?>").takeIf { it >= 0 }?.plus(2)
+            text.startsWith("<!--") -> text.indexOf("-->").takeIf { it >= 0 }?.plus(3)
+            text.startsWith("<!") -> text.indexOf('>').takeIf { it >= 0 }?.plus(1)
+            else -> null
+        } ?: break
+        text = text.substring(skip)
+    }
+    if (!text.startsWith("<")) return null
+    val name = text.drop(1).takeWhile { it.isLetterOrDigit() || it == ':' || it == '_' || it == '-' || it == '.' }
+    return name.substringAfterLast(':').takeIf { it.isNotEmpty() }
+}
+
 /** Parses RSS 2.0 and Atom feeds. */
 object RssParser {
-    fun parse(xml: String, feedUrl: String): List<RssItem> {
+    fun parse(xml: String, feedUrl: String): List<RssItem> = parseDocument(xml, feedUrl).items
+
+    fun parseDocument(xml: String, feedUrl: String): RssParseResult {
+        val root = xmlRootLocalName(xml)?.lowercase()
+        if (root != "rss" && root != "feed") return RssParseResult(false, emptyList())
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
         parser.setInput(StringReader(xml.trimStart('\uFEFF', ' ', '\n', '\r', '\t')))
@@ -140,7 +163,7 @@ object RssParser {
             }
             event = parser.next()
         }
-        return items
+        return RssParseResult(true, items)
     }
 
     /** Reads element text; gives up on nested markup (e.g. xhtml content). */

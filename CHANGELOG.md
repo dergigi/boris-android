@@ -11,6 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Added
 
+- Reader can suggest adding a detected website RSS feed
 - Text-to-Speech has its own settings category
 - Slim TTS player can toggle follow-along while listening
 
