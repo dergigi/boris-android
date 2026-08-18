@@ -104,7 +104,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Listen from the reader through on-device TTS and a media foreground service
+- [x] 04-01-PLAN.md — Listen from the reader through on-device TTS and a media foreground service (2026-08-18)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
