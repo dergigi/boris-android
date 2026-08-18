@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Feeds top bar has an info dialog for Nostrverse, Friends, and You filters
+
 ### Changed
 
 - README and Zapstore screenshot sets drop the article cover shot

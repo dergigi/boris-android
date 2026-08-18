@@ -206,6 +206,11 @@
     <string name="feed_scope_nostrverse">Nostrverse</string>
     <string name="feed_scope_friends">Friends</string>
     <string name="feed_scope_mine">You</string>
+    <string name="feed_info">Feed visibility</string>
+    <string name="feed_info_title">Feed visibility</string>
+    <string name="feed_info_nostrverse">Highlights from anyone on nostr. The public firehose.</string>
+    <string name="feed_info_friends">Highlights from people you follow. Needs a login.</string>
+    <string name="feed_info_mine">Your own highlights. Needs a login.</string>
     <string name="feed_scope_friends_login">Connect to see friends content</string>
     <string name="feed_scope_mine_login">Connect to see your content</string>
     <string name="settings_reading">Reading</string>

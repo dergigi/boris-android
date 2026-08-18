@@ -25,9 +25,11 @@ import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -187,6 +189,15 @@ fun FeedScreenContent(
     deletedIds: Set<String> = emptySet(),
     menuFor: (FeedItem) -> HighlightCardMenu? = { null },
 ) {
+    var showInfo by remember { mutableStateOf(false) }
+    if (showInfo) {
+        FeedInfoDialog(
+            nostrverseColor = nostrverseColor,
+            friendsColor = friendsColor,
+            mineColor = mineColor,
+            onDismiss = { showInfo = false },
+        )
+    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -221,6 +232,12 @@ fun FeedScreenContent(
                         ),
                         onClick = { onToggle(FeedLevel.Mine) },
                     )
+                    IconButton(onClick = { showInfo = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.feed_info),
+                        )
+                    }
                     TopBarMoreMenu(
                         items = listOf(
                             TopBarMenuItem(
@@ -736,6 +753,80 @@ private fun StatusMessage(
             shape = RoundedCornerShape(8.dp),
         ) {
             Text(actionLabel)
+        }
+    }
+}
+
+@Composable
+private fun FeedInfoDialog(
+    nostrverseColor: Color,
+    friendsColor: Color,
+    mineColor: Color,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.feed_info_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                FeedInfoRow(
+                    icon = Icons.Outlined.Hub,
+                    tint = nostrverseColor,
+                    title = stringResource(R.string.feed_scope_nostrverse),
+                    body = stringResource(R.string.feed_info_nostrverse),
+                )
+                FeedInfoRow(
+                    icon = Icons.Outlined.Group,
+                    tint = friendsColor,
+                    title = stringResource(R.string.feed_scope_friends),
+                    body = stringResource(R.string.feed_info_friends),
+                )
+                FeedInfoRow(
+                    icon = Icons.Outlined.Person,
+                    tint = mineColor,
+                    title = stringResource(R.string.feed_scope_mine),
+                    body = stringResource(R.string.feed_info_mine),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.library_info_close))
+            }
+        },
+    )
+}
+
+@Composable
+private fun FeedInfoRow(
+    icon: ImageVector,
+    tint: Color,
+    title: String,
+    body: String,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(20.dp),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
