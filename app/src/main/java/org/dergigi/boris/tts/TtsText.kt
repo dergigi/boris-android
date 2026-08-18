@@ -45,6 +45,19 @@ object TtsText {
         return selectedIndex.coerceAtLeast(0)
     }
 
+    fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
+        var index = 0
+        content.title?.let { if (clean(it) != null) index++ }
+        content.summary?.let { if (clean(it) != null) index++ }
+        val markdown = NostrMentions.rewrite(Footnotes.expand(content.body))
+        for (block in splitMarkdownBlocksWithRanges(markdown)) {
+            if (clean(block.text) == null) continue
+            if (markdownOffset in block.start..block.end) return index
+            index++
+        }
+        return null
+    }
+
     /**
      * Splits one logical paragraph into speakable sub-chunks that fit the engine's
      * input limit. Splits on sentence punctuation first, then on spaces.
@@ -72,18 +85,44 @@ object TtsText {
     }
 
     fun splitMarkdownBlocks(markdown: String): List<String> {
-        val withoutFences = FENCE.replace(markdown, "\n")
-        val blocks = mutableListOf<String>()
+        return splitMarkdownBlocksWithRanges(markdown).map { it.text }
+    }
+
+    private fun splitMarkdownBlocksWithRanges(markdown: String): List<MarkdownBlock> {
+        val rangedBlocks = mutableListOf<MarkdownBlock>()
         val current = StringBuilder()
+        var currentStart = 0
+        var currentEnd = 0
         var droppingReferenceDefinition = false
+        var inFence: String? = null
         fun flush() {
-            if (current.isNotBlank()) blocks += current.toString()
+            if (current.isNotBlank()) {
+                val text = current.toString()
+                rangedBlocks += MarkdownBlock(text, currentStart, currentEnd)
+            }
             current.setLength(0)
         }
-        for (line in withoutFences.lines()) {
+        var lineStart = 0
+        for (line in markdown.lines()) {
             val trimmed = line.trim()
+            val fence = inFence
+            if (fence != null) {
+                if (trimmed.startsWith(fence)) inFence = null
+                lineStart += line.length + 1
+                continue
+            }
+            val fenceStart = fenceMarker(trimmed)
+            if (fenceStart != null) {
+                flush()
+                inFence = fenceStart
+                lineStart += line.length + 1
+                continue
+            }
             if (droppingReferenceDefinition) {
-                if (isReferenceDefinitionContinuation(line)) continue
+                if (isReferenceDefinitionContinuation(line)) {
+                    lineStart += line.length + 1
+                    continue
+                }
                 droppingReferenceDefinition = false
             }
             when {
@@ -95,16 +134,23 @@ object TtsText {
                 isTableRow(trimmed) || isImageOnly(trimmed) || isRule(trimmed) -> flush()
                 isHeading(trimmed) || isListItem(trimmed) -> {
                     flush()
-                    blocks += trimmed
+                    rangedBlocks += MarkdownBlock(
+                        text = trimmed,
+                        start = lineStart + line.indexOf(trimmed),
+                        end = lineStart + line.length,
+                    )
                 }
                 else -> {
+                    if (current.isEmpty()) currentStart = lineStart + line.indexOf(trimmed)
                     if (current.isNotEmpty()) current.append(' ')
                     current.append(trimmed)
+                    currentEnd = lineStart + line.length
                 }
             }
+            lineStart += line.length + 1
         }
         flush()
-        return blocks
+        return rangedBlocks
     }
 
     private fun addCleaned(out: MutableList<String>, raw: String) {
@@ -140,6 +186,12 @@ object TtsText {
 
     private fun isReferenceDefinition(line: String): Boolean = REFERENCE_DEFINITION.matches(line)
 
+    private fun fenceMarker(line: String): String? = when {
+        line.startsWith("```") -> "```"
+        line.startsWith("~~~") -> "~~~"
+        else -> null
+    }
+
     private fun isReferenceDefinitionContinuation(line: String): Boolean {
         val trimmed = line.trim()
         return line.firstOrNull()?.isWhitespace() == true &&
@@ -161,7 +213,6 @@ object TtsText {
         }
     }
 
-    private val FENCE = Regex("""(?s)(?:```|~~~)[^\n]*\n.*?(?:```|~~~)""")
     private val SENTENCE_BREAK = Regex("""(?<=[.!?…])\s+""")
     private val HEADING_MARK = Regex("""(?m)^#{1,6}\s+""")
     private val QUOTE_MARK = Regex("""(?m)^>\s?""")
@@ -173,4 +224,10 @@ object TtsText {
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
     private val IMAGE_ONLY = Regex("""^(?:!\[[^\]]*]\([^)\s]+\)\s*)+$""")
     private val RULE = Regex("""^(?:-{3,}|\*{3,}|_{3,})$""")
+
+    private data class MarkdownBlock(
+        val text: String,
+        val start: Int,
+        val end: Int,
+    )
 }

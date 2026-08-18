@@ -1,8 +1,11 @@
 package org.dergigi.boris.ui.reader
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -36,6 +40,7 @@ fun HighlightTextToolbar(
     if (!selection.toolbarReady) return
     val rect = selection.toolbarRect
     val position = remember(rect) { SelectionMenuPosition(rect) }
+    val maxWidth = (LocalConfiguration.current.screenWidthDp - 16).dp
     Popup(
         popupPositionProvider = position,
         properties = PopupProperties(
@@ -50,8 +55,13 @@ fun HighlightTextToolbar(
             color = MaterialTheme.colorScheme.inverseSurface,
             contentColor = MaterialTheme.colorScheme.inverseOnSurface,
             shadowElevation = 6.dp,
+            modifier = Modifier.widthIn(max = maxWidth),
         ) {
-            Row(modifier = Modifier.padding(horizontal = 4.dp)) {
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 4.dp),
+            ) {
                 ToolbarAction(
                     label = stringResource(android.R.string.copy),
                     onClick = onCopy,

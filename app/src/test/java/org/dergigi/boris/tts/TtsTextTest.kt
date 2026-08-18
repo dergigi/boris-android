@@ -162,6 +162,25 @@ class TtsTextTest {
     }
 
     @Test
+    fun startIndexForMarkdownOffsetPreservesRepeatedParagraphOccurrence() {
+        val markdown = """
+            Repeat this paragraph.
+
+            Something else.
+
+            Repeat this paragraph.
+        """.trimIndent()
+        val content = ReadableContent(
+            url = "https://example.com/repeated",
+            markdown = markdown,
+        )
+        assertEquals(
+            2,
+            TtsText.startIndexForMarkdownOffset(content, markdown.lastIndexOf("Repeat")),
+        )
+    }
+
+    @Test
     fun chunksSplitLongTextOnSentencesThenSpaces() {
         val sentence = "This is a sentence. " // 20 chars
         val long = sentence.repeat(10).trim()

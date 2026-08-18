@@ -44,6 +44,8 @@ class ReaderSelectionState {
         private set
     var toolbarRect by mutableStateOf(Rect.Zero)
         private set
+    var ttsStartIndex by mutableStateOf<Int?>(null)
+        private set
 
     private var frozenMin = 0
     private var frozenMax = 0
@@ -61,10 +63,11 @@ class ReaderSelectionState {
 
     fun owns(id: Any): Boolean = owner === id && hasSelection
 
-    fun begin(id: Any, value: String, word: TextRange) {
+    fun begin(id: Any, value: String, word: TextRange, ttsIndex: Int? = null) {
         owner = id
         text = value
         range = word
+        ttsStartIndex = ttsIndex
         frozenMin = word.min
         frozenMax = word.max
         toolbarRect = Rect.Zero
@@ -86,10 +89,11 @@ class ReaderSelectionState {
         range = if (movingMin) TextRange(clamped, range.max) else TextRange(range.min, clamped)
     }
 
-    fun selectAll(id: Any, value: String) {
+    fun selectAll(id: Any, value: String, ttsIndex: Int? = null) {
         owner = id
         text = value
         range = TextRange(0, value.length)
+        ttsStartIndex = ttsIndex
         frozenMin = 0
         frozenMax = value.length
     }
@@ -98,6 +102,7 @@ class ReaderSelectionState {
         owner = null
         text = ""
         range = TextRange.Zero
+        ttsStartIndex = null
         toolbarRect = Rect.Zero
     }
 
@@ -123,6 +128,7 @@ fun Modifier.readerSelectable(
     state: ReaderSelectionState,
     onCoordinates: (LayoutCoordinates) -> Unit,
     onTap: ((Offset) -> Boolean)? = null,
+    ttsStartIndex: Int? = null,
 ): Modifier = composed {
     val colors = LocalTextSelectionColors.current
     val haptic = LocalHapticFeedback.current
@@ -132,6 +138,7 @@ fun Modifier.readerSelectable(
     val coordsRef = rememberUpdatedState(coordinates)
     val textRef = rememberUpdatedState(text)
     val onTapRef = rememberUpdatedState(onTap)
+    val ttsStartIndexRef = rememberUpdatedState(ttsStartIndex)
 
     SideEffect {
         val laid = layout
@@ -174,6 +181,7 @@ fun Modifier.readerSelectable(
                         longPressTimeout = longPressTimeout,
                         handleSlop = handleSlop,
                         onTap = { onTapRef.value?.invoke(it) == true },
+                        ttsStartIndex = { ttsStartIndexRef.value },
                     )
                 }
             }
@@ -192,6 +200,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     longPressTimeout: Long,
     handleSlop: Float,
     onTap: (Offset) -> Boolean,
+    ttsStartIndex: () -> Int?,
 ) {
     val pass = PointerEventPass.Initial
     val down = awaitFirstDown(requireUnconsumed = false, pass = pass)
@@ -230,7 +239,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val index = JustifiedLayout.offsetAt(laid, change.position)
-        state.begin(owner, text(), laid.getWordBoundary(index))
+        state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
         coordinates()?.let { state.updateToolbar(laid, it) }
         while (true) {
             val event = awaitPointerEvent(pass)
