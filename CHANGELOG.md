@@ -11,7 +11,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Changed
 
-- Screenshot set includes a highlighted reader view and an updated settings shot
+- README screenshot section splits reading (light), highlights (dark), and settings
+- Screenshot set includes light-mode reading shots with TTS and in-article marks
 
 ## [1.4.9] - 2026-08-18
 

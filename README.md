@@ -2,14 +2,6 @@
 
 A nostr-native app for reading and highlighting. Paste a URL, share one from the browser, or open an `http`/`https`/`nostr:` link (articles, notes, `npub`/`nprofile`). You get a calm article view, your marks, swarm highlights from friends and the rest of the nostrverse, and listen with on-device TTS. Bookmarks and RSS live in the library.
 
-<p align="center">
-  <img src="screenshots/home.png" width="180" alt="Home" />
-  <img src="screenshots/reader-cover.png" width="180" alt="Reader" />
-  <img src="screenshots/feeds.png" width="180" alt="Feeds" />
-  <img src="screenshots/you.png" width="180" alt="Your highlights" />
-  <img src="screenshots/search.png" width="180" alt="Search" />
-</p>
-
 No ads, no trackers, no paywalls, no subscriptions. Nostr is the backend, so your highlights travel with your npub. Pair a local relay like [Citrine](https://github.com/greenart7c3/Citrine) and keep reading in airplane mode.
 
 Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec`.
@@ -20,6 +12,39 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
 </p>
 
 - Versions: [CHANGELOG.md](CHANGELOG.md)
+
+## Screenshots
+
+### Reading
+
+Light mode. Serif article view, marks in the text, TTS at the bottom.
+
+<p align="center">
+  <img src="screenshots/reader-light.png" width="180" alt="Reading in light mode" />
+  <img src="screenshots/reader-highlight.png" width="180" alt="Highlighted passage" />
+  <img src="screenshots/reader-tts.png" width="180" alt="Listening with on-device TTS" />
+</p>
+
+### Highlights
+
+Dark mode. Your marks, friends' marks, and the rest of the nostrverse.
+
+<p align="center">
+  <img src="screenshots/home.png" width="180" alt="Home" />
+  <img src="screenshots/reader-cover.png" width="180" alt="Article with swarm highlights" />
+  <img src="screenshots/feeds.png" width="180" alt="Highlights feed" />
+  <img src="screenshots/you.png" width="180" alt="Your highlights" />
+  <img src="screenshots/search-highlight.png" width="180" alt="Search highlights" />
+</p>
+
+### Settings
+
+<p align="center">
+  <img src="screenshots/settings.png" width="180" alt="Settings" />
+  <img src="screenshots/settings-reading.png" width="180" alt="Reading settings" />
+  <img src="screenshots/settings-highlights.png" width="180" alt="Highlight colors" />
+  <img src="screenshots/settings-airplane.png" width="180" alt="Airplane mode" />
+</p>
 
 ```bash
 ./gradlew :app:assembleDebug
