@@ -145,6 +145,53 @@ class TtsTextTest {
     }
 
     @Test
+    fun fromSentenceStartsAtContainingSentence() {
+        val paragraph = "First sentence. Second sentence here. Third one."
+        assertEquals(
+            "Second sentence here. Third one.",
+            TtsText.fromSentence(paragraph, "sentence here"),
+        )
+        assertEquals(paragraph, TtsText.fromSentence(paragraph, "First"))
+        assertEquals(paragraph, TtsText.fromSentence(paragraph, "missing"))
+        assertEquals(
+            "Only one sentence.",
+            TtsText.fromSentence("Only one sentence.", "sentence"),
+        )
+    }
+
+    @Test
+    fun fromSentenceUsesOwnerOffsetWhenTheWordRepeats() {
+        val paragraph = "The cat sat. The cat ran."
+        assertEquals(
+            "The cat ran.",
+            TtsText.fromSentence(
+                paragraph = paragraph,
+                selectedText = "cat",
+                ownerText = paragraph,
+                ownerOffset = paragraph.lastIndexOf("cat"),
+            ),
+        )
+        assertEquals(
+            paragraph,
+            TtsText.fromSentence(
+                paragraph = paragraph,
+                selectedText = "cat",
+                ownerText = paragraph,
+                ownerOffset = paragraph.indexOf("cat"),
+            ),
+        )
+    }
+
+    @Test
+    fun applySentenceStartTrimsOnlyTheStartingParagraph() {
+        val paragraphs = listOf("Title", "One. Two. Three.", "Next.")
+        assertEquals(
+            listOf("Title", "Two. Three.", "Next."),
+            TtsText.applySentenceStart(paragraphs, 1, "Two"),
+        )
+    }
+
+    @Test
     fun startIndexForSelectionFindsTitle() {
         val content = ReadableContent(
             url = "https://example.com/title",

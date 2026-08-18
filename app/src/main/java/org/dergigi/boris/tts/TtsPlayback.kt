@@ -65,8 +65,25 @@ object TtsPlayback {
         start(context, content, startIndex, author, restartActive = false)
     }
 
-    fun playFrom(context: Context, content: ReadableContent, startIndex: Int, author: String?) {
-        start(context, content, startIndex, author, restartActive = true)
+    fun playFrom(
+        context: Context,
+        content: ReadableContent,
+        startIndex: Int,
+        author: String?,
+        selectedText: String = "",
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+    ) {
+        start(
+            context,
+            content,
+            startIndex,
+            author,
+            restartActive = true,
+            selectedText = selectedText,
+            ownerText = ownerText,
+            ownerOffset = ownerOffset,
+        )
     }
 
     private fun start(
@@ -75,11 +92,20 @@ object TtsPlayback {
         startIndex: Int,
         author: String?,
         restartActive: Boolean,
+        selectedText: String = "",
+        ownerText: String = "",
+        ownerOffset: Int = 0,
     ) {
         val current = _session.value
         val restartingCurrentArticle = restartActive && current?.url == content.url
         if (current?.url == content.url && current.playing && !restartActive) return
-        val paragraphs = TtsText.paragraphs(content)
+        val paragraphs = TtsText.paragraphs(content).let { all ->
+            if (selectedText.isBlank() && ownerText.isBlank()) {
+                all
+            } else {
+                TtsText.applySentenceStart(all, startIndex, selectedText, ownerText, ownerOffset)
+            }
+        }
         if (paragraphs.isEmpty()) return
         val settings = SettingsSync.settings.value
         pendingPreview = null

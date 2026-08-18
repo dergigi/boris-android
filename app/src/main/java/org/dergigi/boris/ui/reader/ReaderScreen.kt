@@ -983,6 +983,7 @@ private fun ArticleBody(
     fun startTtsFromSelection() {
         val selected = selection.selectedText
         val ownerText = selection.text
+        val ownerOffset = selection.range.min
         val explicitStartIndex = selection.ttsStartIndex
         val paragraphs = TtsText.paragraphs(content)
         if (selected.isBlank() || paragraphs.isEmpty()) return
@@ -1002,6 +1003,9 @@ private fun ArticleBody(
                 selectedText = selected,
             ),
             author = authorName,
+            selectedText = selected,
+            ownerText = ownerText,
+            ownerOffset = ownerOffset,
         )
     }
     val navigator = remember { HighlightNavigator() }

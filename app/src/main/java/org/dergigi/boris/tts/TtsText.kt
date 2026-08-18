@@ -45,6 +45,46 @@ object TtsText {
         return selectedIndex.coerceAtLeast(0)
     }
 
+    fun applySentenceStart(
+        paragraphs: List<String>,
+        startIndex: Int,
+        selectedText: String,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+    ): List<String> {
+        if (paragraphs.isEmpty()) return paragraphs
+        val index = startIndex.coerceIn(0, paragraphs.lastIndex)
+        val trimmed = fromSentence(paragraphs[index], selectedText, ownerText, ownerOffset)
+        if (trimmed == paragraphs[index]) return paragraphs
+        return paragraphs.toMutableList().also { it[index] = trimmed }
+    }
+
+    fun fromSentence(
+        paragraph: String,
+        selectedText: String,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+    ): String {
+        val sentences = paragraph.split(SENTENCE_BREAK).filter { it.isNotBlank() }
+        if (sentences.size <= 1) return paragraph
+        val ownerSentences = ownerText.split(SENTENCE_BREAK).filter { it.isNotBlank() }
+        val byOffset = if (ownerText.isNotBlank() && ownerSentences.size == sentences.size) {
+            sentenceIndex(ownerText, ownerOffset)
+        } else {
+            -1
+        }
+        val index = when {
+            byOffset in 1 until sentences.size -> byOffset
+            else -> {
+                val selected = clean(selectedText)?.matchKey().orEmpty()
+                if (selected.isBlank()) return paragraph
+                sentences.indexOfFirst { it.matchKey().contains(selected) }
+            }
+        }
+        if (index <= 0) return paragraph
+        return sentences.drop(index).joinToString(" ")
+    }
+
     fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
         var index = 0
         content.title?.let { if (clean(it) != null) index++ }
@@ -151,6 +191,17 @@ object TtsText {
         }
         flush()
         return rangedBlocks
+    }
+
+    private fun sentenceIndex(text: String, offset: Int): Int {
+        if (text.isEmpty()) return 0
+        val clamped = offset.coerceIn(0, text.length)
+        var index = 0
+        for (match in SENTENCE_BREAK.findAll(text)) {
+            if (clamped < match.range.last + 1) return index
+            index++
+        }
+        return index
     }
 
     private fun addCleaned(out: MutableList<String>, raw: String) {

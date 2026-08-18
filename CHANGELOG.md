@@ -17,6 +17,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Highlight card Share is now Share quote when the source is a nostr article
 
+### Fixed
+
+- TTS from here starts at the selected sentence, not the start of the paragraph
+
 ## [1.4.6] - 2026-08-18
 
 ### Added
