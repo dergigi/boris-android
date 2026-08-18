@@ -13,7 +13,12 @@ A nostr-native app for reading and highlighting. Paste a URL, share one from the
 No ads, no trackers, no paywalls, no subscriptions. Nostr is the backend, so your highlights travel with your npub. Pair a local relay like [Citrine](https://github.com/greenart7c3/Citrine) and keep reading in airplane mode.
 
 Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec`.
-- Install: [Zapstore](https://zapstore.dev/apps/org.dergigi.boris) · [GitHub Releases](https://github.com/dergigi/boris-android/releases)
+
+<p align="center">
+  <a href="https://zapstore.dev/apps/org.dergigi.boris"><img src="docs/badges/get-it-on-zapstore.svg" alt="Get it on Zap Store" height="70"></a>
+  <a href="https://github.com/dergigi/boris-android/releases"><img src="docs/badges/get-it-on-github.png" alt="Get it on GitHub" height="70"></a>
+</p>
+
 - Versions: [CHANGELOG.md](CHANGELOG.md)
 
 ```bash
