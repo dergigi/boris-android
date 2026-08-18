@@ -36,6 +36,10 @@ object TtsPlayback {
     private val _session = MutableStateFlow<TtsSession?>(null)
     val session: StateFlow<TtsSession?> = _session.asStateFlow()
 
+    /** True while the one-shot settings preview is speaking (session stays null, D-10). */
+    private val _previewing = MutableStateFlow(false)
+    val previewing: StateFlow<Boolean> = _previewing.asStateFlow()
+
     @Volatile
     internal var engine: Engine? = null
 
@@ -46,6 +50,7 @@ object TtsPlayback {
         fun play()
         fun pause()
         fun applyRate()
+        fun applyLanguage()
         fun preview(text: String)
         fun shutdownSelf()
     }
@@ -58,6 +63,7 @@ object TtsPlayback {
         if (paragraphs.isEmpty()) return
         val settings = SettingsSync.settings.value
         pendingPreview = null
+        _previewing.value = false
         _session.value = TtsSession(
             url = content.url,
             title = content.title?.takeIf { it.isNotBlank() } ?: content.url,
@@ -117,12 +123,19 @@ object TtsPlayback {
         engine?.applyRate()
     }
 
+    /** Re-resolve the speaking locale after a language-setting change (D-09). */
+    fun applyLanguage() {
+        if (_session.value == null) return
+        engine?.applyLanguage()
+    }
+
     /**
      * One-shot preview (D-10): no session, no mini player. Stops any speaking
      * article first because there is only one engine.
      */
     fun preview(context: Context, text: String = TtsPreview.EXAMPLE_TEXT) {
         _session.value = null
+        _previewing.value = true
         val current = engine
         if (current != null) {
             current.preview(text)
@@ -130,6 +143,14 @@ object TtsPlayback {
             pendingPreview = text
             startService(context)
         }
+    }
+
+    /** Stops the one-shot preview utterance; sessions never exist while previewing. */
+    fun stopPreview() {
+        pendingPreview = null
+        if (!_previewing.value) return
+        _previewing.value = false
+        engine?.shutdownSelf()
     }
 
     fun setFollowAlongPaused(paused: Boolean) {
@@ -157,7 +178,12 @@ object TtsPlayback {
         engine?.play()
     }
 
+    internal fun onPreviewFinished() {
+        _previewing.value = false
+    }
+
     internal fun onError(message: String) {
+        _previewing.value = false
         val current = _session.value
         if (current != null) {
             _session.value = current.copy(

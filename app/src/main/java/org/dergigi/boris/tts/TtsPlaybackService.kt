@@ -134,6 +134,14 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         }
     }
 
+    override fun applyLanguage() {
+        handler.post {
+            resolvedLanguageUrl = null
+            val session = TtsPlayback.session.value ?: return@post
+            if (session.playing) speakCurrent()
+        }
+    }
+
     override fun preview(text: String) {
         handler.post { speakPreview(text) }
     }
@@ -268,6 +276,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
             handler.post {
                 if (utteranceId == PREVIEW_ID) {
                     previewing = false
+                    TtsPlayback.onPreviewFinished()
                     if (TtsPlayback.session.value == null) stopPlaybackAndSelf()
                     return@post
                 }

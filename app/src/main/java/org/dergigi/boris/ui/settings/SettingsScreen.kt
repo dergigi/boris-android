@@ -299,6 +299,7 @@ private fun SettingsCategoryDetail(
             }
             SettingsCategory.Reading -> {
                 ReadingSection(settings = settings, darkTheme = darkTheme, onUpdate = onUpdate)
+                TtsSection(settings = settings, onUpdate = onUpdate)
                 ReadingPreview(settings = settings, darkTheme = darkTheme)
             }
             SettingsCategory.Media -> MediaSection(settings = settings, onUpdate = onUpdate)
