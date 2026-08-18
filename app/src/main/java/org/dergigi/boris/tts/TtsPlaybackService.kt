@@ -434,7 +434,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         session?.author?.let { builder.setContentText(it) }
         if (session != null) {
             builder.addAction(
-                action(android.R.drawable.ic_media_previous, R.string.tts_previous_paragraph, ACTION_PREV),
+                action(android.R.drawable.ic_media_rew, R.string.tts_previous_paragraph, ACTION_PREV),
             )
             if (session.playing) {
                 builder.addAction(
@@ -446,7 +446,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                 )
             }
             builder.addAction(
-                action(android.R.drawable.ic_media_next, R.string.tts_next_paragraph, ACTION_NEXT),
+                action(android.R.drawable.ic_media_ff, R.string.tts_next_paragraph, ACTION_NEXT),
             )
             builder.addAction(
                 action(

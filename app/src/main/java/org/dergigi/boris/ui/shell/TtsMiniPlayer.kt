@@ -19,10 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -174,7 +174,7 @@ fun TtsMiniPlayer(
             }
             IconButton(onClick = { TtsPlayback.skip(-1) }, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.SkipPrevious,
+                    imageVector = Icons.Filled.FastRewind,
                     contentDescription = stringResource(R.string.tts_previous_paragraph),
                 )
             }
@@ -191,7 +191,7 @@ fun TtsMiniPlayer(
             }
             IconButton(onClick = { TtsPlayback.skip(1) }, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.SkipNext,
+                    imageVector = Icons.Filled.FastForward,
                     contentDescription = stringResource(R.string.tts_next_paragraph),
                 )
             }
