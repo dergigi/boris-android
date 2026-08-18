@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Nostr profile references in reader content now open the in-app profile instead of showing as raw text
+
 ## [1.4.2] - 2026-08-18
 
 ### Changed

@@ -141,6 +141,7 @@ import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrProfile
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingPositionStore
@@ -781,6 +782,7 @@ private fun ArticleBody(
                     ReaderLinkAction.Ignore -> Unit
                     is ReaderLinkAction.OpenInReader -> onOpenArticle(action.url)
                     is ReaderLinkAction.OpenExternal -> defaultUriHandler.openUri(action.url)
+                    is ReaderLinkAction.OpenProfile -> onOpenProfile(action.pubkey)
                 }
             }
         }
@@ -1065,7 +1067,9 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
-    val markdownBody = remember(content.body) { Footnotes.expand(content.body) }
+    val markdownBody = remember(content.body) {
+        NostrProfile.linkify(Footnotes.expand(content.body))
+    }
     val markdownState = rememberMarkdownState(
         content = markdownBody,
         flavour = flavour,

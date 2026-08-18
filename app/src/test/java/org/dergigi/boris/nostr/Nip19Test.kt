@@ -103,4 +103,23 @@ class Nip19Test {
         assertEquals(original.author, decoded.author)
         assertEquals(original.kind, decoded.kind)
     }
+
+    @Test
+    fun decodesNprofileWithRelayHints() {
+        val nprofile =
+            "nprofile1qyv8wue69uhk6mmwv9jzu6nzx56jucm0d5arsvpcxqq3qamn8ghj7atdvfex2mp6xsurgwqqyzdkm9dhdgq3jxjvw7qc26q76lememf0l75wg9gka3uzgzepx2zl2ewxw6s"
+        val pointer = Nip19.nprofileDecode(nprofile)
+        assertEquals("9b6d95b76a01191a4c778185681ed7f3bced2fffa8e41516ec78240b213285f5", pointer.pubkey)
+        assertEquals(listOf("ws://monad.jb55.com:8080", "ws://umbrel:4848"), pointer.relays)
+    }
+
+    @Test
+    fun nprofileRoundTrips() {
+        val original = NprofilePointer(
+            pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            relays = listOf("wss://relay.damus.io"),
+        )
+        val decoded = Nip19.nprofileDecode(Nip19.nprofileEncode(original))
+        assertEquals(original, decoded)
+    }
 }

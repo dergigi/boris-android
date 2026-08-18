@@ -52,4 +52,17 @@ class ReaderLinksTest {
         )
         assertEquals(ReaderLinkAction.OpenExternal("mailto:hi@example.com"), action)
     }
+
+    @Test
+    fun nostrProfileLinksOpenProfiles() {
+        val action = readerLinkAction(
+            uri = "nostr:nprofile1qyv8wue69uhk6mmwv9jzu6nzx56jucm0d5arsvpcxqq3qamn8ghj7atdvfex2mp6xsurgwqqyzdkm9dhdgq3jxjvw7qc26q76lememf0l75wg9gka3uzgzepx2zl2ewxw6s",
+            currentUrl = "nostr:naddr1qq",
+            openInReader = true,
+        )
+        assertEquals(
+            ReaderLinkAction.OpenProfile("9b6d95b76a01191a4c778185681ed7f3bced2fffa8e41516ec78240b213285f5"),
+            action,
+        )
+    }
 }
