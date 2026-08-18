@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Screenshot set includes a highlighted reader view and an updated settings shot
+
 ## [1.4.9] - 2026-08-18
 
 ### Added
