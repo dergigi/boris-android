@@ -34,6 +34,11 @@ class UserSettingsTest {
         assertEquals(90, settings.volumeButtonScrollPercent)
         assertTrue(settings.useLocalRelayAsCache)
         assertFalse(settings.hideArchivedOnHome)
+        assertEquals(2.1, settings.ttsDefaultSpeed, 0.0)
+        assertEquals("content", settings.ttsLanguageMode)
+        assertFalse(settings.ttsUseSystemLanguage)
+        assertTrue(settings.ttsDetectContentLanguage)
+        assertTrue(settings.ttsFollowAlong)
     }
 
     @Test
