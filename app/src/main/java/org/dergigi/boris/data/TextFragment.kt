@@ -41,7 +41,7 @@ object TextFragment {
     }
 
     private fun encodeToken(text: String): String =
-        URLEncoder.encode(text, StandardCharsets.UTF_8)
+        URLEncoder.encode(text, StandardCharsets.UTF_8.name())
             .replace("+", "%20")
             .replace("*", "%2A")
             .replace("-", "%2D")
