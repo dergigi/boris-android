@@ -25,18 +25,23 @@ images:
   - ./screenshots/about-distraction-free.png
   - ./screenshots/about-airplane.png
   - ./screenshots/about-social.png
-  - ./screenshots/home.png
-  - ./screenshots/reader-dark.png
-  - ./screenshots/reading.png
-  - ./screenshots/reader-orange.png
-  - ./screenshots/reader-tts.png
-  - ./screenshots/feeds.png
-  - ./screenshots/you.png
-  - ./screenshots/search.png
-  - ./screenshots/settings.png
-  - ./screenshots/settings-highlights.png
-  - ./screenshots/settings-feeds.png
-  - ./screenshots/settings-airplane.png
+  - ./screenshots/read-1.png
+  - ./screenshots/read-2.png
+  - ./screenshots/read-3.png
+  - ./screenshots/read-4.png
+  - ./screenshots/dark-1.png
+  - ./screenshots/dark-2.png
+  - ./screenshots/dark-3.png
+  - ./screenshots/dark-4.png
+  - ./screenshots/1-home.png
+  - ./screenshots/2-library.png
+  - ./screenshots/3-feeds.png
+  - ./screenshots/4-search.png
+  - ./screenshots/5-you.png
+  - ./screenshots/settings-1.png
+  - ./screenshots/settings-2.png
+  - ./screenshots/settings-3.png
+  - ./screenshots/settings-4.png
 
 metadata_sources:
   - github

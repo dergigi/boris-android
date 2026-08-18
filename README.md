@@ -20,29 +20,30 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
 Light mode. Serif article view, marks in the text, TTS at the bottom.
 
 <p align="center">
-  <img src="screenshots/reading.png" width="180" alt="Reading in light mode" />
-  <img src="screenshots/reader-orange.png" width="180" alt="Orange highlight in light mode" />
-  <img src="screenshots/reader-tts.png" width="180" alt="Listening with on-device TTS" />
+  <img src="screenshots/read-1.png" width="180" alt="Reading in light mode" />
+  <img src="screenshots/read-2.png" width="180" alt="Orange highlight in light mode" />
+  <img src="screenshots/read-3.png" width="180" alt="Listening with on-device TTS" />
+  <img src="screenshots/read-4.png" width="180" alt="TTS playing in light mode" />
 </p>
 
-### Highlights
+### Dark
 
-Dark mode. Your marks, friends' marks, and the rest of the nostrverse.
+Article view, swarm marks, a profile, TTS.
 
 <p align="center">
-  <img src="screenshots/home.png" width="180" alt="Home" />
-  <img src="screenshots/feeds.png" width="180" alt="Highlights feed" />
-  <img src="screenshots/reader-dark.png" width="180" alt="Article in dark mode" />
-  <img src="screenshots/you.png" width="180" alt="Your highlights" />
+  <img src="screenshots/dark-1.png" width="180" alt="Article in dark mode" />
+  <img src="screenshots/dark-2.png" width="180" alt="Swarm highlights in dark mode" />
+  <img src="screenshots/dark-3.png" width="180" alt="Profile highlights in dark mode" />
+  <img src="screenshots/dark-4.png" width="180" alt="Listening in dark mode" />
 </p>
 
-### Settings
+### Home
 
 <p align="center">
-  <img src="screenshots/settings.png" width="180" alt="Settings" />
-  <img src="screenshots/settings-highlights.png" width="180" alt="Highlight colors" />
-  <img src="screenshots/settings-feeds.png" width="180" alt="Feeds settings" />
-  <img src="screenshots/settings-airplane.png" width="180" alt="Airplane mode" />
+  <img src="screenshots/1-home.png" width="180" alt="Home" />
+  <img src="screenshots/2-library.png" width="180" alt="Library" />
+  <img src="screenshots/3-feeds.png" width="180" alt="Feeds" />
+  <img src="screenshots/4-search.png" width="180" alt="Search" />
 </p>
 
 ```bash
