@@ -62,8 +62,23 @@ object TtsPlayback {
 
     /** One article at a time (D-03): starting a different url replaces the session. */
     fun start(context: Context, content: ReadableContent, startIndex: Int, author: String?) {
+        start(context, content, startIndex, author, restartActive = false)
+    }
+
+    fun playFrom(context: Context, content: ReadableContent, startIndex: Int, author: String?) {
+        start(context, content, startIndex, author, restartActive = true)
+    }
+
+    private fun start(
+        context: Context,
+        content: ReadableContent,
+        startIndex: Int,
+        author: String?,
+        restartActive: Boolean,
+    ) {
         val current = _session.value
-        if (current?.url == content.url && current.playing) return
+        val restartingCurrentArticle = restartActive && current?.url == content.url
+        if (current?.url == content.url && current.playing && !restartActive) return
         val paragraphs = TtsText.paragraphs(content)
         if (paragraphs.isEmpty()) return
         val settings = SettingsSync.settings.value
@@ -79,8 +94,21 @@ object TtsPlayback {
             index = startIndex.coerceIn(0, paragraphs.size - 1),
             playing = true,
             paused = false,
-            followAlongEnabled = settings.ttsFollowAlong,
-            rate = TtsSpeed.snap(settings.ttsDefaultSpeed),
+            followAlongEnabled = if (restartingCurrentArticle) {
+                current?.followAlongEnabled ?: settings.ttsFollowAlong
+            } else {
+                settings.ttsFollowAlong
+            },
+            rate = if (restartingCurrentArticle) {
+                current?.rate ?: TtsSpeed.snap(settings.ttsDefaultSpeed)
+            } else {
+                TtsSpeed.snap(settings.ttsDefaultSpeed)
+            },
+            followAlongPaused = if (restartingCurrentArticle) {
+                current?.followAlongPaused ?: false
+            } else {
+                false
+            },
         )
         engine?.play() ?: startService(context)
     }

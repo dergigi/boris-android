@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Pasting or sharing an `npub` / `nprofile` opens that profile instead of the reader
 - HTML fallback articles keep inline images
 - Pull requests run Android Lint and JVM unit tests
+- Reader text selection can start TTS from the selected position
 
 ### Changed
 

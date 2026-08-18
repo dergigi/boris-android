@@ -886,6 +886,10 @@ private fun ArticleBody(
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
     val openLinksInReader = settings.openLinksInReader
+    val ttsContext = LocalContext.current
+    val ttsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
     val uriHandler = remember(content.url, onOpenArticle, onOpenProfile, defaultUriHandler, openLinksInReader) {
         object : UriHandler {
             override fun openUri(uri: String) {
@@ -971,6 +975,35 @@ private fun ArticleBody(
     val clipboard = LocalClipboardManager.current
     val density = LocalDensity.current
     val selection = remember { ReaderSelectionState() }
+    val titleTtsIndex = remember(content.title, content.summary, content.body) {
+        content.title?.let {
+            TtsText.startIndexForSelection(content, ownerText = it, selectedText = it)
+        }
+    }
+    fun startTtsFromSelection() {
+        val selected = selection.selectedText
+        val ownerText = selection.text
+        val explicitStartIndex = selection.ttsStartIndex
+        val paragraphs = TtsText.paragraphs(content)
+        if (selected.isBlank() || paragraphs.isEmpty()) return
+        selection.clear()
+        requestNotificationPermissionOnce(ttsContext) {
+            ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        val authorName = content.authorPubkey?.trim()
+            ?.takeIf { it.length == 64 }
+            ?.let { Profile.displayName(it, author) }
+        TtsPlayback.playFrom(
+            context = ttsContext,
+            content = content,
+            startIndex = explicitStartIndex ?: TtsText.startIndexForSelection(
+                content = content,
+                ownerText = ownerText,
+                selectedText = selected,
+            ),
+            author = authorName,
+        )
+    }
     val navigator = remember { HighlightNavigator() }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
@@ -1129,12 +1162,29 @@ private fun ArticleBody(
         navigator,
         openFromStop,
         content.url,
+        content.title,
+        content.summary,
+        content.body,
         fullWidthImages,
         maxImageHeight,
         onImageClick,
     ) {
         markdownComponents(
-            text = { HighlightedMarkdownNode(it, it.typography.text, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            text = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.text,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
             paragraph = { model ->
                 val imageUrl = standaloneMarkdownImageUrl(model.content, model.node)
                 if (imageUrl != null) {
@@ -1145,7 +1195,19 @@ private fun ArticleBody(
                         onClick = onImageClick,
                     )
                 } else {
-                    HighlightedMarkdownNode(model, model.typography.paragraph, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop)
+                    HighlightedMarkdownNode(
+                        model,
+                        model.typography.paragraph,
+                        paintedHolder.value,
+                        mineColor,
+                        friendsColor,
+                        otherColor,
+                        underline,
+                        selection,
+                        navigator,
+                        openFromStop,
+                        TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
+                    )
                 }
             },
             image = { model ->
@@ -1159,12 +1221,96 @@ private fun ArticleBody(
                     )
                 }
             },
-            heading1 = { HighlightedMarkdownNode(it, it.typography.h1, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            heading2 = { HighlightedMarkdownNode(it, it.typography.h2, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            heading3 = { HighlightedMarkdownNode(it, it.typography.h3, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            heading4 = { HighlightedMarkdownNode(it, it.typography.h4, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            heading5 = { HighlightedMarkdownNode(it, it.typography.h5, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
-            heading6 = { HighlightedMarkdownNode(it, it.typography.h6, paintedHolder.value, mineColor, friendsColor, otherColor, underline, selection, navigator, openFromStop) },
+            heading1 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h1,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
+            heading2 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h2,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
+            heading3 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h3,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
+            heading4 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h4,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
+            heading5 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h5,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
+            heading6 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h6,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                )
+            },
         )
     }
     VolumeKeys.Handle(enabled = volumeScroll && settings.volumeButtonScroll) { up ->
@@ -1214,6 +1360,8 @@ private fun ArticleBody(
                 imageUrl = coverUrl,
                 title = content.title,
                 summary = overlaySummary,
+                selection = selection,
+                ttsStartIndex = titleTtsIndex,
                 onClick = {
                     val urls = buildList {
                         add(coverUrl)
@@ -1266,6 +1414,7 @@ private fun ArticleBody(
                             coordinates = titleCoords,
                             state = selection,
                             onCoordinates = { titleCoords = it },
+                            ttsStartIndex = titleTtsIndex,
                             onTap = { offset ->
                                 val laid = titleLayout ?: return@readerSelectable false
                                 val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
@@ -1405,9 +1554,10 @@ private fun ArticleBody(
                 selection.clear()
                 onHighlight(quote)
             },
+            onTtsFromHere = ::startTtsFromSelection,
             onSelectAll = {
                 val owner = selection.owner ?: return@HighlightTextToolbar
-                selection.selectAll(owner, selection.text)
+                selection.selectAll(owner, selection.text, selection.ttsStartIndex)
             },
         )
         HighlightsPane(
@@ -1498,6 +1648,7 @@ private fun HighlightedMarkdownNode(
     selection: ReaderSelectionState,
     navigator: HighlightNavigator,
     onHighlightTap: (HighlightStop) -> Unit,
+    ttsStartIndex: Int?,
 ) {
     val styledText = model.content.buildMarkdownAnnotatedString(
         model.node,
@@ -1538,6 +1689,7 @@ private fun HighlightedMarkdownNode(
                 coordinates = coords,
                 state = selection,
                 onCoordinates = { coords = it },
+                ttsStartIndex = ttsStartIndex,
                 onTap = { offset ->
                     val laid = layout ?: return@readerSelectable false
                     val stop = navigator.hit(owner, laid, offset) ?: return@readerSelectable false
@@ -1607,10 +1759,15 @@ private fun ArticleHero(
     imageUrl: String,
     title: String?,
     summary: String?,
+    selection: ReaderSelectionState? = null,
+    ttsStartIndex: Int? = null,
     onClick: () -> Unit,
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val height = (screenHeight * 0.42f).dp.coerceIn(240.dp, 420.dp)
+    var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val titleOwner = remember { Any() }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1641,6 +1798,23 @@ private fun ArticleHero(
                 .padding(horizontal = 20.dp, vertical = 20.dp),
         ) {
             if (!title.isNullOrBlank()) {
+                val selectableModifier = if (selection == null) {
+                    Modifier
+                } else {
+                    Modifier.readerSelectable(
+                        owner = titleOwner,
+                        text = title,
+                        layout = titleLayout,
+                        coordinates = titleCoords,
+                        state = selection,
+                        onCoordinates = { titleCoords = it },
+                        ttsStartIndex = ttsStartIndex,
+                        onTap = {
+                            onClick()
+                            true
+                        },
+                    )
+                }
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineLarge.copy(
@@ -1648,9 +1822,10 @@ private fun ArticleHero(
                         lineHeight = 34.sp,
                     ),
                     color = Color.White,
+                    onTextLayout = { titleLayout = it },
                     modifier = Modifier.padding(
                         bottom = if (summary.isNullOrBlank()) 0.dp else 8.dp,
-                    ),
+                    ).then(selectableModifier),
                 )
             }
             if (!summary.isNullOrBlank()) {
