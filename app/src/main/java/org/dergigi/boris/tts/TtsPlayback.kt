@@ -168,6 +168,15 @@ object TtsPlayback {
         _session.value = current.copy(followAlongPaused = paused)
     }
 
+    fun setFollowAlongEnabled(enabled: Boolean) {
+        val current = _session.value ?: return
+        if (current.followAlongEnabled == enabled) return
+        _session.value = current.copy(
+            followAlongEnabled = enabled,
+            followAlongPaused = if (enabled) false else current.followAlongPaused,
+        )
+    }
+
     internal fun onSpeechStarted(index: Int) {
         val current = _session.value ?: return
         if (index != current.index) return

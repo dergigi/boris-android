@@ -18,6 +18,7 @@ class ReaderRepository(
         val content = when (val target = NostrLink.parse(url)) {
             is NostrTarget.Article -> fetchArticle(target.ref)
             is NostrTarget.Note -> fetchNote(target)
+            is NostrTarget.Profile -> throw IOException("Profile links cannot be opened as articles")
             null -> {
                 val targetUrl = UrlExtractor.normalize(url)
                 rssContent(url, targetUrl) ?: run {

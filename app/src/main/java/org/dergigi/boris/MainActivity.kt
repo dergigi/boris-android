@@ -34,6 +34,7 @@ import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
+import org.dergigi.boris.nostr.HintedRelays
 import org.dergigi.boris.nostr.OfflineOutbox
 import org.dergigi.boris.nostr.OfflineSync
 import org.dergigi.boris.nostr.RelayHealth
@@ -61,6 +62,7 @@ class MainActivity : ComponentActivity() {
         splash.setKeepOnScreenCondition { !composeDrawn }
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         RelayHealth.init(File(filesDir, "relay_health.json"))
+        HintedRelays.init(File(filesDir, "hinted_relays.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
         ReadingPositionSync.refreshAsync(applicationContext)
         ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))

@@ -32,4 +32,15 @@ class RssDiscoveryTest {
             ),
         )
     }
+
+    @Test
+    fun preservesWwwAndNonDefaultPort() {
+        assertEquals(
+            listOf(
+                "https://www.example.com:8443/feed.xml",
+                "https://www.example.com:8443/blog/feed.xml",
+            ),
+            RssDiscovery.feedCandidates("https://www.example.com:8443/blog/some-post"),
+        )
+    }
 }

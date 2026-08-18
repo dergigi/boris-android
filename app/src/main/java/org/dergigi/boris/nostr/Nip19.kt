@@ -16,6 +16,11 @@ data class NeventPointer(
     val kind: Int? = null,
 )
 
+data class NprofilePointer(
+    val pubkey: String,
+    val relays: List<String> = emptyList(),
+)
+
 object Nip19 {
     private const val CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
     private val charsetRev = IntArray(128) { -1 }.also { table ->
@@ -78,6 +83,26 @@ object Nip19 {
         return NeventPointer(eventId, relays, author, kind)
     }
 
+    fun nprofileEncode(pointer: NprofilePointer): String {
+        val payload = buildList {
+            add(tlv(0, pointer.pubkey.hexToByteArray()))
+            for (relay in pointer.relays) {
+                add(tlv(1, relay.toByteArray(Charsets.UTF_8)))
+            }
+        }.fold(ByteArray(0)) { acc, chunk -> acc + chunk }
+        return bech32Encode("nprofile", payload)
+    }
+
+    fun nprofileDecode(nprofile: String): NprofilePointer {
+        val (hrp, data) = bech32Decode(nprofile)
+        require(hrp == "nprofile") { "Expected nprofile, got $hrp" }
+        val fields = parseTlv(data)
+        val pubkey = fields[0]?.firstOrNull()?.toHex()
+        require(pubkey != null && pubkey.length == 64) { "nprofile missing pubkey" }
+        val relays = fields[1].orEmpty().map { it.toString(Charsets.UTF_8) }
+        return NprofilePointer(pubkey, relays)
+    }
+
     fun naddrDecode(naddr: String): NaddrPointer {
         val (hrp, data) = bech32Decode(naddr)
         require(hrp == "naddr") { "Expected naddr, got $hrp" }
@@ -135,6 +160,7 @@ object Nip19 {
         return try {
             when {
                 trimmed.startsWith("npub1", ignoreCase = true) -> npubDecode(trimmed)
+                trimmed.startsWith("nprofile1", ignoreCase = true) -> nprofileDecode(trimmed).pubkey
                 else -> {
                     val hex = trimmed.lowercase()
                     if (hex.length == 64 && hex.all { it in '0'..'9' || it in 'a'..'f' }) hex else null

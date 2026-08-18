@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
@@ -28,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,8 +66,12 @@ fun TtsMiniPlayerHost(
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val session by TtsPlayback.session.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val active = session?.takeIf {
         it.url.isNotBlank() && (showCurrentArticle || !isSameArticle(it.url, currentArticleUrl))
+    }
+    LaunchedEffect(active?.url, settings.ttsFollowAlong) {
+        if (active != null) TtsPlayback.setFollowAlongEnabled(settings.ttsFollowAlong)
     }
     // Keep the last session around so the 200ms fade-out still has content.
     var shown by remember { mutableStateOf(active) }
@@ -85,6 +91,12 @@ fun TtsMiniPlayerHost(
                     val next = TtsSpeed.cycle(current.rate)
                     settingsViewModel.update { it.withDouble("ttsDefaultSpeed", next) }
                     TtsPlayback.setRate(next)
+                },
+                followAlongEnabled = settings.ttsFollowAlong,
+                onToggleFollowAlong = {
+                    val enabled = !settings.ttsFollowAlong
+                    settingsViewModel.update { it.withBoolean("ttsFollowAlong", enabled) }
+                    TtsPlayback.setFollowAlongEnabled(enabled)
                 },
             )
         }
@@ -109,6 +121,8 @@ fun TtsMiniPlayer(
     session: TtsSession,
     onOpenArticle: (String) -> Unit,
     onCycleSpeed: () -> Unit,
+    followAlongEnabled: Boolean,
+    onToggleFollowAlong: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val openArticle = stringResource(R.string.tts_open_article)
@@ -138,6 +152,26 @@ fun TtsMiniPlayer(
                     .semantics { contentDescription = openArticle },
             )
             SpeedChip(rate = session.rate, onCycle = onCycleSpeed)
+            IconButton(
+                onClick = onToggleFollowAlong,
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CenterFocusStrong,
+                    contentDescription = stringResource(
+                        if (followAlongEnabled) {
+                            R.string.tts_disable_follow_along
+                        } else {
+                            R.string.tts_enable_follow_along
+                        },
+                    ),
+                    tint = if (followAlongEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
             IconButton(onClick = { TtsPlayback.skip(-1) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,

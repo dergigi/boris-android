@@ -47,7 +47,20 @@ object RssRepository {
             .build()
     }
 
-    fun fetch(feedUrl: String): List<RssItem> {
+    fun fetch(feedUrl: String): List<RssItem> = loadFeed(feedUrl).items
+
+    fun discoverRootFeed(articleUrl: String): String? {
+        for (feedUrl in RssDiscovery.feedCandidates(articleUrl)) {
+            try {
+                if (loadFeed(feedUrl).isFeed) return feedUrl
+            } catch (_: Exception) {
+                // Try the next common feed location.
+            }
+        }
+        return null
+    }
+
+    private fun loadFeed(feedUrl: String): RssParseResult {
         val request = Request.Builder()
             .url(feedUrl)
             .header("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
@@ -58,18 +71,13 @@ object RssRepository {
         } catch (e: IOException) {
             executeFromCache(request) ?: throw e
         }
-        return remember(RssParser.parse(xml, feedUrl))
+        return rememberFeed(xml, feedUrl)
     }
 
-    fun discoverRootFeed(articleUrl: String): String? {
-        for (feedUrl in RssDiscovery.feedCandidates(articleUrl)) {
-            try {
-                if (fetch(feedUrl).isNotEmpty()) return feedUrl
-            } catch (_: Exception) {
-                // Try the next common feed location.
-            }
-        }
-        return null
+    private fun rememberFeed(xml: String, feedUrl: String): RssParseResult {
+        val parsed = RssParser.parseDocument(xml, feedUrl)
+        if (parsed.isFeed) remember(parsed.items)
+        return parsed
     }
 
     /**

@@ -9,8 +9,9 @@ object RssDiscovery {
         return try {
             val raw = if (articleUrl.contains("://")) articleUrl.trim() else "https://${articleUrl.trim()}"
             val uri = java.net.URI(raw)
-            val host = uri.host?.lowercase()?.removePrefix("www.")?.ifEmpty { null } ?: return emptyList()
-            val origin = "https://$host"
+            val scheme = uri.scheme?.lowercase()?.takeIf { it == "http" || it == "https" } ?: "https"
+            val host = uri.host?.lowercase()?.ifEmpty { null } ?: return emptyList()
+            val origin = origin(scheme, host, uri.port)
             buildList {
                 add("$origin/feed.xml")
                 val firstPath = uri.path.orEmpty()
@@ -22,5 +23,10 @@ object RssDiscovery {
         } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    private fun origin(scheme: String, host: String, port: Int): String {
+        val defaultPort = if (scheme == "http") 80 else 443
+        return if (port > 0 && port != defaultPort) "$scheme://$host:$port" else "$scheme://$host"
     }
 }

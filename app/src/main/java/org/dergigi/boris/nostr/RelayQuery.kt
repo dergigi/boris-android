@@ -64,17 +64,17 @@ object RelayQuery {
         return listOfNotNull(remote, cached).maxByOrNull { it.createdAt }
     }
 
-    fun fetchProfile(pubkeyHex: String): Profile? {
+    fun fetchProfile(pubkeyHex: String, extraRelays: List<String> = emptyList()): Profile? {
         val cached = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex)
         if (cached != null) {
-            refreshOnce("profile:${pubkeyHex.lowercase()}") { fetchProfileRemote(pubkeyHex) }
+            refreshOnce("profile:${pubkeyHex.lowercase()}") { fetchProfileRemote(pubkeyHex, extraRelays) }
             return Profile.parse(cached.content)
         }
-        return fetchProfileRemote(pubkeyHex)?.let { Profile.parse(it.content) }
+        return fetchProfileRemote(pubkeyHex, extraRelays)?.let { Profile.parse(it.content) }
     }
 
-    private fun fetchProfileRemote(pubkeyHex: String): Nip01Event? {
-        val relays = fetchRelayList(pubkeyHex).read
+    private fun fetchProfileRemote(pubkeyHex: String, extraRelays: List<String> = emptyList()): Nip01Event? {
+        val relays = (extraRelays + HintedRelays.forPubkey(pubkeyHex) + fetchRelayList(pubkeyHex).read).distinct()
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_METADATA))
             .put("authors", JSONArray().put(pubkeyHex))
