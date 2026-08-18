@@ -160,6 +160,7 @@
     <string name="reader_save_cancelled">Save cancelled.</string>
     <string name="reader_save_rejected">Save rejected.</string>
     <string name="reader_save_failed">Could not save to library.</string>
+    <string name="reader_mark_as_read">Mark as read</string>
     <string name="reader_archive">Move to Archive</string>
     <string name="reader_archive_close">Move to Archive &amp; Close</string>
     <string name="reader_archived">Archived</string>
@@ -171,7 +172,6 @@
     <string name="reader_copied">Copied.</string>
     <string name="reader_open_original">Open original</string>
     <string name="reader_share_article">Share article</string>
-    <string name="reader_mark_as_read">Mark as read</string>
     <string name="reader_highlights_settings">Highlight settings</string>
     <string name="reader_highlights_close">Close highlights</string>
     <string name="reader_highlights_hide">Hide highlight marks</string>

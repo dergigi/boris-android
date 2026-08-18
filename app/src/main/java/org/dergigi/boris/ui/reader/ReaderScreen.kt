@@ -728,6 +728,18 @@ fun ReaderScreenContent(
                                         },
                                     )
                                 }
+                                if (loggedIn && state is ReaderUiState.Ready && !archived) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_mark_as_read)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            onArchive(false)
+                                        },
+                                    )
+                                }
                                 if (loggedIn) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.reader_settings)) },

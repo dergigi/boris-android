@@ -14,6 +14,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Feeds top bar has an info dialog for Nostrverse, Friends, and You filters
 - Slim TTS player can be dismissed from the mini player bar
 - Home article cards open article actions on long press
+- Reader overflow menu can mark the current article as read
 
 ### Fixed
 
