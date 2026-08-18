@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: Listen to articles
 status: verifying
-stopped_at: Phase 5 research complete, ready to plan
-last_updated: "2026-08-18T15:31:21.671Z"
+stopped_at: Phase 5 UI-SPEC drafted, ready for checker
+last_updated: "2026-08-18T15:45:00.000Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 5 research written (nprofile decode, mention rewrite, hint store)
+last_activity_desc: Phase 5 UI-SPEC written (inline @name mentions, existing reader link style)
 progress:
   total_phases: 5
   completed_phases: 4
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 Phase: 04 of 4 (Listen to articles)
 Plan: 04-01, 04-02, 04-03 complete
 Status: Verifying — all plans executed, device UAT deferred to 1.4.0 release testing
-Last activity: 2026-08-18 — Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
+Last activity: 2026-08-18 — Phase 5 UI-SPEC drafted (inline @name mentions, no new chrome)
 
 Progress: [███████░░░] 75%
 
@@ -119,5 +119,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-18T15:31:21.662Z
-Stopped at: Phase 5 research complete, ready to plan
-Resume file: .planning/phases/05-resolve-nostr-profile-references/05-RESEARCH.md
+Stopped at: Phase 5 UI-SPEC drafted, ready for checker
+Resume file: .planning/phases/05-resolve-nostr-profile-references/05-UI-SPEC.md
