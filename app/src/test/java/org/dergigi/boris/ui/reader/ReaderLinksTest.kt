@@ -1,9 +1,28 @@
 package org.dergigi.boris.ui.reader
 
+import org.dergigi.boris.nostr.HintedRelays
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 class ReaderLinksTest {
+    private lateinit var hintedFile: File
+
+    @Before
+    fun setUp() {
+        hintedFile = File.createTempFile("hinted_relays", ".json")
+        HintedRelays.clear()
+        HintedRelays.init(hintedFile)
+    }
+
+    @After
+    fun tearDown() {
+        HintedRelays.clear()
+        hintedFile.delete()
+    }
     @Test
     fun openInReaderSendsHttpLinksToTheReader() {
         val action = readerLinkAction(
@@ -66,6 +85,20 @@ class ReaderLinksTest {
         assertEquals(
             ReaderLinkAction.OpenProfile(hex),
             readerLinkAction("nostr:$npub", "https://example.com", openInReader = false),
+        )
+    }
+
+    @Test
+    fun openProfileRemembersNprofileRelayHints() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8gpp4mhxue69uhhytnc9e3k7mgpz4mhxue69uhkg6nzv9ejuumpv34kytnrdaksjlyr9p"
+        val hex = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        val action = readerLinkAction("nostr:$nprofile", "https://example.com", openInReader = true)
+        assertEquals(ReaderLinkAction.OpenProfile(hex), action)
+        assertTrue(HintedRelays.forPubkey(hex).isNotEmpty())
+        assertEquals(
+            listOf("wss://r.x.com", "wss://djbas.sadkb.com"),
+            HintedRelays.forPubkey(hex),
         )
     }
 
