@@ -1,7 +1,12 @@
 package org.dergigi.boris.ui.reader
 
+import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +41,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AddCircle
@@ -57,6 +64,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -137,6 +148,9 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.tts.TtsPlayback
+import org.dergigi.boris.tts.TtsSession
+import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.openExternalUri
@@ -320,6 +334,95 @@ private fun SaveLibraryButton(
     }
 }
 
+@Composable
+private fun TtsListenButton(
+    content: ReadableContent,
+    author: Profile?,
+    session: TtsSession?,
+    onEmpty: () -> Unit,
+) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
+    val mine = session?.url == content.url
+    val speaking = mine && session?.playing == true && session.started
+    val initializing = mine && session?.playing == true && !session.started
+    val paused = mine && session?.paused == true
+    val description = stringResource(
+        when {
+            speaking -> R.string.tts_pause_playback
+            paused -> R.string.tts_resume_playback
+            else -> R.string.tts_listen_to_article
+        },
+    )
+    IconButton(onClick = {
+        when {
+            initializing -> Unit
+            speaking -> TtsPlayback.pause()
+            paused -> TtsPlayback.resume()
+            else -> {
+                val paragraphs = TtsText.paragraphs(content)
+                if (paragraphs.isEmpty()) {
+                    onEmpty()
+                    return@IconButton
+                }
+                requestNotificationPermissionOnce(context) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                TtsPlayback.start(
+                    context = context,
+                    content = content,
+                    startIndex = TtsText.startIndex(
+                        ReadingPositionStore.fraction(content.url),
+                        paragraphs.size,
+                    ),
+                    author = content.authorPubkey?.trim()
+                        ?.takeIf { it.length == 64 }
+                        ?.let { Profile.displayName(it, author) },
+                )
+            }
+        }
+    }) {
+        Icon(
+            imageVector = if (speaking) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+            contentDescription = description,
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** API 33+: ask for POST_NOTIFICATIONS once on first play; denial never blocks playback. */
+private fun requestNotificationPermissionOnce(context: Context, request: () -> Unit) {
+    if (Build.VERSION.SDK_INT < 33) return
+    val granted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
+    if (granted) return
+    val prefs = context.getSharedPreferences("tts", Context.MODE_PRIVATE)
+    if (prefs.getBoolean("notif_requested", false)) return
+    prefs.edit().putBoolean("notif_requested", true).apply()
+    request()
+}
+
+/** The SDK has no Settings.ACTION_TEXT_TO_SPEECH_SETTINGS constant; this is the settings action. */
+private const val ACTION_TEXT_TO_SPEECH_SETTINGS = "com.android.settings.TTS_SETTINGS"
+
+/** D-11 fallback chain: TTS settings, then install-TTS-data, then generic settings. */
+internal fun openTtsSettings(context: Context) {
+    val candidates = listOf(
+        ACTION_TEXT_TO_SPEECH_SETTINGS,
+        android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA,
+        android.provider.Settings.ACTION_SETTINGS,
+    )
+    for (action in candidates) {
+        try {
+            context.startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (_: ActivityNotFoundException) {
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreenContent(
@@ -356,6 +459,26 @@ fun ReaderScreenContent(
         is ReaderUiState.Ready -> state.content.url
         is ReaderUiState.Error -> state.url
         ReaderUiState.Loading -> null
+    }
+    val ttsSession by TtsPlayback.session.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
+    val ttsError = ttsSession?.takeIf { it.url == articleUrl }?.errorMessage
+    LaunchedEffect(ttsError) {
+        val key = ttsError ?: return@LaunchedEffect
+        val text = context.getString(
+            if (key == TtsPlayback.ERROR_LANGUAGE) {
+                R.string.tts_error_language
+            } else {
+                R.string.tts_error_engine
+            },
+        )
+        val result = snackbarHostState.showSnackbar(
+            message = text,
+            actionLabel = context.getString(R.string.tts_open_settings),
+            duration = SnackbarDuration.Long,
+        )
+        if (result == SnackbarResult.ActionPerformed) openTtsSettings(context)
     }
 
     fun openOriginal() {
@@ -424,6 +547,22 @@ fun ReaderScreenContent(
                             archived = archived,
                             canSave = canSave,
                             onSave = onSave,
+                        )
+                    }
+                    if (state is ReaderUiState.Ready) {
+                        TtsListenButton(
+                            content = state.content,
+                            author = author,
+                            session = ttsSession,
+                            onEmpty = {
+                                snackbarScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = context.getString(R.string.tts_empty_heading) +
+                                            "\n" + context.getString(R.string.tts_empty_body),
+                                        duration = SnackbarDuration.Short,
+                                    )
+                                }
+                            },
                         )
                     }
                     if (articleUrl != null) {
@@ -519,6 +658,7 @@ fun ReaderScreenContent(
                 ),
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         when (state) {
@@ -570,7 +710,8 @@ fun ReaderScreenContent(
                     archived = archived,
                     author = author,
                     settings = settings,
-                    volumeScroll = gallery == null,
+                    // D-19: while TTS is speaking, volume keys change volume, not scroll.
+                    volumeScroll = gallery == null && ttsSession?.playing != true,
                     findOpen = findOpen,
                     onFindOpenChange = { findOpen = it },
                     onOpenArticle = onOpenArticle,

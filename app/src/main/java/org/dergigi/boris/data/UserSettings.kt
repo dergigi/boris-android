@@ -65,6 +65,11 @@ class UserSettings internal constructor(
     val volumeButtonScroll: Boolean get() = bool("volumeButtonScroll", true)
     val volumeButtonScrollPercent: Int
         get() = int("volumeButtonScrollPercent", 90).coerceIn(25, 100)
+    val ttsDefaultSpeed: Double get() = double("ttsDefaultSpeed", 2.1)
+    val ttsLanguageMode: String get() = string("ttsLanguageMode", "content")
+    val ttsUseSystemLanguage: Boolean get() = bool("ttsUseSystemLanguage", false)
+    val ttsDetectContentLanguage: Boolean get() = bool("ttsDetectContentLanguage", true)
+    val ttsFollowAlong: Boolean get() = bool("ttsFollowAlong", true)
     val rssFeeds: List<String> get() = stringList("rssFeeds")
     val zapSplitsEnabled: Boolean get() = bool("zapSplitsEnabled", true)
     val zapSplitHighlighterWeight: Double get() = double("zapSplitHighlighterWeight", 50.0)
@@ -177,6 +182,7 @@ private const val DEFAULT_JSON = """{
   "ttsDetectContentLanguage":true,
   "ttsLanguageMode":"content",
   "ttsDefaultSpeed":2.1,
+  "ttsFollowAlong":true,
   "linkColorDark":"#38bdf8",
   "linkColorLight":"#3b82f6"
 }"""
