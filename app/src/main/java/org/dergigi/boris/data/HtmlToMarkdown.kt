@@ -6,7 +6,7 @@ package org.dergigi.boris.data
  * enough; no full DOM parsing needed.
  */
 object HtmlToMarkdown {
-    fun convert(html: String): String {
+    fun convert(html: String, baseUrl: String? = null): String {
         val stash = mutableListOf<String>()
         fun stash(text: String): String {
             stash.add(text)
@@ -16,6 +16,7 @@ object HtmlToMarkdown {
         var s = html
             .replace(Regex("(?is)<script.*?</script>"), "")
             .replace(Regex("(?is)<style.*?</style>"), "")
+            .replace(Regex("(?is)<head.*?</head>"), "")
             .replace(Regex("(?s)<!--.*?-->"), "")
 
         s = s.replace(Regex("(?is)<pre[^>]*>\\s*<code[^>]*>(.*?)</code>\\s*</pre>")) {
@@ -27,7 +28,7 @@ object HtmlToMarkdown {
         s = s.replace(Regex("(?is)<code[^>]*>(.*?)</code>")) {
             stash("`" + decode(it.groupValues[1]) + "`")
         }
-        s = s.replace(Regex("(?is)<img[^>]*>")) { image(it.value) }
+        s = s.replace(Regex("(?is)<img[^>]*>")) { image(it.value, baseUrl) }
         s = s.replace(Regex("(?is)<a\\s[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>")) { m ->
             val text = stripTags(m.groupValues[2]).trim()
             if (text.isEmpty()) m.groupValues[1] else "[$text](${m.groupValues[1]})"
@@ -68,10 +69,15 @@ object HtmlToMarkdown {
         return s.replace(Regex("\\n{3,}"), "\n\n").trim()
     }
 
-    private fun image(tag: String): String {
+    private fun image(tag: String, baseUrl: String?): String {
         val src = attr(tag, "src") ?: return ""
+        val url = if (baseUrl.isNullOrBlank()) {
+            src
+        } else {
+            UrlExtractor.articleUrl(src, baseUrl) ?: return ""
+        }.let(UrlExtractor::preferHttps)
         val alt = attr(tag, "alt").orEmpty()
-        return "\n\n![$alt]($src)\n\n"
+        return "\n\n![$alt]($url)\n\n"
     }
 
     private fun attr(tag: String, name: String): String? =

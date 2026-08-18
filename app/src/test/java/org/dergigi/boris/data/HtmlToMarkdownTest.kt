@@ -24,6 +24,24 @@ class HtmlToMarkdownTest {
     }
 
     @Test
+    fun resolvesRelativeImagesAgainstBaseUrl() {
+        val markdown = HtmlToMarkdown.convert(
+            """<img src="/img/a.jpg" alt="a"><img src="http://cdn.example.com/b.png">""",
+            "https://example.com/post",
+        )
+        assertTrue(markdown.contains("![a](https://example.com/img/a.jpg)"))
+        assertTrue(markdown.contains("![](https://cdn.example.com/b.png)"))
+    }
+
+    @Test
+    fun stripsDocumentHead() {
+        val markdown = HtmlToMarkdown.convert(
+            "<html><head><title>Page Title</title></head><body><p>Hi</p></body></html>",
+        )
+        assertEquals("Hi", markdown)
+    }
+
+    @Test
     fun convertsHeadingsAndLists() {
         val markdown = HtmlToMarkdown.convert(
             "<h2>Section</h2><ul><li>one</li><li>two</li></ul>",

@@ -178,12 +178,18 @@ class ReaderRepository(
         } else {
             val preview = OgMeta.parse(text, targetUrl)
             val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+            val markdown = HtmlToMarkdown.convert(text, targetUrl)
+                .let(UrlExtractor::upgradeImageHttpUrls)
+                .ifBlank { null }
+            val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
             ReadableContent(
                 url = targetUrl,
                 title = preview.title ?: title,
-                html = text,
+                markdown = cover?.let { image ->
+                    markdown?.let { ArticleCover.stripLeadingImage(it, image) }
+                } ?: markdown,
                 publishedAt = PublishedTime.fromHtml(text),
-                imageUrl = preview.imageUrl?.let(UrlExtractor::preferHttps),
+                imageUrl = cover,
                 summary = preview.description,
             )
         }
