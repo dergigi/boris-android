@@ -23,12 +23,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -1260,7 +1262,8 @@ private fun ArticleBody(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding(),
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background),
         ) {
             TtsMiniPlayerHost(
                 currentArticleUrl = content.url,
@@ -1269,6 +1272,11 @@ private fun ArticleBody(
             )
             ReadingProgressBar(
                 percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
+            )
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsBottomHeight(WindowInsets.navigationBars),
             )
         }
         HighlightTextToolbar(
