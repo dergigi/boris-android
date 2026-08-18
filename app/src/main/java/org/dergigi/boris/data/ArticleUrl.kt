@@ -5,6 +5,7 @@ object ArticleUrl {
         when (val target = NostrLink.parse(url)) {
             is NostrTarget.Article -> return target.ref.pointer.identifier.ifBlank { null }
             is NostrTarget.Note -> return "nostr"
+            is NostrTarget.Profile -> return null
             null -> Unit
         }
         return try {

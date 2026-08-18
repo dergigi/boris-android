@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 04
-current_phase_name: Listen to articles
-status: verifying
-stopped_at: All phase 4 plans complete, verification next
-last_updated: "2026-08-18T11:10:00.000Z"
+current_phase: 05
+current_phase_name: Resolve nostr profile references
+status: in_progress
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-08-18T16:12:44.512Z"
 last_activity: 2026-08-18
-last_activity_desc: Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
+last_activity_desc: Phase 5 plans executed (hinted relay persist + fetch union)
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 4 Listen to articles — planned, ready to execute
+**Current focus:** Phase 5 Resolve nostr profile references — 05-01 and 05-02 executed, awaiting verify
 
 ## Current Position
 
-Phase: 04 of 4 (Listen to articles)
-Plan: 04-01, 04-02, 04-03 complete
-Status: Verifying — all plans executed, device UAT deferred to 1.4.0 release testing
-Last activity: 2026-08-18 — Executed plans 04-02 and 04-03 (TTS settings, follow-along, mini player)
+Phase: 05 of 5 (Resolve nostr profile references)
+Plan: 02 of 02 complete
+Status: Executed — both plans done; HintedRelays persist unions into kind 0 fetch
+Last activity: 2026-08-18 — Completed 05-02 (hinted_relays.json + fetchProfile union)
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -62,6 +62,8 @@ Progress: [███████░░░] 75%
 |------|----------|-------|-------|
 | Phase 02-bunker-login-nip-46 P01 | 12min | 3 tasks | 23 files |
 | Phase 03-nostr-highlights P01 | 8min | 3 tasks | 21 files |
+| Phase 05 P01 | 6min | 2 tasks | 23 files |
+| Phase 05 P02 | 5min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -80,6 +82,12 @@ Recent decisions affecting current work:
 - [Phase ?]: D-08 locked: webapp NIP-84 tags (kind 9802, r, optional context, Android alt). No Lantern selector tags.
 - [Phase ?]: parseSignedEvent accepts a parsed Nip01Event on the JVM because org.json is stubbed in unit tests.
 - [Phase ?]: AuthViewModel handles SignerResult.Signed as a no-op so the sealed when still compiles.
+- [Phase 5]: Rewrite raw prefixed nprofile/npub after Footnotes.expand; markdown keyed only on content.body
+- [Phase 5]: entityRegex requires nostr scheme for nprofile/npub; bare ids stay plaintext (D-09)
+- [Phase 5]: Profile.relays carries decoded nprofile hints for 05-02 persist/fetch-union
+- [Phase ?]: D-08: hinted_relays.json keyed by lowercase 64-char pubkey hex, MAX_HINTS 8, MAX_ENTRIES 500
+- [Phase ?]: D-07: fetchProfileRemote unions extraRelays + HintedRelays.forPubkey + fetchRelayList.read; still calls fetchRelayList
+- [Phase ?]: Persist codec is hand-rolled JSON because org.json.JSONObject.put is stubbed on JVM unit tests
 
 ### Roadmap Evolution
 
@@ -90,6 +98,7 @@ Recent decisions affecting current work:
 - Backlog 999.5 added: zap people, articles, and highlights (2026-08-16)
 - Backlog 999.6 added: friends-of-friends scope (2026-08-17)
 - Phase 4 added: Listen to articles
+- Phase 5 added: Resolve nostr profile references (GitHub #5)
 
 ### Pending Todos
 
@@ -117,6 +126,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T11:15:00.000Z
-Stopped at: Phase 4 planned
-Resume file: .planning/phases/04-listen-to-articles/04-01-PLAN.md
+Last session: 2026-08-18T16:12:44.505Z
+Stopped at: Completed 05-02-PLAN.md
+Resume file: None

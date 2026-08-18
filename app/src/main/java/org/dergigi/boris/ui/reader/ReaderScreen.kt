@@ -23,12 +23,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -141,6 +143,7 @@ import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrMentions
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingPositionStore
@@ -774,13 +777,14 @@ private fun ArticleBody(
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
     val openLinksInReader = settings.openLinksInReader
-    val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler, openLinksInReader) {
+    val uriHandler = remember(content.url, onOpenArticle, onOpenProfile, defaultUriHandler, openLinksInReader) {
         object : UriHandler {
             override fun openUri(uri: String) {
                 when (val action = readerLinkAction(uri, content.url, openLinksInReader)) {
                     ReaderLinkAction.Ignore -> Unit
                     is ReaderLinkAction.OpenInReader -> onOpenArticle(action.url)
                     is ReaderLinkAction.OpenExternal -> defaultUriHandler.openUri(action.url)
+                    is ReaderLinkAction.OpenProfile -> onOpenProfile(action.pubkeyHex)
                 }
             }
         }
@@ -1068,7 +1072,9 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
-    val markdownBody = remember(content.body) { Footnotes.expand(content.body) }
+    val markdownBody = remember(content.body) {
+        NostrMentions.rewrite(Footnotes.expand(content.body))
+    }
     val markdownState = rememberMarkdownState(
         content = markdownBody,
         flavour = flavour,
@@ -1259,7 +1265,8 @@ private fun ArticleBody(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding(),
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background),
         ) {
             TtsMiniPlayerHost(
                 currentArticleUrl = content.url,
@@ -1268,6 +1275,11 @@ private fun ArticleBody(
             )
             ReadingProgressBar(
                 percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
+            )
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsBottomHeight(WindowInsets.navigationBars),
             )
         }
         HighlightTextToolbar(

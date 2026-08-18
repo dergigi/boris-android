@@ -132,6 +132,7 @@ object OfflineDownloader {
                 val event = EventCache.event(target.eventId) ?: return 0L
                 return event.content.toByteArray(Charsets.UTF_8).size.toLong()
             }
+            is NostrTarget.Profile -> return 0L
             null -> return ReaderRepository.cachedBodyBytes(url)
         }
     }

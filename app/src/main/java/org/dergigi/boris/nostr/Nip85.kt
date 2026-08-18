@@ -24,6 +24,7 @@ object Nip85 {
     fun dTag(url: String): String? = when (val target = NostrLink.parse(url)) {
         is NostrTarget.Article -> target.ref.coordinate
         is NostrTarget.Note -> null
+        is NostrTarget.Profile -> null
         null -> URL_PREFIX + Base64.getUrlEncoder().withoutPadding()
             .encodeToString(url.toByteArray(Charsets.ISO_8859_1))
     }

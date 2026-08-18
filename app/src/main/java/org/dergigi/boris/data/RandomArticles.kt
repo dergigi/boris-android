@@ -27,6 +27,7 @@ object RandomArticles {
                     ?: when (val target = NostrLink.parse(url)) {
                         is NostrTarget.Article -> target.ref.pointer.identifier.ifBlank { "nostr" }
                         is NostrTarget.Note -> "nostr"
+                        is NostrTarget.Profile -> item.host ?: url
                         null -> ArticleUrl.host(url) ?: url
                     }
                 HighlightedArticles.decorate(
