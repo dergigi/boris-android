@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 03
-current_phase_name: Nostr highlights
-status: completed
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-16T21:43:24.269Z"
-last_activity: 2026-08-16
-last_activity_desc: Phase 03 complete
+current_phase: 04
+current_phase_name: Listen to articles
+status: context_gathered
+stopped_at: Phase 4 context gathered
+last_updated: "2026-08-18T08:00:00.000Z"
+last_activity: 2026-08-18
+last_activity_desc: Phase 04 context gathered
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
   total_plans: 3
   completed_plans: 3
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Milestone v1.0 phases complete; backlog 999.x next
+**Current focus:** Phase 4 Listen to articles — discussing before planning
 
 ## Current Position
 
-Phase: 03 of 3 (Nostr highlights)
+Phase: 04 of 4 (Listen to articles)
 Plan: Not started
-Status: All phases complete
-Last activity: 2026-08-16 — Phase 03 complete
+Status: Context gathered — ready to plan
+Last activity: 2026-08-18 — Phase 04 context gathered
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
@@ -89,6 +89,7 @@ Recent decisions affecting current work:
 - Backlog 999.4 added: NIP-50 relay search; 999.2 notes local-cache MVP first (2026-08-16)
 - Backlog 999.5 added: zap people, articles, and highlights (2026-08-16)
 - Backlog 999.6 added: friends-of-friends scope (2026-08-17)
+- Phase 4 added: Listen to articles
 
 ### Pending Todos
 

@@ -9,6 +9,7 @@ Boris already reads articles. This milestone adds optional identity on Home (Amb
 - [x] **Phase 1: Amber login** - Connect via Amber, persist npub, sign out, missing-signer UX
 - [x] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
 - [x] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern (completed 2026-08-16)
+- [ ] **Phase 4: Listen to articles** - Speak the current article from the reader
 
 ## Phase Details
 
@@ -55,13 +56,14 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1, 2, 3
+Phases execute in numeric order: 1, 2, 3, 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Amber login | 1/1 | Complete | 2026-08-14 |
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
+| 4. Listen to articles | 0/0 | Not planned | |
 
 ### Phase 3: Nostr highlights
 
@@ -82,6 +84,26 @@ Phases execute in numeric order: 1, 2, 3
 Plans:
 
 - [x] 03-01-PLAN.md — NIP-84 highlights in the reader
+
+### Phase 4: Listen to articles
+
+**Goal:** User can listen to the currently open article with on-device TTS, including background playback, webapp-matched settings, and follow-along in the reader.
+**Depends on:** Phase 3
+**Requirements:** TTS-01, READ-01
+**Success Criteria** (what must be TRUE):
+
+  1. User can play, pause, and stop the current article from the reader top bar
+  2. Speech continues with the screen off and while browsing other screens; lock-screen / notification can play, pause, stop, and skip paragraph
+  3. Play on a different article switches; browsing without play does not interrupt
+  4. Settings match the webapp TTS section (speed, language, preview sentence) and sync via existing NIP-78 keys
+  5. Follow-along highlights and auto-scrolls the spoken paragraph, on by default, disableable; play starts near the saved reading position
+  6. Listening works logged out; reading still works if TTS is missing
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 4 to break down)
 
 ## Backlog
 

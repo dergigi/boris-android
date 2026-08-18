@@ -18,6 +18,7 @@
 - [x] **READ-01**: User can paste, share, or open a URL and read the article while logged out. Login UI sits on Home; it does not replace or block reading.
 - [x] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
 - [x] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
+- [ ] **TTS-01**: User can listen to the current article with on-device TTS (background playback, webapp-matched speed/language settings, follow-along in the reader). Login is not required. Reading still works if TTS is missing.
 
 ## v2 Requirements
 
@@ -52,13 +53,14 @@ Deferred. Not in this roadmap.
 | AUTH-05 | Phase 2 | Complete |
 | AUTH-06 | Phase 3 | Complete |
 | HIGH-01 | Phase 3 | Complete |
+| TTS-01 | Phase 4 | Planned |
 
 **Coverage:**
 
-- v1 requirements: 8 total
-- Mapped to phases: 8
+- v1 requirements: 9 total
+- Mapped to phases: 9
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-14*
-*Last updated: 2026-08-14 after promoting AUTH-06 and HIGH-01 to Phase 3*
+*Last updated: 2026-08-18 after adding TTS-01 for Phase 4*
