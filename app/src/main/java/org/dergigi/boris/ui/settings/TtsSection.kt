@@ -119,7 +119,10 @@ fun TtsSection(
         SettingCheckbox(
             label = stringResource(R.string.tts_follow_along),
             checked = settings.ttsFollowAlong,
-            onCheckedChange = { onUpdate(settings.withBoolean("ttsFollowAlong", it)) },
+            onCheckedChange = {
+                onUpdate(settings.withBoolean("ttsFollowAlong", it))
+                TtsPlayback.setFollowAlongEnabled(it)
+            },
         )
     }
 }

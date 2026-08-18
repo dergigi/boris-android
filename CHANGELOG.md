@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Slim TTS player can toggle follow-along while listening
+
 ### Fixed
 
 - Reader TTS bottom chrome no longer leaves article text visible through the navigation bar inset
