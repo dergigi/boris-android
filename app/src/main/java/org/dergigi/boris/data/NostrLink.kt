@@ -1,5 +1,6 @@
 package org.dergigi.boris.data
 
+import org.dergigi.boris.nostr.LocalRelays
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
 
@@ -24,10 +25,20 @@ sealed class NostrTarget {
         override val uri get() = "nostr:$encoded"
         override val publicUrl get() = NostrLink.gatewayUrl(encoded)
     }
+
+    data class Profile(
+        val pubkeyHex: String,
+        val encoded: String,
+        override val relays: List<String> = emptyList(),
+    ) : NostrTarget() {
+        override val uri get() = "nostr:$encoded"
+        override val publicUrl get() = NostrLink.gatewayUrl(encoded)
+    }
 }
 
 object NostrLink {
     const val GATEWAY = "https://njump.to"
+    private const val MAX_IDENTIFIER_LENGTH = 5000
 
     fun gatewayUrl(identifier: String): String = "$GATEWAY/$identifier"
 
@@ -44,6 +55,7 @@ object NostrLink {
     }
 
     private fun decode(encoded: String): NostrTarget? {
+        if (encoded.length > MAX_IDENTIFIER_LENGTH) return null
         return try {
             when {
                 encoded.startsWith("naddr1") -> {
@@ -71,6 +83,19 @@ object NostrLink {
                         kind = kind,
                     )
                 }
+                encoded.startsWith("nprofile1") -> {
+                    val pointer = Nip19.nprofileDecode(encoded)
+                    val relays = pointer.relays.mapNotNull { LocalRelays.resolve(it) }
+                    NostrTarget.Profile(
+                        pubkeyHex = pointer.pubkey,
+                        encoded = encoded,
+                        relays = relays,
+                    )
+                }
+                encoded.startsWith("npub1") -> {
+                    val pubkey = Nip19.npubDecode(encoded)
+                    NostrTarget.Profile(pubkeyHex = pubkey, encoded = encoded)
+                }
                 else -> null
             }
         } catch (_: Exception) {
@@ -79,15 +104,20 @@ object NostrLink {
     }
 
     private fun findEntity(raw: String): String? {
-        entityRegex.find(raw)?.groupValues?.getOrNull(1)?.lowercase()?.let { return it }
-        return null
+        val match = entityRegex.find(raw) ?: return null
+        val encoded = match.groupValues.getOrNull(1)?.takeIf { it.isNotEmpty() }
+            ?: match.groupValues.getOrNull(2)?.takeIf { it.isNotEmpty() }
+            ?: return null
+        return encoded.lowercase()
     }
 
     private fun hexEventId(raw: String): String? =
         eventPathRegex.find(raw)?.groupValues?.getOrNull(1)?.lowercase()
 
+    private val bech32Body = "023456789acdefghjklmnpqrstuvwxyz"
+
     private val entityRegex = Regex(
-        """(?:nostr:(?://)?)?(naddr1[023456789acdefghjklmnpqrstuvwxyz]+|note1[023456789acdefghjklmnpqrstuvwxyz]+|nevent1[023456789acdefghjklmnpqrstuvwxyz]+)""",
+        """(?:nostr:(?://)?)?(naddr1[$bech32Body]+|note1[$bech32Body]+|nevent1[$bech32Body]+)|(?:nostr:(?://)?)(nprofile1[$bech32Body]+|npub1[$bech32Body]+)""",
         RegexOption.IGNORE_CASE,
     )
 

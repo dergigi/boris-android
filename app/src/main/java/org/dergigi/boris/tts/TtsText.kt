@@ -2,6 +2,7 @@ package org.dergigi.boris.tts
 
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.MarkdownInline
+import org.dergigi.boris.data.NostrMentions
 import org.dergigi.boris.data.ReadableContent
 
 /** Turns an article into speakable paragraphs and maps reading position to a start index. */
@@ -10,7 +11,7 @@ object TtsText {
         val out = mutableListOf<String>()
         content.title?.let { addCleaned(out, it) }
         content.summary?.let { addCleaned(out, it) }
-        for (block in splitMarkdownBlocks(Footnotes.expand(content.body))) {
+        for (block in splitMarkdownBlocks(NostrMentions.rewrite(Footnotes.expand(content.body)))) {
             addCleaned(out, block)
         }
         return out

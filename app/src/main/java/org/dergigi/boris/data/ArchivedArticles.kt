@@ -20,6 +20,7 @@ object ArchivedArticles {
         return when (target) {
             is NostrTarget.Article -> "a:${target.ref.coordinate.lowercase()}"
             is NostrTarget.Note -> "e:${target.eventId.lowercase()}"
+            is NostrTarget.Profile -> null
             null -> if (url.startsWith("http", ignoreCase = true)) {
                 "r:${Archive.normalizeUrl(url).lowercase()}"
             } else {
