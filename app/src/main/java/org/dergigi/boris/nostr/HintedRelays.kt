@@ -1,7 +1,5 @@
 package org.dergigi.boris.nostr
 
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 
 object HintedRelays {
@@ -17,20 +15,7 @@ object HintedRelays {
             file = target
             hints.clear()
             if (!target.exists()) return
-            runCatching {
-                val obj = JSONObject(target.readText())
-                for (key in obj.keys()) {
-                    val pubkey = normalizePubkey(key) ?: continue
-                    val array = obj.optJSONArray(key) ?: continue
-                    val relays = buildList {
-                        for (i in 0 until array.length()) {
-                            val url = LocalRelays.resolve(array.optString(i)) ?: continue
-                            add(url)
-                        }
-                    }.distinct().takeLast(MAX_HINTS)
-                    if (relays.isNotEmpty()) hints[pubkey] = relays
-                }
-            }
+            runCatching { load(target.readText()) }
         }
     }
 
@@ -66,11 +51,15 @@ object HintedRelays {
         val target = file ?: return
         runCatching {
             target.parentFile?.mkdirs()
-            val obj = JSONObject()
-            hints.forEach { (pubkey, relays) ->
-                obj.put(pubkey, JSONArray().apply { relays.forEach { put(it) } })
-            }
-            target.writeText(obj.toString())
+            target.writeText(encode(hints))
+        }
+    }
+
+    private fun load(text: String) {
+        decode(text).forEach { (pubkey, relays) ->
+            val key = normalizePubkey(pubkey) ?: return@forEach
+            val urls = relays.mapNotNull { LocalRelays.resolve(it) }.distinct().takeLast(MAX_HINTS)
+            if (urls.isNotEmpty()) hints[key] = urls
         }
     }
 
@@ -80,4 +69,69 @@ object HintedRelays {
         if (hex.any { it !in '0'..'9' && it !in 'a'..'f' }) return null
         return hex
     }
+
+    private fun encode(map: Map<String, List<String>>): String {
+        val body = map.entries.joinToString(",") { (pubkey, relays) ->
+            val array = relays.joinToString(",") { "\"${escape(it)}\"" }
+            "\"$pubkey\":[$array]"
+        }
+        return "{$body}"
+    }
+
+    private fun decode(text: String): LinkedHashMap<String, List<String>> {
+        val out = LinkedHashMap<String, List<String>>()
+        val trimmed = text.trim()
+        if (trimmed.length < 2 || trimmed.first() != '{' || trimmed.last() != '}') return out
+        var i = 1
+        val end = trimmed.length - 1
+        while (i < end) {
+            while (i < end && trimmed[i] in ", \n\r\t") i++
+            if (i >= end) break
+            val key = readQuoted(trimmed, i) ?: break
+            i = key.next
+            while (i < end && trimmed[i] in " \n\r\t") i++
+            if (i >= end || trimmed[i] != ':') break
+            i++
+            while (i < end && trimmed[i] in " \n\r\t") i++
+            if (i >= end || trimmed[i] != '[') break
+            i++
+            val urls = mutableListOf<String>()
+            while (i < end && trimmed[i] != ']') {
+                while (i < end && trimmed[i] in ", \n\r\t") i++
+                if (i < end && trimmed[i] == ']') break
+                val value = readQuoted(trimmed, i) ?: break
+                urls += value.text
+                i = value.next
+            }
+            if (i < end && trimmed[i] == ']') i++
+            if (urls.isNotEmpty()) out[key.text] = urls.toList()
+        }
+        return out
+    }
+
+    private data class Quoted(val text: String, val next: Int)
+
+    private fun readQuoted(source: String, start: Int): Quoted? {
+        if (start >= source.length || source[start] != '"') return null
+        val value = StringBuilder()
+        var i = start + 1
+        while (i < source.length) {
+            val char = source[i]
+            when {
+                char == '\\' && i + 1 < source.length -> {
+                    value.append(source[i + 1])
+                    i += 2
+                }
+                char == '"' -> return Quoted(value.toString(), i + 1)
+                else -> {
+                    value.append(char)
+                    i++
+                }
+            }
+        }
+        return null
+    }
+
+    private fun escape(value: String): String =
+        value.replace("\\", "\\\\").replace("\"", "\\\"")
 }
