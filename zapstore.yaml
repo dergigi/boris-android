@@ -20,11 +20,14 @@ license: MIT
 website: https://readwithboris.com/
 icon: ./zapstore-icon.png
 images:
-  - ./screenshots/about.png
-  - ./screenshots/about-read-anywhere.png
-  - ./screenshots/about-distraction-free.png
-  - ./screenshots/about-airplane.png
-  - ./screenshots/about-social.png
+  - ./screenshots/about-1.png
+  - ./screenshots/about-2.png
+  - ./screenshots/about-3.png
+  - ./screenshots/about-4.png
+  - ./screenshots/about-5.png
+  - ./screenshots/about-6.png
+  - ./screenshots/about-7.png
+  - ./screenshots/about-8.png
   - ./screenshots/read-1.png
   - ./screenshots/read-2.png
   - ./screenshots/read-3.png

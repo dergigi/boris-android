@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Zapstore gallery uses the About Boris walkthrough shots plus You
+
 ## [1.4.12] - 2026-08-19
 
 ### Added
