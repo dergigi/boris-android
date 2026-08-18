@@ -63,7 +63,7 @@ Boris is free and open source and always will be. Fork it, change it, send a pul
 
 Come say hi on [Nostr](https://njump.to/npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x). [Report a bug](https://github.com/dergigi/boris-android/issues/new?template=bug_report.yml) or [suggest a feature](https://github.com/dergigi/boris-android/issues/new?template=feature_request.yml). Pull requests run lint and unit tests; same commands as under [Build](#build).
 
-If you like the work, you can [send sats](https://dergigi.com/value/).
+If you like the work, you can [zap the Boris account](https://njump.to/npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x) directly or [send sats](https://dergigi.com/value/) to the author.
 
 ## Build
 
