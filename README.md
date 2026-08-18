@@ -57,6 +57,14 @@ Theme, type, TTS, and highlight colors, including separate palettes for you, fri
   <img src="screenshots/settings-4.png" width="180" alt="About" />
 </p>
 
+## Contributing
+
+Boris is free and open source and always will be. Fork it, change it, send a pull request, or just use it.
+
+Come say hi on [Nostr](https://njump.to/npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x). [Report a bug](https://github.com/dergigi/boris-android/issues/new?template=bug_report.yml) or [suggest a feature](https://github.com/dergigi/boris-android/issues/new?template=feature_request.yml). Pull requests run lint and unit tests; same commands as under [Build](#build).
+
+If you like the work, you can [send sats](https://dergigi.com/value/).
+
 ## Build
 
 ```bash
@@ -109,4 +117,4 @@ First publish links the APK signing certificate to your Nostr identity (NIP-C1) 
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Versions are in [CHANGELOG.md](CHANGELOG.md).

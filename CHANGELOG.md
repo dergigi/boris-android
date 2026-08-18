@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- README has a Contributing section (Nostr, bug reports, feature ideas)
+
 ### Changed
 
 - README screenshot rows are Reading, Dark, Home, and Settings; Zapstore also includes You
