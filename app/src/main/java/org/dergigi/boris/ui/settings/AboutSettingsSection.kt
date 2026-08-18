@@ -26,12 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.ui.about.AboutLinks
+import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.reader.openWeblink
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
@@ -47,6 +49,7 @@ fun AboutSettingsSection(
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
     val linkTint = SettingsTints.About
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -86,9 +89,7 @@ fun AboutSettingsSection(
             icon = Icons.Outlined.BugReport,
             tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
-            onClick = {
-                openWeblink(AboutLinks.BUG_REPORT, openInBoris, onOpenArticle, uriHandler::openUri)
-            },
+            onClick = { openExternalUri(context, AboutLinks.BUG_REPORT) },
         )
         AboutActionRow(
             label = stringResource(R.string.about_cta_feature),
@@ -96,9 +97,7 @@ fun AboutSettingsSection(
             icon = Icons.Outlined.Lightbulb,
             tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
-            onClick = {
-                openWeblink(AboutLinks.FEATURE_REQUEST, openInBoris, onOpenArticle, uriHandler::openUri)
-            },
+            onClick = { openExternalUri(context, AboutLinks.FEATURE_REQUEST) },
         )
 
         Text(

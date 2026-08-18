@@ -21,8 +21,12 @@ class AboutPagesTest {
         assertEquals("https://njump.to/${AboutLinks.NPUB}", AboutLinks.nostrUrl)
         assertEquals("https://github.com/dergigi/boris-android", AboutLinks.GITHUB)
         assertEquals(
-            "https://dergigi.com/2023/04/04/purple-text-orange-highlights/",
-            AboutLinks.VISION,
+            "https://github.com/dergigi/boris-android/issues/new?template=bug_report.yml",
+            AboutLinks.BUG_REPORT,
+        )
+        assertEquals(
+            "https://github.com/dergigi/boris-android/issues/new?template=feature_request.yml",
+            AboutLinks.FEATURE_REQUEST,
         )
         assertTrue(ABOUT_FEATURES.isNotEmpty())
     }

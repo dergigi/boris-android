@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Settings About includes Report a bug and Suggest a feature (same GitHub issue templates as About Boris)
 
+### Fixed
+
+- Report a bug and Suggest a feature open GitHub issue templates in the browser instead of the reader
+
 ## [1.3.2] - 2026-08-18
 
 ### Changed

@@ -71,6 +71,7 @@ import coil3.svg.SvgDecoder
 import kotlinx.coroutines.launch
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HomeOnboardingStore
+import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.SourceSerif
 
@@ -247,6 +248,7 @@ private fun FreeAsInBeerParagraph(modifier: Modifier = Modifier) {
 @Composable
 private fun CtaPage(onStartReading: () -> Unit) {
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
     AboutPageColumn {
         Text(
             text = stringResource(R.string.about_cta_title),
@@ -276,13 +278,13 @@ private fun CtaPage(onStartReading: () -> Unit) {
         CtaOutlinedButton(
             label = stringResource(R.string.about_cta_bug),
             icon = rememberVectorPainter(Icons.Outlined.BugReport),
-            onClick = { uriHandler.openUri(AboutLinks.BUG_REPORT) },
+            onClick = { openExternalUri(context, AboutLinks.BUG_REPORT) },
         )
         Spacer(Modifier.height(12.dp))
         CtaOutlinedButton(
             label = stringResource(R.string.about_cta_feature),
             icon = rememberVectorPainter(Icons.Outlined.Lightbulb),
-            onClick = { uriHandler.openUri(AboutLinks.FEATURE_REQUEST) },
+            onClick = { openExternalUri(context, AboutLinks.FEATURE_REQUEST) },
         )
         Spacer(Modifier.height(24.dp))
         Button(
