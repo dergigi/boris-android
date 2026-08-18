@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import org.dergigi.boris.tts.TtsLanguage
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsPreview
 import org.dergigi.boris.tts.TtsSpeed
+import org.dergigi.boris.ui.reader.openTtsSettings
 
 /**
  * Webapp-shaped Text-to-Speech block inside the Reading category (D-06):
@@ -64,6 +66,7 @@ fun TtsSection(
     val context = LocalContext.current
     val session by TtsPlayback.session.collectAsStateWithLifecycle()
     val previewing by TtsPlayback.previewing.collectAsStateWithLifecycle()
+    val previewError by TtsPlayback.previewError.collectAsStateWithLifecycle()
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -106,6 +109,13 @@ fun TtsSection(
             onPlay = { TtsPlayback.preview(context, TtsPreview.EXAMPLE_TEXT) },
             onStop = { TtsPlayback.stopPreview() },
         )
+        val error = session?.errorMessage ?: previewError
+        if (error != null) {
+            TtsErrorNotice(
+                error = error,
+                onOpenSettings = { openTtsSettings(context) },
+            )
+        }
         SettingCheckbox(
             label = stringResource(R.string.tts_follow_along),
             checked = settings.ttsFollowAlong,
@@ -229,6 +239,36 @@ private fun TtsPreviewBox(
                     if (previewing) R.string.tts_pause_playback else R.string.tts_listen_to_article,
                 ),
             )
+        }
+    }
+}
+
+/**
+ * D-11: an engine or language failure never hides the controls above; it only
+ * adds this notice with a deep link into the system TTS settings.
+ */
+@Composable
+private fun TtsErrorNotice(
+    error: String,
+    onOpenSettings: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(
+                if (error == TtsPlayback.ERROR_LANGUAGE) {
+                    R.string.tts_error_language
+                } else {
+                    R.string.tts_error_engine
+                },
+            ),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        TextButton(onClick = onOpenSettings) {
+            Text(stringResource(R.string.tts_open_settings))
         }
     }
 }

@@ -40,6 +40,10 @@ object TtsPlayback {
     private val _previewing = MutableStateFlow(false)
     val previewing: StateFlow<Boolean> = _previewing.asStateFlow()
 
+    /** Engine/language failure from a preview, which has no session to carry it (D-11). */
+    private val _previewError = MutableStateFlow<String?>(null)
+    val previewError: StateFlow<String?> = _previewError.asStateFlow()
+
     @Volatile
     internal var engine: Engine? = null
 
@@ -64,6 +68,7 @@ object TtsPlayback {
         val settings = SettingsSync.settings.value
         pendingPreview = null
         _previewing.value = false
+        _previewError.value = null
         _session.value = TtsSession(
             url = content.url,
             title = content.title?.takeIf { it.isNotBlank() } ?: content.url,
@@ -136,6 +141,7 @@ object TtsPlayback {
     fun preview(context: Context, text: String = TtsPreview.EXAMPLE_TEXT) {
         _session.value = null
         _previewing.value = true
+        _previewError.value = null
         val current = engine
         if (current != null) {
             current.preview(text)
@@ -192,6 +198,8 @@ object TtsPlayback {
                 started = false,
                 errorMessage = message,
             )
+        } else {
+            _previewError.value = message
         }
         engine?.shutdownSelf()
     }
