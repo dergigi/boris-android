@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Reader loading title decodes HTML entities such as apostrophes
+- Article images stay in flow and no longer cover the text above them
 
 ### Changed
 

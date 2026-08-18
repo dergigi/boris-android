@@ -94,6 +94,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -2051,7 +2052,8 @@ private class ClickableCoilImageTransformer(
         val data = Coil3ImageTransformerImpl.transform(https)
         return data.copy(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .clipToBounds()
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { onImageClick(https) },
             contentScale = ContentScale.Fit,
