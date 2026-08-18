@@ -61,6 +61,17 @@ object RssRepository {
         return remember(RssParser.parse(xml, feedUrl))
     }
 
+    fun discoverRootFeed(articleUrl: String): String? {
+        for (feedUrl in RssDiscovery.feedCandidates(articleUrl)) {
+            try {
+                if (fetch(feedUrl).isNotEmpty()) return feedUrl
+            } catch (_: Exception) {
+                // Try the next common feed location.
+            }
+        }
+        return null
+    }
+
     /**
      * Finds a previously fetched item for [url]. On a cold start the
      * in-memory index is rebuilt from the HTTP cache of [feedUrls].

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader can suggest adding a detected website RSS feed
+
 ## [1.4.2] - 2026-08-18
 
 ### Changed

@@ -51,10 +51,12 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -70,6 +72,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -157,6 +160,7 @@ import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.settings.ReadingFonts
+import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -184,6 +188,7 @@ fun ReaderScreen(
     onOpenHighlightSettings: () -> Unit = {},
     viewModel: ReaderViewModel = viewModel(),
     menuViewModel: HighlightMenuViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gallery by viewModel.gallery.collectAsStateWithLifecycle()
@@ -195,11 +200,14 @@ fun ReaderScreen(
     val inLibrary by viewModel.inLibrary.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
     val author by viewModel.author.collectAsStateWithLifecycle()
+    val rssFeedSuggestion by viewModel.rssFeedSuggestion.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val deletedIds by menuViewModel.deleted.collectAsStateWithLifecycle()
     val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
     val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
+    val settingsSignIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
+    val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
@@ -212,6 +220,11 @@ fun ReaderScreen(
     ) { result ->
         menuViewModel.onSignerResult(result.resultCode, result.data)
     }
+    val settingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        settingsViewModel.onSignerResult(result.resultCode, result.data)
+    }
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -220,6 +233,11 @@ fun ReaderScreen(
     LaunchedEffect(menuMessage) {
         val text = menuMessage ?: return@LaunchedEffect
         menuViewModel.consumeMessage()
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+    }
+    LaunchedEffect(settingsMessage) {
+        val text = settingsMessage ?: return@LaunchedEffect
+        settingsViewModel.consumeMessage()
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
     }
     LaunchedEffect(signIntent) {
@@ -231,6 +249,11 @@ fun ReaderScreen(
         val intent = menuSignIntent ?: return@LaunchedEffect
         menuViewModel.consumeSignIntent()
         menuLauncher.launch(intent)
+    }
+    LaunchedEffect(settingsSignIntent) {
+        val intent = settingsSignIntent ?: return@LaunchedEffect
+        settingsViewModel.consumeSignIntent()
+        settingsLauncher.launch(intent)
     }
     val visibleHighlights = remember(highlights, deletedIds) {
         highlights.filter { it.id !in deletedIds }
@@ -248,6 +271,7 @@ fun ReaderScreen(
         archived = archived,
         author = author,
         settings = settings,
+        rssFeedSuggestion = rssFeedSuggestion?.takeIf { it !in settings.rssFeeds },
         onBack = onBack,
         onRetry = viewModel::load,
         onOpenArticle = onOpenArticle,
@@ -266,6 +290,17 @@ fun ReaderScreen(
         onArchive = {
             viewModel.archive()?.let(launcher::launch)
         },
+        onAddRssFeed = { feedUrl ->
+            settingsViewModel.update { current ->
+                if (feedUrl in current.rssFeeds) {
+                    current
+                } else {
+                    current.withStringList("rssFeeds", current.rssFeeds + feedUrl)
+                }
+            }
+            viewModel.dismissRssFeedSuggestion()
+        },
+        onDismissRssFeed = viewModel::dismissRssFeedSuggestion,
         canDeleteHighlight = menuViewModel::canDelete,
         onDeleteHighlight = menuViewModel::delete,
     )
@@ -440,6 +475,7 @@ fun ReaderScreenContent(
     archived: Boolean,
     author: Profile?,
     settings: UserSettings,
+    rssFeedSuggestion: String?,
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenArticle: (String) -> Unit,
@@ -452,6 +488,8 @@ fun ReaderScreenContent(
     onHighlight: (String) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: () -> Unit,
+    onAddRssFeed: (String) -> Unit,
+    onDismissRssFeed: () -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
 ) {
@@ -517,6 +555,37 @@ fun ReaderScreenContent(
 
     val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var findOpen by remember { mutableStateOf(false) }
+    var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
+    rssConfirmFeed?.let { feedUrl ->
+        AlertDialog(
+            onDismissRequest = {
+                rssConfirmFeed = null
+                onDismissRssFeed()
+            },
+            title = { Text(stringResource(R.string.reader_rss_confirm_title)) },
+            text = { Text(stringResource(R.string.reader_rss_confirm_body, feedUrl)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        rssConfirmFeed = null
+                        onAddRssFeed(feedUrl)
+                    },
+                ) {
+                    Text(stringResource(R.string.reader_rss_confirm_add))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        rssConfirmFeed = null
+                        onDismissRssFeed()
+                    },
+                ) {
+                    Text(stringResource(R.string.reader_rss_confirm_cancel))
+                }
+            },
+        )
+    }
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         modifier = if (settings.hideTopBarOnScroll) {
@@ -712,6 +781,7 @@ fun ReaderScreenContent(
                     archived = archived,
                     author = author,
                     settings = settings,
+                    rssFeedSuggestion = rssFeedSuggestion,
                     ttsSession = ttsSession,
                     // D-19: while TTS is speaking, volume keys change volume, not scroll.
                     volumeScroll = gallery == null && ttsSession?.playing != true,
@@ -719,6 +789,7 @@ fun ReaderScreenContent(
                     onFindOpenChange = { findOpen = it },
                     onOpenArticle = onOpenArticle,
                     onOpenProfile = onOpenProfile,
+                    onAddRssFeed = { feed -> rssConfirmFeed = feed },
                     onOpenHighlightSettings = onOpenHighlightSettings,
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
@@ -751,8 +822,10 @@ private fun ArticleBody(
     archived: Boolean,
     author: Profile?,
     settings: UserSettings,
+    rssFeedSuggestion: String?,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onAddRssFeed: (String) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (String) -> Unit,
@@ -1189,7 +1262,9 @@ private fun ArticleBody(
                     highlightsLabel = highlightsLabel,
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
                     published = published,
+                    rssFeedUrl = rssFeedSuggestion,
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
+                    onRssClick = rssFeedSuggestion?.let { feed -> { onAddRssFeed(feed) } },
                     onHighlightsClick = {
                         onFindOpenChange(false)
                         paneOpen = true
@@ -1554,7 +1629,9 @@ private fun ArticleMetaRow(
     highlightsLabel: String?,
     highlightsColor: Color,
     published: String?,
+    rssFeedUrl: String?,
     onDomainClick: (() -> Unit)? = null,
+    onRssClick: (() -> Unit)? = null,
     onHighlightsClick: (() -> Unit)? = null,
 ) {
     if (
@@ -1562,6 +1639,7 @@ private fun ArticleMetaRow(
         domain == null &&
         readingTime == null &&
         highlightsLabel == null &&
+        rssFeedUrl == null &&
         published == null
     ) {
         return
@@ -1582,6 +1660,14 @@ private fun ArticleMetaRow(
         }
         if (domain != null) {
             MetaChip(text = domain, icon = Icons.Outlined.Language, onClick = onDomainClick)
+        }
+        if (rssFeedUrl != null) {
+            MetaChip(
+                text = stringResource(R.string.reader_add_rss),
+                icon = Icons.Outlined.RssFeed,
+                accent = MaterialTheme.colorScheme.primary,
+                onClick = onRssClick,
+            )
         }
         if (readingTime != null) {
             MetaChip(text = readingTime, icon = Icons.Outlined.Schedule)
