@@ -72,8 +72,10 @@ object Nip19 {
     }
 
     fun nprofileEncode(pointer: NprofilePointer): String {
+        val pubkey = pointer.pubkey.hexToByteArray()
+        require(pubkey.size == 32) { "Invalid nprofile pubkey length" }
         val payload = buildList {
-            add(tlv(0, pointer.pubkey.hexToByteArray()))
+            add(tlv(0, pubkey))
             for (relay in pointer.relays) {
                 add(tlv(1, relay.toByteArray(Charsets.UTF_8)))
             }

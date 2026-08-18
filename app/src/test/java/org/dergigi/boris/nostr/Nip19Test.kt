@@ -122,4 +122,9 @@ class Nip19Test {
         val decoded = Nip19.nprofileDecode(Nip19.nprofileEncode(original))
         assertEquals(original, decoded)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun nprofileEncodeRejectsShortPubkey() {
+        Nip19.nprofileEncode(NprofilePointer(pubkey = "00".repeat(31)))
+    }
 }

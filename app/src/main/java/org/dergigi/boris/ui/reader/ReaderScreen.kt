@@ -775,7 +775,7 @@ private fun ArticleBody(
     val highlightsLabel = highlightCountLabel(highlightCount)
     val defaultUriHandler = LocalUriHandler.current
     val openLinksInReader = settings.openLinksInReader
-    val uriHandler = remember(content.url, onOpenArticle, defaultUriHandler, openLinksInReader) {
+    val uriHandler = remember(content.url, onOpenArticle, onOpenProfile, defaultUriHandler, openLinksInReader) {
         object : UriHandler {
             override fun openUri(uri: String) {
                 when (val action = readerLinkAction(uri, content.url, openLinksInReader)) {

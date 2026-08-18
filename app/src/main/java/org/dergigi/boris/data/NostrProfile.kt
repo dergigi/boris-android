@@ -25,11 +25,25 @@ object NostrProfile {
         ) {
             return markdown
         }
-        return entityRegex.replace(markdown) { match ->
-            if (alreadyLinked(markdown, match.range.first)) return@replace match.value
-            val profile = decode(match.groupValues[1].lowercase()) ?: return@replace match.value
-            "[${label(profile)}](${profile.uri})"
+        val protectedRanges = protectedRanges(markdown)
+        val out = StringBuilder(markdown.length)
+        var last = 0
+        var changed = false
+        for (match in entityRegex.findAll(markdown)) {
+            if (isProtected(match.range, protectedRanges) ||
+                !hasPlainTextBoundary(markdown, match.range)
+            ) {
+                continue
+            }
+            val profile = decode(match.groupValues[1].lowercase()) ?: continue
+            out.append(markdown, last, match.range.first)
+            out.append("[${label(profile)}](${profile.uri})")
+            last = match.range.last + 1
+            changed = true
         }
+        if (!changed) return markdown
+        out.append(markdown, last, markdown.length)
+        return out.toString()
     }
 
     private fun decode(encoded: String): NostrProfileRef? = try {
@@ -53,18 +67,53 @@ object NostrProfile {
     }
 
     private fun findEntity(raw: String): String? =
-        entityRegex.find(raw)?.groupValues?.getOrNull(1)?.lowercase()
+        entityRegex.matchEntire(raw)?.groupValues?.getOrNull(1)?.lowercase()
 
     private fun label(profile: NostrProfileRef): String {
         val npub = profile.npub
         return "@${npub.take(12)}...${npub.takeLast(6)}"
     }
 
-    private fun alreadyLinked(text: String, start: Int): Boolean {
-        if (start == 0) return false
-        val before = text[start - 1]
-        return before == '(' || before == '<'
+    private fun protectedRanges(text: String): List<IntRange> {
+        val ranges = mutableListOf<IntRange>()
+        for (regex in protectedRegexes) {
+            for (match in regex.findAll(text)) ranges.add(match.range)
+        }
+        if (ranges.isEmpty()) return emptyList()
+        return ranges.sortedBy { it.first }.fold(mutableListOf()) { merged, range ->
+            val previous = merged.lastOrNull()
+            if (previous != null && range.first <= previous.last + 1) {
+                merged[merged.lastIndex] = previous.first..maxOf(previous.last, range.last)
+            } else {
+                merged.add(range)
+            }
+            merged
+        }
     }
+
+    private fun isProtected(range: IntRange, protectedRanges: List<IntRange>): Boolean =
+        protectedRanges.any { protected ->
+            range.first >= protected.first && range.last <= protected.last
+        }
+
+    private fun hasPlainTextBoundary(text: String, range: IntRange): Boolean {
+        val before = text.getOrNull(range.first - 1)
+        val after = text.getOrNull(range.last + 1)
+        return before?.isIdentifierAdjacent() != true && after?.isIdentifierAdjacent() != true
+    }
+
+    private fun Char.isIdentifierAdjacent(): Boolean =
+        isLetterOrDigit() || this in "._-/:@?=&%#"
+
+    private val protectedRegexes = listOf(
+        Regex("""(?s)(^|\n)(?:```|~~~)[^\n]*\n.*?(?:\n(?:```|~~~)[ \t]*(?=\n|$)|$)"""),
+        Regex("""`+[^`\n]+`+"""),
+        Regex("""!?\[[^\]\n]*]\([^)\n]*\)"""),
+        Regex("""!?\[[^\]\n]*]\[[^\]\n]*]"""),
+        Regex("""(?m)^[ \t]{0,3}\[[^\]\n]+]:[ \t]*\S.*$"""),
+        Regex("""<[A-Za-z][^>\n]*>[^<\n]*</[A-Za-z][^>\n]*>"""),
+        Regex("""<[^>\n]+>"""),
+    )
 
     private val entityRegex = Regex(
         """(?:nostr:(?://)?)?(nprofile1[023456789acdefghjklmnpqrstuvwxyz]+|npub1[023456789acdefghjklmnpqrstuvwxyz]+)""",

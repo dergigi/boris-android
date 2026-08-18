@@ -42,6 +42,50 @@ class NostrProfileTest {
     }
 
     @Test
+    fun linkifyLeavesExistingMarkdownLabelsAlone() {
+        val markdown = "[nostr:$nprofile](https://example.com)"
+        assertEquals(markdown, NostrProfile.linkify(markdown))
+    }
+
+    @Test
+    fun linkifyLeavesReferenceLinksAlone() {
+        val markdown = "[nostr:$nprofile][author]\n\n[author]: nostr:$nprofile"
+        assertEquals(markdown, NostrProfile.linkify(markdown))
+    }
+
+    @Test
+    fun linkifyLeavesInlineCodeAlone() {
+        val markdown = "Use `nostr:$nprofile` as the value."
+        assertEquals(markdown, NostrProfile.linkify(markdown))
+    }
+
+    @Test
+    fun linkifyLeavesFencedCodeAlone() {
+        val markdown = "```\nnostr:$nprofile\n```"
+        assertEquals(markdown, NostrProfile.linkify(markdown))
+    }
+
+    @Test
+    fun linkifyLeavesHtmlAlone() {
+        val attribute = """<span data-profile="nostr:$nprofile">profile</span>"""
+        val body = "<span>nostr:$nprofile</span>"
+        assertEquals(attribute, NostrProfile.linkify(attribute))
+        assertEquals(body, NostrProfile.linkify(body))
+    }
+
+    @Test
+    fun linkifyDoesNotRewriteProfileUrls() {
+        val markdown = "Open https://njump.to/$nprofile"
+        assertEquals(markdown, NostrProfile.linkify(markdown))
+    }
+
+    @Test
+    fun parseDoesNotAcceptEmbeddedProfiles() {
+        assertNull(NostrProfile.parse("https://njump.to/$nprofile"))
+        assertNull(NostrProfile.parse("prefix nostr:$nprofile"))
+    }
+
+    @Test
     fun ignoresOtherText() {
         assertNull(NostrProfile.parse("nostr:note1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"))
         assertEquals("plain text", NostrProfile.linkify("plain text"))
