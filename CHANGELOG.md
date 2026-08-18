@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Light-mode highlight cards keep yellow borders and icons visible against cream paper
+
 ### Changed
 
 - Zapstore gallery order is reading, settings, dark, About, then the main tabs

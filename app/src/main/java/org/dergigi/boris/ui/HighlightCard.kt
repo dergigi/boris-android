@@ -42,6 +42,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.nostr.QuoteMatch
+import org.dergigi.boris.ui.theme.ChromeColor
 import org.dergigi.boris.ui.theme.SourceSerif
 
 fun highlightContextParts(quote: String, context: String?): Triple<String, String, String> {
@@ -174,11 +175,11 @@ fun HighlightCard(
     menu: HighlightCardMenu? = null,
 ) {
     val shape = RoundedCornerShape(8.dp)
-    val border = color.copy(alpha = if (selected) 0.95f else 0.55f)
+    val chrome = ChromeColor.of(color, MaterialTheme.colorScheme.background)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, border, shape)
+            .border(1.dp, chrome, shape)
             .clip(shape)
             .background(if (selected) color.copy(alpha = 0.08f) else Color.Transparent)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
@@ -193,7 +194,7 @@ fun HighlightCard(
             Icon(
                 imageVector = Icons.Outlined.FormatQuote,
                 contentDescription = null,
-                tint = color,
+                tint = chrome,
                 modifier = Modifier.size(18.dp),
             )
             if (createdAt > 0L) {
@@ -224,7 +225,7 @@ fun HighlightCard(
         ) {
             HighlightAuthor(
                 name = authorName,
-                color = color,
+                color = chrome,
                 picture = authorPicture,
                 modifier = Modifier.weight(1f, fill = false),
             )
