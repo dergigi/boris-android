@@ -46,6 +46,17 @@ Article view, swarm marks, a profile, TTS.
   <img src="screenshots/4-search.png" width="180" alt="Search" />
 </p>
 
+### Settings
+
+Light mode.
+
+<p align="center">
+  <img src="screenshots/settings-1.png" width="180" alt="Settings" />
+  <img src="screenshots/settings-2.png" width="180" alt="Highlight colors" />
+  <img src="screenshots/settings-3.png" width="180" alt="Airplane mode" />
+  <img src="screenshots/settings-4.png" width="180" alt="About" />
+</p>
+
 ```bash
 ./gradlew :app:assembleDebug
 ```

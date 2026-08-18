@@ -11,7 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Changed
 
-- README screenshot rows are Reading, Dark, and Home; Zapstore also includes You and Settings
+- README screenshot rows are Reading, Dark, Home, and Settings; Zapstore also includes You
 
 ## [1.4.11] - 2026-08-18
 
