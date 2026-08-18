@@ -11,8 +11,6 @@ Login is optional. Amber or a bunker can sign events. Boris never holds an `nsec
   <a href="https://github.com/dergigi/boris-android/releases"><img src="docs/badges/get-it-on-github.png" alt="Get it on GitHub" height="70"></a>
 </p>
 
-- Versions: [CHANGELOG.md](CHANGELOG.md)
-
 ## Screenshots
 
 ### Reading
