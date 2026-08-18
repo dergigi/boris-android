@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-08-18
+
 ### Added
 
 - Settings About includes Report a bug and Suggest a feature (same GitHub issue templates as About Boris)
