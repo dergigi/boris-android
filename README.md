@@ -35,15 +35,14 @@ Dark mode. Your marks, friends' marks, and the rest of the nostrverse.
   <img src="screenshots/feeds.png" width="180" alt="Highlights feed" />
   <img src="screenshots/reader-dark.png" width="180" alt="Article in dark mode" />
   <img src="screenshots/you.png" width="180" alt="Your highlights" />
-  <img src="screenshots/search-highlight.png" width="180" alt="Search highlights" />
 </p>
 
 ### Settings
 
 <p align="center">
   <img src="screenshots/settings.png" width="180" alt="Settings" />
-  <img src="screenshots/settings-reading.png" width="180" alt="Reading settings" />
   <img src="screenshots/settings-highlights.png" width="180" alt="Highlight colors" />
+  <img src="screenshots/settings-feeds.png" width="180" alt="Feeds settings" />
   <img src="screenshots/settings-airplane.png" width="180" alt="Airplane mode" />
 </p>
 

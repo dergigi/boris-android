@@ -18,6 +18,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - README and Zapstore screenshot sets drop the article cover shot
 - Light-mode reading screenshots include an orange highlight and an updated TTS shot
 - Dark-mode screenshots include an updated Feeds view and a dark article reader
+- README screenshot rows are four wide; Settings uses the new light-mode shots
 
 ## [1.4.10] - 2026-08-18
 

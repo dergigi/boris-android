@@ -35,6 +35,8 @@ images:
   - ./screenshots/you.png
   - ./screenshots/search.png
   - ./screenshots/settings.png
+  - ./screenshots/settings-highlights.png
+  - ./screenshots/settings-feeds.png
   - ./screenshots/settings-airplane.png
 
 metadata_sources:
