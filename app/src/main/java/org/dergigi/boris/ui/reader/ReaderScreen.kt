@@ -966,13 +966,18 @@ private fun ArticleBody(
         it.url == content.url && settings.ttsFollowAlong && it.followAlongEnabled
     }
     val spokenParagraph = spokenSession?.paragraphs?.getOrNull(spokenSession.index)
+    val spokenSentence = spokenSession?.let { session ->
+        session.spokenText ?: spokenParagraph?.let { paragraph ->
+            TtsText.sentences(paragraph).getOrNull(session.sentenceIndex) ?: paragraph
+        }
+    }
     val painted = HighlightJump.withFocus(
         highlights.visibleFor(settings),
         focusHighlightId,
         focusQuote,
     ) + listOfNotNull(
         ArticleFind.painted(findQuery),
-        spokenParagraph?.let(ArticleFind::paintedSpoken),
+        spokenSentence?.let { ArticleFind.paintedSpoken(it, spokenParagraph) },
     )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
@@ -1081,14 +1086,14 @@ private fun ArticleBody(
         pendingJumpId = null
         ReaderFocus.clear()
     }
-    // D-12/D-15 follow-along auto-scroll: bring the spoken paragraph on screen when
-    // the index changes, unless the user paused auto-scroll by scrolling themselves.
+    // D-12/D-15 follow-along auto-scroll: bring the spoken sentence on screen when
+    // playback advances, unless the user paused auto-scroll by scrolling themselves.
     var followAlongScrolling by remember { mutableStateOf(false) }
-    val followAlongIndex = spokenSession
+    val followAlongPosition = spokenSession
         ?.takeIf { it.playing && !it.followAlongPaused }
-        ?.index
-    LaunchedEffect(followAlongIndex, content.url) {
-        if (followAlongIndex == null) return@LaunchedEffect
+        ?.let { it.index to it.sentenceIndex }
+    LaunchedEffect(followAlongPosition, content.url) {
+        if (followAlongPosition == null) return@LaunchedEffect
         val stop = HighlightJump.awaitStop(navigator, ArticleFind.SPOKEN_ID) {
             scrollViewport?.isAttached == true
         } ?: return@LaunchedEffect

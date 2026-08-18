@@ -200,12 +200,12 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         if (!requestFocus()) return
         engine.setSpeechRate(session.rate.toFloat())
         val paragraph = session.paragraphs.getOrNull(session.index) ?: return
-        val chunks = TtsText.chunks(paragraph, maxSpeechLength())
-        chunks.forEachIndexed { j, chunk ->
-            val id = "p${session.index}.$j"
-            if (j == chunks.lastIndex) lastChunkId = id
+        val units = TtsText.speechUnits(paragraph, maxSpeechLength())
+        units.forEachIndexed { j, unit ->
+            val id = "p${session.index}.s$j"
+            if (j == units.lastIndex) lastChunkId = id
             engine.speak(
-                chunk,
+                unit,
                 if (j == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
                 null,
                 id,
@@ -287,7 +287,14 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         override fun onStart(utteranceId: String?) {
             handler.post {
                 if (utteranceId == PREVIEW_ID) return@post
-                parseIndex(utteranceId)?.let(TtsPlayback::onSpeechStarted)
+                parsePosition(utteranceId)?.let {
+                    val session = TtsPlayback.session.value ?: return@post
+                    val paragraph = session.paragraphs.getOrNull(it.paragraphIndex) ?: return@post
+                    val unit = TtsText.speechUnits(paragraph, maxSpeechLength())
+                        .getOrNull(it.sentenceIndex)
+                        ?: return@post
+                    TtsPlayback.onSpeechStarted(it.paragraphIndex, it.sentenceIndex, unit)
+                }
             }
         }
 
@@ -300,7 +307,9 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                     return@post
                 }
                 if (utteranceId != lastChunkId) return@post
-                parseIndex(utteranceId)?.let(TtsPlayback::onParagraphFinished)
+                parsePosition(utteranceId)?.let {
+                    TtsPlayback.onParagraphFinished(it.paragraphIndex)
+                }
             }
         }
 
@@ -314,10 +323,18 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         }
     }
 
-    private fun parseIndex(utteranceId: String?): Int? {
+    private fun parsePosition(utteranceId: String?): SpeechPosition? {
         if (utteranceId == null || !utteranceId.startsWith("p")) return null
-        return utteranceId.substringAfter("p").substringBefore(".").toIntOrNull()
+        val body = utteranceId.drop(1)
+        val paragraphIndex = body.substringBefore(".").toIntOrNull() ?: return null
+        val sentenceIndex = body.substringAfter(".s", "0").toIntOrNull() ?: 0
+        return SpeechPosition(paragraphIndex, sentenceIndex)
     }
+
+    private data class SpeechPosition(
+        val paragraphIndex: Int,
+        val sentenceIndex: Int,
+    )
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         handler.post {

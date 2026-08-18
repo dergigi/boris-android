@@ -61,6 +61,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Profile metadata escapes render as text instead of literal JSON sequences
 
+### Fixed
+
+- TTS follow-along highlights the current sentence instead of the whole paragraph
+
 ## [1.4.7] - 2026-08-18
 
 ### Added

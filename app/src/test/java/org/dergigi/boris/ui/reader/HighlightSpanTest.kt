@@ -27,6 +27,19 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun spokenHighlightUsesParagraphContext() {
+        val spoken = ArticleFind.paintedSpoken(
+            sentence = "Repeated sentence.",
+            paragraph = "Target paragraph. Repeated sentence.",
+        )!!
+        assertTrue(
+            matchHighlightSpans("Other paragraph. Repeated sentence.", listOf(spoken)).isEmpty(),
+        )
+        val spans = matchHighlightSpans("Target paragraph. Repeated sentence.", listOf(spoken))
+        assertEquals(listOf(18 to 36), spans.map { it.start to it.end })
+    }
+
+    @Test
     fun stopsFromSpansKeepsOrderAndSkipsUnlaidRanges() {
         val item = PaintedHighlight(id = "h", quote = "x", mine = false)
         val spans = listOf(

@@ -65,25 +65,30 @@ object TtsText {
         ownerText: String = "",
         ownerOffset: Int = 0,
     ): String {
-        val sentences = paragraph.split(SENTENCE_BREAK).filter { it.isNotBlank() }
-        if (sentences.size <= 1) return paragraph
-        val ownerSentences = ownerText.split(SENTENCE_BREAK).filter { it.isNotBlank() }
-        val byOffset = if (ownerText.isNotBlank() && ownerSentences.size == sentences.size) {
+        val parts = sentences(paragraph)
+        if (parts.size <= 1) return paragraph
+        val ownerSentences = sentences(ownerText)
+        val byOffset = if (ownerText.isNotBlank() && ownerSentences.size == parts.size) {
             sentenceIndex(ownerText, ownerOffset)
         } else {
             -1
         }
         val index = when {
-            byOffset in 1 until sentences.size -> byOffset
+            byOffset in 1 until parts.size -> byOffset
             else -> {
                 val selected = clean(selectedText)?.matchKey().orEmpty()
                 if (selected.isBlank()) return paragraph
-                sentences.indexOfFirst { it.matchKey().contains(selected) }
+                parts.indexOfFirst { it.matchKey().contains(selected) }
             }
         }
         if (index <= 0) return paragraph
-        return sentences.drop(index).joinToString(" ")
+        return parts.drop(index).joinToString(" ")
     }
+
+    fun sentences(text: String): List<String> =
+        text.split(SENTENCE_BREAK)
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
 
     fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
         var index = 0
@@ -122,6 +127,20 @@ object TtsText {
         }
         flush()
         return pieces.ifEmpty { listOf(text.take(maxLength)) }
+    }
+
+    fun speechUnits(text: String, maxLength: Int): List<String> {
+        val units = mutableListOf<String>()
+        for (sentence in sentences(text)) {
+            if (maxLength > 0 && sentence.length > maxLength) {
+                splitOnSpaces(sentence, maxLength, units)
+            } else {
+                units += sentence
+            }
+        }
+        return units.ifEmpty {
+            if (maxLength > 0) listOf(text.take(maxLength)) else listOf(text)
+        }
     }
 
     fun splitMarkdownBlocks(markdown: String): List<String> {

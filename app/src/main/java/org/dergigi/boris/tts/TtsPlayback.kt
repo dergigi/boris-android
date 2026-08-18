@@ -20,6 +20,8 @@ data class TtsSession(
     val paused: Boolean,
     /** True once the engine actually started speaking; false while initializing. */
     val started: Boolean = false,
+    val sentenceIndex: Int = 0,
+    val spokenText: String? = null,
     val followAlongEnabled: Boolean = true,
     val followAlongPaused: Boolean = false,
     val rate: Double = TtsSpeed.DEFAULT,
@@ -172,6 +174,8 @@ object TtsPlayback {
             playing = true,
             paused = false,
             started = false,
+            sentenceIndex = 0,
+            spokenText = null,
             followAlongPaused = false,
         )
         engine?.play()
@@ -231,11 +235,20 @@ object TtsPlayback {
         )
     }
 
-    internal fun onSpeechStarted(index: Int) {
+    internal fun onSpeechStarted(index: Int, sentenceIndex: Int, spokenText: String) {
         val current = _session.value ?: return
         if (index != current.index) return
-        if (!current.started || current.errorMessage != null) {
-            _session.value = current.copy(started = true, errorMessage = null)
+        val nextSentence = sentenceIndex.coerceAtLeast(0)
+        val nextSpoken = spokenText.takeIf { it.isNotBlank() }
+        if (!current.started || current.sentenceIndex != nextSentence ||
+            current.spokenText != nextSpoken || current.errorMessage != null
+        ) {
+            _session.value = current.copy(
+                started = true,
+                sentenceIndex = nextSentence,
+                spokenText = nextSpoken,
+                errorMessage = null,
+            )
         }
     }
 
@@ -246,7 +259,12 @@ object TtsPlayback {
             stop()
             return
         }
-        _session.value = current.copy(index = index + 1, started = false)
+        _session.value = current.copy(
+            index = index + 1,
+            started = false,
+            sentenceIndex = 0,
+            spokenText = null,
+        )
         engine?.play()
     }
 

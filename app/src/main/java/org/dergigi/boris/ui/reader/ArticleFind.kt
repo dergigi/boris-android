@@ -42,16 +42,17 @@ object ArticleFind {
     }
 
     /**
-     * Transient follow-along mark for the currently spoken paragraph (D-12).
+     * Transient follow-along mark for the currently spoken sentence (D-12).
      * Never published; never enters the NIP-84 sign path.
      */
-    fun paintedSpoken(paragraph: String): PaintedHighlight? {
-        val p = paragraph.trim()
+    fun paintedSpoken(sentence: String, paragraph: String? = null): PaintedHighlight? {
+        val p = sentence.trim()
         if (p.isEmpty()) return null
         return PaintedHighlight(
             id = SPOKEN_ID,
             quote = p,
             mine = false,
+            context = paragraph,
             spoken = true,
         )
     }

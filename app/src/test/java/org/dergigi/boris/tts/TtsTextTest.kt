@@ -241,6 +241,22 @@ class TtsTextTest {
     }
 
     @Test
+    fun speechUnitsFollowSentenceBoundaries() {
+        assertEquals(
+            listOf("First sentence.", "Second sentence!", "Third one?"),
+            TtsText.speechUnits("First sentence. Second sentence! Third one?", 100),
+        )
+    }
+
+    @Test
+    fun speechUnitsSplitOverlongSentencesOnSpaces() {
+        assertEquals(
+            listOf("One two", "three", "four."),
+            TtsText.speechUnits("One two three four.", 8),
+        )
+    }
+
+    @Test
     fun previewSentenceIsLocked() {
         assertEquals(
             "Boris aims to be a calm reader app with clean typography, beautiful design, " +
