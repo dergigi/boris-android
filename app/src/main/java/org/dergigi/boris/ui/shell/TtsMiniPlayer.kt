@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +21,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -92,6 +97,11 @@ fun TtsMiniPlayerHost(
                     settingsViewModel.update { it.withDouble("ttsDefaultSpeed", next) }
                     TtsPlayback.setRate(next)
                 },
+                onSelectSpeed = { speed ->
+                    val next = TtsSpeed.snap(speed)
+                    settingsViewModel.update { it.withDouble("ttsDefaultSpeed", next) }
+                    TtsPlayback.setRate(next)
+                },
                 followAlongEnabled = settings.ttsFollowAlong,
                 onToggleFollowAlong = {
                     val enabled = !settings.ttsFollowAlong
@@ -121,6 +131,7 @@ fun TtsMiniPlayer(
     session: TtsSession,
     onOpenArticle: (String) -> Unit,
     onCycleSpeed: () -> Unit,
+    onSelectSpeed: (Double) -> Unit,
     followAlongEnabled: Boolean,
     onToggleFollowAlong: () -> Unit,
     modifier: Modifier = Modifier,
@@ -151,7 +162,11 @@ fun TtsMiniPlayer(
                     .clickable { onOpenArticle(session.url) }
                     .semantics { contentDescription = openArticle },
             )
-            SpeedChip(rate = session.rate, onCycle = onCycleSpeed)
+            SpeedChip(
+                rate = session.rate,
+                onCycle = onCycleSpeed,
+                onSelect = onSelectSpeed,
+            )
             IconButton(
                 onClick = onToggleFollowAlong,
                 modifier = Modifier.size(48.dp),
@@ -199,17 +214,24 @@ fun TtsMiniPlayer(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SpeedChip(
     rate: Double,
     onCycle: () -> Unit,
+    onSelect: (Double) -> Unit,
 ) {
     val description = stringResource(R.string.tts_cycle_speed)
     val shape = RoundedCornerShape(8.dp)
+    val selected = TtsSpeed.snap(rate)
+    var menuOpen by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .clickable(onClick = onCycle)
+            .combinedClickable(
+                onClick = onCycle,
+                onLongClick = { menuOpen = true },
+            )
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
@@ -222,6 +244,30 @@ private fun SpeedChip(
                 .border(1.dp, MaterialTheme.colorScheme.outline, shape)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
         )
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+        ) {
+            TtsSpeed.PRESETS.forEach { speed ->
+                DropdownMenuItem(
+                    text = { Text(rateLabel(speed)) },
+                    trailingIcon = if (speed == selected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        menuOpen = false
+                        onSelect(speed)
+                    },
+                )
+            }
+        }
     }
 }
 
