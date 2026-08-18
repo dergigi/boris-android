@@ -17,6 +17,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - TTS follow-along highlights the current sentence instead of the whole paragraph
+- Library All view dedupes the same article across bookmark shelves
 
 ### Changed
 

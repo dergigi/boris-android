@@ -64,6 +64,35 @@ class BookmarkCatalogTest {
     }
 
     @Test
+    fun mergedLibraryDedupesSameUrlAcrossShelves() {
+        val list = event(
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = listOf(listOf("r", "https://www.example.com/read/")),
+            createdAt = 10,
+        )
+        val web = event(
+            kind = Nip01Event.KIND_WEB_BOOKMARK,
+            tags = listOf(
+                listOf("d", "example.com/read"),
+                listOf("title", "Web title"),
+                listOf("published_at", "20"),
+            ),
+            createdAt = 20,
+        )
+
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = listOf(web),
+        )
+
+        assertEquals(1, shelves.public.size)
+        assertEquals(1, shelves.web.size)
+        assertEquals(1, shelves.merged().size)
+        assertEquals("Web title", shelves.merged().single().title)
+    }
+
+    @Test
     fun publicNotesUseFetchedContentAsTitle() {
         val eventId = "aa".repeat(32)
         val list = event(
