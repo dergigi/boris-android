@@ -1,12 +1,17 @@
 package org.dergigi.boris.ui.home
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +35,19 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -85,7 +98,11 @@ import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
+import org.dergigi.boris.ui.copyArticleLink
+import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.openOriginalArticle
 import org.dergigi.boris.ui.reader.CardReadingProgress
+import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -110,10 +127,21 @@ fun HomeScreen(
 ) {
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val loggedIn = authState is AuthUiState.LoggedIn
     val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        viewModel.onSignerResult(result.resultCode, result.data)
+    }
+    LaunchedEffect(message) {
+        val text = message ?: return@LaunchedEffect
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        viewModel.consumeMessage()
+    }
     var showFirstTime by remember {
         mutableStateOf(!HomeOnboardingStore.isFirstTimeDismissed(context))
     }
@@ -238,6 +266,9 @@ fun HomeScreen(
                 onOpenLogin = onOpenLogin,
                 onRefresh = viewModel::refresh,
                 onRead = onRead,
+                onMarkAsRead = { article ->
+                    viewModel.markAsRead(article)?.let(launcher::launch)
+                },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -308,6 +339,7 @@ fun HomeScreenContent(
     nostrverseColor: Color,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
+    onMarkAsRead: (HighlightedArticle) -> Unit = {},
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
     showFirstTime: Boolean = false,
@@ -505,7 +537,10 @@ fun HomeScreenContent(
                                                 rowKey = "continue",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 icon = Icons.AutoMirrored.Outlined.MenuBook,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                         HomeSections.YOURS -> if (yours.isNotEmpty()) {
@@ -514,7 +549,10 @@ fun HomeScreenContent(
                                                 items = yours,
                                                 rowKey = "you",
                                                 tint = mineColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                         HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
@@ -523,7 +561,10 @@ fun HomeScreenContent(
                                                 items = friends,
                                                 rowKey = "friends",
                                                 tint = friendsColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                         HomeSections.OTHERS -> if (others.isNotEmpty()) {
@@ -538,7 +579,10 @@ fun HomeScreenContent(
                                                 items = others,
                                                 rowKey = "others",
                                                 tint = nostrverseColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                         HomeSections.MOST -> if (mostHighlighted.isNotEmpty()) {
@@ -547,7 +591,10 @@ fun HomeScreenContent(
                                                 items = mostHighlighted,
                                                 rowKey = "most",
                                                 tint = nostrverseColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                         HomeSections.RANDOM -> if (randomArticles.isNotEmpty()) {
@@ -557,7 +604,10 @@ fun HomeScreenContent(
                                                 rowKey = "random",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 icon = Icons.Outlined.Shuffle,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
                                             )
                                         }
                                     }
@@ -721,7 +771,10 @@ private fun HighlightedRow(
     items: List<HighlightedArticle>,
     rowKey: String,
     tint: Color,
+    loggedIn: Boolean,
+    archivedKeys: Set<String>,
     onRead: (String) -> Unit,
+    onMarkAsRead: (HighlightedArticle) -> Unit,
     icon: ImageVector = BorisIcons.Highlighter,
 ) {
     Column(
@@ -759,72 +812,150 @@ private fun HighlightedRow(
                 HighlightedArticleCard(
                     article = article,
                     fallbackTint = tint,
+                    loggedIn = loggedIn,
+                    archived = ArchivedArticles.isArchived(article.url, archivedKeys),
                     onOpen = { onRead(article.url) },
+                    onMarkAsRead = { onMarkAsRead(article) },
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HighlightedArticleCard(
     article: HighlightedArticle,
     fallbackTint: Color,
+    loggedIn: Boolean,
+    archived: Boolean,
     onOpen: () -> Unit,
+    onMarkAsRead: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val target = remember(article.url) { NostrLink.parse(article.url) }
+    val nativeUri = target?.uri
+    val actionMenuLabel = stringResource(R.string.home_article_actions)
+    var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
-    Column(
-        modifier = Modifier
-            .width(CardWidth)
-            .clickable(onClick = onOpen),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(
+    Box(modifier = Modifier.width(CardWidth)) {
+        Column(
             modifier = Modifier
-                .size(CardImageSize)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onOpen,
+                    onLongClick = { menuOpen = true },
+                    onLongClickLabel = actionMenuLabel,
+                ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (article.imageUrl.isNullOrBlank()) {
-                val note = NostrLink.parse(article.url) is NostrTarget.Note
-                Icon(
-                    imageVector = if (note) {
-                        Icons.AutoMirrored.Outlined.StickyNote2
-                    } else {
-                        Icons.AutoMirrored.Outlined.Article
+            Box(
+                modifier = Modifier
+                    .size(CardImageSize)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (article.imageUrl.isNullOrBlank()) {
+                    val note = target is NostrTarget.Note
+                    Icon(
+                        imageVector = if (note) {
+                            Icons.AutoMirrored.Outlined.StickyNote2
+                        } else {
+                            Icons.AutoMirrored.Outlined.Article
+                        },
+                        contentDescription = null,
+                        tint = fallbackTint,
+                        modifier = Modifier.size(28.dp),
+                    )
+                } else {
+                    AsyncImage(
+                        model = article.imageUrl,
+                        contentDescription = article.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+            Text(
+                text = article.title,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = article.host,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            CardReadingProgress(url = article.url)
+        }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_share)) },
+                leadingIcon = {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    shareArticleLink(context, article.title, article.url)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_copy_link)) },
+                leadingIcon = {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    copyArticleLink(context, clipboard, article.url)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_open_original)) },
+                leadingIcon = {
+                    Icon(Icons.Filled.OpenInBrowser, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    openOriginalArticle(context, article.url)
+                },
+            )
+            if (nativeUri != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.reader_open_native)) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Smartphone, contentDescription = null)
                     },
-                    contentDescription = null,
-                    tint = fallbackTint,
-                    modifier = Modifier.size(28.dp),
+                    onClick = {
+                        menuOpen = false
+                        openExternalUri(context, nativeUri)
+                    },
                 )
-            } else {
-                AsyncImage(
-                    model = article.imageUrl,
-                    contentDescription = article.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
+            }
+            if (loggedIn && !archived) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.reader_mark_as_read)) },
+                    leadingIcon = {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                    },
+                    onClick = {
+                        menuOpen = false
+                        onMarkAsRead()
+                    },
                 )
             }
         }
-        Text(
-            text = article.title,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.SemiBold,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = article.host,
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        CardReadingProgress(url = article.url)
     }
 }
 

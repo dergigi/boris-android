@@ -55,6 +55,7 @@
     <string name="home_hide_archived">Hide archived</string>
     <string name="home_show_archived">Show archived</string>
     <string name="home_empty_archived">Everything here is already archived.</string>
+    <string name="home_article_actions">Article actions</string>
     <string name="home_about">About Boris</string>
     <string name="home_first_time_title">First time?</string>
     <string name="home_first_time_body">A short walk through of what Boris is and how highlighting works.</string>
@@ -165,6 +166,12 @@
     <string name="reader_archive_cancelled">Archive cancelled.</string>
     <string name="reader_archive_rejected">Archive rejected.</string>
     <string name="reader_archive_failed">Could not update archive.</string>
+    <string name="reader_share">Share</string>
+    <string name="reader_copy_link">Copy link</string>
+    <string name="reader_copied">Copied.</string>
+    <string name="reader_open_original">Open original</string>
+    <string name="reader_share_article">Share article</string>
+    <string name="reader_mark_as_read">Mark as read</string>
     <string name="reader_highlights_settings">Highlight settings</string>
     <string name="reader_highlights_close">Close highlights</string>
     <string name="reader_highlights_hide">Hide highlight marks</string>
