@@ -23,6 +23,7 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.ServiceCompat
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.ResponseBody
 import org.dergigi.boris.R
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
@@ -487,10 +489,28 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
             if (!response.isSuccessful) {
                 null
             } else {
-                response.body?.bytes()?.let(::decodeArtwork)
+                response.body?.let(::readArtworkBytes)?.let(::decodeArtwork)
             }
         }
     }.getOrNull()
+
+    private fun readArtworkBytes(body: ResponseBody): ByteArray? {
+        val length = body.contentLength()
+        if (length > MAX_ARTWORK_BYTES) return null
+        val out = ByteArrayOutputStream()
+        var total = 0L
+        body.byteStream().use { input ->
+            val buffer = ByteArray(8 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                total += read
+                if (total > MAX_ARTWORK_BYTES) return null
+                out.write(buffer, 0, read)
+            }
+        }
+        return out.toByteArray()
+    }
 
     private fun decodeArtwork(bytes: ByteArray): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -536,6 +556,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         const val SESSION_TAG = "BorisTts"
         const val CHANNEL_ID = "tts_playback"
         const val NOTIFICATION_ID = 41
+        const val MAX_ARTWORK_BYTES = 5L * 1024L * 1024L
         const val MAX_ARTWORK_SIZE = 512
         const val PREVIEW_ID = "preview"
         const val ACTION_PLAY = "org.dergigi.boris.tts.PLAY"
