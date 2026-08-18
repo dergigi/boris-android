@@ -188,4 +188,20 @@ class UrlExtractorTest {
         val note = org.dergigi.boris.nostr.Nip19.noteEncode(id)
         assertEquals("nostr:$note", UrlExtractor.extract("Share this nostr:$note please"))
     }
+
+    @Test
+    fun profileUrisAreNotArticles() {
+        val nprofile =
+            "nprofile1qqsrhuxx8l9ex335q7he0f09aej04zpazpl0ne2cgukyawd24mayt8gpp4mhxue69uhhytnc9e3k7mgpz4mhxue69uhkg6nzv9ejuumpv34kytnrdaksjlyr9p"
+        assertNull(UrlExtractor.articleUrl("nostr:$nprofile"))
+        val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+        assertNull(UrlExtractor.extract("nostr:$npub"))
+    }
+
+    @Test
+    fun issue5ReproNaddrStillExtracts() {
+        val naddr =
+            "naddr1qqwhwmmjw35xcetnwvkk6mmwv4uj6arfd4jkcetnwvkkzun595pzq634npfz8rwfq2hdr8am76s9t7dt7gwpe2y3t5wyufl4phe09yxeqvzqqqr4gu7cgak5"
+        assertEquals("nostr:$naddr", UrlExtractor.extract("nostr:$naddr"))
+    }
 }

@@ -57,6 +57,22 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsSpeakAtNameForRawNpubMention() {
+        val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+        val label = "@" + org.dergigi.boris.nostr.Profile.displayName(
+            "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+            null,
+        )
+        val content = ReadableContent(
+            url = "https://example.com/mention",
+            markdown = "Thanks nostr:$npub for writing.",
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(listOf("Thanks $label for writing."), paragraphs)
+        assertFalse(paragraphs.any { it.contains(npub) })
+    }
+
+    @Test
     fun paragraphsDropReferenceLinkDefinitions() {
         val markdown = """
             Read [Boris][boris] and [the docs][] today.
