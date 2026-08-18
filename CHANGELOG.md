@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-08-18
+
 ### Changed
 
 - Slim TTS player in the reader sits above the reading progress bar and uses the same translucent background
