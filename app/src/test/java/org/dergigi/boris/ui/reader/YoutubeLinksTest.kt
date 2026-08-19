@@ -24,6 +24,8 @@ class YoutubeLinksTest {
         assertNull(youtubeVideoId("https://vimeo.com/123456"))
         assertNull(youtubeVideoId("https://example.com/watch?v=7s8glZ-efMg"))
         assertNull(youtubeVideoId("https://youtube.com/watch?v=short"))
+        assertNull(youtubeVideoId("javascript://youtube.com/watch?v=7s8glZ-efMg"))
+        assertNull(youtubeVideoId("intent://www.youtube.com/watch?v=7s8glZ-efMg"))
     }
 
     @Test
@@ -47,6 +49,10 @@ class YoutubeLinksTest {
         assertEquals(
             "https://www.youtube.com/watch?v=7s8glZ-efMg",
             standaloneYoutubePreview(md)?.watchUrl,
+        )
+        assertEquals(
+            "https://www.youtube.com/watch?v=7s8glZ-efMg",
+            standaloneYoutubePreview("[Watch](<https://www.youtube.com/watch?v=7s8glZ-efMg> \"Clip\")")?.watchUrl,
         )
     }
 

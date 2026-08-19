@@ -18,6 +18,8 @@ internal fun youtubeVideoId(url: String): String? {
     } catch (_: Exception) {
         return null
     }
+    val scheme = uri.scheme?.lowercase()
+    if (scheme != "http" && scheme != "https") return null
     val host = uri.host?.lowercase()?.removePrefix("www.") ?: return null
     val path = uri.path.orEmpty()
     val id = when (host) {
@@ -46,7 +48,7 @@ internal fun youtubePreview(url: String): YoutubePreview? {
 internal fun standaloneYoutubePreview(text: String): YoutubePreview? {
     val trimmed = text.trim()
     if (trimmed.isEmpty()) return null
-    val url = MARKDOWN_LINK.matchEntire(trimmed)?.groupValues?.get(2)?.trim()
+    val url = MARKDOWN_LINK.matchEntire(trimmed)?.groupValues?.get(2)?.let(::markdownDestination)
         ?: ANGLE_LINK.matchEntire(trimmed)?.groupValues?.get(1)?.trim()
         ?: trimmed
     if (url.contains(Regex("\\s"))) return null
@@ -55,6 +57,13 @@ internal fun standaloneYoutubePreview(text: String): YoutubePreview? {
 
 internal fun standaloneYoutubePreview(content: String, node: ASTNode): YoutubePreview? {
     return standaloneYoutubePreview(content.substring(node.startOffset, node.endOffset))
+}
+
+private fun markdownDestination(raw: String): String {
+    var dest = raw.trim()
+    val titled = Regex("""^(.*?)(?:\s+(?:"[^"]*"|'[^']*'))$""").matchEntire(dest)
+    if (titled != null) dest = titled.groupValues[1].trim()
+    return dest.trim('<', '>').trim()
 }
 
 private fun queryValue(query: String?, name: String): String? {
