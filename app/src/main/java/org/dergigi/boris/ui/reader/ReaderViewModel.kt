@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +20,10 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ResolvedEventRef
+import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.SecretBox
@@ -109,11 +114,15 @@ class ReaderViewModel(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _eventRefs = MutableStateFlow<Map<String, ResolvedEventRef>>(emptyMap())
+    val eventRefs: StateFlow<Map<String, ResolvedEventRef>> = _eventRefs.asStateFlow()
+
     private var highlightJob: Job? = null
     private var membershipJob: Job? = null
     private var archiveJob: Job? = null
     private var authorJob: Job? = null
     private var rssFeedJob: Job? = null
+    private var eventRefJob: Job? = null
     private var loadJob: Job? = null
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var pendingLibrary: PendingLibrary? = null
@@ -172,6 +181,8 @@ class ReaderViewModel(
         archiveJob?.cancel()
         authorJob?.cancel()
         rssFeedJob?.cancel()
+        eventRefJob?.cancel()
+        _eventRefs.value = emptyMap()
         loadJob = viewModelScope.launch {
             _state.value = readerLoadingState(url)
             _highlights.value = emptyList()
@@ -191,6 +202,7 @@ class ReaderViewModel(
                 startArchiveCheck(content)
                 startAuthorFetch(content)
                 startRssFeedDiscovery(content)
+                startEventRefFetch(content)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -199,6 +211,7 @@ class ReaderViewModel(
                 archiveJob?.cancel()
                 authorJob?.cancel()
                 rssFeedJob?.cancel()
+                eventRefJob?.cancel()
                 _highlights.value = emptyList()
                 _highlightCount.value = 0
                 _highlightsLoaded.value = true
@@ -550,6 +563,40 @@ class ReaderViewModel(
                 archiveIds = emptyList()
                 _archived.value = false
             }
+        }
+    }
+
+    private fun startEventRefFetch(content: ReadableContent) {
+        eventRefJob?.cancel()
+        val refs = NostrEventRefs.collect(content.body)
+        if (refs.isEmpty()) {
+            _eventRefs.value = emptyMap()
+            return
+        }
+        eventRefJob = viewModelScope.launch(Dispatchers.IO) {
+            val relays = refs.flatMap { it.relays }.distinct()
+            val events = try {
+                RelayQuery.fetchEvents(refs.map { it.eventId }, relays)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyMap()
+            }
+            val authors = events.values.map { it.pubkey }.distinct()
+            val profiles = try {
+                RelayQuery.fetchProfiles(
+                    (RelayQuery.globalReadRelays() + relays).distinct(),
+                    authors,
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyMap()
+            }
+            val resolved = NostrEventRefs.resolvedFrom(events, profiles)
+                .takeIfActive(isActive) ?: return@launch
+            ensureActive()
+            _eventRefs.value = resolved
         }
     }
 
