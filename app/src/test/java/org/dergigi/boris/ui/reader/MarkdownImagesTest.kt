@@ -81,6 +81,14 @@ class MarkdownImagesTest {
     }
 
     @Test
+    fun adjacentStandaloneImagesFallbackWhenAnyDestinationIsMissing() {
+        val md = "Before\n\n![first](https://example.com/first.webp)![second]()\n\nAfter"
+        val paragraph = firstParagraphWithImage(md)
+        assertNull(standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(emptyList<String>(), standaloneMarkdownImageUrls(md, paragraph))
+    }
+
+    @Test
     fun mixedParagraphKeepsTheImageInline() {
         val md = "See ![clock](https://example.com/clock.png) here"
         val paragraph = firstParagraphWithImage(md)

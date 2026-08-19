@@ -31,7 +31,9 @@ internal fun standaloneMarkdownImageUrls(content: String, node: ASTNode): List<S
             content.substring(child.startOffset, child.endOffset).isNotBlank()
     }
     if (leftover) return emptyList()
-    return images.mapNotNull { markdownImageDestination(content, it) }
+    val urls = images.map { markdownImageDestination(content, it) }
+    if (urls.any { it == null }) return emptyList()
+    return urls.filterNotNull()
 }
 
 private fun ASTNode.findType(type: IElementType): ASTNode? {
