@@ -30,4 +30,7 @@ object IncomingShares {
         if (url.startsWith("android-app:", ignoreCase = true)) return null
         return url
     }
+
+    internal fun firstPageUrl(candidates: Iterable<String?>): String? =
+        candidates.firstNotNullOfOrNull(::pageUrl)
 }

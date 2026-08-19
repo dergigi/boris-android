@@ -154,7 +154,7 @@
     <string name="highlight_url_title">Article URL</string>
     <string name="highlight_url_hint">https://…</string>
     <string name="highlight_url_continue">Continue</string>
-    <string name="highlight_sign_in">Connect to save this highlight.</string>
+    <string name="highlight_sign_in">Connect a signer to highlight with Boris.</string>
     <string name="highlight_cancelled">Highlight cancelled.</string>
     <string name="highlight_rejected">Highlight rejected.</string>
     <string name="highlight_not_published">Highlight not published.</string>

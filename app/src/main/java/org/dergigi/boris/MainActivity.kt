@@ -1,6 +1,7 @@
 package org.dergigi.boris
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
@@ -197,8 +198,48 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun originatingUrl(intent: Intent): String? {
-        val referrer = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_REFERRER)?.toString()
-        return IncomingShares.pageUrl(referrer) ?: IncomingShares.pageUrl(intent.dataString)
+        val selectedText = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
+        return IncomingShares.firstPageUrl(
+            processTextUrlCandidates(intent, selectedText),
+        )
+    }
+
+    private fun processTextUrlCandidates(intent: Intent, selectedText: String?): List<String?> = buildList {
+        add(intent.getParcelableExtra<Uri>(Intent.EXTRA_REFERRER)?.toString())
+        add(intent.getStringExtra(Intent.EXTRA_REFERRER_NAME))
+        add(intent.dataString)
+        val clip = intent.clipData
+        if (clip != null) {
+            for (i in 0 until clip.itemCount) {
+                val item = clip.getItemAt(i)
+                addIfSourceCandidate(item.uri?.toString(), selectedText)
+                addIfSourceCandidate(item.text?.toString(), selectedText)
+                addIfSourceCandidate(item.htmlText, selectedText)
+            }
+        }
+        val extras = intent.extras ?: return@buildList
+        for (key in extras.keySet()) {
+            if (key in PROCESS_TEXT_SOURCE_IGNORE_KEYS) continue
+            addExtraUrlCandidate(extras.get(key), selectedText)
+        }
+    }
+
+    private fun MutableList<String?>.addExtraUrlCandidate(value: Any?, selectedText: String?) {
+        when (value) {
+            null -> Unit
+            is Uri -> addIfSourceCandidate(value.toString(), selectedText)
+            is CharSequence -> addIfSourceCandidate(value.toString(), selectedText)
+            is Array<*> -> value.forEach { addExtraUrlCandidate(it, selectedText) }
+            is Iterable<*> -> value.forEach { addExtraUrlCandidate(it, selectedText) }
+            is Bundle -> value.keySet().forEach { addExtraUrlCandidate(value.get(it), selectedText) }
+        }
+    }
+
+    private fun MutableList<String?>.addIfSourceCandidate(value: String?, selectedText: String?) {
+        val trimmed = value?.trim().orEmpty()
+        if (trimmed.isBlank()) return
+        if (selectedText != null && trimmed == selectedText.trim()) return
+        add(trimmed)
     }
 
     /** Marks the current Activity intent so recreate/share replay cannot re-open it. */
@@ -241,5 +282,9 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_INTENT_CONSUMED = "org.dergigi.boris.INTENT_CONSUMED"
         private const val COLD_START_SPLASH_MS = 5_000L
         private const val COLD_START_FADE_MS = 700
+        private val PROCESS_TEXT_SOURCE_IGNORE_KEYS = setOf(
+            Intent.EXTRA_PROCESS_TEXT,
+            Intent.EXTRA_PROCESS_TEXT_READONLY,
+        )
     }
 }
