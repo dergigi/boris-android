@@ -257,6 +257,9 @@ fun ReaderScreen(
         viewModel.consumeSignIntent()
         launcher.launch(intent)
     }
+    LaunchedEffect(Unit) {
+        PendingHighlight.consume()?.let(viewModel::offerExternalHighlight)
+    }
     LaunchedEffect(menuSignIntent) {
         val intent = menuSignIntent ?: return@LaunchedEffect
         menuViewModel.consumeSignIntent()

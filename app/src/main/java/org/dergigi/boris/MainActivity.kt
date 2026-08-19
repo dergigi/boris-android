@@ -32,6 +32,8 @@ import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.RssRepository
+import org.dergigi.boris.data.IncomingShare
+import org.dergigi.boris.data.IncomingShares
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.HintedRelays
@@ -50,6 +52,7 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     private var incomingUrl by mutableStateOf<String?>(null)
     private var incomingBunker by mutableStateOf<String?>(null)
+    private var incomingHighlight by mutableStateOf<IncomingShare?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -83,7 +86,9 @@ class MainActivity : ComponentActivity() {
             var appReady by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) { EventCache.awaitReady() }
-                val deepLink = !incomingUrl.isNullOrBlank() || !incomingBunker.isNullOrBlank()
+                val deepLink = !incomingUrl.isNullOrBlank() ||
+                    !incomingBunker.isNullOrBlank() ||
+                    incomingHighlight != null
                 val hasLocal = withContext(Dispatchers.IO) { EventCache.hasHighlights() }
                 if (hasLocal || deepLink) {
                     composeDrawn = true
@@ -107,8 +112,10 @@ class MainActivity : ComponentActivity() {
                         BorisApp(
                             incomingUrl = incomingUrl,
                             incomingBunker = incomingBunker,
+                            incomingHighlight = incomingHighlight,
                             onIncomingUrlConsumed = { markIncomingIntentConsumed() },
                             onIncomingBunkerConsumed = { markIncomingIntentConsumed() },
+                            onIncomingHighlightConsumed = { markIncomingIntentConsumed() },
                             homeViewModel = homeViewModel,
                         )
                     }
@@ -159,16 +166,39 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra(EXTRA_INTENT_CONSUMED, false)) {
             incomingUrl = null
             incomingBunker = null
+            incomingHighlight = null
+            return
+        }
+        if (intent.action == Intent.ACTION_PROCESS_TEXT) {
+            incomingBunker = null
+            val share = IncomingShares.fromProcessText(
+                intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString(),
+                originatingUrl(intent),
+            )
+            if (!share.highlightQuote.isNullOrBlank()) {
+                incomingHighlight = share
+                incomingUrl = null
+            } else {
+                incomingHighlight = null
+                incomingUrl = share.url
+            }
             return
         }
         val bunker = bunkerFrom(intent)
         if (bunker != null) {
             incomingBunker = bunker
             incomingUrl = null
+            incomingHighlight = null
         } else {
             incomingUrl = urlFrom(intent)
             incomingBunker = null
+            incomingHighlight = null
         }
+    }
+
+    private fun originatingUrl(intent: Intent): String? {
+        val referrer = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_REFERRER)?.toString()
+        return IncomingShares.pageUrl(referrer) ?: IncomingShares.pageUrl(intent.dataString)
     }
 
     /** Marks the current Activity intent so recreate/share replay cannot re-open it. */
@@ -176,6 +206,7 @@ class MainActivity : ComponentActivity() {
         intent.putExtra(EXTRA_INTENT_CONSUMED, true)
         incomingUrl = null
         incomingBunker = null
+        incomingHighlight = null
     }
 
     private fun bunkerFrom(intent: Intent): String? {
