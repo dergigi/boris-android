@@ -40,6 +40,20 @@ class IncomingShareTest {
     }
 
     @Test
+    fun firstPageUrlSkipsAppReferrers() {
+        assertEquals(
+            "https://example.com/article",
+            IncomingShares.firstPageUrl(
+                listOf(
+                    "android-app://org.chromium.chrome",
+                    "Selected text without a URL",
+                    "https://example.com/article",
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun emptySelectionIsEmpty() {
         val share = IncomingShares.fromProcessText("   ")
         assertNull(share.url)

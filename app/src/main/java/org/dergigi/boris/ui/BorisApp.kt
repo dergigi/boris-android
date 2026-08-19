@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
@@ -45,6 +47,7 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
+import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.feed.FeedScreen
 import org.dergigi.boris.ui.home.HomeScreen
@@ -113,7 +116,9 @@ fun BorisApp(
     authViewModel: AuthViewModel = viewModel(),
     homeViewModel: HomeViewModel = viewModel(),
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
     val pictureUrl by authViewModel.pictureUrl.collectAsStateWithLifecycle()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
@@ -147,6 +152,7 @@ fun BorisApp(
     }
 
     var highlightPromptQuote by rememberSaveable { mutableStateOf<String?>(null) }
+    var highlightLoginPromptKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
@@ -169,10 +175,20 @@ fun BorisApp(
             goToTab(MainTab.You)
         }
     }
-    LaunchedEffect(incomingHighlight) {
+    LaunchedEffect(incomingHighlight, authState) {
         val incoming = incomingHighlight ?: return@LaunchedEffect
         val quote = incoming.highlightQuote?.trim().orEmpty()
         if (quote.isBlank()) return@LaunchedEffect
+        val loginPromptKey = quote + "\n" + incoming.url.orEmpty()
+        if (authState !is AuthUiState.LoggedIn) {
+            if (highlightLoginPromptKey != loginPromptKey) {
+                Toast.makeText(context, R.string.highlight_sign_in, Toast.LENGTH_SHORT).show()
+                goToTab(MainTab.You)
+                highlightLoginPromptKey = loginPromptKey
+            }
+            return@LaunchedEffect
+        }
+        highlightLoginPromptKey = null
         onIncomingHighlightConsumed()
         val url = incoming.url?.trim().orEmpty()
         if (url.isNotBlank()) {
