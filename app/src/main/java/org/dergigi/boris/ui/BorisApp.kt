@@ -152,6 +152,7 @@ fun BorisApp(
     }
 
     var highlightPromptQuote by rememberSaveable { mutableStateOf<String?>(null) }
+    var highlightLoginPromptKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
@@ -174,16 +175,21 @@ fun BorisApp(
             goToTab(MainTab.You)
         }
     }
-    LaunchedEffect(incomingHighlight) {
+    LaunchedEffect(incomingHighlight, authState) {
         val incoming = incomingHighlight ?: return@LaunchedEffect
         val quote = incoming.highlightQuote?.trim().orEmpty()
         if (quote.isBlank()) return@LaunchedEffect
-        onIncomingHighlightConsumed()
+        val loginPromptKey = quote + "\n" + incoming.url.orEmpty()
         if (authState !is AuthUiState.LoggedIn) {
-            Toast.makeText(context, R.string.highlight_sign_in, Toast.LENGTH_SHORT).show()
-            goToTab(MainTab.You)
+            if (highlightLoginPromptKey != loginPromptKey) {
+                Toast.makeText(context, R.string.highlight_sign_in, Toast.LENGTH_SHORT).show()
+                goToTab(MainTab.You)
+                highlightLoginPromptKey = loginPromptKey
+            }
             return@LaunchedEffect
         }
+        highlightLoginPromptKey = null
+        onIncomingHighlightConsumed()
         val url = incoming.url?.trim().orEmpty()
         if (url.isNotBlank()) {
             openHighlight(url, quote)
