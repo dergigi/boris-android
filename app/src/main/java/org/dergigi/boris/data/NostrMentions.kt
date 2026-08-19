@@ -66,7 +66,7 @@ object NostrMentions {
         }
     }
 
-    private fun markdownLinkUrlRanges(text: String): List<IntRange> {
+    internal fun markdownLinkUrlRanges(text: String): List<IntRange> {
         val ranges = mutableListOf<IntRange>()
         var i = 0
         while (i < text.length) {
@@ -104,7 +104,7 @@ object NostrMentions {
         return ranges
     }
 
-    private fun protectCode(text: String): Pair<String, (String) -> String> {
+    internal fun protectCode(text: String): Pair<String, (String) -> String> {
         val slots = mutableListOf<String>()
         fun stash(match: MatchResult): String {
             slots += match.value

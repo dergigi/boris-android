@@ -148,6 +148,7 @@
     <string name="auth_bunker_missing_pubkey">The bunker did not return a public key.</string>
     <string name="auth_nstart_prefix">New to nostr? Start here:\u00a0</string>
     <string name="auth_nstart_host">nstart.me</string>
+    <string name="reader_note_by">Note by %1$s</string>
     <string name="highlight_action">Highlight</string>
     <string name="highlight_with_boris">Highlight with Boris</string>
     <string name="highlight_url_title">Article URL</string>

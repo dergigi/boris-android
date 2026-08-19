@@ -41,6 +41,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
@@ -149,8 +151,12 @@ import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.NostrEventRef
+import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrMentions
+import org.dergigi.boris.data.NoteCover
+import org.dergigi.boris.data.ResolvedEventRef
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingPositionStore
@@ -158,7 +164,10 @@ import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsSession
 import org.dergigi.boris.tts.TtsText
@@ -210,6 +219,7 @@ fun ReaderScreen(
     val inLibrary by viewModel.inLibrary.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
     val author by viewModel.author.collectAsStateWithLifecycle()
+    val eventRefs by viewModel.eventRefs.collectAsStateWithLifecycle()
     val rssFeedSuggestion by viewModel.rssFeedSuggestion.collectAsStateWithLifecycle()
     val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
@@ -295,6 +305,7 @@ fun ReaderScreen(
         inLibrary = inLibrary,
         archived = archived,
         author = author,
+        eventRefs = eventRefs,
         settings = settings,
         rssFeedSuggestion = rssFeedSuggestion?.takeIf { it !in settings.rssFeeds },
         onBack = onBack,
@@ -507,6 +518,7 @@ fun ReaderScreenContent(
     inLibrary: Boolean,
     archived: Boolean,
     author: Profile?,
+    eventRefs: Map<String, ResolvedEventRef>,
     settings: UserSettings,
     rssFeedSuggestion: String?,
     onBack: () -> Unit,
@@ -865,6 +877,7 @@ fun ReaderScreenContent(
                     loggedIn = loggedIn,
                     archived = archived,
                     author = author,
+                    eventRefs = eventRefs,
                     settings = settings,
                     rssFeedSuggestion = rssFeedSuggestion,
                     ttsSession = ttsSession,
@@ -907,6 +920,7 @@ private fun ArticleBody(
     loggedIn: Boolean,
     archived: Boolean,
     author: Profile?,
+    eventRefs: Map<String, ResolvedEventRef>,
     settings: UserSettings,
     rssFeedSuggestion: String?,
     onOpenArticle: (String) -> Unit,
@@ -1225,6 +1239,8 @@ private fun ArticleBody(
         maxImageHeight,
         onImageClick,
         defaultUriHandler,
+        eventRefs,
+        onOpenArticle,
     ) {
         markdownComponents(
             text = {
@@ -1245,6 +1261,8 @@ private fun ArticleBody(
             paragraph = { model ->
                 val imageUrls = standaloneMarkdownImageUrls(model.content, model.node)
                 val youtube = standaloneYoutubePreview(model.content, model.node)
+                val eventRef = standaloneEventRef(model.content, model.node)
+                val eventEmbed = eventRef?.eventId?.let { eventRefs[it] }
                 when {
                     imageUrls.isNotEmpty() -> {
                         imageUrls.forEach { imageUrl ->
@@ -1262,6 +1280,13 @@ private fun ArticleBody(
                             fullWidth = fullWidthImages,
                             maxHeight = maxImageHeight,
                             onClick = { defaultUriHandler.openUri(youtube.watchUrl) },
+                        )
+                    }
+                    eventRef != null && eventEmbed != null -> {
+                        EventRefCard(
+                            ref = eventRef,
+                            resolved = eventEmbed,
+                            onOpen = onOpenArticle,
                         )
                     }
                     else -> {
@@ -1398,8 +1423,13 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
-    val markdownBody = remember(content.body) {
-        NostrMentions.rewrite(Footnotes.expand(content.body))
+    val noteByAuthor = stringResource(R.string.reader_note_by)
+    val markdownBody = remember(content.body, eventRefs, noteByAuthor) {
+        NostrMentions.rewrite(
+            NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
+                noteByAuthor.format(name)
+            },
+        )
     }
     val markdownState = rememberMarkdownState(
         content = markdownBody,
@@ -2083,6 +2113,33 @@ private fun MetaChip(
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+@Composable
+private fun EventRefCard(
+    ref: NostrEventRef,
+    resolved: ResolvedEventRef,
+    onOpen: (String) -> Unit,
+) {
+    val event = resolved.event
+    val note = event.kind == Nip01Event.KIND_TEXT_NOTE
+    ArticleRow(
+        title = NostrEventRefs.cardTitle(resolved),
+        summary = if (note) null else Nip23.summary(event),
+        imageUrl = if (note) NoteCover.image(event) else Nip23.image(event) ?: NoteCover.image(event),
+        imageFallbackIcon = if (note) {
+            Icons.AutoMirrored.Outlined.StickyNote2
+        } else {
+            Icons.AutoMirrored.Outlined.Article
+        },
+        byline = Profile.displayName(event.pubkey, resolved.profile),
+        bylinePicture = resolved.profile?.picture,
+        bylineFallbackIcon = Icons.Outlined.AccountCircle,
+        publishedAt = if (note) event.createdAt else Nip23.publishedAt(event),
+        url = ref.uri,
+        showReadingProgress = !note,
+        onClick = { onOpen(ref.uri) },
+    )
 }
 
 private class ClickableCoilImageTransformer(
