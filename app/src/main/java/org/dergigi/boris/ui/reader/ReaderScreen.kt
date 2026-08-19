@@ -1221,6 +1221,7 @@ private fun ArticleBody(
         fullWidthImages,
         maxImageHeight,
         onImageClick,
+        defaultUriHandler,
     ) {
         markdownComponents(
             text = {
@@ -1240,29 +1241,41 @@ private fun ArticleBody(
             },
             paragraph = { model ->
                 val imageUrls = standaloneMarkdownImageUrls(model.content, model.node)
-                if (imageUrls.isNotEmpty()) {
-                    imageUrls.forEach { imageUrl ->
+                val youtube = standaloneYoutubePreview(model.content, model.node)
+                when {
+                    imageUrls.isNotEmpty() -> {
+                        imageUrls.forEach { imageUrl ->
+                            ArticleImage(
+                                url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
+                                fullWidth = fullWidthImages,
+                                maxHeight = maxImageHeight,
+                                onClick = onImageClick,
+                            )
+                        }
+                    }
+                    youtube != null -> {
                         ArticleImage(
-                            url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
+                            url = youtube.thumbnailUrl,
                             fullWidth = fullWidthImages,
                             maxHeight = maxImageHeight,
-                            onClick = onImageClick,
+                            onClick = { defaultUriHandler.openUri(youtube.watchUrl) },
                         )
                     }
-                } else {
-                    HighlightedMarkdownNode(
-                        model,
-                        model.typography.paragraph,
-                        paintedHolder.value,
-                        mineColor,
-                        friendsColor,
-                        otherColor,
-                        underline,
-                        selection,
-                        navigator,
-                        openFromStop,
-                        TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
-                    )
+                    else -> {
+                        HighlightedMarkdownNode(
+                            model,
+                            model.typography.paragraph,
+                            paintedHolder.value,
+                            mineColor,
+                            friendsColor,
+                            otherColor,
+                            underline,
+                            selection,
+                            navigator,
+                            openFromStop,
+                            TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
+                        )
+                    }
                 }
             },
             image = { model ->
