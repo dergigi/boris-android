@@ -27,6 +27,13 @@ class NeventLinksTest {
         assertNull(standaloneEventRef(md, paragraph))
     }
 
+    @Test
+    fun authoredMarkdownLinkStaysALink() {
+        val md = "[Watch](nostr:$note)"
+        val paragraph = firstParagraphContaining(md, "nostr:")
+        assertNull(standaloneEventRef(md, paragraph))
+    }
+
     private fun firstParagraphContaining(markdown: String, needle: String): ASTNode {
         val root = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(markdown)
         fun walk(node: ASTNode): ASTNode? {

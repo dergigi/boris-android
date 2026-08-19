@@ -1,5 +1,6 @@
 package org.dergigi.boris.data
 
+import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.nostr.HintedRelays
 import org.dergigi.boris.nostr.NeventPointer
 import org.dergigi.boris.nostr.Nip01Event
@@ -70,10 +71,18 @@ class NostrEventRefsTest {
     }
 
     @Test
-    fun parseStandaloneAcceptsRawAngleAndMarkdown() {
+    fun collectMergesRelaysWhenNoteComesBeforeNevent() {
+        val refs = NostrEventRefs.collect("nostr:$note then nostr:$nevent")
+        assertEquals(1, refs.size)
+        assertEquals(listOf("wss://nos.lol"), refs[0].relays)
+        assertEquals(pubkey, refs[0].author)
+    }
+
+    @Test
+    fun parseStandaloneAcceptsRawAndAngleButNotMarkdown() {
         assertEquals(eventId, NostrEventRefs.parseStandalone("nostr:$nevent")?.eventId)
         assertEquals(eventId, NostrEventRefs.parseStandalone("<nostr:$note>")?.eventId)
-        assertEquals(eventId, NostrEventRefs.parseStandalone("[Watch](nostr:$note)")?.eventId)
+        assertNull(NostrEventRefs.parseStandalone("[Watch](nostr:$note)"))
         assertNull(NostrEventRefs.parseStandalone("See nostr:$note here"))
         assertNull(NostrEventRefs.parseStandalone(nevent))
     }
@@ -111,6 +120,20 @@ class NostrEventRefsTest {
             "See nostr:$note",
             NostrEventRefs.rewrite("See nostr:$note", emptyMap()) { "Note by $it" },
         )
+    }
+
+    @Test
+    fun rewriteLeavesStandaloneParagraphRaw() {
+        val src = "Before\n\nnostr:$note\n\nAfter"
+        val resolved = mapOf(eventId to resolvedNote("Hello"))
+        assertEquals(src, NostrEventRefs.rewrite(src, resolved) { "Note by $it" })
+    }
+
+    @Test
+    fun takeIfActiveDropsStaleResults() {
+        val resolved = mapOf(eventId to resolvedNote("Hello"))
+        assertEquals(resolved, resolved.takeIfActive(true))
+        assertNull(resolved.takeIfActive(false))
     }
 
     @Test

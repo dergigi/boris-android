@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,7 @@ import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ResolvedEventRef
+import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.SecretBox
@@ -572,28 +575,28 @@ class ReaderViewModel(
         }
         eventRefJob = viewModelScope.launch(Dispatchers.IO) {
             val relays = refs.flatMap { it.relays }.distinct()
-            val events = runCatching {
+            val events = try {
                 RelayQuery.fetchEvents(refs.map { it.eventId }, relays)
-            }.getOrDefault(emptyMap())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyMap()
+            }
             val authors = events.values.map { it.pubkey }.distinct()
-            val profiles = runCatching {
+            val profiles = try {
                 RelayQuery.fetchProfiles(
                     (RelayQuery.globalReadRelays() + relays).distinct(),
                     authors,
                 )
-            }.getOrDefault(emptyMap())
-            _eventRefs.value = events.mapNotNull { (id, event) ->
-                if (
-                    event.kind != Nip01Event.KIND_TEXT_NOTE &&
-                    event.kind != Nip01Event.KIND_LONG_FORM
-                ) {
-                    return@mapNotNull null
-                }
-                id.lowercase() to ResolvedEventRef(
-                    event,
-                    profiles[event.pubkey.lowercase()],
-                )
-            }.toMap()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyMap()
+            }
+            val resolved = NostrEventRefs.resolvedFrom(events, profiles)
+                .takeIfActive(isActive) ?: return@launch
+            ensureActive()
+            _eventRefs.value = resolved
         }
     }
 

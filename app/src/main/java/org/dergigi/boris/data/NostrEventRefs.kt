@@ -37,21 +37,18 @@ object NostrEventRefs {
             if (linkUrls.any { match.range.first in it || match.range.last in it }) continue
             val ref = decode(match.groupValues[1]) ?: continue
             rememberHints(ref)
-            refs.putIfAbsent(ref.eventId, ref)
+            refs[ref.eventId] = refs[ref.eventId]?.let { merge(it, ref) } ?: ref
         }
         return refs.values.toList()
     }
 
     fun parseStandalone(text: String): NostrEventRef? {
         val trimmed = text.trim()
-        if (trimmed.isEmpty()) return null
-        val dest = MARKDOWN_LINK.matchEntire(trimmed)?.groupValues?.get(2)?.let(::markdownDestination)
-            ?: ANGLE_LINK.matchEntire(trimmed)?.groupValues?.get(1)?.trim()
-            ?: trimmed
+        if (trimmed.isEmpty() || MARKDOWN_LINK.matches(trimmed)) return null
+        val dest = ANGLE_LINK.matchEntire(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
         if (dest.contains(Regex("\\s"))) return null
-        val match = EVENT_MENTION.find(dest.trim()) ?: return null
-        if (match.range.first != 0) return null
-        if (match.range.last != dest.trim().lastIndex) return null
+        val match = EVENT_MENTION.find(dest) ?: return null
+        if (match.range.first != 0 || match.range.last != dest.lastIndex) return null
         return decode(match.groupValues[1])
     }
 
@@ -78,7 +75,11 @@ object NostrEventRefs {
                 endExclusive += 1
             }
             out.append(protected, last, start)
-            out.append(replacementFor(match, resolved, noteByAuthor))
+            if (isStandaloneParagraph(protected, start, endExclusive)) {
+                out.append(protected, start, endExclusive)
+            } else {
+                out.append(replacementFor(match, resolved, noteByAuthor))
+            }
             last = endExclusive
         }
         out.append(protected, last, protected.length)
@@ -102,6 +103,20 @@ object NostrEventRefs {
         }
     }
 
+    fun resolvedFrom(
+        events: Map<String, Nip01Event>,
+        profiles: Map<String, Profile>,
+    ): Map<String, ResolvedEventRef> =
+        events.mapNotNull { (id, event) ->
+            if (
+                event.kind != Nip01Event.KIND_TEXT_NOTE &&
+                event.kind != Nip01Event.KIND_LONG_FORM
+            ) {
+                return@mapNotNull null
+            }
+            id.lowercase() to ResolvedEventRef(event, profiles[event.pubkey.lowercase()])
+        }.toMap()
+
     fun decode(encoded: String): NostrEventRef? {
         val target = NostrLink.parse("nostr:${encoded.lowercase()}") as? NostrTarget.Note ?: return null
         return NostrEventRef(
@@ -124,18 +139,33 @@ object NostrEventRefs {
         return "[${escapeLabel(label)}](${ref.uri})"
     }
 
+    private fun merge(existing: NostrEventRef, incoming: NostrEventRef): NostrEventRef {
+        val relays = (existing.relays + incoming.relays).distinct()
+        return existing.copy(
+            relays = relays,
+            author = existing.author ?: incoming.author,
+            kind = existing.kind ?: incoming.kind,
+            encoded = if (existing.relays.isEmpty() && incoming.relays.isNotEmpty()) {
+                incoming.encoded
+            } else {
+                existing.encoded
+            },
+        )
+    }
+
+    private fun isStandaloneParagraph(text: String, start: Int, endExclusive: Int): Boolean {
+        val paraStart = text.lastIndexOf("\n\n", start - 1).let { if (it < 0) 0 else it + 2 }
+        val paraEnd = text.indexOf("\n\n", endExclusive).let { if (it < 0) text.length else it }
+        return parseStandalone(text.substring(paraStart, paraEnd)) != null
+    }
+
     private fun rememberHints(ref: NostrEventRef) {
         val author = ref.author?.takeIf { it.length == 64 } ?: return
         if (ref.relays.isNotEmpty()) HintedRelays.remember(author, ref.relays)
     }
 
-    private fun markdownDestination(raw: String): String {
-        var dest = raw.trim()
-        val titled = Regex("""^(.*?)(?:\s+(?:"[^"]*"|'[^']*'))$""").matchEntire(dest)
-        if (titled != null) dest = titled.groupValues[1].trim()
-        return dest.trim('<', '>').trim()
-    }
-
     private fun escapeLabel(label: String): String =
         label.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 }
+
+internal fun <T> T.takeIfActive(active: Boolean): T? = takeIf { active }
