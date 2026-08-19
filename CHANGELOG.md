@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.18] - 2026-08-19
+
+### Fixed
+
+- Highlight with Boris picks up the page URL when the text-selection intent includes it
+- Highlight with Boris asks unsigned users to connect a signer
+
 ## [1.4.17] - 2026-08-19
 
 ### Added
@@ -1117,7 +1124,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.17...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.18...HEAD
+[1.4.18]: https://github.com/dergigi/boris-android/releases/tag/v1.4.18
 [1.4.17]: https://github.com/dergigi/boris-android/releases/tag/v1.4.17
 [1.4.16]: https://github.com/dergigi/boris-android/releases/tag/v1.4.16
 [1.4.15]: https://github.com/dergigi/boris-android/releases/tag/v1.4.15
