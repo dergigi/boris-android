@@ -172,7 +172,7 @@ class MainActivity : ComponentActivity() {
         if (intent.action == Intent.ACTION_PROCESS_TEXT) {
             incomingBunker = null
             val share = IncomingShares.fromProcessText(
-                intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT),
+                intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString(),
                 originatingUrl(intent),
             )
             if (!share.highlightQuote.isNullOrBlank()) {

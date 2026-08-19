@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -145,7 +146,7 @@ fun BorisApp(
         openUrl(url)
     }
 
-    var highlightPrompt by remember { mutableStateOf<IncomingShare?>(null) }
+    var highlightPromptQuote by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
@@ -177,7 +178,7 @@ fun BorisApp(
         if (url.isNotBlank()) {
             openHighlight(url, quote)
         } else {
-            highlightPrompt = incoming
+            highlightPromptQuote = incoming.highlightQuote
         }
     }
 
@@ -418,14 +419,14 @@ fun BorisApp(
             }
             }
         }
-        highlightPrompt?.let { prompt ->
+        highlightPromptQuote?.let { quote ->
             HighlightUrlDialog(
-                quote = prompt.highlightQuote.orEmpty(),
+                quote = quote,
                 onConfirm = { url ->
-                    highlightPrompt = null
-                    openHighlight(url, prompt.highlightQuote.orEmpty())
+                    highlightPromptQuote = null
+                    openHighlight(url, quote)
                 },
-                onDismiss = { highlightPrompt = null },
+                onDismiss = { highlightPromptQuote = null },
             )
         }
     }
@@ -437,7 +438,7 @@ private fun HighlightUrlDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var url by remember { mutableStateOf("") }
+    var url by rememberSaveable { mutableStateOf("") }
     val resolved = UrlExtractor.extract(url)
     AlertDialog(
         onDismissRequest = onDismiss,
