@@ -17,15 +17,23 @@ internal fun markdownImageDestination(content: String, node: ASTNode): String? {
 }
 
 internal fun standaloneMarkdownImageUrl(content: String, node: ASTNode): String? {
-    if (node.type == MarkdownElementTypes.IMAGE) return markdownImageDestination(content, node)
+    return standaloneMarkdownImageUrls(content, node).singleOrNull()
+}
+
+internal fun standaloneMarkdownImageUrls(content: String, node: ASTNode): List<String> {
+    if (node.type == MarkdownElementTypes.IMAGE) {
+        return markdownImageDestination(content, node)?.let(::listOf).orEmpty()
+    }
     val images = node.children.filter { it.type == MarkdownElementTypes.IMAGE }
-    if (images.size != 1) return null
+    if (images.isEmpty()) return emptyList()
     val leftover = node.children.any { child ->
         child.type != MarkdownElementTypes.IMAGE &&
             content.substring(child.startOffset, child.endOffset).isNotBlank()
     }
-    if (leftover) return null
-    return markdownImageDestination(content, images.single())
+    if (leftover) return emptyList()
+    val urls = images.map { markdownImageDestination(content, it) }
+    if (urls.any { it == null }) return emptyList()
+    return urls.filterNotNull()
 }
 
 private fun ASTNode.findType(type: IElementType): ASTNode? {

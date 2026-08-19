@@ -63,6 +63,29 @@ class MarkdownImagesTest {
         val md = "Before\n\n![clock](https://example.com/clock.png)\n\nAfter"
         val paragraph = firstParagraphWithImage(md)
         assertEquals("https://example.com/clock.png", standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(listOf("https://example.com/clock.png"), standaloneMarkdownImageUrls(md, paragraph))
+    }
+
+    @Test
+    fun adjacentStandaloneImagesYieldAllImageUrls() {
+        val md = "Before\n\n![first](https://example.com/first.webp)![second](https://example.com/second.webp)\n\nAfter"
+        val paragraph = firstParagraphWithImage(md)
+        assertNull(standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(
+            listOf(
+                "https://example.com/first.webp",
+                "https://example.com/second.webp",
+            ),
+            standaloneMarkdownImageUrls(md, paragraph),
+        )
+    }
+
+    @Test
+    fun adjacentStandaloneImagesFallbackWhenAnyDestinationIsMissing() {
+        val md = "Before\n\n![first](https://example.com/first.webp)![second]()\n\nAfter"
+        val paragraph = firstParagraphWithImage(md)
+        assertNull(standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(emptyList<String>(), standaloneMarkdownImageUrls(md, paragraph))
     }
 
     @Test
@@ -70,6 +93,7 @@ class MarkdownImagesTest {
         val md = "See ![clock](https://example.com/clock.png) here"
         val paragraph = firstParagraphWithImage(md)
         assertNull(standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(emptyList<String>(), standaloneMarkdownImageUrls(md, paragraph))
         assertEquals(
             "https://example.com/clock.png",
             markdownImageDestination(md, paragraph.children.first { it.type == MarkdownElementTypes.IMAGE }),

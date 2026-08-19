@@ -1239,14 +1239,16 @@ private fun ArticleBody(
                 )
             },
             paragraph = { model ->
-                val imageUrl = standaloneMarkdownImageUrl(model.content, model.node)
-                if (imageUrl != null) {
-                    ArticleImage(
-                        url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
-                        fullWidth = fullWidthImages,
-                        maxHeight = maxImageHeight,
-                        onClick = onImageClick,
-                    )
+                val imageUrls = standaloneMarkdownImageUrls(model.content, model.node)
+                if (imageUrls.isNotEmpty()) {
+                    imageUrls.forEach { imageUrl ->
+                        ArticleImage(
+                            url = UrlExtractor.articleUrl(imageUrl, content.url) ?: imageUrl,
+                            fullWidth = fullWidthImages,
+                            maxHeight = maxImageHeight,
+                            onClick = onImageClick,
+                        )
+                    }
                 } else {
                     HighlightedMarkdownNode(
                         model,
