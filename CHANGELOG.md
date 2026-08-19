@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.15] - 2026-08-19
+
+### Fixed
+
+- Adjacent Markdown images no longer overlap article text
+
 ## [1.4.14] - 2026-08-19
 
 ### Fixed
@@ -1098,7 +1104,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.14...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.15...HEAD
+[1.4.15]: https://github.com/dergigi/boris-android/releases/tag/v1.4.15
 [1.4.14]: https://github.com/dergigi/boris-android/releases/tag/v1.4.14
 [1.4.13]: https://github.com/dergigi/boris-android/releases/tag/v1.4.13
 [1.4.12]: https://github.com/dergigi/boris-android/releases/tag/v1.4.12
