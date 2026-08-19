@@ -1,19 +1,33 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import org.dergigi.boris.R
+import org.dergigi.boris.data.IncomingShare
+import org.dergigi.boris.data.UrlExtractor
+import org.dergigi.boris.ui.reader.PendingHighlight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -91,8 +105,10 @@ object Routes {
 fun BorisApp(
     incomingUrl: String? = null,
     incomingBunker: String? = null,
+    incomingHighlight: IncomingShare? = null,
     onIncomingUrlConsumed: () -> Unit = {},
     onIncomingBunkerConsumed: () -> Unit = {},
+    onIncomingHighlightConsumed: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(),
     homeViewModel: HomeViewModel = viewModel(),
 ) {
@@ -121,6 +137,16 @@ fun BorisApp(
         }
     }
 
+    fun openHighlight(url: String, quote: String) {
+        PendingHighlight.offer(quote)
+        if (currentRoute == Routes.READER) {
+            navController.popBackStack()
+        }
+        openUrl(url)
+    }
+
+    var highlightPrompt by remember { mutableStateOf<IncomingShare?>(null) }
+
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
             popUpTo(navController.graph.findStartDestination().id) {
@@ -140,6 +166,18 @@ fun BorisApp(
     LaunchedEffect(incomingBunker) {
         if (!incomingBunker.isNullOrBlank()) {
             goToTab(MainTab.You)
+        }
+    }
+    LaunchedEffect(incomingHighlight) {
+        val incoming = incomingHighlight ?: return@LaunchedEffect
+        val quote = incoming.highlightQuote?.trim().orEmpty()
+        if (quote.isBlank()) return@LaunchedEffect
+        onIncomingHighlightConsumed()
+        val url = incoming.url?.trim().orEmpty()
+        if (url.isNotBlank()) {
+            openHighlight(url, quote)
+        } else {
+            highlightPrompt = incoming
         }
     }
 
@@ -380,5 +418,56 @@ fun BorisApp(
             }
             }
         }
+        highlightPrompt?.let { prompt ->
+            HighlightUrlDialog(
+                quote = prompt.highlightQuote.orEmpty(),
+                onConfirm = { url ->
+                    highlightPrompt = null
+                    openHighlight(url, prompt.highlightQuote.orEmpty())
+                },
+                onDismiss = { highlightPrompt = null },
+            )
+        }
     }
+}
+
+@Composable
+private fun HighlightUrlDialog(
+    quote: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var url by remember { mutableStateOf("") }
+    val resolved = UrlExtractor.extract(url)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.highlight_with_boris)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (quote.isNotBlank()) {
+                    Text(quote)
+                }
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text(stringResource(R.string.highlight_url_title)) },
+                    placeholder = { Text(stringResource(R.string.highlight_url_hint)) },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { resolved?.let(onConfirm) },
+                enabled = resolved != null,
+            ) {
+                Text(stringResource(R.string.highlight_url_continue))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }

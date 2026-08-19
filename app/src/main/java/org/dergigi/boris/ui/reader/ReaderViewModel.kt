@@ -121,6 +121,7 @@ class ReaderViewModel(
     private var archiving = false
     private var pendingArchive = false
     private var archiveIds = emptyList<String>()
+    private var pendingExternalQuote: String? = null
 
     init {
         load()
@@ -184,6 +185,7 @@ class ReaderViewModel(
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url) }
                 _state.value = ReaderUiState.Ready(content)
+                tryExternalHighlight()
                 startHighlightFetch(content)
                 startMembershipCheck(content)
                 startArchiveCheck(content)
@@ -209,6 +211,18 @@ class ReaderViewModel(
         }
     }
 
+    fun offerExternalHighlight(quote: String) {
+        pendingExternalQuote = quote.trim().takeIf { it.isNotBlank() }
+        tryExternalHighlight()
+    }
+
+    private fun tryExternalHighlight() {
+        val quote = pendingExternalQuote ?: return
+        if (_state.value !is ReaderUiState.Ready) return
+        pendingExternalQuote = null
+        highlight(quote)?.let { _signIntent.value = it }
+    }
+
     fun highlight(quote: String): Intent? {
         val trimmed = quote.trim()
         val app = getApplication<Application>()
@@ -216,7 +230,10 @@ class ReaderViewModel(
             _message.value = app.getString(R.string.highlight_cancelled)
             return null
         }
-        val session = SessionStore.load(app) ?: return null
+        val session = SessionStore.load(app) ?: run {
+            _message.value = app.getString(R.string.highlight_sign_in)
+            return null
+        }
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         val context = Nip84.extractContext(trimmed, content.body)
         val zapSplits = zapSplitTags(content, session.pubkeyHex)
