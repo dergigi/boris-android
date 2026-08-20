@@ -4,6 +4,7 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
 
@@ -46,6 +48,8 @@ class ReaderSelectionState {
     var range by mutableStateOf(TextRange.Zero)
         private set
     var toolbarRect by mutableStateOf(Rect.Zero)
+        private set
+    var loupeCenter by mutableStateOf(Offset.Unspecified)
         private set
     var ttsStartIndex by mutableStateOf<Int?>(null)
         private set
@@ -73,6 +77,7 @@ class ReaderSelectionState {
         frozenMin = word.min
         frozenMax = word.max
         toolbarRect = Rect.Zero
+        loupeCenter = Offset.Unspecified
         hasSelection = word.min != word.max
     }
 
@@ -100,11 +105,20 @@ class ReaderSelectionState {
         frozenMin = 0
         frozenMax = value.length
         toolbarRect = Rect.Zero
+        loupeCenter = Offset.Unspecified
         hasSelection = value.isNotEmpty()
     }
 
     fun hideToolbar() {
         toolbarRect = Rect.Zero
+    }
+
+    fun showLoupe(center: Offset) {
+        loupeCenter = center
+    }
+
+    fun hideLoupe() {
+        loupeCenter = Offset.Unspecified
     }
 
     fun clear() {
@@ -113,6 +127,7 @@ class ReaderSelectionState {
         range = TextRange.Zero
         ttsStartIndex = null
         toolbarRect = Rect.Zero
+        loupeCenter = Offset.Unspecified
         hasSelection = false
     }
 
@@ -162,6 +177,19 @@ fun Modifier.readerSelectable(
             state.updateToolbar(current, coords)
         }
     }
+        .then(
+            if (state.owns(owner)) {
+                Modifier.magnifier(
+                    sourceCenter = { state.loupeCenter },
+                    zoom = LOUPE_ZOOM,
+                    size = DpSize(LOUPE_WIDTH, LOUPE_HEIGHT),
+                    cornerRadius = LOUPE_HEIGHT / 2,
+                    elevation = 8.dp,
+                )
+            } else {
+                Modifier
+            },
+        )
         .drawWithContent {
             val current = layoutRef.value
             if (state.owns(owner) && current != null) {
@@ -223,6 +251,8 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         if (movingMin || movingMax) {
             down.consume()
             state.hideToolbar()
+            val bound = if (movingMin) state.range.min else state.range.max
+            state.showLoupe(loupeSource(currentLayout, bound))
             dragSelectionBound(down.id, movingMin, state, layout, coordinates, pass)
             return
         }
@@ -250,13 +280,16 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val index = JustifiedLayout.offsetAt(laid, change.position)
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
+        state.showLoupe(loupeSource(laid, index))
         while (true) {
             val event = awaitPointerEvent(pass)
             val drag = event.changes.firstOrNull { it.id == down.id } ?: break
             if (!drag.pressed) break
             drag.consume()
             val next = layout() ?: break
-            state.extendTo(JustifiedLayout.offsetAt(next, drag.position))
+            val nextOffset = JustifiedLayout.offsetAt(next, drag.position)
+            state.extendTo(nextOffset)
+            state.showLoupe(loupeSource(next, nextOffset))
         }
         showToolbar(state, layout, coordinates)
         return
@@ -286,7 +319,9 @@ private suspend fun AwaitPointerEventScope.dragSelectionBound(
         if (!change.pressed) break
         change.consume()
         val current = layout() ?: break
-        state.moveBound(movingMin, JustifiedLayout.offsetAt(current, change.position))
+        val offset = JustifiedLayout.offsetAt(current, change.position)
+        state.moveBound(movingMin, offset)
+        state.showLoupe(loupeSource(current, if (movingMin) state.range.min else state.range.max))
     }
     showToolbar(state, layout, coordinates)
 }
@@ -296,6 +331,7 @@ private fun showToolbar(
     layout: () -> TextLayoutResult?,
     coordinates: () -> LayoutCoordinates?,
 ) {
+    state.hideLoupe()
     val laid = layout() ?: return
     val coords = coordinates() ?: return
     state.updateToolbar(laid, coords)
@@ -328,11 +364,26 @@ private fun DrawScope.drawHandles(
 }
 
 private fun handleCenter(layout: TextLayoutResult, offset: Int, start: Boolean): Offset {
-    val last = (layout.layoutInput.text.length - 1).coerceAtLeast(0)
-    val line = layout.getLineForOffset(
-        if (start) offset.coerceIn(0, last) else (offset - 1).coerceIn(0, last),
-    )
+    val line = caretLine(layout, offset, start)
     val x = JustifiedLayout.visualCursor(layout, offset, line)
     val y = if (start) layout.getLineTop(line) else layout.getLineBottom(line)
     return Offset(x, y)
 }
+
+internal fun loupeSource(layout: TextLayoutResult, offset: Int): Offset {
+    val line = caretLine(layout, offset, start = offset == 0)
+    val x = JustifiedLayout.visualCursor(layout, offset, line)
+    val y = (layout.getLineTop(line) + layout.getLineBottom(line)) / 2f
+    return Offset(x, y)
+}
+
+private fun caretLine(layout: TextLayoutResult, offset: Int, start: Boolean): Int {
+    val last = (layout.layoutInput.text.length - 1).coerceAtLeast(0)
+    return layout.getLineForOffset(
+        if (start) offset.coerceIn(0, last) else (offset - 1).coerceIn(0, last),
+    )
+}
+
+private val LOUPE_WIDTH = 140.dp
+private val LOUPE_HEIGHT = 48.dp
+private const val LOUPE_ZOOM = 1.75f

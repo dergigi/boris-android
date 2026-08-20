@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader text selection shows a loupe so you can place handles between characters
+
 ## [1.4.30] - 2026-08-20
 
 ### Added
