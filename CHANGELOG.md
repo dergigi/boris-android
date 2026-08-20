@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Contents heading jumps land below the reader top bar
+- TTS follow-along keeps the spoken sentence below the reader top bar
 
 ## [1.4.42] - 2026-08-20
 

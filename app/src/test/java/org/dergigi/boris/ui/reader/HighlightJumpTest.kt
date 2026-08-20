@@ -103,4 +103,12 @@ class HighlightJumpTest {
         assertEquals(168f, HighlightJump.chromePadding(120, 48f))
         assertEquals(32, HighlightJump.scrollTarget(scrollValue = 200, scrollMax = 2000, yInViewport = 0f, paddingPx = 168f))
     }
+
+    @Test
+    fun chromePaddingShrinksWhenTheTopBarHasSlidAway() {
+        val visible = (120 + -120f).toInt().coerceAtLeast(0)
+        assertEquals(48f, HighlightJump.chromePadding(visible, 48f))
+        val halfHidden = (120 + -60f).toInt().coerceAtLeast(0)
+        assertEquals(108f, HighlightJump.chromePadding(halfHidden, 48f))
+    }
 }

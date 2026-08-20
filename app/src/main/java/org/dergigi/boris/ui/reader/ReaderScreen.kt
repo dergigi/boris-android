@@ -216,6 +216,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.roundToInt
 
 @Composable
 fun ReaderScreen(
@@ -1041,6 +1042,13 @@ fun ReaderScreenContent(
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,
                     topScrollInsetPx = if (hideBar) overlayBarPx else 0,
+                    jumpChromePx = {
+                        if (!hideBar) {
+                            0
+                        } else {
+                            (overlayBarPx + barOffsetPx.floatValue).roundToInt().coerceAtLeast(0)
+                        }
+                    },
                     modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
                 )
             }
@@ -1095,6 +1103,7 @@ private fun ArticleBody(
     onOutlineItems: (List<ArticleOutlineItem>) -> Unit,
     scrollState: ScrollState,
     topScrollInsetPx: Int = 0,
+    jumpChromePx: () -> Int = { topScrollInsetPx },
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -1236,7 +1245,7 @@ private fun ArticleBody(
         val viewport = scrollViewport ?: return@rememberUpdatedState
         if (!coords.isAttached || !viewport.isAttached) return@rememberUpdatedState
         val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-        val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
+        val pad = HighlightJump.chromePadding(jumpChromePx(), with(density) { 48.dp.toPx() })
         val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
         if (target != scrollState.value) {
             scope.launch { scrollState.animateScrollTo(target) }
@@ -1324,7 +1333,7 @@ private fun ArticleBody(
         scrollViewport = scrollViewport,
         positionRestored = positionRestored,
         settingsFollowAlong = settings.ttsFollowAlong,
-        topScrollInsetPx = topScrollInsetPx,
+        jumpChromePx = jumpChromePx,
     )
     DisposableEffect(content.url) {
         onDispose { ReadingPositionSync.publishAsync(appContext, content.url) }
@@ -1959,7 +1968,7 @@ private fun ArticleBody(
                 scrollState.value
                 navigator.stops
                 val viewport = scrollViewport
-                val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
+                val pad = HighlightJump.chromePadding(jumpChromePx(), with(density) { 48.dp.toPx() })
                 ArticleOutline.activeId(outlineItems, { id ->
                     val stop = navigator.firstStop(id) ?: return@activeId null
                     val coords = navigator.coordinates(stop.owner) ?: return@activeId null
@@ -2042,7 +2051,7 @@ private fun TtsSpokenSync(
     scrollViewport: LayoutCoordinates?,
     positionRestored: Boolean,
     settingsFollowAlong: Boolean,
-    topScrollInsetPx: Int = 0,
+    jumpChromePx: () -> Int = { 0 },
 ) {
     val density = LocalDensity.current
     val session by TtsPlayback.session.collectAsStateWithLifecycle()
@@ -2070,7 +2079,7 @@ private fun TtsSpokenSync(
         val viewport = scrollViewport ?: return@LaunchedEffect
         if (!coords.isAttached || !viewport.isAttached) return@LaunchedEffect
         val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-        val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
+        val pad = HighlightJump.chromePadding(jumpChromePx(), with(density) { 48.dp.toPx() })
         val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
         if (target != scrollState.value) {
             followAlongScrolling = true
