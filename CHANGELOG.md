@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.26] - 2026-08-20
+
+### Fixed
+
+- Reader top bar slides over the article instead of shrinking the layout on reverse scroll
+- Selecting text no longer remasures the article on every drag
+
 ## [1.4.25] - 2026-08-20
 
 ### Fixed
@@ -1171,7 +1178,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.25...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.26...HEAD
+[1.4.26]: https://github.com/dergigi/boris-android/releases/tag/v1.4.26
 [1.4.25]: https://github.com/dergigi/boris-android/releases/tag/v1.4.25
 [1.4.24]: https://github.com/dergigi/boris-android/releases/tag/v1.4.24
 [1.4.23]: https://github.com/dergigi/boris-android/releases/tag/v1.4.23
