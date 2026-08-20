@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
 status: planning
-stopped_at: Phase 6 plans written — ready to execute
-last_updated: "2026-08-20T06:40:50.794Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-08-20T07:33:08.833Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 6 plans written (06-01/02/03); READ-04 added
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
-Plan: 0 of 3
+Plan: 1 of 3
 Status: Planning complete — ready to execute
 Last activity: 2026-08-20 — Phase 6 plans 06-01/02/03 written; READ-04 added
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [████████░░] 83%
 | Phase 03-nostr-highlights P01 | 8min | 3 tasks | 21 files |
 | Phase 05 P01 | 6min | 2 tasks | 23 files |
 | Phase 05 P02 | 5min | 3 tasks | 9 files |
+| Phase 06 P01 | 50min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ Recent decisions affecting current work:
 - [Phase ?]: D-08: hinted_relays.json keyed by lowercase 64-char pubkey hex, MAX_HINTS 8, MAX_ENTRIES 500
 - [Phase ?]: D-07: fetchProfileRemote unions extraRelays + HintedRelays.forPubkey + fetchRelayList.read; still calls fetchRelayList
 - [Phase ?]: Persist codec is hand-rolled JSON because org.json.JSONObject.put is stubbed on JVM unit tests
+- [Phase ?]: Phase 6: parse falls back to full-document HtmlToMarkdown when ArticleExtractor returns null; 500-char thin-extract fail lands in 06-02
+- [Phase ?]: Phase 6: BORIS_UA is a private ReaderRepository companion val; shared HttpUserAgents object arrives with the 06-02 UA retry
 
 ### Roadmap Evolution
 
@@ -127,6 +130,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-20T06:13:39.768Z
-Stopped at: Phase 6 UI-SPEC approved
-Resume file: .planning/phases/06-on-device-article-extraction/06-UI-SPEC.md
+Last session: 2026-08-20T07:33:08.825Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None

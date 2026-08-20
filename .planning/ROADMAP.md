@@ -67,7 +67,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 | 4. Listen to articles | 3/3 | Verifying | |
 | 5. Resolve nostr profile references | 2/2 | In Progress|  |
-| 6. On-device article extraction | 0/3 | Planned |  |
+| 6. On-device article extraction | 1/3 | In Progress|  |
 
 ### Phase 3: Nostr highlights
 
@@ -203,12 +203,12 @@ Plans:
 **Goal:** Ordinary http(s) articles load by fetching the page on-device and extracting readable Markdown locally, so reading does not depend on `r.jina.ai` being available or authenticated. Nostr and RSS paths stay as they are. Offline cache still works. GitHub issue #54.
 **Requirements**: READ-04, READ-01
 **Depends on:** Phase 5
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Origin fetch plus on-device extract tracer
+- [x] 06-01-PLAN.md — Origin fetch plus on-device extract tracer
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
