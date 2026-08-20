@@ -73,6 +73,7 @@ class ReaderRepository(
         origin: String,
         userAgent: String,
         forwards: Set<String> = emptySet(),
+        forwardDepth: Int = 0,
     ): OriginResult = try {
         client.newCall(originRequest(origin, userAgent)).execute().use { response ->
             when {
@@ -85,15 +86,15 @@ class ReaderRepository(
                     val text = readCapped(response)
                     val responseUrl = response.request.url.toString()
                     htmlForwardTarget(responseUrl, text)?.let { target ->
-                        if (forwards.size >= MAX_HTML_FORWARDS) {
+                        if (forwardDepth >= MAX_HTML_FORWARDS) {
                             return OriginResult.Unreachable("Too many redirects")
                         }
                         val currentForwards = forwards + forwardIdentity(origin) + forwardIdentity(responseUrl)
                         val key = forwardIdentity(target)
                         if (key in currentForwards) return OriginResult.Unreachable("Redirect loop")
-                        return originAttempt(target, userAgent, currentForwards)
+                        return originAttempt(target, userAgent, currentForwards, forwardDepth + 1)
                     }
-                    val content = if (text.isBlank()) null else parse(origin, text)
+                    val content = if (text.isBlank()) null else parse(responseUrl, text)
                     if (content?.markdown == null) {
                         OriginResult.NoArticle(
                             if (text.isBlank()) "Empty page" else "No readable article in the page",
@@ -141,8 +142,14 @@ class ReaderRepository(
                 val equiv = htmlAttr(tag.value, "http-equiv") ?: return@firstNotNullOfOrNull null
                 if (!equiv.equals("refresh", ignoreCase = true)) return@firstNotNullOfOrNull null
                 val content = htmlAttr(tag.value, "content") ?: return@firstNotNullOfOrNull null
-                refreshUrlRegex.find(content)?.groupValues?.getOrNull(1)
+                immediateRefreshTarget(content)
             }
+
+    private fun immediateRefreshTarget(content: String): String? {
+        val delay = content.substringBefore(';').trim().toDoubleOrNull() ?: return null
+        if (delay != 0.0) return null
+        return refreshUrlRegex.find(content)?.groupValues?.getOrNull(1)
+    }
 
     private fun scriptLocationTarget(html: String): String? =
         locationAssignRegex.find(html)?.groupValues?.getOrNull(1)
@@ -183,8 +190,9 @@ class ReaderRepository(
         val host = uri.host?.lowercase().orEmpty()
         if (scheme.isBlank() || host.isBlank()) return url.trim()
         val port = if (uri.port >= 0) ":${uri.port}" else ""
+        val path = uri.rawPath.orEmpty().ifEmpty { "/" }
         val query = uri.rawQuery?.let { "?$it" }.orEmpty()
-        return "$scheme://$host$port${uri.rawPath.orEmpty().trimEnd('/')}$query"
+        return "$scheme://$host$port$path$query"
     }
 
     private sealed interface OriginResult {

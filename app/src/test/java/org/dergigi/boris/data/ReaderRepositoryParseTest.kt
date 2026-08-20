@@ -213,6 +213,27 @@ class ReaderRepositoryParseTest {
     }
 
     @Test
+    fun htmlForwardTargetKeepsTrailingSlashPathsDistinct() {
+        assertEquals(
+            "https://example.com/post/",
+            repository.htmlForwardTarget(
+                "https://example.com/post",
+                forwardPage(meta = "https://example.com/post/"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetRejectsDelayedMetaRefreshes() {
+        assertNull(
+            repository.htmlForwardTarget(
+                "https://example.com/post",
+                forwardPage(meta = "https://example.com/next", delaySeconds = 300),
+            ),
+        )
+    }
+
+    @Test
     fun fetchStopsHtmlForwardLoops() {
         val client = stubClient { request ->
             if (request.cacheControl.onlyIfCached) return@stubClient stubResponse(request, 504, "")
@@ -267,6 +288,29 @@ class ReaderRepositoryParseTest {
         assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
     }
 
+    @Test
+    fun fetchParsesFinalResponseUrlAfterHttpRedirects() {
+        val finalUrl = "https://example.com/final/page"
+        val page = """
+            <html><head><title>Final Article</title></head>
+            <body>
+              <article>
+                <p>$longBody</p>
+                <img src="images/cover.jpg" alt="cover">
+              </article>
+            </body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            stubResponse(request, 200, page, finalUrl = finalUrl)
+        }
+        val content = ReaderRepository(client).fetch("https://example.com/short")
+        assertEquals(finalUrl, content.url)
+        assertEquals(
+            listOf("https://example.com/final/images/cover.jpg"),
+            UrlExtractor.imageUrls(content.body, content.url),
+        )
+    }
+
     private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
         ReaderRepository(client).fetch(url)
         null
@@ -283,13 +327,14 @@ class ReaderRepositoryParseTest {
         meta: String? = null,
         script: String? = null,
         canonical: String? = null,
+        delaySeconds: Int = 0,
     ): String = """
         <!DOCTYPE html>
         <html lang="en-US">
           <title>Redirecting&hellip;</title>
           ${canonical?.let { "<link rel=\"canonical\" href=\"$it\">" }.orEmpty()}
           ${script?.let { "<script>location=\"$it\"</script>" }.orEmpty()}
-          ${meta?.let { "<meta http-equiv=\"refresh\" content=\"0; url=$it\">" }.orEmpty()}
+          ${meta?.let { "<meta http-equiv=\"refresh\" content=\"$delaySeconds; url=$it\">" }.orEmpty()}
           <h1>Redirecting&hellip;</h1>
           <a href="${meta ?: script ?: canonical.orEmpty()}">Click here if you are not redirected.</a>
         </html>
