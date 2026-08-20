@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.28] - 2026-08-20
+
+### Fixed
+
+- Reader scrolling stays smooth while TTS follow-along is painting the spoken sentence
+
 ## [1.4.27] - 2026-08-20
 
 ### Added
@@ -1189,7 +1195,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.27...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.28...HEAD
+[1.4.28]: https://github.com/dergigi/boris-android/releases/tag/v1.4.28
 [1.4.27]: https://github.com/dergigi/boris-android/releases/tag/v1.4.27
 [1.4.26]: https://github.com/dergigi/boris-android/releases/tag/v1.4.26
 [1.4.25]: https://github.com/dergigi/boris-android/releases/tag/v1.4.25
