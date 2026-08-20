@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.35] - 2026-08-20
+
+### Fixed
+
+- Reader scrolling no longer stutters from contents outline tracking
+- Contents heading taps scroll to the matching heading
+- Highlights pane stays below the reader top bar
+
 ## [1.4.34] - 2026-08-20
 
 ### Added
@@ -1233,7 +1241,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.34...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.35...HEAD
+[1.4.35]: https://github.com/dergigi/boris-android/releases/tag/v1.4.35
 [1.4.34]: https://github.com/dergigi/boris-android/releases/tag/v1.4.34
 [1.4.33]: https://github.com/dergigi/boris-android/releases/tag/v1.4.33
 [1.4.32]: https://github.com/dergigi/boris-android/releases/tag/v1.4.32
