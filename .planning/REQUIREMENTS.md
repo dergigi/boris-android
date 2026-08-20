@@ -20,7 +20,7 @@
 - [x] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
 - [ ] **TTS-01**: User can listen to the current article with on-device TTS (background playback, webapp-matched speed/language settings, follow-along in the reader). Login is not required. Reading still works if TTS is missing.
 - [x] **READ-03**: `nostr:nprofile` references in article Markdown render as profile links that open the in-app profile screen. Existing note, event, and article nostr links still work. Login is not required.
-- [ ] **READ-04**: Ordinary http(s) articles load by fetching the origin page on-device and extracting readable Markdown locally. Reading does not call `r.jina.ai`. Nostr and RSS paths stay as they are. A previously cached local extract still opens offline. Login is not required.
+- [x] **READ-04**: Ordinary http(s) articles load by fetching the origin page on-device and extracting readable Markdown locally. Reading does not call `r.jina.ai`. Nostr and RSS paths stay as they are. A previously cached local extract still opens offline. Login is not required.
 
 ## v2 Requirements
 
@@ -57,7 +57,7 @@ Deferred. Not in this roadmap.
 | HIGH-01 | Phase 3 | Complete |
 | TTS-01 | Phase 4 | Planned |
 | READ-03 | Phase 5 | Implemented (05-01; hinted-relay persist in 05-02) |
-| READ-04 | Phase 6 | Planned |
+| READ-04 | Phase 6 | Complete |
 
 **Coverage:**
 

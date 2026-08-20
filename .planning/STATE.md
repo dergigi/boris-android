@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
 status: planning
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-08-20T07:46:58.370Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-08-20T08:01:04.077Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 6 plans written (06-01/02/03); READ-04 added
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Planning complete — ready to execute
 Last activity: 2026-08-20 — Phase 6 plans 06-01/02/03 written; READ-04 added
 
-Progress: [█████████░] 91%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [█████████░] 91%
 | Phase 05 P02 | 5min | 3 tasks | 9 files |
 | Phase 06 P01 | 50min | 2 tasks | 8 files |
 | Phase 06 P02 | 7min | 2 tasks | 5 files |
+| Phase 06 P03 | 12min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Footnote ids renumbered sequentially; only sup refs with matching li[id] become [^n] pairs
 - [Phase ?]: MIN_ARTICLE_MARKDOWN_CHARS internal in ReaderRepository companion; ArticleExtractor scoring reuses it so 500 exists once
 - [Phase ?]: parse keeps full-document fallback but gates final markdown on the 500 bar; thin pages return null markdown
+- [Phase ?]: Phase 6: OriginResult sealed interface keeps the fetch outcome table private; only the two D-13 sentences leave ReaderRepository
+- [Phase ?]: Phase 6: cache interceptor rewrites Cache-Control only on successful responses so failures never overwrite a good cached copy
 
 ### Roadmap Evolution
 
@@ -134,6 +137,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-20T07:46:58.363Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-08-20T08:01:04.069Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
