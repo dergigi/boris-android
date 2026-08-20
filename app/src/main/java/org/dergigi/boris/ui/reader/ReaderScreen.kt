@@ -89,6 +89,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -180,7 +181,6 @@ import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.tts.TtsPlayback
-import org.dergigi.boris.tts.TtsSession
 import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
@@ -204,8 +204,10 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -432,16 +434,16 @@ private fun SaveLibraryButton(
 private fun TtsListenButton(
     content: ReadableContent,
     author: Profile?,
-    session: TtsSession?,
     onEmpty: () -> Unit,
 ) {
+    val session by TtsPlayback.session.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
     val mine = session?.url == content.url
-    val speaking = mine && session?.playing == true && session.started
-    val initializing = mine && session?.playing == true && !session.started
+    val speaking = mine && session?.playing == true && session?.started == true
+    val initializing = mine && session?.playing == true && session?.started != true
     val paused = mine && session?.paused == true
     val description = stringResource(
         when {
@@ -560,7 +562,6 @@ fun ReaderScreenContent(
         is ReaderUiState.Error -> state.url
         is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
     }
-    val ttsSession by TtsPlayback.session.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val readerScope = rememberCoroutineScope()
     val articleScrollState = rememberScrollState()
@@ -589,23 +590,10 @@ fun ReaderScreenContent(
     LaunchedEffect(hideBar) {
         if (!hideBar) barOffsetPx.floatValue = 0f
     }
-    val ttsError = ttsSession?.takeIf { it.url == articleUrl }?.errorMessage
-    LaunchedEffect(ttsError) {
-        val key = ttsError ?: return@LaunchedEffect
-        val text = context.getString(
-            if (key == TtsPlayback.ERROR_LANGUAGE) {
-                R.string.tts_error_language
-            } else {
-                R.string.tts_error_engine
-            },
-        )
-        val result = snackbarHostState.showSnackbar(
-            message = text,
-            actionLabel = context.getString(R.string.tts_open_settings),
-            duration = SnackbarDuration.Long,
-        )
-        if (result == SnackbarResult.ActionPerformed) openTtsSettings(context)
-    }
+    TtsReaderError(
+        articleUrl = articleUrl,
+        snackbarHostState = snackbarHostState,
+    )
 
     fun openOriginal() {
         val url = articleUrl ?: return
@@ -716,7 +704,6 @@ fun ReaderScreenContent(
                         TtsListenButton(
                             content = state.content,
                             author = author,
-                            session = ttsSession,
                             onEmpty = {
                                 readerScope.launch {
                                     snackbarHostState.showSnackbar(
@@ -1004,9 +991,8 @@ fun ReaderScreenContent(
                     eventRefs = eventRefs,
                     settings = settings,
                     rssFeedSuggestion = rssFeedSuggestion,
-                    ttsSession = ttsSession,
                     // D-19: while TTS is speaking, volume keys change volume, not scroll.
-                    volumeScroll = gallery == null && ttsSession?.playing != true,
+                    volumeScroll = gallery == null,
                     findOpen = findOpen,
                     onFindOpenChange = { findOpen = it },
                     onOpenArticle = onOpenArticle,
@@ -1070,7 +1056,6 @@ private fun ArticleBody(
     onFindOpenChange: (Boolean) -> Unit,
     scrollState: ScrollState,
     topScrollInsetPx: Int = 0,
-    ttsSession: TtsSession? = null,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
@@ -1133,25 +1118,16 @@ private fun ArticleBody(
     val findHits = remember(findHaystack, findQuery) {
         ArticleFind.hits(findHaystack, findQuery)
     }
-    // D-12/D-13: transient spoken mark while this article speaks, honoring the
-    // live follow-along checkbox. Appended outside visibleFor (like Find) so it
-    // paints even when showHighlights is off. Never enters the NIP-84 publish path.
-    val spokenSession = ttsSession?.takeIf {
-        it.url == content.url && settings.ttsFollowAlong && it.followAlongEnabled
-    }
-    val spokenParagraph = spokenSession?.paragraphs?.getOrNull(spokenSession.index)
-    val spokenSentence = spokenSession?.let { session ->
-        session.spokenText ?: spokenParagraph?.let { paragraph ->
-            TtsText.sentences(paragraph).getOrNull(session.sentenceIndex) ?: paragraph
-        }
-    }
+    // D-12/D-13: spoken mark lives on SpokenMarkState so sentence ticks and
+    // follow-along pause do not rebuild this NIP-84/find list (or remasure
+    // the article) while the user is scrolling.
+    val spokenMark = remember { SpokenMarkState() }
     val painted = HighlightJump.withFocus(
         highlights.visibleFor(settings),
         focusHighlightId,
         focusQuote,
     ) + listOfNotNull(
         ArticleFind.painted(findQuery),
-        spokenSentence?.let { ArticleFind.paintedSpoken(it, spokenParagraph) },
     )
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
@@ -1259,32 +1235,6 @@ private fun ArticleBody(
         pendingJumpId = null
         ReaderFocus.clear()
     }
-    // D-12/D-15 follow-along auto-scroll: bring the spoken sentence on screen when
-    // playback advances, unless the user paused auto-scroll by scrolling themselves.
-    var followAlongScrolling by remember { mutableStateOf(false) }
-    val followAlongPosition = spokenSession
-        ?.takeIf { it.playing && !it.followAlongPaused }
-        ?.let { it.index to it.sentenceIndex }
-    LaunchedEffect(followAlongPosition, content.url) {
-        if (followAlongPosition == null) return@LaunchedEffect
-        val stop = HighlightJump.awaitStop(navigator, ArticleFind.SPOKEN_ID) {
-            scrollViewport?.isAttached == true
-        } ?: return@LaunchedEffect
-        val coords = navigator.coordinates(stop.owner) ?: return@LaunchedEffect
-        val viewport = scrollViewport ?: return@LaunchedEffect
-        if (!coords.isAttached || !viewport.isAttached) return@LaunchedEffect
-        val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-        val pad = with(density) { 48.dp.toPx() }
-        val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
-        if (target != scrollState.value) {
-            followAlongScrolling = true
-            try {
-                scrollState.animateScrollTo(target)
-            } finally {
-                followAlongScrolling = false
-            }
-        }
-    }
     val appContext = LocalContext.current.applicationContext
     var positionRestored by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
@@ -1311,20 +1261,15 @@ private fun ArticleBody(
             ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
         }
     }
-    // D-15: a user scroll while this article speaks pauses auto-scroll only; speech
-    // continues and the mark stays. Our own animateScrollTo is excluded via the flag.
-    LaunchedEffect(content.url) {
-        snapshotFlow { scrollState.isScrollInProgress }.collect { inProgress ->
-            if (!inProgress || followAlongScrolling || !positionRestored) return@collect
-            val session = TtsPlayback.session.value
-            if (session != null && session.url == content.url &&
-                settings.ttsFollowAlong && session.followAlongEnabled &&
-                session.playing && !session.followAlongPaused
-            ) {
-                TtsPlayback.setFollowAlongPaused(true)
-            }
-        }
-    }
+    TtsSpokenSync(
+        url = content.url,
+        spoken = spokenMark,
+        scrollState = scrollState,
+        navigator = navigator,
+        scrollViewport = scrollViewport,
+        positionRestored = positionRestored,
+        settingsFollowAlong = settings.ttsFollowAlong,
+    )
     DisposableEffect(content.url) {
         onDispose { ReadingPositionSync.publishAsync(appContext, content.url) }
     }
@@ -1366,6 +1311,7 @@ private fun ArticleBody(
         selection,
         navigator,
         openFromStop,
+        spokenMark,
         content.url,
         content.title,
         content.summary,
@@ -1390,6 +1336,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1436,6 +1383,7 @@ private fun ArticleBody(
                             selection,
                             navigator,
                             openFromStop,
+                            spokenMark,
                             TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
                         )
                     }
@@ -1464,6 +1412,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1479,6 +1428,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1494,6 +1444,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1509,6 +1460,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1524,6 +1476,7 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
@@ -1539,12 +1492,16 @@ private fun ArticleBody(
                     selection,
                     navigator,
                     openFromStop,
+                    spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                 )
             },
         )
     }
-    VolumeKeys.Handle(enabled = volumeScroll && settings.volumeButtonScroll) { up ->
+    val ttsSpeaking by remember {
+        TtsPlayback.session.map { it?.playing == true }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.playing == true)
+    VolumeKeys.Handle(enabled = volumeScroll && !ttsSpeaking && settings.volumeButtonScroll) { up ->
         val page = VolumeKeys.pageSize(viewportHeight, settings.volumeButtonScrollPercent)
         val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
         if (target != scrollState.value) {
@@ -1582,7 +1539,9 @@ private fun ArticleBody(
         if (parsedNow) markdownReady = true
     }
     val showArticle = markdownReady || parsedNow
-    val ttsMiniPlayerVisible = ttsSession?.url?.isNotBlank() == true
+    val ttsMiniPlayerVisible by remember {
+        TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.url?.isNotBlank() == true)
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     SelectionBackHandler(selection)
 
@@ -1628,49 +1587,20 @@ private fun ArticleBody(
                 .padding(bottom = bottomChromePadding),
         ) {
             if (coverUrl == null && !content.title.isNullOrBlank()) {
-                var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-                var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
-                val titleOwner = remember { Any() }
-                val titleSpans = remember(content.title, painted) {
-                    matchHighlightSpans(content.title, painted)
-                }
-                Text(
-                    text = content.title,
+                HighlightedArticleTitle(
+                    title = content.title,
+                    painted = painted,
+                    spoken = spokenMark,
                     style = headingFamily,
                     color = colors.onBackground,
-                    onTextLayout = { titleLayout = it },
-                    modifier = Modifier
-                        .padding(top = 8.dp, bottom = 12.dp)
-                        .drawHighlightMarks(
-                            titleLayout,
-                            titleSpans,
-                            mineColor,
-                            friendsColor,
-                            otherColor,
-                            underline,
-                        )
-                        .highlightAnchors(
-                            owner = titleOwner,
-                            spans = titleSpans,
-                            layout = titleLayout,
-                            coordinates = titleCoords,
-                            navigator = navigator,
-                        )
-                        .readerSelectable(
-                            owner = titleOwner,
-                            text = content.title,
-                            layout = titleLayout,
-                            coordinates = titleCoords,
-                            state = selection,
-                            onCoordinates = { titleCoords = it },
-                            ttsStartIndex = titleTtsIndex,
-                            onTap = { offset ->
-                                val laid = titleLayout ?: return@readerSelectable false
-                                val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
-                                openFromStop(stop)
-                                true
-                            },
-                        ),
+                    mineColor = mineColor,
+                    friendsColor = friendsColor,
+                    otherColor = otherColor,
+                    underline = underline,
+                    selection = selection,
+                    navigator = navigator,
+                    ttsStartIndex = titleTtsIndex,
+                    onHighlightTap = openFromStop,
                 )
             }
             if (coverUrl == null && !content.summary.isNullOrBlank()) {
@@ -1895,6 +1825,177 @@ private fun ArticleBody(
     }
 }
 
+@Stable
+private class SpokenMarkState {
+    var sentence by mutableStateOf<String?>(null)
+    var paragraph by mutableStateOf<String?>(null)
+}
+
+@Composable
+private fun rememberHighlightMarks(
+    displayed: String,
+    painted: List<PaintedHighlight>,
+    spoken: SpokenMarkState,
+): List<HighlightSpan> {
+    val base = remember(displayed, painted) {
+        matchHighlightSpans(displayed, painted)
+    }
+    val spokenSpans = remember(displayed, spoken.sentence, spoken.paragraph) {
+        matchSpokenSpans(displayed, spoken.sentence, spoken.paragraph)
+    }
+    return if (spokenSpans.isEmpty()) base else base + spokenSpans
+}
+
+@Composable
+private fun TtsReaderError(
+    articleUrl: String?,
+    snackbarHostState: SnackbarHostState,
+) {
+    val context = LocalContext.current
+    val error by remember(articleUrl) {
+        TtsPlayback.session
+            .map { session -> session?.takeIf { it.url == articleUrl }?.errorMessage }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(null)
+    LaunchedEffect(error) {
+        val key = error ?: return@LaunchedEffect
+        val text = context.getString(
+            if (key == TtsPlayback.ERROR_LANGUAGE) {
+                R.string.tts_error_language
+            } else {
+                R.string.tts_error_engine
+            },
+        )
+        val result = snackbarHostState.showSnackbar(
+            message = text,
+            actionLabel = context.getString(R.string.tts_open_settings),
+            duration = SnackbarDuration.Long,
+        )
+        if (result == SnackbarResult.ActionPerformed) openTtsSettings(context)
+    }
+}
+
+@Composable
+private fun TtsSpokenSync(
+    url: String,
+    spoken: SpokenMarkState,
+    scrollState: ScrollState,
+    navigator: HighlightNavigator,
+    scrollViewport: LayoutCoordinates?,
+    positionRestored: Boolean,
+    settingsFollowAlong: Boolean,
+) {
+    val density = LocalDensity.current
+    val session by TtsPlayback.session.collectAsStateWithLifecycle()
+    val spokenSession = session?.takeIf {
+        it.url == url && settingsFollowAlong && it.followAlongEnabled
+    }
+    val spokenParagraph = spokenSession?.paragraphs?.getOrNull(spokenSession.index)
+    val spokenSentence = spokenSession?.let { current ->
+        current.spokenText ?: spokenParagraph?.let { paragraph ->
+            TtsText.sentences(paragraph).getOrNull(current.sentenceIndex) ?: paragraph
+        }
+    }
+    spoken.sentence = spokenSentence
+    spoken.paragraph = spokenParagraph
+    var followAlongScrolling by remember { mutableStateOf(false) }
+    val followAlongPosition = spokenSession
+        ?.takeIf { it.playing && !it.followAlongPaused }
+        ?.let { it.index to it.sentenceIndex }
+    LaunchedEffect(followAlongPosition, url) {
+        if (followAlongPosition == null) return@LaunchedEffect
+        val stop = HighlightJump.awaitStop(navigator, ArticleFind.SPOKEN_ID) {
+            scrollViewport?.isAttached == true
+        } ?: return@LaunchedEffect
+        val coords = navigator.coordinates(stop.owner) ?: return@LaunchedEffect
+        val viewport = scrollViewport ?: return@LaunchedEffect
+        if (!coords.isAttached || !viewport.isAttached) return@LaunchedEffect
+        val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+        val pad = with(density) { 48.dp.toPx() }
+        val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
+        if (target != scrollState.value) {
+            followAlongScrolling = true
+            try {
+                scrollState.animateScrollTo(target)
+            } finally {
+                followAlongScrolling = false
+            }
+        }
+    }
+    LaunchedEffect(url) {
+        snapshotFlow { scrollState.isScrollInProgress }.collect { inProgress ->
+            if (!inProgress || followAlongScrolling || !positionRestored) return@collect
+            val current = TtsPlayback.session.value
+            if (current != null && current.url == url &&
+                settingsFollowAlong && current.followAlongEnabled &&
+                current.playing && !current.followAlongPaused
+            ) {
+                TtsPlayback.setFollowAlongPaused(true)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HighlightedArticleTitle(
+    title: String,
+    painted: List<PaintedHighlight>,
+    spoken: SpokenMarkState,
+    style: TextStyle,
+    color: Color,
+    mineColor: Color,
+    friendsColor: Color,
+    otherColor: Color,
+    underline: Boolean,
+    selection: ReaderSelectionState,
+    navigator: HighlightNavigator,
+    ttsStartIndex: Int?,
+    onHighlightTap: (HighlightStop) -> Unit,
+) {
+    var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val titleOwner = remember { Any() }
+    val titleSpans = rememberHighlightMarks(title, painted, spoken)
+    Text(
+        text = title,
+        style = style,
+        color = color,
+        onTextLayout = { titleLayout = it },
+        modifier = Modifier
+            .padding(top = 8.dp, bottom = 12.dp)
+            .drawHighlightMarks(
+                titleLayout,
+                titleSpans,
+                mineColor,
+                friendsColor,
+                otherColor,
+                underline,
+            )
+            .highlightAnchors(
+                owner = titleOwner,
+                spans = titleSpans,
+                layout = titleLayout,
+                coordinates = titleCoords,
+                navigator = navigator,
+            )
+            .readerSelectable(
+                owner = titleOwner,
+                text = title,
+                layout = titleLayout,
+                coordinates = titleCoords,
+                state = selection,
+                onCoordinates = { titleCoords = it },
+                ttsStartIndex = ttsStartIndex,
+                onTap = { offset ->
+                    val laid = titleLayout ?: return@readerSelectable false
+                    val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
+                    onHighlightTap(stop)
+                    true
+                },
+            ),
+    )
+}
+
 @Composable
 private fun HighlightedMarkdownNode(
     model: MarkdownComponentModel,
@@ -1907,6 +2008,7 @@ private fun HighlightedMarkdownNode(
     selection: ReaderSelectionState,
     navigator: HighlightNavigator,
     onHighlightTap: (HighlightStop) -> Unit,
+    spoken: SpokenMarkState,
     ttsStartIndex: Int?,
 ) {
     val annotator = annotatorSettings()
@@ -1920,10 +2022,8 @@ private fun HighlightedMarkdownNode(
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
-    // Match once per (text, highlights); the draw phase only paints cached spans.
-    val spans = remember(styledText.text, highlights) {
-        matchHighlightSpans(styledText.text, highlights)
-    }
+    // NIP-84/find match once per (text, highlights). Spoken rematches alone.
+    val spans = rememberHighlightMarks(styledText.text, highlights, spoken)
     MarkdownText(
         content = styledText,
         style = style,

@@ -27,6 +27,12 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun spokenSpansIgnoreBlankSentence() {
+        assertTrue(matchSpokenSpans("hello there", null, null).isEmpty())
+        assertTrue(matchSpokenSpans("hello there", "   ", null).isEmpty())
+    }
+
+    @Test
     fun spokenHighlightUsesParagraphContext() {
         val spoken = ArticleFind.paintedSpoken(
             sentence = "Repeated sentence.",

@@ -40,6 +40,15 @@ data class HighlightSpan(
  * allocations, so it must run once per (text, highlights) — never per frame
  * in the draw phase. Callers cache the result with remember().
  */
+fun matchSpokenSpans(
+    displayed: String,
+    sentence: String?,
+    paragraph: String?,
+): List<HighlightSpan> {
+    val item = sentence?.let { ArticleFind.paintedSpoken(it, paragraph) } ?: return emptyList()
+    return matchHighlightSpans(displayed, listOf(item))
+}
+
 fun matchHighlightSpans(
     displayed: String,
     highlights: List<PaintedHighlight>,
