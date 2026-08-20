@@ -87,9 +87,9 @@ class ReaderRepository(
                         if (forwards.size >= MAX_HTML_FORWARDS) {
                             return OriginResult.Unreachable("Too many redirects")
                         }
-                        val key = target.lowercase()
+                        val key = forwardIdentity(target)
                         if (key in forwards) return OriginResult.Unreachable("Redirect loop")
-                        return originAttempt(target, userAgent, forwards + origin.lowercase())
+                        return originAttempt(target, userAgent, forwards + forwardIdentity(origin))
                     }
                     val content = if (text.isBlank()) null else parse(origin, text)
                     if (content?.markdown == null) {
@@ -158,9 +158,7 @@ class ReaderRepository(
     private fun resolveForwardTarget(baseUrl: String, rawTarget: String): String? {
         val decoded = HtmlToMarkdown.decode(rawTarget).trim().trim('"', '\'')
         val resolved = UrlExtractor.articleUrl(decoded, baseUrl)?.let(UrlExtractor::preferHttps) ?: return null
-        val base = baseUrl.substringBefore('#').trimEnd('/').lowercase()
-        val target = resolved.substringBefore('#').trimEnd('/').lowercase()
-        return resolved.takeIf { target != base }
+        return resolved.takeIf { forwardIdentity(it) != forwardIdentity(baseUrl) }
     }
 
     private fun looksLikeRedirectPage(html: String): Boolean {
@@ -176,6 +174,16 @@ class ReaderRepository(
                 doubleQuoted.ifBlank { singleQuoted.ifBlank { bare } }
             }
             ?.takeIf { it.isNotBlank() }
+
+    private fun forwardIdentity(url: String): String {
+        val uri = runCatching { java.net.URI(url.trim()) }.getOrNull() ?: return url.trim()
+        val scheme = uri.scheme?.lowercase().orEmpty()
+        val host = uri.host?.lowercase().orEmpty()
+        if (scheme.isBlank() || host.isBlank()) return url.trim()
+        val port = if (uri.port >= 0) ":${uri.port}" else ""
+        val query = uri.rawQuery?.let { "?$it" }.orEmpty()
+        return "$scheme://$host$port${uri.rawPath.orEmpty().trimEnd('/')}$query"
+    }
 
     private sealed interface OriginResult {
         data class Article(val content: ReadableContent) : OriginResult
