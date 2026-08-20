@@ -1,43 +1,13 @@
 package org.dergigi.boris.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderRepositoryParseTest {
     private val repository = ReaderRepository()
-
-    @Test
-    fun parsesJinaMarkdownPayload() {
-        val raw = """
-            Title: Hello World
-            URL Source: https://example.com/hello
-            Markdown Content:
-            # Hello
-
-            Body text.
-        """.trimIndent()
-
-        val content = repository.parse("https://example.com/hello", raw)
-        assertEquals("Hello World", content.title)
-        assertEquals("# Hello\n\nBody text.", content.markdown)
-        assertNull(content.html)
-        assertNull(content.publishedAt)
-        assertNull(content.imageUrl)
-    }
-
-    @Test
-    fun parsesPublishedTimeFromJinaHeader() {
-        val raw = """
-            Title: Hello World
-            URL Source: https://example.com/hello
-            Published Time: 2024-01-15T10:00:00Z
-            Markdown Content:
-            # Hello
-        """.trimIndent()
-        val content = repository.parse("https://example.com/hello", raw)
-        assertEquals(1_705_312_800L, content.publishedAt)
-    }
 
     @Test
     fun parsesHtmlFallback() {
@@ -72,21 +42,20 @@ class ReaderRepositoryParseTest {
     }
 
     @Test
-    fun parsesCoverFromJinaHeaderAndStripsTheLeadImage() {
+    fun parseStripsChromeFromWrappedArticle() {
+        val body = "The article paragraph carries the real story. ".repeat(15)
         val raw = """
-            Title: Hello World
-            URL Source: https://example.com/hello
-            Image URL: https://cdn.example.com/cover.jpg
-            Description: A short lede
-            Markdown Content:
-            ![](https://cdn.example.com/cover.jpg)
-
-            Body text.
+            <html><head><title>Page Title</title></head><body>
+            <nav>Home</nav>
+            <article><p>$body</p></article>
+            <div id="comments">nope</div>
+            </body></html>
         """.trimIndent()
-        val content = repository.parse("https://example.com/hello", raw)
-        assertEquals("https://cdn.example.com/cover.jpg", content.imageUrl)
-        assertEquals("A short lede", content.summary)
-        assertEquals("Body text.", content.markdown)
+        val content = repository.parse("https://example.com/post", raw)
+        val markdown = content.markdown!!
+        assertTrue(markdown.contains("The article paragraph carries the real story."))
+        assertFalse(markdown.contains("Home"))
+        assertFalse(markdown.contains("nope"))
     }
 
     @Test

@@ -32,8 +32,8 @@ object UrlExtractor {
     }
 
     /**
-     * Cleartext HTTP is blocked app-wide. Image GETs (Coil, gallery, save) must use HTTPS.
-     * Article opens still keep `http://` for Jina; only image fetches call this.
+     * Cleartext HTTP is blocked app-wide. Article GETs and image fetches
+     * (Coil, gallery, save) upgrade `http://` to `https://` before the request.
      */
     fun preferHttps(url: String): String {
         val trimmed = url.trim()
