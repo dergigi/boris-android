@@ -94,4 +94,37 @@ class ReaderSelectionStateTest {
         assertEquals(Offset.Unspecified, state.loupeCenter)
         assertEquals("hello", state.selectedText)
     }
+
+    @Test
+    fun extendAcrossParagraphsJoinsReadingOrder() {
+        val state = ReaderSelectionState()
+        val first = Any()
+        val second = Any()
+        state.attach(first, "First paragraph here.")
+        state.attach(second, "Second paragraph there.")
+        state.begin(first, "First paragraph here.", TextRange(6, 15))
+        assertEquals("paragraph", state.selectedText)
+        state.extendTo(second, 6)
+        assertEquals("paragraph here.\n\nSecond", state.selectedText)
+        assertEquals(TextRange(6, 21), state.rangeIn(first))
+        assertEquals(TextRange(0, 6), state.rangeIn(second))
+        assertTrue(state.hasStartHandle(first))
+        assertTrue(state.hasEndHandle(second))
+        assertFalse(state.hasEndHandle(first))
+    }
+
+    @Test
+    fun extendAcrossThreeParagraphsKeepsTheMiddle() {
+        val state = ReaderSelectionState()
+        val first = Any()
+        val middle = Any()
+        val last = Any()
+        state.attach(first, "Alpha one.")
+        state.attach(middle, "Bravo two.")
+        state.attach(last, "Charlie three.")
+        state.begin(first, "Alpha one.", TextRange(6, 10))
+        state.extendTo(last, 7)
+        assertEquals("one.\n\nBravo two.\n\nCharlie", state.selectedText)
+        assertEquals(TextRange(0, 10), state.rangeIn(middle))
+    }
 }

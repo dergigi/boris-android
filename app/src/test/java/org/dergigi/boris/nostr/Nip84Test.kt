@@ -150,4 +150,13 @@ class Nip84Test {
             Nip84.extractContext("Selected quote here", body),
         )
     }
+
+    @Test
+    fun extractContextUsesFirstParagraphOfSpanningQuote() {
+        val body = "Before. First paragraph here. After.\n\nSecond paragraph there."
+        assertEquals(
+            "Before. First paragraph here. After.",
+            Nip84.extractContext("First paragraph here.\n\nSecond paragraph there.", body),
+        )
+    }
 }

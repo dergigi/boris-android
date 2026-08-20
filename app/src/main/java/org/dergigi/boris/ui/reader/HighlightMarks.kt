@@ -59,10 +59,10 @@ fun matchHighlightSpans(
         if (item.spoken && !item.context.isNullOrBlank()) {
             spokenSpans
         } else {
-            QuoteMatch.occurrences(
+            spanningOccurrences(
                 displayed,
                 highlightMark(item.quote, item.context),
-                ignoreCase = item.ignoreCase,
+                item.ignoreCase,
             ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
         }
     }
@@ -116,6 +116,16 @@ private fun spokenWords(text: String): List<String> =
         .split(Regex("\\s+"))
         .map { it.trim('"', '\'', '.', ',', ';', ':', '!', '?') }
         .filter { it.length >= 2 }
+
+internal fun spanningOccurrences(
+    displayed: String,
+    quote: String,
+    ignoreCase: Boolean,
+): List<IntRange> {
+    val parts = quote.split(Regex("\\n+")).map { it.trim() }.filter { it.isNotEmpty() }
+    if (parts.size <= 1) return QuoteMatch.occurrences(displayed, quote, ignoreCase)
+    return parts.flatMap { part -> QuoteMatch.occurrences(displayed, part, ignoreCase) }
+}
 
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()

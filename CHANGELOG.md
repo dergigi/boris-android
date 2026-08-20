@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Highlights can start in one paragraph and end in another
+
 ## [1.4.36] - 2026-08-20
 
 ### Fixed

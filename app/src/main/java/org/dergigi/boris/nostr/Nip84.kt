@@ -74,7 +74,9 @@ object Nip84 {
 
     fun extractContext(selectedText: String, articleContent: String): String? {
         if (selectedText.isEmpty() || articleContent.isEmpty()) return null
-        val selectedIndex = articleContent.indexOf(selectedText)
+        val needle = selectedText.split(Regex("\\n+")).firstOrNull { it.isNotBlank() }?.trim()
+            ?: selectedText
+        val selectedIndex = articleContent.indexOf(needle)
         if (selectedIndex < 0) return null
 
         val paragraphs = articleContent.split(Regex("\n\n+"))
@@ -103,7 +105,7 @@ object Nip84 {
             }
         }
 
-        val selectedSentenceIndex = reconstructed.indexOfFirst { it.contains(selectedText) }
+        val selectedSentenceIndex = reconstructed.indexOfFirst { it.contains(needle) }
         if (selectedSentenceIndex < 0) return null
 
         val contextParts = mutableListOf<String>()
