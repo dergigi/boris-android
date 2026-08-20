@@ -1,5 +1,6 @@
 package org.dergigi.boris.tts
 
+import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.NostrMentions
@@ -296,9 +297,19 @@ object TtsText {
         text = REFERENCE_LINK.replace(text) { it.groupValues[1] }
         text = MarkdownInline.plain(text)
         text = EMPHASIS.replace(text, "")
+        text = speakSourceDomains(text)
+        text = BARE_URL.replace(text, "")
         text = WHITESPACE.replace(text, " ").trim()
         return text.takeIf { it.isNotEmpty() }
     }
+
+    private fun speakSourceDomains(text: String): String =
+        SOURCE_URL.replace(text) { match ->
+            val label = match.groupValues[1]
+            val raw = match.groupValues[2].trimEnd('.', ',', ';', ':', '!', '?', ')', ']')
+            val host = ArticleUrl.host(raw) ?: return@replace label
+            "$label $host"
+        }
 
     private fun String.matchKey(): String =
         WHITESPACE.replace(this, " ").trim().lowercase()
@@ -356,6 +367,11 @@ object TtsText {
     private val REFERENCE_LINK = Regex("""\[([^\]\n]+)]\[[^\]\n]*]""")
     private val REFERENCE_DEFINITION = Regex("""^[ \t]{0,3}\[(?!\^)[^\]\n]+]:[ \t]*.*$""")
     private val EMPHASIS = Regex("""[*_~`]+""")
+    private val BARE_URL = Regex("""(?:https?://|www\.)[^\s<>\[\]()]+""")
+    private val SOURCE_URL = Regex(
+        """(source:)\s*((?:https?://|www\.)[^\s<>\[\]()]+)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
     private val IMAGE_ONLY = Regex("""^(?:!\[[^\]]*]\([^)\s]+\)\s*)+$""")

@@ -47,6 +47,25 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsSkipBareUrlsButSpeakSourceDomain() {
+        val content = ReadableContent(
+            url = "https://example.com/c",
+            markdown = """
+                See https://www.example.com/long/path?q=1 for details.
+
+                Source: https://www.bbc.co.uk/news/world-123
+            """.trimIndent(),
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf("See for details.", "Source: bbc.co.uk"),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("https://") })
+        assertFalse(paragraphs.any { it.contains("www.") })
+    }
+
+    @Test
     fun paragraphsFlattenLinksToLabels() {
         val content = ReadableContent(
             url = "https://example.com/c",
