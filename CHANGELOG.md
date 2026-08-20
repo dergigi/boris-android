@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Restored the last working reader selection, before multi-paragraph highlight gestures broke drag and handles
+
 ## [1.4.41] - 2026-08-20
 
 ### Fixed
