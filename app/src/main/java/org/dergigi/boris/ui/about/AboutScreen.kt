@@ -86,7 +86,7 @@ fun AboutScreen(
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
             if (page == ABOUT_PAGES.lastIndex) {
-                HomeOnboardingStore.dismissFirstTime(context)
+                HomeOnboardingStore.dismissFirstTimeEverywhere(context)
             }
         }
     }

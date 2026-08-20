@@ -174,6 +174,7 @@ class AuthViewModel(
             SettingsSync.reset()
             return
         }
+        SettingsSync.markLoading()
         viewModelScope.launch(Dispatchers.IO) {
             SettingsSync.load(session.pubkeyHex)
         }

@@ -40,6 +40,15 @@ class UserSettingsTest {
         assertFalse(settings.ttsUseSystemLanguage)
         assertTrue(settings.ttsDetectContentLanguage)
         assertTrue(settings.ttsFollowAlong)
+        assertFalse(settings.firstTimeDismissed)
+    }
+
+    @Test
+    fun firstTimeDismissedReadsAndRoundTrips() {
+        assertTrue(UserSettings.parse("""{"firstTimeDismissed":true}""").firstTimeDismissed)
+        val updated = UserSettings.defaults().withBoolean("firstTimeDismissed", true)
+        assertTrue(updated.firstTimeDismissed)
+        assertTrue(UserSettings.parse(updated.toJson()).firstTimeDismissed)
     }
 
     @Test

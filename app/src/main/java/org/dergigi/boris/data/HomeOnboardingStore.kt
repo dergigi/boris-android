@@ -22,6 +22,26 @@ object HomeOnboardingStore {
         prefs(context).edit().putBoolean(KEY_LOGIN_DISMISSED, true).apply()
     }
 
+    fun dismissFirstTimeEverywhere(context: Context) {
+        dismissFirstTime(context)
+        val current = SettingsSync.settings.value
+        if (!current.firstTimeDismissed) {
+            SettingsSync.apply(current.withBoolean("firstTimeDismissed", true))
+        }
+    }
+
+    fun shouldShowFirstTime(
+        localDismissed: Boolean,
+        settingsDismissed: Boolean,
+        loggedIn: Boolean,
+        settingsReady: Boolean,
+        hasRemoteSettings: Boolean,
+    ): Boolean {
+        if (localDismissed || settingsDismissed) return false
+        if (loggedIn && (!settingsReady || hasRemoteSettings)) return false
+        return true
+    }
+
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }

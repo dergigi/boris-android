@@ -76,6 +76,7 @@ class UserSettings internal constructor(
     val zapSplitHighlighterWeight: Double get() = double("zapSplitHighlighterWeight", 50.0)
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
+    val firstTimeDismissed: Boolean get() = bool("firstTimeDismissed", false)
 
     fun offlineDownloadEnabled(key: String): Boolean = bool(key, true)
 

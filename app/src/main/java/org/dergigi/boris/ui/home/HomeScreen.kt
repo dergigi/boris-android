@@ -130,6 +130,8 @@ fun HomeScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val settingsReady by SettingsSync.ready.collectAsStateWithLifecycle()
+    val hasRemoteSettings by SettingsSync.hasRemote.collectAsStateWithLifecycle()
     val loggedIn = authState is AuthUiState.LoggedIn
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
@@ -142,18 +144,19 @@ fun HomeScreen(
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
         viewModel.consumeMessage()
     }
-    var showFirstTime by remember {
-        mutableStateOf(!HomeOnboardingStore.isFirstTimeDismissed(context))
-    }
     var loginPromptDismissed by remember {
         mutableStateOf(HomeOnboardingStore.isLoginDismissed(context))
     }
     val showLoginPrompt = !loggedIn && !loginPromptDismissed
+    val showFirstTime = HomeOnboardingStore.shouldShowFirstTime(
+        localDismissed = HomeOnboardingStore.isFirstTimeDismissed(context),
+        settingsDismissed = settings.firstTimeDismissed,
+        loggedIn = loggedIn,
+        settingsReady = settingsReady,
+        hasRemoteSettings = hasRemoteSettings,
+    )
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
-        if (HomeOnboardingStore.isFirstTimeDismissed(context)) {
-            showFirstTime = false
-        }
     }
     val windowInfo = LocalWindowInfo.current
     var clipboardUrl by remember { mutableStateOf<String?>(null) }
@@ -254,8 +257,7 @@ fun HomeScreen(
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {
-                    HomeOnboardingStore.dismissFirstTime(context)
-                    showFirstTime = false
+                    HomeOnboardingStore.dismissFirstTimeEverywhere(context)
                 },
                 onOpenAbout = onOpenAbout,
                 showLoginPrompt = showLoginPrompt,
