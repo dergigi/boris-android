@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.19] - 2026-08-20
+
+### Changed
+
+- Ordinary web articles extract Markdown on-device. Reading no longer calls `r.jina.ai`.
+
+### Fixed
+
+- Web URLs that Jina rejected with 401 now load when the origin page is readable.
+
 ## [1.4.18] - 2026-08-19
 
 ### Fixed
@@ -1124,7 +1134,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.18...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.19...HEAD
+[1.4.19]: https://github.com/dergigi/boris-android/releases/tag/v1.4.19
 [1.4.18]: https://github.com/dergigi/boris-android/releases/tag/v1.4.18
 [1.4.17]: https://github.com/dergigi/boris-android/releases/tag/v1.4.17
 [1.4.16]: https://github.com/dergigi/boris-android/releases/tag/v1.4.16
