@@ -1465,7 +1465,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading2 = {
@@ -1482,7 +1483,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading3 = {
@@ -1499,7 +1501,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading4 = {
@@ -1516,7 +1519,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading5 = {
@@ -1533,7 +1537,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading6 = {
@@ -1550,7 +1555,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
         )
@@ -2104,7 +2110,8 @@ private fun HighlightedMarkdownNode(
     onHighlightTap: (HighlightStop) -> Unit,
     spoken: SpokenMarkState,
     ttsStartIndex: Int?,
-    outlineId: String? = null,
+    outlineItems: List<ArticleOutlineItem> = emptyList(),
+    outlineStartOffset: Int? = null,
 ) {
     val annotator = annotatorSettings()
     val styledText = remember(model.node, style) {
@@ -2119,6 +2126,9 @@ private fun HighlightedMarkdownNode(
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
     val marks = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val outlineId = remember(outlineItems, outlineStartOffset, styledText.text) {
+        outlineStartOffset?.let { ArticleOutline.idForHeading(outlineItems, it, styledText.text) }
+    }
     val spans = remember(marks, outlineId, styledText.text) {
         val extra = outlineId?.let { ArticleOutline.painted(it, styledText.text) }?.let { item ->
             HighlightSpan(item, 0, styledText.text.length)
