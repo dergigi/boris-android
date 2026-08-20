@@ -138,7 +138,17 @@ class HomeViewModel(
                                 ARTICLE_LIMIT,
                             ),
                         )
-                        val archivedKeys = archiveDeferred.await()
+                        archiveDeferred.await()
+                        val feedUrls = (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
+                            .map { it.url }
+                        if (pubkey != null) {
+                            RelayQuery.fetchArchivesForUrls(pubkey, relays, feedUrls)
+                        }
+                        val archivedKeys = if (pubkey == null) {
+                            emptySet()
+                        } else {
+                            ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
+                        }
                         val rawRandom = if (pubkey == null) {
                             emptyList()
                         } else {
@@ -150,11 +160,19 @@ class HomeViewModel(
                                 ),
                             )
                         }
+                        if (pubkey != null && rawRandom.isNotEmpty()) {
+                            RelayQuery.fetchArchivesForUrls(pubkey, relays, rawRandom.map { it.url })
+                        }
+                        val keys = if (pubkey == null) {
+                            archivedKeys
+                        } else {
+                            ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
+                        }
                         LoadedRows(
                             rawYours,
                             rawFriends,
                             rawOthers,
-                            archivedKeys,
+                            keys,
                             rawContinue,
                             rawMost,
                             rawRandom,

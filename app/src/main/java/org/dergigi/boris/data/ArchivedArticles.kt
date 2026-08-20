@@ -12,7 +12,7 @@ object ArchivedArticles {
     fun key(ref: BookmarkRef): String = when (ref.kind) {
         BookmarkRefKind.Article -> "a:${ref.value.lowercase()}"
         BookmarkRefKind.Note -> "e:${ref.value.lowercase()}"
-        BookmarkRefKind.Url -> "r:${Archive.normalizeUrl(ref.value).lowercase()}"
+        BookmarkRefKind.Url -> Archive.urlKey(ref.value)
     }
 
     fun key(url: String): String? {
@@ -22,7 +22,7 @@ object ArchivedArticles {
             is NostrTarget.Note -> "e:${target.eventId.lowercase()}"
             is NostrTarget.Profile -> null
             null -> if (url.startsWith("http", ignoreCase = true)) {
-                "r:${Archive.normalizeUrl(url).lowercase()}"
+                Archive.urlKey(url)
             } else {
                 null
             }

@@ -71,6 +71,15 @@ class ArchiveTest {
     }
 
     @Test
+    fun webUrlWriteMatchesHomeCardIdentity() {
+        val content = ReadableContent(url = "http://www.example.com/post/?utm_source=x#top")
+        assertEquals(
+            listOf(listOf("r", "https://example.com/post")),
+            Archive.tags(content),
+        )
+    }
+
+    @Test
     fun noteWithoutAuthorCannotArchive() {
         val content = ReadableContent(url = "nostr:note1qq", eventId = eventId)
         assertNull(Archive.kind(content))
