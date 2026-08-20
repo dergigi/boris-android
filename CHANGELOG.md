@@ -11,7 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Fixed
 
-- Restored the last working reader selection, before multi-paragraph highlight gestures broke drag and handles
+- Dropped multi-paragraph highlighting and restored the last working reader selection
 
 ## [1.4.41] - 2026-08-20
 

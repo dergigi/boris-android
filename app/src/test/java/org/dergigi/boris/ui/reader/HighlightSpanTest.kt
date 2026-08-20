@@ -58,19 +58,6 @@ class HighlightSpanTest {
     }
 
     @Test
-    fun spanningQuotePaintsEachParagraph() {
-        val mine = PaintedHighlight(
-            id = "span",
-            quote = "end of first.\n\nStart of second",
-            mine = true,
-        )
-        val first = matchHighlightSpans("Words at the end of first.", listOf(mine))
-        val second = matchHighlightSpans("Start of second keeps going.", listOf(mine))
-        assertEquals(listOf(13 to 26), first.map { it.start to it.end })
-        assertEquals(listOf(0 to 15), second.map { it.start to it.end })
-    }
-
-    @Test
     fun stopsFromSpansKeepsOrderAndSkipsUnlaidRanges() {
         val item = PaintedHighlight(id = "h", quote = "x", mine = false)
         val spans = listOf(
