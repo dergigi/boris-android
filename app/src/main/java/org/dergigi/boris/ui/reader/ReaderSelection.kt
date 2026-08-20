@@ -2,9 +2,10 @@ package org.dergigi.boris.ui.reader
 
 import android.view.HapticFeedbackConstants
 import android.view.View
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,8 @@ import kotlin.math.max
 class ReaderSelectionState {
     var owner by mutableStateOf<Any?>(null)
         private set
+    var hasSelection by mutableStateOf(false)
+        private set
     var text by mutableStateOf("")
         private set
     var range by mutableStateOf(TextRange.Zero)
@@ -50,7 +53,6 @@ class ReaderSelectionState {
     private var frozenMin = 0
     private var frozenMax = 0
 
-    val hasSelection: Boolean get() = owner != null && range.min != range.max
     val toolbarReady: Boolean
         get() = hasSelection && (toolbarRect.width > 1f || toolbarRect.height > 1f)
     val selectedText: String
@@ -71,6 +73,7 @@ class ReaderSelectionState {
         frozenMin = word.min
         frozenMax = word.max
         toolbarRect = Rect.Zero
+        hasSelection = word.min != word.max
     }
 
     fun extendTo(offset: Int) {
@@ -96,6 +99,12 @@ class ReaderSelectionState {
         ttsStartIndex = ttsIndex
         frozenMin = 0
         frozenMax = value.length
+        toolbarRect = Rect.Zero
+        hasSelection = value.isNotEmpty()
+    }
+
+    fun hideToolbar() {
+        toolbarRect = Rect.Zero
     }
 
     fun clear() {
@@ -104,6 +113,7 @@ class ReaderSelectionState {
         range = TextRange.Zero
         ttsStartIndex = null
         toolbarRect = Rect.Zero
+        hasSelection = false
     }
 
     fun updateToolbar(layout: TextLayoutResult, coords: LayoutCoordinates) {
@@ -118,6 +128,11 @@ class ReaderSelectionState {
         val bottomRight = coords.localToWindow(Offset(box.right, box.bottom))
         toolbarRect = Rect(topLeft, bottomRight)
     }
+}
+
+@Composable
+fun SelectionBackHandler(state: ReaderSelectionState) {
+    BackHandler(enabled = state.hasSelection) { state.clear() }
 }
 
 fun Modifier.readerSelectable(
@@ -140,18 +155,12 @@ fun Modifier.readerSelectable(
     val onTapRef = rememberUpdatedState(onTap)
     val ttsStartIndexRef = rememberUpdatedState(ttsStartIndex)
 
-    SideEffect {
-        val laid = layout
-        val coords = coordinates
-        if (laid != null && coords != null && state.owns(owner)) {
-            state.updateToolbar(laid, coords)
-        }
-    }
-
     onGloballyPositioned { coords ->
         onCoordinates(coords)
         val current = layoutRef.value
-        if (state.owns(owner) && current != null) state.updateToolbar(current, coords)
+        if (state.owns(owner) && state.toolbarReady && current != null) {
+            state.updateToolbar(current, coords)
+        }
     }
         .drawWithContent {
             val current = layoutRef.value
@@ -213,6 +222,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         val movingMax = (down.position - endHandle).getDistance() <= handleSlop
         if (movingMin || movingMax) {
             down.consume()
+            state.hideToolbar()
             dragSelectionBound(down.id, movingMin, state, layout, coordinates, pass)
             return
         }
@@ -240,7 +250,6 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val index = JustifiedLayout.offsetAt(laid, change.position)
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
-        coordinates()?.let { state.updateToolbar(laid, it) }
         while (true) {
             val event = awaitPointerEvent(pass)
             val drag = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -248,8 +257,8 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
             drag.consume()
             val next = layout() ?: break
             state.extendTo(JustifiedLayout.offsetAt(next, drag.position))
-            coordinates()?.let { state.updateToolbar(next, it) }
         }
+        showToolbar(state, layout, coordinates)
         return
     }
 
@@ -278,8 +287,18 @@ private suspend fun AwaitPointerEventScope.dragSelectionBound(
         change.consume()
         val current = layout() ?: break
         state.moveBound(movingMin, JustifiedLayout.offsetAt(current, change.position))
-        coordinates()?.let { state.updateToolbar(current, it) }
     }
+    showToolbar(state, layout, coordinates)
+}
+
+private fun showToolbar(
+    state: ReaderSelectionState,
+    layout: () -> TextLayoutResult?,
+    coordinates: () -> LayoutCoordinates?,
+) {
+    val laid = layout() ?: return
+    val coords = coordinates() ?: return
+    state.updateToolbar(laid, coords)
 }
 
 private fun DrawScope.drawSelection(

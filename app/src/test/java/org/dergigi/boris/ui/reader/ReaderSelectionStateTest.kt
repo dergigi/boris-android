@@ -49,6 +49,21 @@ class ReaderSelectionStateTest {
     }
 
     @Test
+    fun extendAndMoveBoundLeaveToolbarHidden() {
+        val state = ReaderSelectionState()
+        val owner = Any()
+        state.begin(owner, "the quick brown fox", TextRange(4, 9))
+        assertFalse(state.toolbarReady)
+        state.extendTo(15)
+        assertEquals("quick brown", state.selectedText)
+        assertFalse(state.toolbarReady)
+        state.moveBound(movingMin = false, offset = 19)
+        assertEquals("quick brown fox", state.selectedText)
+        assertFalse(state.toolbarReady)
+        assertTrue(state.hasSelection)
+    }
+
+    @Test
     fun selectAllKeepsTheWholeParagraph() {
         val state = ReaderSelectionState()
         val owner = Any()
