@@ -12,6 +12,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -429,6 +431,34 @@ fun Modifier.readerSelectable(
     val textRef = rememberUpdatedState(text)
     val onTapRef = rememberUpdatedState(onTap)
     val ttsStartIndexRef = rememberUpdatedState(ttsStartIndex)
+    // Since Compose 1.7, pointerInput restarts whenever it is handed a new lambda
+    // instance. composed re-materializes on every recomposition, so the handler must
+    // be remembered or any recomposition mid-gesture cancels the drag.
+    val gestureHandler = remember<suspend PointerInputScope.() -> Unit>(owner, state) {
+        {
+            val touchSlop = viewConfig.touchSlop
+            val longPressTimeout = viewConfig.longPressTimeoutMillis
+            val handleSlop = 24.dp.toPx()
+            while (true) {
+                awaitPointerEventScope {
+                    handleReaderGesture(
+                        owner = owner,
+                        text = { textRef.value },
+                        state = state,
+                        layout = { layoutRef.value },
+                        coordinates = { coordsRef.value },
+                        view = view,
+                        haptic = haptic,
+                        touchSlop = touchSlop,
+                        longPressTimeout = longPressTimeout,
+                        handleSlop = handleSlop,
+                        onTap = { onTapRef.value?.invoke(it) == true },
+                        ttsStartIndex = { ttsStartIndexRef.value },
+                    )
+                }
+            }
+        }
+    }
 
     DisposableEffect(owner) {
         onDispose { state.detach(owner) }
@@ -469,29 +499,7 @@ fun Modifier.readerSelectable(
                 )
             }
         }
-        .pointerInput(owner) {
-            val touchSlop = viewConfig.touchSlop
-            val longPressTimeout = viewConfig.longPressTimeoutMillis
-            val handleSlop = 40.dp.toPx()
-            while (true) {
-                awaitPointerEventScope {
-                    handleReaderGesture(
-                        owner = owner,
-                        text = { textRef.value },
-                        state = state,
-                        layout = { layoutRef.value },
-                        coordinates = { coordsRef.value },
-                        view = view,
-                        haptic = haptic,
-                        touchSlop = touchSlop,
-                        longPressTimeout = longPressTimeout,
-                        handleSlop = handleSlop,
-                        onTap = { onTapRef.value?.invoke(it) == true },
-                        ttsStartIndex = { ttsStartIndexRef.value },
-                    )
-                }
-            }
-        }
+        .pointerInput(owner, gestureHandler)
 }
 
 private suspend fun AwaitPointerEventScope.handleReaderGesture(
@@ -518,9 +526,9 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
             val startHandle = handleCenter(currentLayout, local.min, start = true)
             val endHandle = handleCenter(currentLayout, local.max, start = false)
             val movingMin = state.hasStartHandle(owner) &&
-                nearHandle(down.position, startHandle, handleSlop)
+                (down.position - startHandle).getDistance() <= handleSlop
             val movingMax = state.hasEndHandle(owner) &&
-                nearHandle(down.position, endHandle, handleSlop)
+                (down.position - endHandle).getDistance() <= handleSlop
             if (movingMin || movingMax) {
                 down.consume()
                 state.hideToolbar()
@@ -560,36 +568,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     }
 
     val change = currentEvent.changes.firstOrNull { it.id == down.id } ?: return
-    val travel = (change.position - down.position).getDistance()
-    if (change.pressed && travel > touchSlop) {
-        val delta = change.position - down.position
-        if (state.owns(owner)) {
-            val local = state.rangeIn(owner) ?: return
-            change.consume()
-            state.hideToolbar()
-            val at = JustifiedLayout.offsetAt(currentLayout, down.position)
-            val movingMin = closerToMin(at, local)
-            state.moveBound(movingMin, owner, JustifiedLayout.offsetAt(currentLayout, change.position))
-            state.showLoupe(owner, loupeSource(currentLayout, if (movingMin) local.min else local.max))
-            dragSelectionBound(down.id, movingMin, owner, state, layout, coordinates, pass)
-            return
-        }
-        if (kotlin.math.abs(delta.x) > kotlin.math.abs(delta.y)) {
-            val laid = layout() ?: return
-            change.consume()
-            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            val start = JustifiedLayout.offsetAt(laid, down.position)
-            state.begin(owner, text(), laid.getWordBoundary(start), ttsStartIndex())
-            val hit = selectionAt(owner, change.position, state, laid, coordinates())
-            state.extendTo(hit.owner, hit.offset)
-            showHitLoupe(state, hit, owner, laid)
-            dragExtendSelection(down.id, owner, state, layout, coordinates, pass)
-            return
-        }
-        return
-    }
-    if (!change.pressed && travel <= touchSlop) {
+    if (!change.pressed && (change.position - down.position).getDistance() <= touchSlop) {
         if (state.hasSelection) {
             state.clear()
         } else if (onTap(down.position)) {
@@ -671,15 +650,6 @@ private fun showHitLoupe(
     } else {
         state.showLoupeAt(hit.owner, hit.offset)
     }
-}
-
-internal fun closerToMin(offset: Int, range: TextRange): Boolean {
-    return kotlin.math.abs(offset - range.min) <= kotlin.math.abs(offset - range.max)
-}
-
-private fun nearHandle(down: Offset, handle: Offset, slop: Float): Boolean {
-    return kotlin.math.abs(down.x - handle.x) <= slop &&
-        kotlin.math.abs(down.y - handle.y) <= slop
 }
 
 private fun showToolbar(state: ReaderSelectionState) {

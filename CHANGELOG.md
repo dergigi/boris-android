@@ -9,6 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader selection gestures no longer restart mid-drag, so extending a selection and moving the handles work again
+- Removed the accidental swipe-to-select and drag-anywhere handle behavior from 1.4.40
+
 ## [1.4.40] - 2026-08-20
 
 ### Fixed

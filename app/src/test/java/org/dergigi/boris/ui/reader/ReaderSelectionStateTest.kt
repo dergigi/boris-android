@@ -9,13 +9,6 @@ import org.junit.Test
 
 class ReaderSelectionStateTest {
     @Test
-    fun dragOnASelectedParagraphMovesTheNearerBound() {
-        assertTrue(closerToMin(2, TextRange(4, 9)))
-        assertFalse(closerToMin(12, TextRange(4, 9)))
-        assertTrue(closerToMin(6, TextRange(4, 9)))
-    }
-
-    @Test
     fun beginThenExtendKeepsTheAnchor() {
         val state = ReaderSelectionState()
         val owner = Any()
