@@ -86,6 +86,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -144,6 +146,7 @@ import com.mikepenz.markdown.model.ImageData
 import com.mikepenz.markdown.model.ImageTransformer
 import com.mikepenz.markdown.model.PlaceholderConfig
 import com.mikepenz.markdown.model.ReferenceLinkHandlerImpl
+import com.mikepenz.markdown.model.State as MarkdownParseState
 import com.mikepenz.markdown.model.markdownPadding
 import com.mikepenz.markdown.model.rememberMarkdownState
 import org.dergigi.boris.R
@@ -1417,26 +1420,36 @@ private fun ArticleBody(
         }
         true
     }
-    // The markdown parse state must survive recomposition. Fresh parser inputs would
-    // re-parse asynchronously, collapse the article to an empty box, clamp the scroll
-    // to zero, and remount every paragraph, killing the active selection.
+    // Rewrite and GFM parse are off the first Ready frame. Until the first
+    // Success, keep a spinner so fetch-complete does not flash an empty body.
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
     val noteByAuthor = stringResource(R.string.reader_note_by)
-    val markdownBody = remember(content.body, eventRefs, noteByAuthor) {
-        NostrMentions.rewrite(
-            NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
-                noteByAuthor.format(name)
-            },
-        )
+    var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
+    LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
+        markdownBody = withContext(Dispatchers.Default) {
+            NostrMentions.rewrite(
+                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
+                    noteByAuthor.format(name)
+                },
+            )
+        }
     }
     val markdownState = rememberMarkdownState(
-        content = markdownBody,
+        content = markdownBody.orEmpty(),
         flavour = flavour,
         parser = parser,
         referenceLinkHandler = referenceLinkHandler,
     )
+    val markdownRender by markdownState.state.collectAsState()
+    var markdownReady by remember(content.url) { mutableStateOf(false) }
+    val parsedSuccess = markdownRender as? MarkdownParseState.Success
+    val parsedNow = markdownBody != null && parsedSuccess?.content == markdownBody
+    SideEffect {
+        if (parsedNow) markdownReady = true
+    }
+    val showArticle = markdownReady || parsedNow
     val ttsMiniPlayerVisible = ttsSession?.url?.isNotBlank() == true
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     BackHandler(enabled = selection.hasSelection) { selection.clear() }
@@ -1566,47 +1579,58 @@ private fun ArticleBody(
                     },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
-                    Markdown(
-                        markdownState = markdownState,
-                        colors = markdownColor(
-                            text = colors.onBackground,
-                            codeBackground = colors.surfaceVariant,
-                            inlineCodeBackground = colors.surfaceVariant,
-                            dividerColor = colors.outline,
-                            tableBackground = colors.surfaceVariant.copy(alpha = 0.4f),
-                        ),
-                        typography = markdownTypography(
-                            h1 = headingFamily,
-                            h2 = typography.headlineMedium.copy(fontFamily = family),
-                            h3 = typography.headlineSmall.copy(fontFamily = family),
-                            h4 = typography.titleLarge.copy(fontFamily = family),
-                            h5 = typography.titleLarge.copy(fontFamily = family, fontSize = 18.sp),
-                            h6 = typography.titleLarge.copy(fontFamily = family, fontSize = 16.sp),
-                            text = body,
-                            paragraph = body,
-                            quote = body.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                            ordered = body,
-                            bullet = body,
-                            list = body,
-                            code = typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, textAlign = TextAlign.Left),
-                            inlineCode = body.copy(fontFamily = FontFamily.Monospace),
-                            table = typography.bodyMedium.copy(fontFamily = family, textAlign = TextAlign.Left),
-                            textLink = TextLinkStyles(
-                                style = body.copy(color = linkColor).toSpanStyle(),
+                    if (!showArticle) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 32.dp, bottom = 48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        Markdown(
+                            markdownState = markdownState,
+                            colors = markdownColor(
+                                text = colors.onBackground,
+                                codeBackground = colors.surfaceVariant,
+                                inlineCodeBackground = colors.surfaceVariant,
+                                dividerColor = colors.outline,
+                                tableBackground = colors.surfaceVariant.copy(alpha = 0.4f),
                             ),
-                        ),
-                        padding = markdownPadding(
-                            block = 12.dp,
-                            list = 8.dp,
-                            listItemTop = 4.dp,
-                            listItemBottom = 4.dp,
-                            codeBlock = PaddingValues(16.dp),
-                            blockQuote = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                        ),
-                        imageTransformer = imageTransformer,
-                        components = highlightedComponents,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                            typography = markdownTypography(
+                                h1 = headingFamily,
+                                h2 = typography.headlineMedium.copy(fontFamily = family),
+                                h3 = typography.headlineSmall.copy(fontFamily = family),
+                                h4 = typography.titleLarge.copy(fontFamily = family),
+                                h5 = typography.titleLarge.copy(fontFamily = family, fontSize = 18.sp),
+                                h6 = typography.titleLarge.copy(fontFamily = family, fontSize = 16.sp),
+                                text = body,
+                                paragraph = body,
+                                quote = body.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                                ordered = body,
+                                bullet = body,
+                                list = body,
+                                code = typography.bodyMedium.copy(fontFamily = FontFamily.Monospace, textAlign = TextAlign.Left),
+                                inlineCode = body.copy(fontFamily = FontFamily.Monospace),
+                                table = typography.bodyMedium.copy(fontFamily = family, textAlign = TextAlign.Left),
+                                textLink = TextLinkStyles(
+                                    style = body.copy(color = linkColor).toSpanStyle(),
+                                ),
+                            ),
+                            padding = markdownPadding(
+                                block = 12.dp,
+                                list = 8.dp,
+                                listItemTop = 4.dp,
+                                listItemBottom = 4.dp,
+                                codeBlock = PaddingValues(16.dp),
+                                blockQuote = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                            ),
+                            imageTransformer = imageTransformer,
+                            components = highlightedComponents,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
                 if (loggedIn) {
                     Box(
