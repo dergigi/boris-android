@@ -243,6 +243,30 @@ class ReaderRepositoryParseTest {
         assertEquals(listOf("/0", "/1", "/2", "/3", "/4", "/5"), requested)
     }
 
+    @Test
+    fun fetchResolvesRelativeHtmlForwardsFromFinalResponseUrl() {
+        val target = "https://example.com/redirected/article"
+        val page = """
+            <html><head><title>Redirect Target</title></head>
+            <body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            when (request.url.toString()) {
+                "https://example.com/short" -> stubResponse(
+                    request,
+                    200,
+                    forwardPage(meta = "article"),
+                    finalUrl = "https://example.com/redirected/page",
+                )
+                target -> stubResponse(request, 200, page)
+                else -> stubResponse(request, 404, "")
+            }
+        }
+        val content = ReaderRepository(client).fetch("https://example.com/short")
+        assertEquals(target, content.url)
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
+    }
+
     private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
         ReaderRepository(client).fetch(url)
         null
@@ -271,9 +295,14 @@ class ReaderRepositoryParseTest {
         </html>
     """.trimIndent()
 
-    private fun stubResponse(request: Request, code: Int, body: String): Response =
+    private fun stubResponse(
+        request: Request,
+        code: Int,
+        body: String,
+        finalUrl: String? = null,
+    ): Response =
         Response.Builder()
-            .request(request)
+            .request(finalUrl?.let { request.newBuilder().url(it).build() } ?: request)
             .protocol(Protocol.HTTP_1_1)
             .code(code)
             .message("stub")

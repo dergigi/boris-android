@@ -83,13 +83,15 @@ class ReaderRepository(
                 )
                 else -> {
                     val text = readCapped(response)
-                    htmlForwardTarget(origin, text)?.let { target ->
+                    val responseUrl = response.request.url.toString()
+                    htmlForwardTarget(responseUrl, text)?.let { target ->
                         if (forwards.size >= MAX_HTML_FORWARDS) {
                             return OriginResult.Unreachable("Too many redirects")
                         }
+                        val currentForwards = forwards + forwardIdentity(origin) + forwardIdentity(responseUrl)
                         val key = forwardIdentity(target)
-                        if (key in forwards) return OriginResult.Unreachable("Redirect loop")
-                        return originAttempt(target, userAgent, forwards + forwardIdentity(origin))
+                        if (key in currentForwards) return OriginResult.Unreachable("Redirect loop")
+                        return originAttempt(target, userAgent, currentForwards)
                     }
                     val content = if (text.isBlank()) null else parse(origin, text)
                     if (content?.markdown == null) {
