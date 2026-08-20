@@ -102,7 +102,13 @@ class ReaderSelectionState {
         layout: TextLayoutResult? = null,
         coordinates: LayoutCoordinates? = null,
     ) {
-        nodes[id] = SelectionNode(id, value, layout, coordinates)
+        val existing = nodes[id]
+        nodes[id] = SelectionNode(
+            id,
+            value,
+            layout ?: existing?.layout,
+            coordinates ?: existing?.coordinates,
+        )
         if (hasSelection && (id === startOwner || id === endOwner || id === owner)) {
             publishRange()
         }
@@ -273,50 +279,56 @@ class ReaderSelectionState {
             node.layout != null && node.coordinates?.isAttached == true
         }
         if (attached.isEmpty()) return null
+        var best: SelectionNode? = null
+        var bestArea = Float.MAX_VALUE
+        var bestLocal = Offset.Zero
         for (node in attached) {
             val coords = node.coordinates ?: continue
-            val layout = node.layout ?: continue
             val local = coords.windowToLocal(windowPos)
-            val bounds = Rect(0f, 0f, layout.size.width.toFloat(), layout.size.height.toFloat())
-            if (bounds.contains(local)) {
-                return SelectionAnchor(node.owner, JustifiedLayout.offsetAt(layout, local))
+            val width = coords.size.width.toFloat()
+            val height = coords.size.height.toFloat()
+            if (local.x in 0f..width && local.y in 0f..height) {
+                val area = width * height
+                if (area < bestArea) {
+                    best = node
+                    bestArea = area
+                    bestLocal = local
+                }
             }
         }
-        val first = attached.first()
-        val last = attached.last()
-        val firstTop = first.coordinates?.localToWindow(Offset.Zero)?.y ?: return null
-        val lastBottom = last.coordinates?.localToWindow(
-            Offset(0f, last.layout?.size?.height?.toFloat() ?: 0f),
-        )?.y ?: return null
-        if (windowPos.y < firstTop) return SelectionAnchor(first.owner, 0)
-        if (windowPos.y > lastBottom) return SelectionAnchor(last.owner, last.text.length)
+        val inside = best
+        val insideLayout = inside?.layout
+        if (inside != null && insideLayout != null) {
+            return SelectionAnchor(inside.owner, JustifiedLayout.offsetAt(insideLayout, bestLocal))
+        }
         var nearest: SelectionNode? = null
         var nearestDist = Float.MAX_VALUE
-        var atEnd = false
+        var nearestLocal = Offset.Zero
         for (node in attached) {
             val coords = node.coordinates ?: continue
-            val layout = node.layout ?: continue
-            val top = coords.localToWindow(Offset.Zero).y
-            val bottom = coords.localToWindow(Offset(0f, layout.size.height.toFloat())).y
-            if (windowPos.y in top..bottom) continue
-            if (windowPos.y < top) {
-                val dist = top - windowPos.y
-                if (dist < nearestDist) {
-                    nearest = node
-                    nearestDist = dist
-                    atEnd = false
-                }
-            } else {
-                val dist = windowPos.y - bottom
-                if (dist < nearestDist) {
-                    nearest = node
-                    nearestDist = dist
-                    atEnd = true
-                }
+            val local = coords.windowToLocal(windowPos)
+            val width = coords.size.width.toFloat().coerceAtLeast(1f)
+            val height = coords.size.height.toFloat().coerceAtLeast(1f)
+            val dx = when {
+                local.x < 0f -> -local.x
+                local.x > width -> local.x - width
+                else -> 0f
+            }
+            val dy = when {
+                local.y < 0f -> -local.y
+                local.y > height -> local.y - height
+                else -> 0f
+            }
+            val dist = dx * dx + dy * dy
+            if (dist < nearestDist) {
+                nearest = node
+                nearestDist = dist
+                nearestLocal = Offset(local.x.coerceIn(0f, width), local.y.coerceIn(0f, height))
             }
         }
         val node = nearest ?: return null
-        return SelectionAnchor(node.owner, if (atEnd) node.text.length else 0)
+        val layout = node.layout ?: return null
+        return SelectionAnchor(node.owner, JustifiedLayout.offsetAt(layout, nearestLocal))
     }
 
     private fun ensureNode(id: Any, value: String) {
@@ -518,7 +530,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
                 state.hideToolbar()
                 val bound = if (movingMin) local.min else local.max
                 state.showLoupe(owner, loupeSource(currentLayout, bound))
-                dragSelectionBound(down.id, movingMin, state, layout, coordinates, pass)
+                dragSelectionBound(down.id, movingMin, owner, state, layout, coordinates, pass)
                 return
             }
         }
@@ -552,18 +564,10 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
             val drag = event.changes.firstOrNull { it.id == down.id } ?: break
             if (!drag.pressed) break
             drag.consume()
-            val coords = coordinates() ?: break
-            val window = coords.localToWindow(drag.position)
-            val hit = state.hit(window)
-            if (hit != null) {
-                state.extendTo(hit.owner, hit.offset)
-                state.showLoupeAt(hit.owner, hit.offset)
-            } else {
-                val next = layout() ?: break
-                val nextOffset = JustifiedLayout.offsetAt(next, drag.position)
-                state.extendTo(nextOffset)
-                state.showLoupe(owner, loupeSource(next, nextOffset))
-            }
+            val next = layout() ?: break
+            val hit = selectionAt(owner, drag.position, state, next, coordinates())
+            state.extendTo(hit.owner, hit.offset)
+            showHitLoupe(state, hit, owner, next)
         }
         showToolbar(state)
         return
@@ -582,6 +586,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
 private suspend fun AwaitPointerEventScope.dragSelectionBound(
     pointerId: PointerId,
     movingMin: Boolean,
+    owner: Any,
     state: ReaderSelectionState,
     layout: () -> TextLayoutResult?,
     coordinates: () -> LayoutCoordinates?,
@@ -592,21 +597,44 @@ private suspend fun AwaitPointerEventScope.dragSelectionBound(
         val change = event.changes.firstOrNull { it.id == pointerId } ?: break
         if (!change.pressed) break
         change.consume()
-        val coords = coordinates()
-        if (coords != null) {
-            val hit = state.hit(coords.localToWindow(change.position))
-            if (hit != null) {
-                state.moveBound(movingMin, hit.owner, hit.offset)
-                state.showLoupeAt(hit.owner, hit.offset)
-                continue
-            }
-        }
         val current = layout() ?: break
-        val offset = JustifiedLayout.offsetAt(current, change.position)
-        state.moveBound(movingMin, offset)
-        state.showLoupe(state.owner ?: return, loupeSource(current, offset))
+        val hit = selectionAt(owner, change.position, state, current, coordinates())
+        state.moveBound(movingMin, hit.owner, hit.offset)
+        showHitLoupe(state, hit, owner, current)
     }
     showToolbar(state)
+}
+
+private fun selectionAt(
+    owner: Any,
+    localPos: Offset,
+    state: ReaderSelectionState,
+    layout: TextLayoutResult,
+    coordinates: LayoutCoordinates?,
+): SelectionAnchor {
+    val coords = coordinates
+    if (coords != null && coords.isAttached) {
+        val width = coords.size.width.toFloat()
+        val height = coords.size.height.toFloat()
+        val inside = localPos.x in 0f..width && localPos.y in 0f..height
+        if (!inside) {
+            state.hit(coords.localToWindow(localPos))?.let { return it }
+        }
+    }
+    return SelectionAnchor(owner, JustifiedLayout.offsetAt(layout, localPos))
+}
+
+private fun showHitLoupe(
+    state: ReaderSelectionState,
+    hit: SelectionAnchor,
+    fallbackOwner: Any,
+    fallbackLayout: TextLayoutResult,
+) {
+    if (hit.owner === fallbackOwner) {
+        state.showLoupe(fallbackOwner, loupeSource(fallbackLayout, hit.offset))
+    } else {
+        state.showLoupeAt(hit.owner, hit.offset)
+    }
 }
 
 private fun showToolbar(state: ReaderSelectionState) {

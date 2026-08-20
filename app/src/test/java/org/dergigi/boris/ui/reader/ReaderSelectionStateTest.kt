@@ -114,6 +114,19 @@ class ReaderSelectionStateTest {
     }
 
     @Test
+    fun reattachWithoutLayoutKeepsSameParagraphExtend() {
+        val state = ReaderSelectionState()
+        val owner = Any()
+        state.attach(owner, "the quick brown fox")
+        state.begin(owner, "the quick brown fox", TextRange(4, 9))
+        state.attach(owner, "the quick brown fox")
+        state.extendTo(15)
+        assertEquals("quick brown", state.selectedText)
+        state.moveBound(movingMin = false, offset = 19)
+        assertEquals("quick brown fox", state.selectedText)
+    }
+
+    @Test
     fun extendAcrossThreeParagraphsKeepsTheMiddle() {
         val state = ReaderSelectionState()
         val first = Any()

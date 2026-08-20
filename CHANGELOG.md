@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader selection can drag past a word and move the handles again
+
 ## [1.4.38] - 2026-08-20
 
 ### Fixed
