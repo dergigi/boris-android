@@ -64,6 +64,7 @@ data class PaintedHighlight(
     val find: Boolean = false,
     val ignoreCase: Boolean = false,
     val spoken: Boolean = false,
+    val outline: Boolean = false,
 )
 
 class ReaderViewModel(

@@ -32,6 +32,7 @@ import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
+import org.dergigi.boris.data.ReadingTimeStore
 import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.IncomingShare
 import org.dergigi.boris.data.IncomingShares
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
         RssRepository.init(File(filesDir, "rss_http_cache"))
         OfflineOutbox.init(File(filesDir, "offline_outbox.json"))
         OgPreviewCache.init(File(filesDir, "og_preview_cache.json"))
+        ReadingTimeStore.init(File(filesDir, "reading_times.json"))
         // Only seed deep links on a fresh start. Config change keeps the same
         // share/VIEW Intent; re-applying it would re-open the reader after Back.
         if (savedInstanceState == null) {

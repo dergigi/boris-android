@@ -9,6 +9,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.SettingsSync
 
@@ -363,19 +365,84 @@ object RelayQuery {
     }
 
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
-        val urls = relayUrls(readRelays)
+        val urls = relayUrls((readRelays + globalReadRelays()).distinct())
         if (urls.isNotEmpty()) {
             val filters = listOf(
                 JSONObject()
                     .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
                     .put("authors", JSONArray().put(pubkeyHex))
-                    .put("limit", 200),
+                    .put("limit", 500),
                 JSONObject()
                     .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
                     .put("authors", JSONArray().put(pubkeyHex))
-                    .put("limit", 200),
+                    .put("limit", 500),
             )
             val remote = query(urls, filters)
+                .filter { event ->
+                    Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+            EventCache.putAll(remote)
+        }
+        return cachedArchiveReactions(pubkeyHex)
+    }
+
+    fun fetchArchivesForUrls(
+        pubkeyHex: String,
+        readRelays: List<String>,
+        urls: Collection<String>,
+    ): List<Nip01Event> {
+        val rTags = LinkedHashSet<String>()
+        val eTags = LinkedHashSet<String>()
+        val aTags = LinkedHashSet<String>()
+        for (url in urls) {
+            when (val target = NostrLink.parse(url)) {
+                is NostrTarget.Article -> {
+                    aTags += target.ref.coordinate
+                    EventCache.latest(
+                        target.ref.pointer.kind,
+                        target.ref.pointer.pubkey,
+                        target.ref.pointer.identifier,
+                    )?.id?.lowercase()?.let { eTags += it }
+                }
+                is NostrTarget.Note -> eTags += target.eventId.lowercase()
+                is NostrTarget.Profile -> Unit
+                null -> if (url.startsWith("http", ignoreCase = true)) {
+                    rTags.addAll(Archive.urlQueryTags(url))
+                }
+            }
+        }
+        val filters = buildList {
+            eTags.chunked(EVENT_CHUNK).forEach { chunk ->
+                add(
+                    JSONObject()
+                        .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                        .put("authors", JSONArray().put(pubkeyHex))
+                        .put("#e", JSONArray().apply { chunk.forEach { put(it) } })
+                        .put("limit", chunk.size * 8),
+                )
+            }
+            aTags.chunked(EVENT_CHUNK).forEach { chunk ->
+                add(
+                    JSONObject()
+                        .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                        .put("authors", JSONArray().put(pubkeyHex))
+                        .put("#a", JSONArray().apply { chunk.forEach { put(it) } })
+                        .put("limit", chunk.size * 8),
+                )
+            }
+            rTags.chunked(EVENT_CHUNK).forEach { chunk ->
+                add(
+                    JSONObject()
+                        .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
+                        .put("authors", JSONArray().put(pubkeyHex))
+                        .put("#r", JSONArray().apply { chunk.forEach { put(it) } })
+                        .put("limit", chunk.size * 8),
+                )
+            }
+        }
+        val relayUrls = relayUrls((readRelays + globalReadRelays()).distinct())
+        if (filters.isNotEmpty() && relayUrls.isNotEmpty()) {
+            val remote = query(relayUrls, filters)
                 .filter { event ->
                     Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
                 }
@@ -675,27 +742,45 @@ object RelayQuery {
         content: ReadableContent,
     ): List<Nip01Event> {
         val kind = Archive.kind(content)
-        val filter = when (kind) {
+        val filters = when (kind) {
             Nip01Event.KIND_REACTION -> {
-                val eventId = content.eventId?.trim()?.takeIf { it.length == 64 } ?: return emptyList()
-                JSONObject()
-                    .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-                    .put("authors", JSONArray().put(pubkeyHex))
-                    .put("#e", JSONArray().put(eventId.lowercase()))
-                    .put("limit", 20)
+                val eventId = content.eventId?.trim()?.takeIf { it.length == 64 }
+                val address = content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() }
+                if (eventId == null && address == null) return emptyList()
+                buildList {
+                    if (eventId != null) {
+                        add(
+                            JSONObject()
+                                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                                .put("authors", JSONArray().put(pubkeyHex))
+                                .put("#e", JSONArray().put(eventId.lowercase()))
+                                .put("limit", 20),
+                        )
+                    }
+                    if (address != null) {
+                        add(
+                            JSONObject()
+                                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                                .put("authors", JSONArray().put(pubkeyHex))
+                                .put("#a", JSONArray().put(address))
+                                .put("limit", 20),
+                        )
+                    }
+                }
             }
             Nip01Event.KIND_URL_REACTION -> {
                 JSONObject()
                     .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
                     .put("authors", JSONArray().put(pubkeyHex))
-                    .put("#r", JSONArray().put(Archive.normalizeUrl(content.url)))
+                    .put("#r", JSONArray().apply { Archive.urlQueryTags(content.url).forEach { put(it) } })
                     .put("limit", 20)
+                    .let { listOf(it) }
             }
             else -> return emptyList()
         }
-        val urls = relayUrls(readRelays)
+        val urls = relayUrls((readRelays + globalReadRelays()).distinct())
         if (urls.isNotEmpty()) {
-            val remote = query(urls, listOf(filter))
+            val remote = query(urls, filters)
                 .filter { event ->
                     Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
                 }
@@ -709,13 +794,20 @@ object RelayQuery {
     private fun archiveMatches(event: Nip01Event, kind: Int, content: ReadableContent): Boolean =
         when (kind) {
             Nip01Event.KIND_REACTION -> {
-                val target = content.eventId?.trim()?.lowercase()
-                target != null &&
-                    event.tags.any { it.size >= 2 && it[0] == "e" && it[1].lowercase() == target }
+                val eventId = content.eventId?.trim()?.lowercase()
+                val address = content.articleCoordinate?.trim()
+                event.tags.any { tag ->
+                    tag.size >= 2 && (
+                        (eventId != null && tag[0] == "e" && tag[1].lowercase() == eventId) ||
+                            (address != null && tag[0] == "a" && tag[1].equals(address, ignoreCase = true))
+                        )
+                }
             }
             Nip01Event.KIND_URL_REACTION -> {
-                val target = Archive.normalizeUrl(content.url)
-                event.tags.any { it.size >= 2 && it[0] == "r" && Archive.normalizeUrl(it[1]) == target }
+                val target = ArticleUrl.normalize(content.url)
+                event.tags.any {
+                    it.size >= 2 && it[0] == "r" && ArticleUrl.normalize(it[1]) == target
+                }
             }
             else -> false
         }

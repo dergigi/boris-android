@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 
@@ -63,6 +64,7 @@ fun FindPane(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onSelect: (Int) -> Unit,
+    topPadding: Dp = 0.dp,
 ) {
     BackHandler(enabled = open, onBack = onDismiss)
     AnimatedVisibility(
@@ -83,6 +85,7 @@ fun FindPane(
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
+                    .padding(top = topPadding)
                     .animateEnterExit(
                         enter = slideInHorizontally { it },
                         exit = slideOutHorizontally { it },

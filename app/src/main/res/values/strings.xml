@@ -46,6 +46,8 @@
     <string name="home_continue_reading">Continue reading</string>
     <string name="home_most_highlighted">Most highlighted this week</string>
     <string name="home_random_articles">Random unreads</string>
+    <string name="home_short_reads">Short reads</string>
+    <string name="home_long_reads">Long reads</string>
     <string name="home_recently_highlighted">Recently highlighted</string>
     <string name="home_recently_highlighted_by_you">Recently highlighted by you</string>
     <string name="home_recently_highlighted_by_friends">Recently highlighted by friends</string>
@@ -321,6 +323,9 @@
     <string name="reader_rss_confirm_body">Add %1$s to your RSS feeds?</string>
     <string name="reader_rss_confirm_add">Add feed</string>
     <string name="reader_rss_confirm_cancel">Cancel</string>
+    <string name="reader_outline">Contents</string>
+    <string name="reader_outline_title">Contents</string>
+    <string name="reader_outline_close">Close contents</string>
     <string name="reader_find">Find in article</string>
     <string name="reader_find_title">Find</string>
     <string name="reader_find_placeholder">Search in article</string>

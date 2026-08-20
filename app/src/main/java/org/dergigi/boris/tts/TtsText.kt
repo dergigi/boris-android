@@ -1,5 +1,6 @@
 package org.dergigi.boris.tts
 
+import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.NostrMentions
@@ -85,10 +86,58 @@ object TtsText {
         return parts.drop(index).joinToString(" ")
     }
 
-    fun sentences(text: String): List<String> =
-        text.split(SENTENCE_BREAK)
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
+    fun sentences(text: String): List<String> {
+        if (text.isBlank()) return emptyList()
+        val parts = mutableListOf<String>()
+        var start = 0
+        var i = 0
+        while (i < text.length) {
+            if (isSentenceBoundary(text, i)) {
+                val piece = text.substring(start, i + 1).trim()
+                if (piece.isNotEmpty()) parts += piece
+                i++
+                while (i < text.length && text[i].isWhitespace()) i++
+                start = i
+                continue
+            }
+            i++
+        }
+        val tail = text.substring(start).trim()
+        if (tail.isNotEmpty()) parts += tail
+        return parts
+    }
+
+    fun sentenceIndexAt(text: String, offset: Int): Int {
+        if (text.isEmpty()) return 0
+        val clamped = offset.coerceIn(0, text.length)
+        var index = 0
+        var i = 0
+        while (i < text.length) {
+            if (clamped <= i) return index
+            if (isSentenceBoundary(text, i)) {
+                index++
+                i++
+                while (i < text.length && text[i].isWhitespace()) i++
+                continue
+            }
+            i++
+        }
+        return index
+    }
+
+    fun chunkStart(text: String, maxLength: Int, chunkIndex: Int): Int {
+        if (chunkIndex <= 0) return 0
+        val parts = chunks(text, maxLength)
+        if (chunkIndex >= parts.size) return text.length
+        var searchFrom = 0
+        for (i in 0 until chunkIndex) {
+            val found = text.indexOf(parts[i], searchFrom)
+            if (found < 0) return searchFrom
+            searchFrom = found + parts[i].length
+        }
+        val found = text.indexOf(parts[chunkIndex], searchFrom)
+        return if (found >= 0) found else searchFrom
+    }
 
     fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
         var index = 0
@@ -115,7 +164,7 @@ object TtsText {
             if (current.isNotBlank()) pieces += current.toString()
             current.setLength(0)
         }
-        for (sentence in text.split(SENTENCE_BREAK)) {
+        for (sentence in sentences(text)) {
             if (sentence.length > maxLength) {
                 flush()
                 splitOnSpaces(sentence, maxLength, pieces)
@@ -127,6 +176,37 @@ object TtsText {
         }
         flush()
         return pieces.ifEmpty { listOf(text.take(maxLength)) }
+    }
+
+    fun spokenDurationMs(text: String, rate: Double): Long {
+        val words = text.split(Regex("\\s+")).count { it.isNotBlank() }.coerceAtLeast(1)
+        val wpm = FOLLOW_ALONG_WPM * rate.coerceIn(0.4, 4.0)
+        return (words / wpm * 60_000.0).toLong().coerceIn(MIN_SENTENCE_MS, MAX_PARAGRAPH_MS)
+    }
+
+    fun sentenceIndexForProgress(paragraph: String, elapsedMs: Long, rate: Double): Int {
+        val total = spokenDurationMs(paragraph, rate).coerceAtLeast(1)
+        val offset = ((elapsedMs.toDouble() / total) * paragraph.length)
+            .toInt()
+            .coerceIn(0, (paragraph.length - 1).coerceAtLeast(0))
+        return sentenceIndexAt(paragraph, offset)
+    }
+
+    /**
+     * Cumulative delays (ms) at which follow-along should leave each sentence
+     * when the engine speaks a whole paragraph and never fires onRangeStart.
+     */
+    fun sentenceAdvanceAtMs(paragraph: String, rate: Double): List<Long> {
+        val parts = sentences(paragraph)
+        if (parts.size <= 1) return emptyList()
+        val wpm = FOLLOW_ALONG_WPM * rate.coerceIn(0.4, 4.0)
+        val msPerWord = 60_000.0 / wpm
+        var at = 0L
+        return parts.dropLast(1).map { sentence ->
+            val words = sentence.split(Regex("\\s+")).count { it.isNotBlank() }.coerceAtLeast(1)
+            at += (words * msPerWord).toLong().coerceIn(MIN_SENTENCE_MS, MAX_SENTENCE_MS)
+            at
+        }
     }
 
     fun speechUnits(text: String, maxLength: Int): List<String> {
@@ -212,15 +292,27 @@ object TtsText {
         return rangedBlocks
     }
 
-    private fun sentenceIndex(text: String, offset: Int): Int {
-        if (text.isEmpty()) return 0
-        val clamped = offset.coerceIn(0, text.length)
-        var index = 0
-        for (match in SENTENCE_BREAK.findAll(text)) {
-            if (clamped < match.range.last + 1) return index
-            index++
-        }
-        return index
+    private fun sentenceIndex(text: String, offset: Int): Int = sentenceIndexAt(text, offset)
+
+    private fun isSentenceBoundary(text: String, punct: Int): Boolean {
+        val mark = text[punct]
+        if (mark != '.' && mark != '!' && mark != '?' && mark != '…') return false
+        val after = punct + 1
+        if (after < text.length && !text[after].isWhitespace()) return false
+        if (mark == '!' || mark == '?' || mark == '…') return true
+        val word = wordBefore(text, punct)
+        if (word.length == 1 && word[0].isLetter()) return false
+        if (word.isNotEmpty() && word.all { it.isDigit() }) return false
+        if (word.lowercase() in ABBREVIATIONS) return false
+        return true
+    }
+
+    private fun wordBefore(text: String, punct: Int): String {
+        var end = punct
+        while (end > 0 && text[end - 1] == '.') end--
+        var start = end
+        while (start > 0 && text[start - 1].isLetterOrDigit()) start--
+        return text.substring(start, end)
     }
 
     private fun addCleaned(out: MutableList<String>, raw: String) {
@@ -238,9 +330,19 @@ object TtsText {
         text = MarkdownInline.plain(text)
         text = BARE_URL.replace(text, " ")
         text = EMPHASIS.replace(text, "")
+        text = speakSourceDomains(text)
+        text = BARE_URL.replace(text, "")
         text = WHITESPACE.replace(text, " ").trim()
         return text.takeIf { it.isNotEmpty() }
     }
+
+    private fun speakSourceDomains(text: String): String =
+        SOURCE_URL.replace(text) { match ->
+            val label = match.groupValues[1]
+            val raw = match.groupValues[2].trimEnd('.', ',', ';', ':', '!', '?', ')', ']')
+            val host = ArticleUrl.host(raw) ?: return@replace label
+            "$label $host"
+        }
 
     private fun String.matchKey(): String =
         WHITESPACE.replace(this, " ").trim().lowercase()
@@ -285,7 +387,18 @@ object TtsText {
         }
     }
 
-    private val SENTENCE_BREAK = Regex("""(?<=[.!?…])\s+""")
+    private const val FOLLOW_ALONG_WPM = 170.0
+    private const val MIN_SENTENCE_MS = 400L
+    private const val MAX_SENTENCE_MS = 12_000L
+    private const val MAX_PARAGRAPH_MS = 180_000L
+
+    private val ABBREVIATIONS = setOf(
+        "abs", "art", "aufl", "bd", "bzw", "ca", "chr", "corp", "dept", "dipl",
+        "dr", "etc", "evtl", "exkl", "fig", "hr", "inc", "inkl", "jr", "kap",
+        "ltd", "mag", "max", "mind", "mio", "mr", "mrd", "mrs", "ms", "no",
+        "nr", "pp", "prof", "resp", "sr", "st", "str", "tel", "usw", "vgl",
+        "vol", "vs",
+    )
     private val HEADING_MARK = Regex("""(?m)^#{1,6}\s+""")
     private val QUOTE_MARK = Regex("""(?m)^>\s?""")
     private val LIST_MARK = Regex("""^\s*(?:[-*+]|\d+[.)])\s+""")
@@ -294,6 +407,11 @@ object TtsText {
     private val MARKDOWN_IMAGE = Regex("""!\[[^\]\n]*]\([^)\s]+(?:\s+"[^"]*")?\)""")
     private val BARE_URL = Regex("""(?i)\b(?:https?://|www\.)[^\s<>)]+""")
     private val EMPHASIS = Regex("""[*_~`]+""")
+    private val BARE_URL = Regex("""(?:https?://|www\.)[^\s<>\[\]()]+""")
+    private val SOURCE_URL = Regex(
+        """(source:)\s*((?:https?://|www\.)[^\s<>\[\]()]+)""",
+        RegexOption.IGNORE_CASE,
+    )
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
     private val IMAGE_ONLY = Regex("""^(?:!\[[^\]]*]\([^)\s]+\)\s*)+$""")

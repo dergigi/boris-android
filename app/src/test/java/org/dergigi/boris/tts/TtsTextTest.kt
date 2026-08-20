@@ -47,6 +47,25 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsSkipBareUrlsButSpeakSourceDomain() {
+        val content = ReadableContent(
+            url = "https://example.com/c",
+            markdown = """
+                See https://www.example.com/long/path?q=1 for details.
+
+                Source: https://www.bbc.co.uk/news/world-123
+            """.trimIndent(),
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf("See for details.", "Source: bbc.co.uk"),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("https://") })
+        assertFalse(paragraphs.any { it.contains("www.") })
+    }
+
+    @Test
     fun paragraphsFlattenLinksToLabels() {
         val content = ReadableContent(
             url = "https://example.com/c",
@@ -261,6 +280,65 @@ class TtsTextTest {
         val noSpaces = "a".repeat(120)
         assertTrue(TtsText.chunks(noSpaces, 50).all { it.length <= 50 })
         assertEquals(listOf("short"), TtsText.chunks("short", 50))
+    }
+
+    @Test
+    fun sentencesKeepGermanAbbreviationsAndOrdinalsTogether() {
+        assertEquals(
+            listOf(
+                "Am 1. Januar sprach Dr. Müller z. B. über Art. 5 GG.",
+                "Dann ging er.",
+            ),
+            TtsText.sentences(
+                "Am 1. Januar sprach Dr. Müller z. B. über Art. 5 GG. Dann ging er.",
+            ),
+        )
+        assertEquals(
+            listOf("Nr. 12 bzw. 13 usw. stehen bereit.", "Weiter gehts."),
+            TtsText.sentences("Nr. 12 bzw. 13 usw. stehen bereit. Weiter gehts."),
+        )
+    }
+
+    @Test
+    fun sentencesStillSplitEnglishAndQuestions() {
+        assertEquals(
+            listOf("Mr. Smith went home.", "Did he sleep?"),
+            TtsText.sentences("Mr. Smith went home. Did he sleep?"),
+        )
+        assertEquals(
+            1,
+            TtsText.sentenceIndexAt("First sentence. Second one.", "First sentence. ".length),
+        )
+    }
+
+    @Test
+    fun sentenceAdvanceAtMsLeavesADelayPerEarlierSentence() {
+        val delays = TtsText.sentenceAdvanceAtMs(
+            "One two three four. Next sentence is shorter.",
+            rate = 1.0,
+        )
+        assertEquals(1, delays.size)
+        assertTrue(delays.single() >= 400L)
+        val faster = TtsText.sentenceAdvanceAtMs(
+            "One two three four. Next sentence is shorter.",
+            rate = 2.0,
+        )
+        assertTrue(faster.single() < delays.single())
+        assertTrue(TtsText.sentenceAdvanceAtMs("Only one sentence.", 1.0).isEmpty())
+    }
+
+    @Test
+    fun sentenceIndexForProgressMovesThroughTheParagraph() {
+        val paragraph = "One two three four five. Next sentence is here now."
+        assertEquals(0, TtsText.sentenceIndexForProgress(paragraph, 0, 1.0))
+        val later = TtsText.sentenceIndexForProgress(
+            paragraph,
+            TtsText.spokenDurationMs(paragraph, 1.0),
+            1.0,
+        )
+        assertEquals(1, later)
+        val long = List(80) { "word" }.joinToString(" ")
+        assertTrue(TtsText.spokenDurationMs(long, 2.0) < TtsText.spokenDurationMs(long, 1.0))
     }
 
     @Test

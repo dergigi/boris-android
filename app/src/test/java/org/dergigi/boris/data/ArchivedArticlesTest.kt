@@ -30,6 +30,20 @@ class ArchivedArticlesTest {
     }
 
     @Test
+    fun matchesHomeCardUrlWhenArchiveKeptWwwAndQuery() {
+        val keys = ArchivedArticles.keys(
+            listOf(
+                reaction(
+                    Nip01Event.KIND_URL_REACTION,
+                    listOf(listOf("r", "http://www.example.com/read/?utm_source=x#top")),
+                ),
+            ),
+        )
+        assertTrue(ArchivedArticles.isArchived("https://example.com/read", keys))
+        assertTrue(ArchivedArticles.isArchived("https://www.example.com/read?utm_source=x", keys))
+    }
+
+    @Test
     fun visibleDropsArchivedOnlyWhenAsked() {
         val kept = HighlightedArticle("https://example.com/new", "example.com", "New", null, 2)
         val archived = HighlightedArticle("https://example.com/read", "example.com", "Read", null, 1)

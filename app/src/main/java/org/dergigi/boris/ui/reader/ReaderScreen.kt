@@ -44,6 +44,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
@@ -171,6 +172,7 @@ import org.dergigi.boris.data.NoteCover
 import org.dergigi.boris.data.ResolvedEventRef
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReadingTime
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.SettingsSync
@@ -199,8 +201,6 @@ import org.dergigi.boris.ui.theme.HighlightOther
 import coil3.compose.AsyncImage
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
-import kotlin.math.max
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -631,6 +631,17 @@ fun ReaderScreenContent(
     }
 
     var findOpen by remember { mutableStateOf(false) }
+    var outlineOpen by remember { mutableStateOf(false) }
+    val readyBody = (state as? ReaderUiState.Ready)?.content?.body
+    var outlineItems by remember(readyBody) {
+        mutableStateOf(readyBody?.let { ArticleOutline.parse(it) }.orEmpty())
+    }
+    LaunchedEffect(findOpen) {
+        if (findOpen) outlineOpen = false
+    }
+    LaunchedEffect(articleUrl) {
+        outlineOpen = false
+    }
     var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
     rssConfirmFeed?.let { feedUrl ->
         AlertDialog(
@@ -686,8 +697,23 @@ fun ReaderScreenContent(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Row {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                        if (outlineItems.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    findOpen = false
+                                    outlineOpen = true
+                                },
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.FormatListBulleted,
+                                    contentDescription = stringResource(R.string.reader_outline),
+                                )
+                            }
+                        }
                     }
                 },
                 actions = {
@@ -995,6 +1021,10 @@ fun ReaderScreenContent(
                     volumeScroll = gallery == null,
                     findOpen = findOpen,
                     onFindOpenChange = { findOpen = it },
+                    outlineOpen = outlineOpen,
+                    onOutlineOpenChange = { outlineOpen = it },
+                    outlineItems = outlineItems,
+                    onOutlineItems = { outlineItems = it },
                     onOpenArticle = onOpenArticle,
                     onOpenProfile = onOpenProfile,
                     onAddRssFeed = { feed -> rssConfirmFeed = feed },
@@ -1054,6 +1084,10 @@ private fun ArticleBody(
     onDeleteHighlight: (String) -> Unit = {},
     findOpen: Boolean,
     onFindOpenChange: (Boolean) -> Unit,
+    outlineOpen: Boolean,
+    onOutlineOpenChange: (Boolean) -> Unit,
+    outlineItems: List<ArticleOutlineItem>,
+    onOutlineItems: (List<ArticleOutlineItem>) -> Unit,
     scrollState: ScrollState,
     topScrollInsetPx: Int = 0,
     volumeScroll: Boolean = true,
@@ -1209,7 +1243,20 @@ private fun ArticleBody(
         mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
     }
     LaunchedEffect(findOpen) {
-        if (findOpen) paneOpen = false
+        if (findOpen) {
+            paneOpen = false
+            onOutlineOpenChange(false)
+        }
+    }
+    LaunchedEffect(outlineOpen) {
+        if (outlineOpen) {
+            paneOpen = false
+            if (findOpen) {
+                findQuery = ""
+                findIndex = 0
+                onFindOpenChange(false)
+            }
+        }
     }
     LaunchedEffect(findJump, findQuery, painted) {
         if (findQuery.isBlank()) return@LaunchedEffect
@@ -1224,7 +1271,10 @@ private fun ArticleBody(
     }
     LaunchedEffect(pendingJumpId, painted, highlightsLoaded) {
         val id = pendingJumpId ?: return@LaunchedEffect
-        if (painted.none { it.id.equals(id, ignoreCase = true) } && !highlightsLoaded) {
+        if (!ArticleOutline.isId(id) &&
+            painted.none { it.id.equals(id, ignoreCase = true) } &&
+            !highlightsLoaded
+        ) {
             return@LaunchedEffect
         }
         val stop = HighlightJump.awaitStop(navigator, id) {
@@ -1322,6 +1372,7 @@ private fun ArticleBody(
         defaultUriHandler,
         eventRefs,
         onOpenArticle,
+        outlineItems,
     ) {
         markdownComponents(
             text = {
@@ -1414,6 +1465,7 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
             heading2 = {
@@ -1430,6 +1482,7 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
             heading3 = {
@@ -1446,6 +1499,7 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
             heading4 = {
@@ -1462,6 +1516,7 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
             heading5 = {
@@ -1478,6 +1533,7 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
             heading6 = {
@@ -1494,13 +1550,14 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
                 )
             },
         )
     }
     val ttsSpeaking by remember {
-        TtsPlayback.session.map { it?.playing == true }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.playing == true)
+        TtsPlayback.session.map { it?.playing == true && it.started == true }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(false)
     VolumeKeys.Handle(enabled = volumeScroll && !ttsSpeaking && settings.volumeButtonScroll) { up ->
         val page = VolumeKeys.pageSize(viewportHeight, settings.volumeButtonScrollPercent)
         val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
@@ -1525,6 +1582,10 @@ private fun ArticleBody(
             )
         }
     }
+    LaunchedEffect(markdownBody) {
+        val body = markdownBody ?: return@LaunchedEffect
+        onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
+    }
     val markdownState = rememberMarkdownState(
         content = markdownBody.orEmpty(),
         flavour = flavour,
@@ -1541,7 +1602,7 @@ private fun ArticleBody(
     val showArticle = markdownReady || parsedNow
     val ttsMiniPlayerVisible by remember {
         TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.url?.isNotBlank() == true)
+    }.collectAsStateWithLifecycle(false)
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     SelectionBackHandler(selection)
 
@@ -1805,6 +1866,7 @@ private fun ArticleBody(
             hits = findHits,
             activeIndex = findIndex,
             matchCount = findHits.size,
+            topPadding = with(density) { topScrollInsetPx.toDp() },
             onQueryChange = { next ->
                 findQuery = next
                 findIndex = 0
@@ -1820,6 +1882,28 @@ private fun ArticleBody(
             onSelect = { index ->
                 goFind(index)
                 onFindOpenChange(false)
+            },
+        )
+        val activeOutlineId = remember(outlineItems, scrollState.value, navigator.stops, scrollViewport) {
+            val viewport = scrollViewport
+            val pad = with(density) { 48.dp.toPx() }
+            ArticleOutline.activeId(outlineItems, { id ->
+                val stop = navigator.firstStop(id) ?: return@activeId null
+                val coords = navigator.coordinates(stop.owner) ?: return@activeId null
+                if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
+                viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+            }, pad)
+        }
+        OutlinePane(
+            open = outlineOpen,
+            items = outlineItems,
+            activeId = activeOutlineId,
+            topPadding = with(density) { topScrollInsetPx.toDp() },
+            onDismiss = { onOutlineOpenChange(false) },
+            onSelect = { item ->
+                pendingJumpId = item.id
+                selectedId = item.id
+                onOutlineOpenChange(false)
             },
         )
     }
@@ -1917,6 +2001,7 @@ private fun TtsSpokenSync(
             followAlongScrolling = true
             try {
                 scrollState.animateScrollTo(target)
+                snapshotFlow { scrollState.isScrollInProgress }.first { !it }
             } finally {
                 followAlongScrolling = false
             }
@@ -2010,6 +2095,7 @@ private fun HighlightedMarkdownNode(
     onHighlightTap: (HighlightStop) -> Unit,
     spoken: SpokenMarkState,
     ttsStartIndex: Int?,
+    outlineId: String? = null,
 ) {
     val annotator = annotatorSettings()
     val styledText = remember(model.node, style) {
@@ -2023,7 +2109,13 @@ private fun HighlightedMarkdownNode(
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
-    val spans = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val marks = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val spans = remember(marks, outlineId, styledText.text) {
+        val extra = outlineId?.let { ArticleOutline.painted(it, styledText.text) }?.let { item ->
+            HighlightSpan(item, 0, styledText.text.length)
+        }
+        if (extra == null) marks else marks + extra
+    }
     MarkdownText(
         content = styledText,
         style = style,
@@ -2122,12 +2214,7 @@ private fun readingColor(hex: String, fallback: Color): Color {
     return Color(argb)
 }
 
-internal fun readingTimeLabel(text: String): String? {
-    val words = text.split(Regex("\\s+")).count { it.isNotBlank() }
-    if (words == 0) return null
-    val minutes = max(1, (words / 200.0).roundToInt())
-    return if (minutes == 1) "1 min read" else "$minutes min read"
-}
+internal fun readingTimeLabel(text: String): String? = ReadingTime.labelFor(text)
 
 internal fun highlightCountLabel(count: Int): String? {
     if (count <= 0) return null

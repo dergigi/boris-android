@@ -177,6 +177,7 @@ class HighlightNavigator {
     fun hit(owner: Any, layout: TextLayoutResult, position: Offset): HighlightStop? {
         val node = nodes[owner] ?: return null
         return node.stops.firstOrNull { stop ->
+            if (ArticleOutline.isId(stop.highlightId)) return@firstOrNull false
             HighlightMarks.highlightRects(layout, stop.start, stop.end).any { it.inflate(8f).contains(position) }
         }
     }

@@ -1,5 +1,6 @@
 package org.dergigi.boris.nostr
 
+import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.ReadableContent
 import java.net.URL
@@ -44,6 +45,15 @@ object Archive {
         }
     }
 
+    /** Same identity Home cards use, so www / utm / http variants still match. */
+    fun urlKey(url: String): String = "r:${ArticleUrl.normalize(url).lowercase()}"
+
+    fun urlQueryTags(url: String): List<String> =
+        listOf(ArticleUrl.normalize(url), normalizeUrl(url))
+            .map { it.trim() }
+            .filter { it.startsWith("http", ignoreCase = true) }
+            .distinct()
+
     fun tags(content: ReadableContent): List<List<String>>? {
         val eventId = content.eventId?.trim()?.takeIf { it.length == 64 }
         val author = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
@@ -61,7 +71,7 @@ object Archive {
             }
         }
         if (content.url.startsWith("http", ignoreCase = true)) {
-            return listOf(listOf("r", normalizeUrl(content.url)))
+            return listOf(listOf("r", ArticleUrl.normalize(content.url)))
         }
         return null
     }

@@ -20,6 +20,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.BookmarkCatalog
+import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
@@ -30,7 +31,10 @@ import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.RandomArticles
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReadingTimes
 import org.dergigi.boris.data.SecretBox
+import org.dergigi.boris.data.TimedReadKind
+import org.dergigi.boris.data.TimedReads
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.Archive
@@ -60,6 +64,8 @@ sealed interface HomeHighlightsState {
         val archivedKeys: Set<String> = emptySet(),
         val continueReading: List<HighlightedArticle> = emptyList(),
         val mostHighlighted: List<HighlightedArticle> = emptyList(),
+        val shortReads: List<HighlightedArticle> = emptyList(),
+        val longReads: List<HighlightedArticle> = emptyList(),
         val randomArticles: List<HighlightedArticle> = emptyList(),
     ) : HomeHighlightsState
 }
@@ -138,25 +144,44 @@ class HomeViewModel(
                                 ARTICLE_LIMIT,
                             ),
                         )
-                        val archivedKeys = archiveDeferred.await()
-                        val rawRandom = if (pubkey == null) {
+                        archiveDeferred.await()
+                        val feedUrls = (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
+                            .map { it.url }
+                        if (pubkey != null) {
+                            RelayQuery.fetchArchivesForUrls(pubkey, relays, feedUrls)
+                        }
+                        val archivedKeys = if (pubkey == null) {
+                            emptySet()
+                        } else {
+                            ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
+                        }
+                        val library = if (pubkey == null) {
                             emptyList()
                         } else {
-                            HighlightedArticles.hydrate(
-                                RandomArticles.articles(
-                                    libraryItems(pubkey, relays),
-                                    archivedKeys,
-                                    ARTICLE_LIMIT,
-                                ),
-                            )
+                            libraryItems(pubkey, relays)
+                        }
+                        val libraryRows = libraryHighlights(library, archivedKeys, fetchUnknownWeb = true)
+                        val rawShort = HighlightedArticles.hydrate(libraryRows.shortReads)
+                        val rawLong = HighlightedArticles.hydrate(libraryRows.longReads)
+                        val rawRandom = HighlightedArticles.hydrate(libraryRows.randomArticles)
+                        val libraryUrls = (rawShort + rawLong + rawRandom).map { it.url }
+                        if (pubkey != null && libraryUrls.isNotEmpty()) {
+                            RelayQuery.fetchArchivesForUrls(pubkey, relays, libraryUrls)
+                        }
+                        val keys = if (pubkey == null) {
+                            archivedKeys
+                        } else {
+                            ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
                         }
                         LoadedRows(
                             rawYours,
                             rawFriends,
                             rawOthers,
-                            archivedKeys,
+                            keys,
                             rawContinue,
                             rawMost,
+                            rawShort,
+                            rawLong,
                             rawRandom,
                         )
                     }
@@ -288,21 +313,24 @@ class HomeViewModel(
         } else {
             ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
         }
-        val randomArticles = if (pubkey == null) {
-            emptyList()
+        val libraryRows = if (pubkey == null) {
+            LibraryHighlights()
         } else {
-            RandomArticles.articles(
-                cachedLibraryItems(pubkey),
-                archivedKeys,
-                ARTICLE_LIMIT,
-            )
+            libraryHighlights(cachedLibraryItems(pubkey), archivedKeys, fetchUnknownWeb = false)
         }
+        val shortReads = libraryRows.shortReads
+        val longReads = libraryRows.longReads
+        val randomArticles = libraryRows.randomArticles
         if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-            continueReading.isEmpty() && mostHighlighted.isEmpty() && randomArticles.isEmpty()
+            continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+            shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
         ) {
             return null
         }
-        val previews = (yours + friends + others + continueReading + mostHighlighted + randomArticles)
+        val previews = (
+            yours + friends + others + continueReading + mostHighlighted +
+                shortReads + longReads + randomArticles
+            )
             .map { it.url }
             .distinct()
             .associateWith { ArticlePreview.get(it) }
@@ -314,6 +342,8 @@ class HomeViewModel(
             archivedKeys = archivedKeys,
             continueReading = applyPreviews(continueReading, previews),
             mostHighlighted = applyPreviews(mostHighlighted, previews),
+            shortReads = applyPreviews(shortReads, previews),
+            longReads = applyPreviews(longReads, previews),
             randomArticles = applyPreviews(randomArticles, previews),
         )
     }
@@ -337,6 +367,31 @@ class HomeViewModel(
         val events = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
             .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys) }
         return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
+    }
+
+    private fun libraryHighlights(
+        items: List<BookmarkItem>,
+        archivedKeys: Set<String>,
+        fetchUnknownWeb: Boolean,
+    ): LibraryHighlights {
+        val minutes = ReadingTimes.minutes(items, archivedKeys, fetchUnknownWeb)
+        return LibraryHighlights(
+            shortReads = TimedReads.articles(
+                items,
+                archivedKeys,
+                TimedReadKind.Short,
+                minutes,
+                ARTICLE_LIMIT,
+            ),
+            longReads = TimedReads.articles(
+                items,
+                archivedKeys,
+                TimedReadKind.Long,
+                minutes,
+                ARTICLE_LIMIT,
+            ),
+            randomArticles = RandomArticles.articles(items, archivedKeys, ARTICLE_LIMIT),
+        )
     }
 
     /** Public + web library shelves (private stays locked until Library unlocks it). */
@@ -461,6 +516,12 @@ class HomeViewModel(
         }
     }
 
+    private data class LibraryHighlights(
+        val shortReads: List<HighlightedArticle> = emptyList(),
+        val longReads: List<HighlightedArticle> = emptyList(),
+        val randomArticles: List<HighlightedArticle> = emptyList(),
+    )
+
     private data class LoadedRows(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
@@ -468,14 +529,20 @@ class HomeViewModel(
         val archivedKeys: Set<String>,
         val continueReading: List<HighlightedArticle>,
         val mostHighlighted: List<HighlightedArticle>,
+        val shortReads: List<HighlightedArticle>,
+        val longReads: List<HighlightedArticle>,
         val randomArticles: List<HighlightedArticle>,
     ) {
         fun isEmpty(): Boolean =
             yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-                continueReading.isEmpty() && mostHighlighted.isEmpty() && randomArticles.isEmpty()
+                continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+                shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
 
         fun urls(): List<String> =
-            (yours + friends + others + continueReading + mostHighlighted + randomArticles)
+            (
+                yours + friends + others + continueReading + mostHighlighted +
+                    shortReads + longReads + randomArticles
+                )
                 .map { it.url }
                 .distinct()
     }
@@ -496,6 +563,8 @@ class HomeViewModel(
         archivedKeys = archivedKeys,
         continueReading = applyPreviews(continueReading, previews),
         mostHighlighted = applyPreviews(mostHighlighted, previews),
+        shortReads = applyPreviews(shortReads, previews),
+        longReads = applyPreviews(longReads, previews),
         randomArticles = applyPreviews(randomArticles, previews),
     )
 

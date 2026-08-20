@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.reader
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.TextRange
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -71,5 +72,26 @@ class ReaderSelectionStateTest {
         state.selectAll(owner, "hello world")
         assertEquals("hello world", state.selectedText)
         assertTrue(state.hasSelection)
+    }
+
+    @Test
+    fun loupeClearsWithSelection() {
+        val state = ReaderSelectionState()
+        state.begin(Any(), "hello world", TextRange(0, 5))
+        state.showLoupe(Offset(12f, 8f))
+        assertEquals(Offset(12f, 8f), state.loupeCenter)
+        state.clear()
+        assertEquals(Offset.Unspecified, state.loupeCenter)
+        assertFalse(state.hasSelection)
+    }
+
+    @Test
+    fun hideLoupeKeepsTheSelection() {
+        val state = ReaderSelectionState()
+        state.begin(Any(), "hello world", TextRange(0, 5))
+        state.showLoupe(Offset(4f, 2f))
+        state.hideLoupe()
+        assertEquals(Offset.Unspecified, state.loupeCenter)
+        assertEquals("hello", state.selectedText)
     }
 }
