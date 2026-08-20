@@ -76,6 +76,79 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsDropBareUrlsAndAutolinks() {
+        val content = ReadableContent(
+            url = "https://example.com/urls",
+            markdown = """
+                Read this https://example.com/docs and <https://example.com/extra> today.
+
+                https://example.com/only
+
+                https://en.wikipedia.org/wiki/Function_(mathematics)
+
+                Keep punctuation after https://example.com/trailing.
+
+                Keep parenthetical link (see https://example.com/paren).
+            """.trimIndent(),
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf(
+                "Read this and today.",
+                "Keep punctuation after.",
+                "Keep parenthetical link (see).",
+            ),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
+    fun paragraphsDropInlineImages() {
+        val content = ReadableContent(
+            url = "https://example.com/images",
+            markdown = "Intro ![chart of adoption](https://example.com/chart.png) continues.",
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(listOf("Intro continues."), paragraphs)
+        assertFalse(paragraphs.any { it.contains("chart of adoption") })
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
+    fun paragraphsDropMarkdownImageForms() {
+        val content = ReadableContent(
+            url = "https://example.com/image-forms",
+            markdown = """
+                A ![nested](https://example.com/image(foo).png) B.
+
+                C ![angle](<https://example.com/image two.png> "caption") D.
+
+                E ![single](https://example.com/one.png 'caption') F.
+
+                G ![paren](https://example.com/one.png (caption)) H.
+
+                I ![referenced][img] J.
+
+                K ![collapsed][] L.
+
+                M ![shortcut] N.
+
+                [img]: https://example.com/img.png
+                [collapsed]: https://example.com/collapsed.png
+                [shortcut]: https://example.com/shortcut.png
+            """.trimIndent(),
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf("A B.", "C D.", "E F.", "G H.", "I J.", "K L.", "M N."),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("nested") })
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
     fun paragraphsSpeakAtNameForRawNpubMention() {
         val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
         val label = "@" + org.dergigi.boris.nostr.Profile.displayName(
@@ -285,6 +358,26 @@ class TtsTextTest {
         assertEquals(
             1,
             TtsText.sentenceIndexAt("First sentence. Second one.", "First sentence. ".length),
+        )
+    }
+
+    @Test
+    fun sentencesKeepClosingDelimitersWithPreviousSentence() {
+        assertEquals(
+            listOf("He said \"Done.\"", "Next one."),
+            TtsText.sentences("He said \"Done.\" Next one."),
+        )
+        assertEquals(
+            listOf("(See below.)", "Next one."),
+            TtsText.sentences("(See below.) Next one."),
+        )
+        assertEquals(
+            0,
+            TtsText.sentenceIndexAt("He said \"Done.\" Next one.", "He said \"Done.".length),
+        )
+        assertEquals(
+            1,
+            TtsText.sentenceIndexAt("He said \"Done.\" Next one.", "He said \"Done.\" ".length),
         )
     }
 
