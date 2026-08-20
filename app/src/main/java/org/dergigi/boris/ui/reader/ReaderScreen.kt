@@ -42,12 +42,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
@@ -728,7 +728,7 @@ fun ReaderScreenContent(
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.reader_open_original)) },
                                     leadingIcon = {
-                                        Icon(Icons.Filled.OpenInBrowser, contentDescription = null)
+                                        Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null)
                                     },
                                     onClick = {
                                         menuOpen = false
@@ -891,6 +891,12 @@ fun ReaderScreenContent(
                             onClick = ::openOriginal,
                             modifier = Modifier.padding(top = 8.dp),
                         ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.reader_open_original))
                         }
                     }
