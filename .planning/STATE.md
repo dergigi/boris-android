@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
-status: research_complete
-stopped_at: Phase 6 research complete
-last_updated: "2026-08-20T06:25:00.000Z"
+status: ui_spec_approved
+stopped_at: Phase 6 UI-SPEC approved — spawning planner
+last_updated: "2026-08-20T06:29:00.000Z"
 last_activity: 2026-08-20
-last_activity_desc: Phase 6 RESEARCH.md written (on-device extract, no Jina)
+last_activity_desc: Phase 6 UI-SPEC approved; PATTERNS.md ready; planning next
 progress:
   total_phases: 6
   completed_phases: 5
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 6 On-device article extraction — research complete, ready to plan
+**Current focus:** Phase 6 On-device article extraction — UI-SPEC approved, planning next
 
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
 Plan: 0 of 0
-Status: Research complete — ready for `/gsd-plan-phase 6`
-Last activity: 2026-08-20 — Phase 6 RESEARCH.md (jsoup + in-repo extract, delete r.jina.ai)
+Status: UI-SPEC approved — planning in progress
+Last activity: 2026-08-20 — Phase 6 UI-SPEC + PATTERNS.md; planner next
 
 Progress: [████████░░] 83%
 
@@ -128,5 +128,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-20T06:13:39.768Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-on-device-article-extraction/06-CONTEXT.md
+Stopped at: Phase 6 UI-SPEC approved
+Resume file: .planning/phases/06-on-device-article-extraction/06-UI-SPEC.md
