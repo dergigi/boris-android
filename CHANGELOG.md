@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader body shows article headings again (ATX and setext)
+
 ## [1.4.37] - 2026-08-20
 
 ### Added
