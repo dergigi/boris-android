@@ -7,6 +7,7 @@ import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
+import kotlin.math.abs
 
 data class ArticleOutlineItem(
     val id: String,
@@ -28,6 +29,16 @@ object ArticleOutline {
 
     fun idAt(items: List<ArticleOutlineItem>, startOffset: Int): String? =
         items.firstOrNull { it.startOffset == startOffset }?.id
+
+    fun idForHeading(items: List<ArticleOutlineItem>, startOffset: Int, title: String): String? {
+        idAt(items, startOffset)?.let { return it }
+        val cleaned = cleanTitle(title)
+        if (cleaned.isBlank()) return null
+        return items
+            .filter { it.title.equals(cleaned, ignoreCase = true) }
+            .minByOrNull { abs(it.startOffset - startOffset) }
+            ?.id
+    }
 
     fun isId(id: String): Boolean = id.startsWith(ID_PREFIX)
 

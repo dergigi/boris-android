@@ -1465,7 +1465,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading2 = {
@@ -1482,7 +1483,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading3 = {
@@ -1499,7 +1501,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading4 = {
@@ -1516,7 +1519,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading5 = {
@@ -1533,7 +1537,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
             heading6 = {
@@ -1550,7 +1555,8 @@ private fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
-                    ArticleOutline.idAt(outlineItems, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
                 )
             },
         )
@@ -1837,6 +1843,7 @@ private fun ArticleBody(
                 content.title?.takeIf { it.isNotBlank() },
                 content.body,
             ),
+            topPadding = with(density) { topScrollInsetPx.toDp() },
             menuFor = { item ->
                 HighlightCardMenu(
                     highlightId = item.id,
@@ -1884,15 +1891,24 @@ private fun ArticleBody(
                 onFindOpenChange(false)
             },
         )
-        val activeOutlineId = remember(outlineItems, scrollState.value, navigator.stops, scrollViewport) {
-            val viewport = scrollViewport
-            val pad = with(density) { 48.dp.toPx() }
-            ArticleOutline.activeId(outlineItems, { id ->
-                val stop = navigator.firstStop(id) ?: return@activeId null
-                val coords = navigator.coordinates(stop.owner) ?: return@activeId null
-                if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
-                viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-            }, pad)
+        var activeOutlineId by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(outlineOpen, outlineItems, topScrollInsetPx) {
+            if (!outlineOpen) {
+                activeOutlineId = null
+                return@LaunchedEffect
+            }
+            snapshotFlow {
+                scrollState.value
+                navigator.stops
+                val viewport = scrollViewport
+                val pad = topScrollInsetPx + with(density) { 48.dp.toPx() }
+                ArticleOutline.activeId(outlineItems, { id ->
+                    val stop = navigator.firstStop(id) ?: return@activeId null
+                    val coords = navigator.coordinates(stop.owner) ?: return@activeId null
+                    if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
+                    viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+                }, pad)
+            }.distinctUntilChanged().collect { activeOutlineId = it }
         }
         OutlinePane(
             open = outlineOpen,
@@ -2095,7 +2111,8 @@ private fun HighlightedMarkdownNode(
     onHighlightTap: (HighlightStop) -> Unit,
     spoken: SpokenMarkState,
     ttsStartIndex: Int?,
-    outlineId: String? = null,
+    outlineItems: List<ArticleOutlineItem> = emptyList(),
+    outlineStartOffset: Int? = null,
 ) {
     val annotator = annotatorSettings()
     val styledText = remember(model.node, style) {
@@ -2110,6 +2127,9 @@ private fun HighlightedMarkdownNode(
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
     val marks = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val outlineId = remember(outlineItems, outlineStartOffset, styledText.text) {
+        outlineStartOffset?.let { ArticleOutline.idForHeading(outlineItems, it, styledText.text) }
+    }
     val spans = remember(marks, outlineId, styledText.text) {
         val extra = outlineId?.let { ArticleOutline.painted(it, styledText.text) }?.let { item ->
             HighlightSpan(item, 0, styledText.text.length)

@@ -27,6 +27,20 @@ class ArticleOutlineTest {
         assertEquals(listOf("outline:0", "outline:1", "outline:2"), items.map { it.id })
         assertEquals("outline:0", ArticleOutline.idAt(items, items[0].startOffset))
         assertNull(ArticleOutline.idAt(items, 999))
+        assertEquals("outline:1", ArticleOutline.idForHeading(items, items[1].startOffset, "Two"))
+    }
+
+    @Test
+    fun matchesRenderedHeadingWhenOffsetsDiffer() {
+        val items = ArticleOutline.parse(
+            """
+            # One
+            intro
+            ## Two
+            """.trimIndent(),
+        )
+        val renderedOffset = items[0].startOffset + 1
+        assertEquals("outline:1", ArticleOutline.idForHeading(items, renderedOffset, "Two"))
     }
 
     @Test
