@@ -45,6 +45,14 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 
 ## Known Bugs
 
+**Reader scroll jank from composing on `scrollState.value`:**
+- Status: Recurring. Fixed in 1.4.21, then again in 1.4.35 after the contents outline (#63 / #64). Do not reintroduce.
+- Symptoms: Finger-scrolling the article feels laggy or stutters after a reader feature that needs scroll position (outline current heading, find, follow-along, reading progress).
+- Files: `app/src/main/java/org/dergigi/boris/ui/reader/ReaderScreen.kt` (`ArticleBody`)
+- Trigger: Any new reader UI that reads `scrollState.value` during composition of `ArticleBody` / `ReaderScreenContent`, or puts it in a `remember(...)` key there.
+- Root cause: `ScrollState.value` is snapshot state. Reading it in a large composable (or keying `remember` on it) recomposes the whole article, including Markdown, on every scroll tick.
+- Rule: Observe scroll off the article tree. Use `snapshotFlow { scrollState.value }` in a `LaunchedEffect` (contents outline active heading does this only while the pane is open). A tiny leaf may read `scrollState.value` (`ArticleScrollProgress`). Never do it in `ArticleBody`.
+
 **Share or VIEW URL re-opens after Back, then rotate:**
 - Status: Fixed — deep-link intents are applied only on a fresh Activity start, then marked consumed after navigation (or bunker field fill) so config change cannot replay them.
 - Symptoms (historical): User opens a shared link, presses Back to Home, rotates the device, and the reader opens again.
@@ -160,6 +168,13 @@ The leftover `com/readwithboris` tree is **not present** on disk or in git (`app
 - Common failures: Crash if the view context is wrapped (or in a non-Activity host). Previews are skipped via `isInEditMode`.
 - Safe modification: Use `findActivity()` / `LocalActivity` and no-op when missing. Do not put more window work in `BorisTheme`.
 - Test coverage: None.
+
+**Reader `ArticleBody` composition:**
+- Files: `app/src/main/java/org/dergigi/boris/ui/reader/ReaderScreen.kt`
+- Why fragile: The markdown article is a large Compose subtree. Any snapshot read in `ArticleBody` (especially `scrollState.value`) rebuilds that subtree every frame.
+- Common failures: Laggy scroll after outline, find, TTS follow-along, or any chrome that wants "current position".
+- Safe modification: Keep scroll observation in `snapshotFlow` or a leaf composable. Do not add `remember(scrollState.value, …)` or `derivedStateOf { scrollState.value }` inside `ArticleBody`.
+- Test coverage: No Compose UI test for scroll jank. Catch it by grepping `ArticleBody` / `ReaderScreenContent` for `scrollState.value` used outside `snapshotFlow` and jump helpers.
 
 **Default `viewModel()` factory + `SavedStateHandle`:**
 - Files: `app/src/main/java/org/dergigi/boris/ui/reader/ReaderScreen.kt`, `app/src/main/java/org/dergigi/boris/ui/reader/ReaderViewModel.kt`

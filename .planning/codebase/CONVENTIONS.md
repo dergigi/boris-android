@@ -50,6 +50,7 @@ Write new Kotlin under `org.dergigi.boris` only. Do not add files to `com.readwi
 - Use `MaterialTheme.colorScheme` and `MaterialTheme.typography` in screens. Raw `Color.*` tokens belong in `ui/theme/` (or the black overlay in `ImageGallery.kt`).
 - Give icons a `contentDescription` string. Use `null` only when the image is decorative (`ZoomableImage` in `ImageGallery.kt`).
 - Prefer `rememberSaveable` for form fields that must survive rotation (`HomeScreen.kt`).
+- Never read `scrollState.value` (or key `remember` on it) inside `ArticleBody` or another large reader composable. That invalidates the whole markdown tree every frame and the article stutters. Fixed in 1.4.21 and again in 1.4.35 (#63). Observe scroll in `snapshotFlow`, or in a tiny leaf such as `ArticleScrollProgress`. See CONCERNS.md.
 
 ## Import Organization
 
@@ -134,5 +135,5 @@ Write new Kotlin under `org.dergigi.boris` only. Do not add files to `com.readwi
 
 ---
 
-*Convention analysis: 2026-08-14*
+*Convention analysis: 2026-08-14; scroll-jank rule 2026-08-20*
 *Update when patterns change*
