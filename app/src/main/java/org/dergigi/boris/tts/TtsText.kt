@@ -343,20 +343,49 @@ object TtsText {
     private fun speakSourceDomains(text: String): String =
         SOURCE_URL.replace(text) { match ->
             val label = match.groupValues[1]
-            val raw = match.groupValues[2]
-            val url = raw.trimEnd { it in URL_TRAILING_CHARS }
-            val punctuation = raw.drop(url.length)
+            val (url, punctuation) = splitUrlTail(match.groupValues[2])
             val host = ArticleUrl.host(url) ?: return@replace label
             "$label $host$punctuation"
         }
 
     private fun stripBareUrls(text: String): String =
         BARE_URL.replace(text) { match ->
-            val raw = match.value
-            val url = raw.trimEnd { it in URL_TRAILING_CHARS }
-            val punctuation = raw.drop(url.length)
+            val (_, punctuation) = splitUrlTail(match.value)
             " $punctuation"
         }
+
+    private fun splitUrlTail(raw: String): Pair<String, String> {
+        var end = raw.length
+        end = trimSentencePunctuation(raw, end)
+        while (end > 0 && isTrailingUrlCloser(raw, end - 1)) {
+            end--
+            end = trimSentencePunctuation(raw, end)
+        }
+        return raw.take(end) to raw.drop(end)
+    }
+
+    private fun trimSentencePunctuation(raw: String, end: Int): Int {
+        var next = end
+        while (next > 0 && raw[next - 1] in URL_TRAILING_PUNCT) next--
+        return next
+    }
+
+    private fun isTrailingUrlCloser(raw: String, index: Int): Boolean {
+        val char = raw[index]
+        if (char == ')') return !hasMatchingOpenParen(raw, index)
+        return char in URL_TRAILING_CLOSERS
+    }
+
+    private fun hasMatchingOpenParen(raw: String, closeIndex: Int): Boolean {
+        var balance = 0
+        for (index in 0 until closeIndex) {
+            when (raw[index]) {
+                '(' -> balance++
+                ')' -> if (balance > 0) balance--
+            }
+        }
+        return balance > 0
+    }
 
     private fun stripMarkdownImages(text: String): String {
         val out = StringBuilder(text.length)
@@ -494,7 +523,8 @@ object TtsText {
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
     private const val SENTENCE_CLOSERS = "\"'”’)]»"
-    private const val URL_TRAILING_CHARS = ".,;:!?)\"'”’]»"
+    private const val URL_TRAILING_PUNCT = ".,;:!?"
+    private const val URL_TRAILING_CLOSERS = "\"'”’]»"
     private val RULE = Regex("""^(?:-{3,}|\*{3,}|_{3,})$""")
 
     private data class MarkdownBlock(

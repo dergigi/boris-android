@@ -84,6 +84,8 @@ class TtsTextTest {
 
                 https://example.com/only
 
+                https://en.wikipedia.org/wiki/Function_(mathematics)
+
                 Keep punctuation after https://example.com/trailing.
 
                 Keep parenthetical link (see https://example.com/paren).
