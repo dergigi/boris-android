@@ -83,4 +83,54 @@ class HtmlToMarkdownTest {
         )
         assertTrue(markdown.contains("![x](https://example.com/i.png)"))
     }
+
+    @Test
+    fun convertsTablesToGfm() {
+        val markdown = HtmlToMarkdown.convert(
+            "<table><thead><tr><th>Name</th><th>Age</th></tr></thead>" +
+                "<tbody><tr><td>Ada</td><td>36</td></tr></tbody></table>",
+        )
+        assertEquals("| Name | Age |\n| --- | --- |\n| Ada | 36 |", markdown)
+    }
+
+    @Test
+    fun numbersOrderedListItems() {
+        val markdown = HtmlToMarkdown.convert(
+            "<ol><li>first</li><li>second</li></ol><ul><li>bullet</li></ul>",
+        )
+        assertTrue(markdown.contains("1. first"))
+        assertTrue(markdown.contains("2. second"))
+        assertTrue(markdown.contains("- bullet"))
+    }
+
+    @Test
+    fun convertsFootnotePairsThatFootnotesExpands() {
+        val markdown = HtmlToMarkdown.convert(
+            """<p>Claim<sup id="fnref1"><a href="#fn1">1</a></sup>.</p>""" +
+                """<div class="footnotes"><ol><li id="fn1">The source text.</li></ol></div>""",
+        )
+        assertTrue(markdown.contains("Claim[^1]."))
+        assertTrue(markdown.contains("[^1]: The source text."))
+        val expanded = Footnotes.expand(markdown)
+        assertTrue(expanded.contains("Claim¹."))
+        assertTrue(expanded.contains("1. The source text."))
+    }
+
+    @Test
+    fun prependsObviousBylineFromAuthorMeta() {
+        val markdown = HtmlToMarkdown.convert(
+            """<html><head><meta name="author" content="Jane Doe"></head>""" +
+                "<body><p>Body text.</p></body></html>",
+        )
+        assertEquals("*Jane Doe*\n\nBody text.", markdown)
+    }
+
+    @Test
+    fun prependsObviousBylineFromRelAuthor() {
+        val markdown = HtmlToMarkdown.convert(
+            """<p>By <a rel="author" href="/jane">Jane Doe</a></p><p>Body text.</p>""",
+        )
+        assertTrue(markdown.startsWith("*Jane Doe*"))
+        assertTrue(markdown.contains("Body text."))
+    }
 }
