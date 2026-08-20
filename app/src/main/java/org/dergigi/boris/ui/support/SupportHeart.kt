@@ -33,6 +33,7 @@ import org.dergigi.boris.ui.theme.HighlightFriends
 
 private const val FADE_MS = 1_400
 
+/** Displays the support action with a rotating avatar from recent positive zap receipts. */
 @Composable
 fun SupportHeart(
     onOpenSupport: () -> Unit,
@@ -65,6 +66,7 @@ fun SupportHeart(
     }
 }
 
+/** Cycles through supporter avatars and opens the matching profile when tapped. */
 @Composable
 private fun CyclingSupporterAvatar(
     avatars: List<SupportAvatar>,

@@ -23,6 +23,7 @@ object SupportStore {
     private val _state = MutableStateFlow<SupportUiState>(SupportUiState.Loading)
     val state: StateFlow<SupportUiState> = _state.asStateFlow()
 
+    /** Starts the one-shot zap receipt and profile load for the shared support UI state. */
     fun ensureLoaded() {
         if (!started.compareAndSet(false, true)) return
         scope.launch {

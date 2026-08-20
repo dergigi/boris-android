@@ -5,17 +5,22 @@ import kotlinx.coroutines.flow.StateFlow
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.ZapSupporter
 
+/** Loading state for the support screen and support-heart avatar data. */
 sealed interface SupportUiState {
     data object Loading : SupportUiState
+
+    /** Loaded supporters, matching profiles, and the full avatar attribution set. */
     data class Ready(
         val supporters: List<ZapSupporter>,
         val profiles: Map<String, Profile>,
         val avatarSupporters: List<ZapSupporter> = supporters,
     ) : SupportUiState {
+        /** Number of zaps represented in the visible supporter list. */
         val totalZaps: Int get() = supporters.sumOf { it.zapCount }
     }
 }
 
+/** Exposes the shared support state to Compose screens. */
 class SupportViewModel : ViewModel() {
     val state: StateFlow<SupportUiState> = SupportStore.state
 

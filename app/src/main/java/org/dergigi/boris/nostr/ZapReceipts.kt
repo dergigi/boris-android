@@ -34,6 +34,7 @@ object ZapReceipts {
         return msats / 1000L
     }
 
+    /** Parses the amount encoded in a BOLT11 invoice into whole sats. */
     internal fun bolt11Sats(invoice: String): Long? {
         val match = bolt11Amount.find(invoice.trim()) ?: return null
         val digits = match.groupValues[1].toLongOrNull() ?: return null
