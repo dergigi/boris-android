@@ -36,6 +36,26 @@ class InAppBrowserTest {
     }
 
     @Test
+    fun webPagesGetArchiveFallbacks() {
+        val url = "https://example.com/foo?q=a&b"
+        assertEquals("https://web.archive.org/web/$url", InAppBrowser.waybackUrl(url))
+        assertEquals(
+            "https://archive.ph/?run=1&url=https%3A%2F%2Fexample.com%2Ffoo%3Fq%3Da%26b",
+            InAppBrowser.archivePhUrl(url),
+        )
+    }
+
+    @Test
+    fun notesAndArchiveHostsHaveNoArchiveFallback() {
+        val id = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
+        val note = Nip19.noteEncode(id)
+        assertNull(InAppBrowser.waybackUrl("nostr:$note"))
+        assertNull(InAppBrowser.archivePhUrl("nostr:$note"))
+        assertNull(InAppBrowser.waybackUrl("https://web.archive.org/web/2020/https://example.com"))
+        assertNull(InAppBrowser.archivePhUrl("https://archive.ph/abcd"))
+    }
+
+    @Test
     fun browserRouteKeepsTheUrlAfterOneDecode() {
         val url = "https://example.com/foo?q=a%26b"
         val encoded = Routes.browser(url).substringAfter("url=")

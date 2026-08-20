@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Reader errors can open the page in an in-app browser
+- Reader errors can open the page on the Wayback Machine or archive.ph
 
 ## [1.4.26] - 2026-08-20
 

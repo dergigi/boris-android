@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
@@ -612,6 +613,18 @@ fun ReaderScreenContent(
         if (target != null) onOpenBrowser(target) else openOriginalArticle(context, url)
     }
 
+    fun openWayback() {
+        val url = articleUrl ?: return
+        InAppBrowser.waybackUrl(url)?.let(onOpenBrowser)
+    }
+
+    fun openArchivePh() {
+        val url = articleUrl ?: return
+        InAppBrowser.archivePhUrl(url)?.let(onOpenBrowser)
+    }
+
+    val canOpenArchive = articleUrl?.let { InAppBrowser.waybackUrl(it) } != null
+
     fun openNative() {
         val url = articleUrl ?: return
         val nostrUri = NostrLink.parse(url)?.uri ?: return
@@ -758,6 +771,28 @@ fun ReaderScreenContent(
                                         openOriginal()
                                     },
                                 )
+                                if (canOpenArchive) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_open_wayback)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.History, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            openWayback()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_open_archive_ph)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.Public, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            openArchivePh()
+                                        },
+                                    )
+                                }
                                 if (nativeUri != null) {
                                     DropdownMenuItem(
                                         text = {
@@ -944,6 +979,14 @@ fun ReaderScreenContent(
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.reader_open_in_browser))
+                        }
+                        if (InAppBrowser.waybackUrl(state.url) != null) {
+                            TextButton(onClick = ::openWayback) {
+                                Text(stringResource(R.string.reader_open_wayback))
+                            }
+                            TextButton(onClick = ::openArchivePh) {
+                                Text(stringResource(R.string.reader_open_archive_ph))
+                            }
                         }
                     }
                 }
