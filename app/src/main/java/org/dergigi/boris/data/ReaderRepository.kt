@@ -141,7 +141,7 @@ class ReaderRepository(
             ?: return null
         val html = item.contentHtml ?: return null
         val markdown = HtmlToMarkdown.convert(html)
-        if (markdown.length < MIN_RSS_MARKDOWN_CHARS) return null
+        if (markdown.length < MIN_ARTICLE_MARKDOWN_CHARS) return null
         val body = item.imageUrl?.let { ArticleCover.stripLeadingImage(markdown, it) } ?: markdown
         return ReadableContent(
             url = item.link,
@@ -167,7 +167,7 @@ class ReaderRepository(
                 ?: HtmlToMarkdown.convert(text, targetUrl)
             )
             .let(UrlExtractor::upgradeImageHttpUrls)
-            .ifBlank { null }
+            .takeIf { it.length >= MIN_ARTICLE_MARKDOWN_CHARS }
         val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
         return ReadableContent(
             url = targetUrl,
@@ -254,8 +254,9 @@ class ReaderRepository(
         private const val HTTP_CACHE_BYTES = 50L * 1024L * 1024L
         private const val FRESH_SECONDS = 300
 
-        /** Feed bodies shorter than this are teasers; fetch the web page instead. */
-        private const val MIN_RSS_MARKDOWN_CHARS = 500
+        // Converted bodies shorter than this are teasers or cookie walls, for
+        // RSS items and web extracts alike; never render them as Ready.
+        internal const val MIN_ARTICLE_MARKDOWN_CHARS = 500
 
         private val BORIS_UA =
             "Boris/${org.dergigi.boris.BuildConfig.VERSION_NAME} " +

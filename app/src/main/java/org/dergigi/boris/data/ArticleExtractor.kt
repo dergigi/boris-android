@@ -17,13 +17,11 @@ object ArticleExtractor {
 
     private fun score(element: Element): Int {
         val text = element.text().trim()
-        if (text.length < MIN_CHARS) return 0
+        if (text.length < ReaderRepository.MIN_ARTICLE_MARKDOWN_CHARS) return 0
         val linkText = element.select("a").text().length
         if (linkText.toDouble() / text.length > 0.5) return 0
         return text.length
     }
-
-    private const val MIN_CHARS = 500
 
     private const val CHROME =
         "script, style, noscript, iframe, svg, canvas, form, nav, footer, aside, " +
