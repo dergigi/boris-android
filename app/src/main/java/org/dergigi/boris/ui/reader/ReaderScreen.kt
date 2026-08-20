@@ -1996,6 +1996,7 @@ private fun ArticleBody(
 private class SpokenMarkState {
     var sentence by mutableStateOf<String?>(null)
     var paragraph by mutableStateOf<String?>(null)
+    var paragraphIndex by mutableStateOf<Int?>(null)
 }
 
 @Composable
@@ -2003,12 +2004,25 @@ private fun rememberHighlightMarks(
     displayed: String,
     painted: List<PaintedHighlight>,
     spoken: SpokenMarkState,
+    ttsStartIndex: Int?,
 ): List<HighlightSpan> {
     val base = remember(displayed, painted) {
         matchHighlightSpans(displayed, painted)
     }
-    val spokenSpans = remember(displayed, spoken.sentence, spoken.paragraph) {
-        matchSpokenSpans(displayed, spoken.sentence, spoken.paragraph)
+    val spokenSpans = remember(
+        displayed,
+        spoken.sentence,
+        spoken.paragraph,
+        spoken.paragraphIndex,
+        ttsStartIndex,
+    ) {
+        matchSpokenSpansForParagraph(
+            displayed = displayed,
+            sentence = spoken.sentence,
+            paragraph = spoken.paragraph,
+            displayedTtsIndex = ttsStartIndex,
+            spokenTtsIndex = spoken.paragraphIndex,
+        )
     }
     return if (spokenSpans.isEmpty()) base else base + spokenSpans
 }
@@ -2066,6 +2080,7 @@ private fun TtsSpokenSync(
     }
     spoken.sentence = spokenSentence
     spoken.paragraph = spokenParagraph
+    spoken.paragraphIndex = spokenSession?.index
     var followAlongScrolling by remember { mutableStateOf(false) }
     val followAlongPosition = spokenSession
         ?.takeIf { it.playing && !it.followAlongPaused }
@@ -2124,7 +2139,7 @@ private fun HighlightedArticleTitle(
     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val titleOwner = remember { Any() }
-    val titleSpans = rememberHighlightMarks(title, painted, spoken)
+    val titleSpans = rememberHighlightMarks(title, painted, spoken, ttsStartIndex)
     Text(
         text = title,
         style = style,
@@ -2199,7 +2214,7 @@ private fun HighlightedMarkdownNode(
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
-    val marks = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val marks = rememberHighlightMarks(styledText.text, highlights, spoken, ttsStartIndex)
     val outlineId = remember(outlineItems, outlineStartOffset, styledText.text) {
         outlineStartOffset?.let { ArticleOutline.idForHeading(outlineItems, it, styledText.text) }
     }
