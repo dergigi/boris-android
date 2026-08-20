@@ -1884,15 +1884,24 @@ private fun ArticleBody(
                 onFindOpenChange(false)
             },
         )
-        val activeOutlineId = remember(outlineItems, scrollState.value, navigator.stops, scrollViewport) {
-            val viewport = scrollViewport
-            val pad = with(density) { 48.dp.toPx() }
-            ArticleOutline.activeId(outlineItems, { id ->
-                val stop = navigator.firstStop(id) ?: return@activeId null
-                val coords = navigator.coordinates(stop.owner) ?: return@activeId null
-                if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
-                viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-            }, pad)
+        var activeOutlineId by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(outlineOpen, outlineItems) {
+            if (!outlineOpen) {
+                activeOutlineId = null
+                return@LaunchedEffect
+            }
+            snapshotFlow {
+                scrollState.value
+                navigator.stops
+                val viewport = scrollViewport
+                val pad = with(density) { 48.dp.toPx() }
+                ArticleOutline.activeId(outlineItems, { id ->
+                    val stop = navigator.firstStop(id) ?: return@activeId null
+                    val coords = navigator.coordinates(stop.owner) ?: return@activeId null
+                    if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
+                    viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
+                }, pad)
+            }.distinctUntilChanged().collect { activeOutlineId = it }
         }
         OutlinePane(
             open = outlineOpen,
