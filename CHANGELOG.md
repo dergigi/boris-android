@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Contents heading jumps land below the reader top bar
+
 ## [1.4.42] - 2026-08-20
 
 ### Fixed

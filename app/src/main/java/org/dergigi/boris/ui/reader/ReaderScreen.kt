@@ -1236,7 +1236,7 @@ private fun ArticleBody(
         val viewport = scrollViewport ?: return@rememberUpdatedState
         if (!coords.isAttached || !viewport.isAttached) return@rememberUpdatedState
         val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-        val pad = with(density) { 48.dp.toPx() }
+        val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
         val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
         if (target != scrollState.value) {
             scope.launch { scrollState.animateScrollTo(target) }
@@ -1324,6 +1324,7 @@ private fun ArticleBody(
         scrollViewport = scrollViewport,
         positionRestored = positionRestored,
         settingsFollowAlong = settings.ttsFollowAlong,
+        topScrollInsetPx = topScrollInsetPx,
     )
     DisposableEffect(content.url) {
         onDispose { ReadingPositionSync.publishAsync(appContext, content.url) }
@@ -1958,7 +1959,7 @@ private fun ArticleBody(
                 scrollState.value
                 navigator.stops
                 val viewport = scrollViewport
-                val pad = topScrollInsetPx + with(density) { 48.dp.toPx() }
+                val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
                 ArticleOutline.activeId(outlineItems, { id ->
                     val stop = navigator.firstStop(id) ?: return@activeId null
                     val coords = navigator.coordinates(stop.owner) ?: return@activeId null
@@ -2041,6 +2042,7 @@ private fun TtsSpokenSync(
     scrollViewport: LayoutCoordinates?,
     positionRestored: Boolean,
     settingsFollowAlong: Boolean,
+    topScrollInsetPx: Int = 0,
 ) {
     val density = LocalDensity.current
     val session by TtsPlayback.session.collectAsStateWithLifecycle()
@@ -2068,7 +2070,7 @@ private fun TtsSpokenSync(
         val viewport = scrollViewport ?: return@LaunchedEffect
         if (!coords.isAttached || !viewport.isAttached) return@LaunchedEffect
         val y = viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
-        val pad = with(density) { 48.dp.toPx() }
+        val pad = HighlightJump.chromePadding(topScrollInsetPx, with(density) { 48.dp.toPx() })
         val target = HighlightJump.scrollTarget(scrollState.value, scrollState.maxValue, y, pad)
         if (target != scrollState.value) {
             followAlongScrolling = true

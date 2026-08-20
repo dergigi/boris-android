@@ -96,4 +96,11 @@ class HighlightJumpTest {
         assertEquals(0, HighlightJump.scrollTarget(scrollValue = 10, scrollMax = 2000, yInViewport = 20f, paddingPx = 48f))
         assertEquals(500, HighlightJump.scrollTarget(scrollValue = 400, scrollMax = 500, yInViewport = 300f, paddingPx = 48f))
     }
+
+    @Test
+    fun chromePaddingClearsTheFloatingTopBar() {
+        assertEquals(48f, HighlightJump.chromePadding(0, 48f))
+        assertEquals(168f, HighlightJump.chromePadding(120, 48f))
+        assertEquals(32, HighlightJump.scrollTarget(scrollValue = 200, scrollMax = 2000, yInViewport = 0f, paddingPx = 168f))
+    }
 }

@@ -62,6 +62,9 @@ object HighlightJump {
         return (scrollValue + yInViewport - paddingPx).roundToInt().coerceIn(0, scrollMax.coerceAtLeast(0))
     }
 
+    fun chromePadding(topScrollInsetPx: Int, extraPx: Float): Float =
+        topScrollInsetPx + extraPx
+
     /**
      * Reading order: first occurrence in [texts] (title, then body) on top.
      * Quotes that never match the article stay at the bottom.
