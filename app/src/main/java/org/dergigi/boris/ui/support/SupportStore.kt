@@ -14,7 +14,6 @@ import org.dergigi.boris.nostr.ZapReceipts
 import org.dergigi.boris.nostr.ZapSplits
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Shared loader for support data used by both the support screen and heart avatar. */
 object SupportStore {
     private const val ZAPSTORE_BORIS_APP_ADDRESS =
         "32267:6e468422dfb74a5738702a8823b9b28168abab8655faacb6853cd0ee15deee93:org.dergigi.boris"
@@ -22,8 +21,6 @@ object SupportStore {
     private val started = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _state = MutableStateFlow<SupportUiState>(SupportUiState.Loading)
-
-    /** Current support data, loaded at most once per app process. */
     val state: StateFlow<SupportUiState> = _state.asStateFlow()
 
     /** Starts the one-shot zap receipt and profile load for the shared support UI state. */
