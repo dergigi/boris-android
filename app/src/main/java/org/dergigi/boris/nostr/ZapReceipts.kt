@@ -34,6 +34,7 @@ object ZapReceipts {
         return msats / 1000L
     }
 
+    /** Parses the amount encoded in a BOLT11 invoice into whole sats. */
     internal fun bolt11Sats(invoice: String): Long? {
         val match = bolt11Amount.find(invoice.trim()) ?: return null
         val digits = match.groupValues[1].toLongOrNull() ?: return null
@@ -47,8 +48,11 @@ object ZapReceipts {
         return msats / 1000L
     }
 
-    /** Aggregates receipts into supporters with at least [MIN_SATS], biggest first. */
-    fun supporters(events: List<Nip01Event>): List<ZapSupporter> {
+    /** Aggregates receipts into supporters with at least [minSats], biggest first. */
+    fun supporters(
+        events: List<Nip01Event>,
+        minSats: Long = MIN_SATS,
+    ): List<ZapSupporter> {
         val totals = LinkedHashMap<String, Pair<Long, Int>>()
         val seen = HashSet<String>()
         for (event in events) {
@@ -61,7 +65,7 @@ object ZapReceipts {
             totals[pubkey] = (sum + sats) to (count + 1)
         }
         return totals.entries
-            .filter { it.value.first >= MIN_SATS }
+            .filter { it.value.first >= minSats }
             .sortedByDescending { it.value.first }
             .map { (pubkey, value) ->
                 ZapSupporter(
@@ -72,6 +76,10 @@ object ZapReceipts {
                 )
             }
     }
+
+    /** Aggregates every positive zap amount for lightweight supporter attribution. */
+    fun allSupporters(events: List<Nip01Event>): List<ZapSupporter> =
+        supporters(events, minSats = 1L)
 
     private fun description(event: Nip01Event): String? =
         event.tags.firstOrNull { it.size >= 2 && it[0] == "description" }?.get(1)

@@ -79,6 +79,20 @@ class ZapReceiptsTest {
     }
 
     @Test
+    fun allSupportersIncludesSmallPositiveZaps() {
+        val big = "aa".repeat(32)
+        val small = "bb".repeat(32)
+        val events = listOf(
+            zap("1", big, sats = 2_100),
+            zap("2", small, sats = 500),
+        )
+        val supporters = ZapReceipts.allSupporters(events)
+        assertEquals(listOf(big, small), supporters.map { it.pubkey })
+        assertEquals(500L, supporters[1].totalSats)
+        assertEquals(1, supporters[1].zapCount)
+    }
+
+    @Test
     fun supportersDedupesByEventId() {
         val zapper = "aa".repeat(32)
         val event = zap("1", zapper, sats = 2_100)

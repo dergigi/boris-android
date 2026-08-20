@@ -119,6 +119,9 @@ object RelayQuery {
         return (RelayList.FALLBACK + discovered).distinct()
     }
 
+    /** Relays used for zap receipt and related metadata lookups. */
+    fun zapRelays(): List<String> = ZAP_RELAYS
+
     /** NIP-66 discovered relays from this session, beyond the fallback set. */
     fun discoveredRelays(): List<String> = discovered
 
@@ -349,6 +352,17 @@ object RelayQuery {
         val filter = JSONObject()
             .put("kinds", JSONArray().put(Nip01Event.KIND_ZAP_RECEIPT))
             .put("#p", JSONArray().put(pubkeyHex.lowercase()))
+            .put("limit", limit)
+        return query(urls, listOf(filter))
+    }
+
+    /** Zap receipts (kind 9735) tagging an addressable event coordinate. */
+    fun fetchZapReceiptsByAddress(address: String, limit: Int = 1000): List<Nip01Event> {
+        val urls = relayUrls((globalReadRelays() + ZAP_RELAYS).distinct())
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_ZAP_RECEIPT))
+            .put("#a", JSONArray().put(address))
             .put("limit", limit)
         return query(urls, listOf(filter))
     }
@@ -950,7 +964,10 @@ object RelayQuery {
         Thread(runnable, "relay-refresh").apply { isDaemon = true }
     }
 
-    private val ZAP_RELAYS = listOf("wss://relay.getalby.com/v1")
+    private val ZAP_RELAYS = listOf(
+        "wss://relay.getalby.com/v1",
+        "wss://relay.zapstore.dev",
+    )
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val QUERY_MAJORITY_WAIT_MS = 2_000L
