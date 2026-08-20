@@ -15,7 +15,7 @@ object OgMetaClient {
     fun fetch(url: String): OgPreview? {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", USER_AGENT)
+            .header("User-Agent", HttpUserAgents.BROWSER_UA)
             .header("Accept", "text/html,application/xhtml+xml")
             .get()
             .build()
@@ -30,6 +30,4 @@ object OgMetaClient {
     }
 
     private const val PREFIX_BYTES = 80_000
-    private const val USER_AGENT =
-        "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
 }

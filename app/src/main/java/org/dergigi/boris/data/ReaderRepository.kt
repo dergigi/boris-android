@@ -4,6 +4,7 @@ import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.RelayQuery
@@ -23,18 +24,7 @@ class ReaderRepository(
                 val targetUrl = UrlExtractor.normalize(url)
                 rssContent(url, targetUrl) ?: run {
                     val origin = UrlExtractor.preferHttps(targetUrl)
-                    val request = Request.Builder()
-                        .url(origin)
-                        .header("User-Agent", BORIS_UA)
-                        .header("Accept", "text/html,application/xhtml+xml")
-                        .get()
-                        .build()
-                    val text = try {
-                        execute(request)
-                    } catch (e: IOException) {
-                        executeFromCache(request) ?: throw e
-                    }
-                    withCover(parse(origin, text))
+                    withCover(fetchOrigin(origin))
                 }
             }
         }
@@ -44,13 +34,72 @@ class ReaderRepository(
         return ready
     }
 
-    private fun execute(request: Request): String =
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("Failed to fetch readable content (${response.code})")
-            }
-            response.body?.string().orEmpty()
+    // D-09: honest Boris UA first; one browser-UA retry on 401/403 or an
+    // empty/thin extract. D-15: a live fail falls back to the origin cache.
+    private fun fetchOrigin(origin: String): ReadableContent {
+        val first = originAttempt(origin, HttpUserAgents.BORIS_UA)
+        val second = when (first) {
+            is OriginResult.Article -> return first.content
+            OriginResult.Blocked, OriginResult.NoArticle ->
+                originAttempt(origin, HttpUserAgents.BROWSER_UA)
+            OriginResult.Unreachable -> first
         }
+        if (second is OriginResult.Article) return second.content
+        if (second == OriginResult.NoArticle) throw IOException(ERROR_NO_ARTICLE)
+        val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
+            ?: throw IOException(ERROR_UNREACHABLE)
+        val content = parse(origin, cached)
+        if (content.markdown == null) throw IOException(ERROR_NO_ARTICLE)
+        return content
+    }
+
+    private fun originAttempt(origin: String, userAgent: String): OriginResult = try {
+        client.newCall(originRequest(origin, userAgent)).execute().use { response ->
+            when {
+                response.code == 401 || response.code == 403 -> OriginResult.Blocked
+                !response.isSuccessful -> OriginResult.Unreachable
+                !looksLikeHtml(response) -> OriginResult.NoArticle
+                else -> {
+                    val text = readCapped(response)
+                    val content = if (text.isBlank()) null else parse(origin, text)
+                    if (content?.markdown == null) {
+                        OriginResult.NoArticle
+                    } else {
+                        OriginResult.Article(content)
+                    }
+                }
+            }
+        }
+    } catch (_: IOException) {
+        OriginResult.Unreachable
+    }
+
+    private fun originRequest(origin: String, userAgent: String): Request =
+        Request.Builder()
+            .url(origin)
+            .header("User-Agent", userAgent)
+            .header("Accept", "text/html,application/xhtml+xml")
+            .get()
+            .build()
+
+    private fun looksLikeHtml(response: Response): Boolean {
+        val contentType = response.header("Content-Type")?.lowercase() ?: return true
+        return "html" in contentType || "xml" in contentType || contentType.startsWith("text/")
+    }
+
+    private fun readCapped(response: Response): String {
+        val source = response.body?.source() ?: return ""
+        source.request(MAX_BODY_BYTES)
+        val n = minOf(source.buffer.size, MAX_BODY_BYTES)
+        return source.buffer.readUtf8(n)
+    }
+
+    private sealed interface OriginResult {
+        data class Article(val content: ReadableContent) : OriginResult
+        data object Blocked : OriginResult
+        data object NoArticle : OriginResult
+        data object Unreachable : OriginResult
+    }
 
     private fun executeFromCache(request: Request): String? = try {
         val cached = request.newBuilder()
@@ -241,7 +290,9 @@ class ReaderRepository(
                     // Origins often send no-store; force successful responses into
                     // the cache so previously opened articles render offline.
                     addNetworkInterceptor { chain ->
-                        chain.proceed(chain.request()).newBuilder()
+                        val response = chain.proceed(chain.request())
+                        if (!response.isSuccessful) return@addNetworkInterceptor response
+                        response.newBuilder()
                             .removeHeader("Pragma")
                             .removeHeader("Cache-Control")
                             .header("Cache-Control", "public, max-age=$FRESH_SECONDS")
@@ -258,9 +309,11 @@ class ReaderRepository(
         // RSS items and web extracts alike; never render them as Ready.
         internal const val MIN_ARTICLE_MARKDOWN_CHARS = 500
 
-        private val BORIS_UA =
-            "Boris/${org.dergigi.boris.BuildConfig.VERSION_NAME} " +
-                "(Android; +https://github.com/dergigi/boris-android)"
+        // D-13: the only two sentences the reader error state may show.
+        internal const val ERROR_UNREACHABLE = "Could not reach this page."
+        internal const val ERROR_NO_ARTICLE = "Could not find an article on this page."
+
+        private const val MAX_BODY_BYTES = 2 * 1024 * 1024L
 
         private val htmlTitleRegex = Regex(
             """<title[^>]*>(.*?)</title>""",
