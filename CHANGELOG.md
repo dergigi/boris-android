@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.41] - 2026-08-20
+
 ### Fixed
 
 - Reader selection gestures no longer restart mid-drag, so extending a selection and moving the handles work again
@@ -1276,7 +1278,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.40...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.41...HEAD
+[1.4.41]: https://github.com/dergigi/boris-android/releases/tag/v1.4.41
 [1.4.40]: https://github.com/dergigi/boris-android/releases/tag/v1.4.40
 [1.4.39]: https://github.com/dergigi/boris-android/releases/tag/v1.4.39
 [1.4.38]: https://github.com/dergigi/boris-android/releases/tag/v1.4.38
