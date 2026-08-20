@@ -26,11 +26,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.width
@@ -82,7 +85,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -90,6 +92,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -108,9 +111,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -120,6 +123,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
@@ -131,9 +135,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mikepenz.markdown.annotator.annotatorSettings
@@ -555,8 +561,30 @@ fun ReaderScreenContent(
     val snackbarHostState = remember { SnackbarHostState() }
     val readerScope = rememberCoroutineScope()
     val articleScrollState = rememberScrollState()
+    val hideBar = settings.hideTopBarOnScroll
+    val barOffsetPx = remember { mutableFloatStateOf(0f) }
+    val barHeightPx = remember { mutableIntStateOf(0) }
+    val hideBarConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                val height = barHeightPx.intValue.toFloat()
+                if (height <= 0f) return Offset.Zero
+                barOffsetPx.floatValue =
+                    (barOffsetPx.floatValue + consumed.y).coerceIn(-height, 0f)
+                return Offset.Zero
+            }
+        }
+    }
     LaunchedEffect(articleUrl) {
         articleScrollState.scrollTo(0)
+        barOffsetPx.floatValue = 0f
+    }
+    LaunchedEffect(hideBar) {
+        if (!hideBar) barOffsetPx.floatValue = 0f
     }
     val ttsError = ttsSession?.takeIf { it.url == articleUrl }?.errorMessage
     LaunchedEffect(ttsError) {
@@ -598,7 +626,6 @@ fun ReaderScreenContent(
         copyArticleLink(context, clipboard, url)
     }
 
-    val topBarScroll = rememberReaderBarScroll()
     var findOpen by remember { mutableStateOf(false) }
     var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
     rssConfirmFeed?.let { feedUrl ->
@@ -631,16 +658,9 @@ fun ReaderScreenContent(
             },
         )
     }
-    Box(modifier = Modifier.fillMaxSize()) {
-    Scaffold(
-        modifier = if (settings.hideTopBarOnScroll) {
-            Modifier.nestedScroll(topBarScroll.nestedScrollConnection)
-        } else {
-            Modifier
-        },
-        topBar = {
+    val chromeBar: @Composable (Modifier) -> Unit = { barModifier ->
             TopAppBar(
-                scrollBehavior = if (settings.hideTopBarOnScroll) topBarScroll else null,
+                modifier = barModifier,
                 title = {
                     val title = (state as? ReaderUiState.Ready)?.content?.title
                         ?: (state as? ReaderUiState.Loading)?.title
@@ -796,16 +816,39 @@ fun ReaderScreenContent(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
             )
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = if (hideBar) {
+            Modifier.nestedScroll(hideBarConnection)
+        } else {
+            Modifier
         },
+        topBar = { if (!hideBar) chromeBar(Modifier) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
+        val density = LocalDensity.current
+        val layoutDirection = LocalLayoutDirection.current
+        val fallbackBarPx = WindowInsets.statusBars.getTop(density) + with(density) { 64.dp.roundToPx() }
+        val overlayBarPx = barHeightPx.intValue.takeIf { it > 0 } ?: fallbackBarPx
+        val overlayBarDp = with(density) { overlayBarPx.toDp() }
+        val sidePad = Modifier.padding(
+            start = innerPadding.calculateStartPadding(layoutDirection),
+            end = innerPadding.calculateEndPadding(layoutDirection),
+            bottom = innerPadding.calculateBottomPadding(),
+        )
+        val pinnedPad = if (hideBar) {
+            sidePad.padding(top = overlayBarDp)
+        } else {
+            Modifier.padding(innerPadding)
+        }
         when (state) {
             is ReaderUiState.Loading -> {
                 val hasPreview = !state.title.isNullOrBlank() || !state.imageUrl.isNullOrBlank()
                 if (!hasPreview) {
                     Box(
-                        modifier = Modifier.fillMaxSize().padding(innerPadding),
+                        modifier = Modifier.fillMaxSize().then(pinnedPad),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
@@ -814,7 +857,7 @@ fun ReaderScreenContent(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
+                            .then(pinnedPad)
                             .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -849,7 +892,7 @@ fun ReaderScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .then(pinnedPad)
                         .padding(24.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -930,10 +973,20 @@ fun ReaderScreenContent(
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,
-                    modifier = Modifier.padding(innerPadding),
+                    topScrollInsetPx = if (hideBar) overlayBarPx else 0,
+                    modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
                 )
             }
         }
+    }
+    if (hideBar) {
+        chromeBar(
+            Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { barHeightPx.intValue = it.height }
+                .graphicsLayer { translationY = barOffsetPx.floatValue }
+                .zIndex(1f),
+        )
     }
     gallery?.let { open ->
         ImageGallery(
@@ -970,6 +1023,7 @@ private fun ArticleBody(
     findOpen: Boolean,
     onFindOpenChange: (Boolean) -> Unit,
     scrollState: ScrollState,
+    topScrollInsetPx: Int = 0,
     ttsSession: TtsSession? = null,
     volumeScroll: Boolean = true,
     modifier: Modifier = Modifier,
@@ -1498,6 +1552,9 @@ private fun ArticleBody(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+        if (topScrollInsetPx > 0) {
+            Spacer(Modifier.height(with(LocalDensity.current) { topScrollInsetPx.toDp() }))
+        }
         val coverUrl = content.imageUrl?.takeIf { it.isNotBlank() }
         val overlaySummary = content.summary?.takeIf { it.isNotBlank() && it.length <= 150 }
         val belowSummary = content.summary?.takeIf { it.isNotBlank() && it.length > 150 }
@@ -1858,36 +1915,6 @@ private fun HighlightedMarkdownNode(
             ),
         onTextLayout = { result, _ -> layout = result },
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun rememberReaderBarScroll(): TopAppBarScrollBehavior {
-    val behavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
-        snapAnimationSpec = null,
-        flingAnimationSpec = null,
-    )
-    val connection = remember(behavior.state) {
-        object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource,
-            ): Offset {
-                behavior.state.heightOffset += consumed.y
-                return Offset.Zero
-            }
-        }
-    }
-    return remember(behavior, connection) {
-        object : TopAppBarScrollBehavior {
-            override val state = behavior.state
-            override val isPinned = false
-            override val snapAnimationSpec = null
-            override val flingAnimationSpec = null
-            override val nestedScrollConnection = connection
-        }
-    }
 }
 
 @Composable
