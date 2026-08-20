@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
-status: ui_spec_approved
-stopped_at: Phase 6 UI-SPEC approved — spawning planner
-last_updated: "2026-08-20T06:29:00.000Z"
+status: planning
+stopped_at: Phase 6 plans written — ready to execute
+last_updated: "2026-08-20T08:45:00.000Z"
 last_activity: 2026-08-20
-last_activity_desc: Phase 6 UI-SPEC approved; PATTERNS.md ready; planning next
+last_activity_desc: Phase 6 plans written (06-01/02/03); READ-04 added
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 8
+  total_plans: 11
   completed_plans: 8
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 6 On-device article extraction — UI-SPEC approved, planning next
+**Current focus:** Phase 6 On-device article extraction — 3 plans written, ready to execute
 
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
-Plan: 0 of 0
-Status: UI-SPEC approved — planning in progress
-Last activity: 2026-08-20 — Phase 6 UI-SPEC + PATTERNS.md; planner next
+Plan: 0 of 3
+Status: Planning complete — ready to execute
+Last activity: 2026-08-20 — Phase 6 plans 06-01/02/03 written; READ-04 added
 
 Progress: [████████░░] 83%
 

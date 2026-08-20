@@ -67,7 +67,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 | 4. Listen to articles | 3/3 | Verifying | |
 | 5. Resolve nostr profile references | 2/2 | In Progress|  |
-| 6. On-device article extraction | 0/0 | Not started |  |
+| 6. On-device article extraction | 0/3 | Planned |  |
 
 ### Phase 3: Nostr highlights
 
@@ -201,13 +201,22 @@ Plans:
 ### Phase 6: On-device article extraction
 
 **Goal:** Ordinary http(s) articles load by fetching the page on-device and extracting readable Markdown locally, so reading does not depend on `r.jina.ai` being available or authenticated. Nostr and RSS paths stay as they are. Offline cache still works. GitHub issue #54.
-**Requirements**: TBD
+**Requirements**: READ-04, READ-01
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run /gsd-plan-phase 6 to break down)
+- [ ] 06-01-PLAN.md — Origin fetch plus on-device extract tracer
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 06-02-PLAN.md — Jina-like Markdown quality and thin-extract bar
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 06-03-PLAN.md — UA retry, two reader errors, origin cache, leftover cleanup
 
 ---
 *Roadmap created: 2026-08-14*
