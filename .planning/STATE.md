@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
-status: context_gathered
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-20T06:13:39.778Z"
-last_activity: 2026-08-18
-last_activity_desc: Phase 5 plans executed (hinted relay persist + fetch union)
+status: research_complete
+stopped_at: Phase 6 research complete
+last_updated: "2026-08-20T06:25:00.000Z"
+last_activity: 2026-08-20
+last_activity_desc: Phase 6 RESEARCH.md written (on-device extract, no Jina)
 progress:
   total_phases: 6
   completed_phases: 5
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 6 On-device article extraction — context gathered, ready to plan
+**Current focus:** Phase 6 On-device article extraction — research complete, ready to plan
 
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
 Plan: 0 of 0
-Status: Context gathered — ready for `/gsd-plan-phase 6`
-Last activity: 2026-08-20 — Phase 6 CONTEXT.md captured (GitHub #54)
+Status: Research complete — ready for `/gsd-plan-phase 6`
+Last activity: 2026-08-20 — Phase 6 RESEARCH.md (jsoup + in-repo extract, delete r.jina.ai)
 
 Progress: [████████░░] 83%
 
