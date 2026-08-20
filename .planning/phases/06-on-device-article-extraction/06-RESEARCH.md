@@ -592,7 +592,7 @@ Issue #54 acceptance to cover in tests / UAT: origin fetch does not use `r.jina.
 | A3 | jsoup 1.23.1 `Jsoup.parse(String, String)` does not need NIO at the call site, but official docs still require desugaring | Pitfall 5 | If D8 is happy without desugar on minSdk 26, the desugar dep is unused but harmless. |
 | A4 | In-repo chrome selectors are enough for D-07 on typical article HTML | Pattern 3 | App-shell pages fail (accepted under D-10). Unusual CMSes may leak chrome; add a selector when a fixture shows it. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 ### Resolved (planner should not re-ask)
 
@@ -603,13 +603,7 @@ Issue #54 acceptance to cover in tests / UAT: origin fetch does not use `r.jina.
 5. **Cache keys:** origin URL only. Ignore leftover Jina entries. Keep the force-`max-age=300` interceptor.
 6. **Jina parse helpers:** delete from production. Rewrite tests. No test-only Jina fixtures.
 7. **RSS / Nostr:** do not change those `fetch` arms. Shared `HtmlToMarkdown` extensions must keep existing RSS tests green.
-
-### Still open (non-blocking)
-
-1. **Exact `desugar_jdk_libs_nio` version**
-   - What we know: jsoup official Android support requires NIO desugaring. Huawei Maven is the fallback repo in `settings.gradle.kts`.
-   - What's unclear: latest artifact version (Google Maven unreachable this session).
-   - Recommendation: planner Wave 0 resolves the version from Google or Huawei metadata. Do not skip desugaring.
+8. **Exact `desugar_jdk_libs_nio` version:** `2.1.5` from Huawei maven-metadata. Plan 06-01 pins this. Do not reopen.
 
 ## Environment Availability
 

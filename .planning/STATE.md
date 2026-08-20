@@ -6,7 +6,7 @@ current_phase: 06
 current_phase_name: On-device article extraction
 status: planning
 stopped_at: Phase 6 plans written — ready to execute
-last_updated: "2026-08-20T08:45:00.000Z"
+last_updated: "2026-08-20T06:40:50.794Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 6 plans written (06-01/02/03); READ-04 added
 progress:
