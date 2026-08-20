@@ -9,12 +9,14 @@ import org.junit.Test
 class ReaderRepositoryParseTest {
     private val repository = ReaderRepository()
 
+    private val longBody = "The article paragraph carries the real story. ".repeat(15)
+
     @Test
     fun parsesHtmlFallback() {
-        val raw = "<html><head><title>Page Title</title></head><body><p>Hi</p></body></html>"
+        val raw = "<html><head><title>Page Title</title></head><body><p>$longBody</p></body></html>"
         val content = repository.parse("https://example.com", raw)
         assertEquals("Page Title", content.title)
-        assertEquals("Hi", content.markdown)
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
         assertNull(content.html)
     }
 
@@ -23,7 +25,7 @@ class ReaderRepositoryParseTest {
         val raw = """
             <html><head><title>Page Title</title></head>
             <body>
-              <p>Hi</p>
+              <p>$longBody</p>
               <img src="/shots/a.jpg" alt="shot">
               <img src="http://cdn.example.com/b.png">
             </body></html>
@@ -39,6 +41,21 @@ class ReaderRepositoryParseTest {
             ),
             UrlExtractor.imageUrls(content.body, content.url),
         )
+    }
+
+    @Test
+    fun thinHtmlBodyYieldsNullMarkdown() {
+        val raw = "<html><head><title>Page Title</title></head><body><p>Hi</p></body></html>"
+        val content = repository.parse("https://example.com", raw)
+        assertEquals("Page Title", content.title)
+        assertNull(content.markdown)
+    }
+
+    @Test
+    fun paywallTeaserYieldsNullMarkdown() {
+        val teaser = "Subscribe now to keep reading this exclusive story from our newsroom."
+        val raw = "<html><body><article><p>$teaser</p></article></body></html>"
+        assertNull(repository.parse("https://example.com/post", raw).markdown)
     }
 
     @Test
