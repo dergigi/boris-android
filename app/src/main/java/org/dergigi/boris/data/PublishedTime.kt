@@ -22,11 +22,6 @@ object PublishedTime {
         """"datePublished"\s*:\s*"([^"]+)"""",
         RegexOption.IGNORE_CASE,
     )
-    private val headerField = Regex(
-        """^Published Time:\s*(.+)$""",
-        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
-    )
-
     fun parse(raw: String?): Long? {
         val trimmed = raw?.trim().orEmpty()
         if (trimmed.isEmpty()) return null
@@ -43,12 +38,6 @@ object PublishedTime {
         } catch (_: DateTimeParseException) {
         }
         return null
-    }
-
-    fun fromJinaHeader(text: String): Long? {
-        val headerEnd = text.indexOf("Markdown Content:", ignoreCase = true)
-        val header = if (headerEnd >= 0) text.substring(0, headerEnd) else text.take(2000)
-        return parse(headerField.find(header)?.groupValues?.getOrNull(1))
     }
 
     fun fromHtml(html: String): Long? {

@@ -216,7 +216,7 @@ class ReaderViewModel(
                 _highlightCount.value = 0
                 _highlightsLoaded.value = true
                 _state.value = ReaderUiState.Error(
-                    e.message ?: "Failed to load this article.",
+                    e.message ?: "Could not reach this page.",
                     url,
                 )
                 publishSaveState()

@@ -862,7 +862,7 @@ fun ReaderScreenContent(
                             onClick = ::openOriginal,
                             modifier = Modifier.padding(top = 8.dp),
                         ) {
-                            Text("Open original")
+                            Text(stringResource(R.string.reader_open_original))
                         }
                     }
                 }
