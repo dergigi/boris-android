@@ -22,6 +22,7 @@ sealed interface SupportUiState {
 
 /** Exposes the shared support state to Compose screens. */
 class SupportViewModel : ViewModel() {
+    /** State collected by the support UI. */
     val state: StateFlow<SupportUiState> = SupportStore.state
 
     init {
