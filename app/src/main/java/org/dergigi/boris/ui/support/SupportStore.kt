@@ -39,7 +39,7 @@ object SupportStore {
             } else {
                 runCatching {
                     RelayQuery.fetchProfiles(
-                        RelayQuery.globalReadRelays(),
+                        RelayQuery.globalReadRelays() + RelayQuery.zapRelays(),
                         profilePubkeys,
                     )
                 }.getOrDefault(emptyMap())

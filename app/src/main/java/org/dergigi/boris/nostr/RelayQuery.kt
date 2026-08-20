@@ -119,6 +119,9 @@ object RelayQuery {
         return (RelayList.FALLBACK + discovered).distinct()
     }
 
+    /** Relays used for zap receipt and related metadata lookups. */
+    fun zapRelays(): List<String> = ZAP_RELAYS
+
     /** NIP-66 discovered relays from this session, beyond the fallback set. */
     fun discoveredRelays(): List<String> = discovered
 
