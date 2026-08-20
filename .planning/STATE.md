@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
 status: planning
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-08-20T07:33:08.833Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-08-20T07:46:58.370Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 6 plans written (06-01/02/03); READ-04 added
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-14)
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
-Plan: 1 of 3
+Plan: 2 of 3
 Status: Planning complete — ready to execute
 Last activity: 2026-08-20 — Phase 6 plans 06-01/02/03 written; READ-04 added
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [████████░░] 82%
 | Phase 05 P01 | 6min | 2 tasks | 23 files |
 | Phase 05 P02 | 5min | 3 tasks | 9 files |
 | Phase 06 P01 | 50min | 2 tasks | 8 files |
+| Phase 06 P02 | 7min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Persist codec is hand-rolled JSON because org.json.JSONObject.put is stubbed on JVM unit tests
 - [Phase ?]: Phase 6: parse falls back to full-document HtmlToMarkdown when ArticleExtractor returns null; 500-char thin-extract fail lands in 06-02
 - [Phase ?]: Phase 6: BORIS_UA is a private ReaderRepository companion val; shared HttpUserAgents object arrives with the 06-02 UA retry
+- [Phase ?]: Footnote ids renumbered sequentially; only sup refs with matching li[id] become [^n] pairs
+- [Phase ?]: MIN_ARTICLE_MARKDOWN_CHARS internal in ReaderRepository companion; ArticleExtractor scoring reuses it so 500 exists once
+- [Phase ?]: parse keeps full-document fallback but gates final markdown on the 500 bar; thin pages return null markdown
 
 ### Roadmap Evolution
 
@@ -130,6 +134,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-20T07:33:08.825Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-08-20T07:46:58.363Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
