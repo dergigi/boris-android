@@ -1498,9 +1498,8 @@ private fun ArticleBody(
             },
         )
     }
-    val ttsSpeaking by remember {
-        TtsPlayback.session.map { it?.playing == true }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.playing == true)
+    val ttsSession by TtsPlayback.session.collectAsStateWithLifecycle()
+    val ttsSpeaking = ttsSession?.playing == true
     VolumeKeys.Handle(enabled = volumeScroll && !ttsSpeaking && settings.volumeButtonScroll) { up ->
         val page = VolumeKeys.pageSize(viewportHeight, settings.volumeButtonScrollPercent)
         val target = VolumeKeys.nextOffset(scrollState.value, scrollState.maxValue, page, up)
@@ -1539,9 +1538,7 @@ private fun ArticleBody(
         if (parsedNow) markdownReady = true
     }
     val showArticle = markdownReady || parsedNow
-    val ttsMiniPlayerVisible by remember {
-        TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(TtsPlayback.session.value?.url?.isNotBlank() == true)
+    val ttsMiniPlayerVisible = ttsSession?.url?.isNotBlank() == true
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     SelectionBackHandler(selection)
 
@@ -1805,6 +1802,7 @@ private fun ArticleBody(
             hits = findHits,
             activeIndex = findIndex,
             matchCount = findHits.size,
+            topPadding = with(density) { topScrollInsetPx.toDp() },
             onQueryChange = { next ->
                 findQuery = next
                 findIndex = 0
