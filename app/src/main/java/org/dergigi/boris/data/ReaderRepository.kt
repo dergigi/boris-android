@@ -69,7 +69,11 @@ class ReaderRepository(
         return content
     }
 
-    private fun originAttempt(origin: String, userAgent: String): OriginResult = try {
+    private fun originAttempt(
+        origin: String,
+        userAgent: String,
+        forwards: Set<String> = emptySet(),
+    ): OriginResult = try {
         client.newCall(originRequest(origin, userAgent)).execute().use { response ->
             when {
                 response.code == 401 || response.code == 403 -> OriginResult.Blocked(response.code)
@@ -79,6 +83,14 @@ class ReaderRepository(
                 )
                 else -> {
                     val text = readCapped(response)
+                    htmlForwardTarget(origin, text)?.let { target ->
+                        if (forwards.size >= MAX_HTML_FORWARDS) {
+                            return OriginResult.Unreachable("Too many redirects")
+                        }
+                        val key = target.lowercase()
+                        if (key in forwards) return OriginResult.Unreachable("Redirect loop")
+                        return originAttempt(target, userAgent, forwards + origin.lowercase())
+                    }
                     val content = if (text.isBlank()) null else parse(origin, text)
                     if (content?.markdown == null) {
                         OriginResult.NoArticle(
@@ -113,6 +125,57 @@ class ReaderRepository(
         val n = minOf(source.buffer.size, MAX_BODY_BYTES)
         return source.buffer.readUtf8(n)
     }
+
+    internal fun htmlForwardTarget(baseUrl: String, html: String): String? {
+        val target = metaRefreshTarget(html)
+            ?: (scriptLocationTarget(html) ?: canonicalTarget(html)).takeIf { looksLikeRedirectPage(html) }
+            ?: return null
+        return resolveForwardTarget(baseUrl, target)
+    }
+
+    private fun metaRefreshTarget(html: String): String? =
+        metaTagRegex.findAll(html)
+            .firstNotNullOfOrNull { tag ->
+                val equiv = htmlAttr(tag.value, "http-equiv") ?: return@firstNotNullOfOrNull null
+                if (!equiv.equals("refresh", ignoreCase = true)) return@firstNotNullOfOrNull null
+                val content = htmlAttr(tag.value, "content") ?: return@firstNotNullOfOrNull null
+                refreshUrlRegex.find(content)?.groupValues?.getOrNull(1)
+            }
+
+    private fun scriptLocationTarget(html: String): String? =
+        locationAssignRegex.find(html)?.groupValues?.getOrNull(1)
+
+    private fun canonicalTarget(html: String): String? =
+        linkTagRegex.findAll(html)
+            .firstNotNullOfOrNull { tag ->
+                val rel = htmlAttr(tag.value, "rel") ?: return@firstNotNullOfOrNull null
+                if (!rel.split(Regex("\\s+")).any { it.equals("canonical", ignoreCase = true) }) {
+                    return@firstNotNullOfOrNull null
+                }
+                htmlAttr(tag.value, "href")
+            }
+
+    private fun resolveForwardTarget(baseUrl: String, rawTarget: String): String? {
+        val decoded = HtmlToMarkdown.decode(rawTarget).trim().trim('"', '\'')
+        val resolved = UrlExtractor.articleUrl(decoded, baseUrl)?.let(UrlExtractor::preferHttps) ?: return null
+        val base = baseUrl.substringBefore('#').trimEnd('/').lowercase()
+        val target = resolved.substringBefore('#').trimEnd('/').lowercase()
+        return resolved.takeIf { target != base }
+    }
+
+    private fun looksLikeRedirectPage(html: String): Boolean {
+        val text = html.lowercase()
+        return "redirecting" in text || "if you are not redirected" in text
+    }
+
+    private fun htmlAttr(tag: String, name: String): String? =
+        Regex("""(?is)\b${Regex.escape(name)}\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""")
+            .find(tag)
+            ?.destructured
+            ?.let { (doubleQuoted, singleQuoted, bare) ->
+                doubleQuoted.ifBlank { singleQuoted.ifBlank { bare } }
+            }
+            ?.takeIf { it.isNotBlank() }
 
     private sealed interface OriginResult {
         data class Article(val content: ReadableContent) : OriginResult
@@ -350,10 +413,23 @@ class ReaderRepository(
         internal const val ERROR_NO_ARTICLE = "Could not find an article on this page."
 
         private const val MAX_BODY_BYTES = 2 * 1024 * 1024L
+        private const val MAX_HTML_FORWARDS = 5
 
         private val htmlTitleRegex = Regex(
             """<title[^>]*>(.*?)</title>""",
             setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        )
+        private val metaTagRegex = Regex(
+            """<meta\b[^>]*>""",
+            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        )
+        private val linkTagRegex = Regex(
+            """<link\b[^>]*>""",
+            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        )
+        private val refreshUrlRegex = Regex("""(?:^|;)\s*url\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
+        private val locationAssignRegex = Regex(
+            """(?is)(?:window\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']""",
         )
     }
 }

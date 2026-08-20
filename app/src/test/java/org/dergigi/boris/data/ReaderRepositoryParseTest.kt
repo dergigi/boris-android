@@ -135,6 +135,40 @@ class ReaderRepositoryParseTest {
         assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
     }
 
+    @Test
+    fun fetchFollowsHtmlForwardBeforeParsing() {
+        val requested = mutableListOf<String>()
+        val target = "https://dergigi.com/2022/04/03/inalienable-property-rights/"
+        val forward = """
+            <!DOCTYPE html>
+            <html lang="en-US">
+              <title>Redirecting&hellip;</title>
+              <link rel="canonical" href="$target">
+              <script>location="$target"</script>
+              <meta http-equiv="refresh" content="0; url=$target">
+              <h1>Redirecting&hellip;</h1>
+              <a href="$target">Click here if you are not redirected.</a>
+            </html>
+        """.trimIndent()
+        val page = """
+            <html><head><title>Target Article</title></head>
+            <body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            requested += request.url.toString()
+            if (request.url.toString() == target) {
+                stubResponse(request, 200, page)
+            } else {
+                stubResponse(request, 200, forward)
+            }
+        }
+        val content = ReaderRepository(client).fetch("https://dergigi.com/speech")
+        assertEquals(target, content.url)
+        assertEquals("Target Article", content.title)
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
+        assertEquals(listOf("https://dergigi.com/speech", target), requested)
+    }
+
     private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
         ReaderRepository(client).fetch(url)
         null
