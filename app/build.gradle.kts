@@ -76,6 +76,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -126,6 +127,8 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.okhttp)
+    implementation(libs.jsoup)
+    coreLibraryDesugaring(libs.desugar.jdk.libs.nio)
     implementation(libs.secp256k1.kmp)
     implementation(libs.secp256k1.jni.android)
     implementation(libs.bouncycastle.bcprov)

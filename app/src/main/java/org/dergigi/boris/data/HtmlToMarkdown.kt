@@ -6,6 +6,9 @@ package org.dergigi.boris.data
  * enough; no full DOM parsing needed.
  */
 object HtmlToMarkdown {
+    fun convert(element: org.jsoup.nodes.Element, baseUrl: String): String =
+        convert(element.outerHtml(), baseUrl)
+
     fun convert(html: String, baseUrl: String? = null): String {
         val stash = mutableListOf<String>()
         fun stash(text: String): String {

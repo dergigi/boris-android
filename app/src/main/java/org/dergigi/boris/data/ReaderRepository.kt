@@ -22,9 +22,11 @@ class ReaderRepository(
             null -> {
                 val targetUrl = UrlExtractor.normalize(url)
                 rssContent(url, targetUrl) ?: run {
+                    val origin = UrlExtractor.preferHttps(targetUrl)
                     val request = Request.Builder()
-                        .url(toProxyUrl(targetUrl))
-                        .header("Accept", "text/plain")
+                        .url(origin)
+                        .header("User-Agent", BORIS_UA)
+                        .header("Accept", "text/html,application/xhtml+xml")
                         .get()
                         .build()
                     val text = try {
@@ -32,7 +34,7 @@ class ReaderRepository(
                     } catch (e: IOException) {
                         executeFromCache(request) ?: throw e
                     }
-                    withCover(parse(targetUrl, text))
+                    withCover(parse(origin, text))
                 }
             }
         }
@@ -158,42 +160,25 @@ class ReaderRepository(
         UrlExtractor.embedImageLinks(content.replace("\n", "  \n"))
 
     internal fun parse(targetUrl: String, text: String): ReadableContent {
-        val hasMarkdownBlock = markdownBlockRegex.containsMatchIn(text)
-        return if (hasMarkdownBlock) {
-            val title = titleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-            val rawMarkdown = markdownRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-            val image = ArticleCover.imageFromJina(text)
-            val markdown = if (rawMarkdown != null && image != null) {
-                ArticleCover.stripLeadingImage(rawMarkdown, image)
-            } else {
-                rawMarkdown
-            }
-            ReadableContent(
-                url = targetUrl,
-                title = title,
-                markdown = markdown?.let(UrlExtractor::upgradeImageHttpUrls),
-                publishedAt = PublishedTime.fromJinaHeader(text),
-                imageUrl = image?.let(UrlExtractor::preferHttps),
-                summary = ArticleCover.descriptionFromJina(text),
+        val preview = OgMeta.parse(text, targetUrl)
+        val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+        val markdown = (
+            ArticleExtractor.markdown(text, targetUrl)
+                ?: HtmlToMarkdown.convert(text, targetUrl)
             )
-        } else {
-            val preview = OgMeta.parse(text, targetUrl)
-            val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
-            val markdown = HtmlToMarkdown.convert(text, targetUrl)
-                .let(UrlExtractor::upgradeImageHttpUrls)
-                .ifBlank { null }
-            val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
-            ReadableContent(
-                url = targetUrl,
-                title = preview.title ?: title?.let(HtmlToMarkdown::decode),
-                markdown = cover?.let { image ->
-                    markdown?.let { ArticleCover.stripLeadingImage(it, image) }
-                } ?: markdown,
-                publishedAt = PublishedTime.fromHtml(text),
-                imageUrl = cover,
-                summary = preview.description,
-            )
-        }
+            .let(UrlExtractor::upgradeImageHttpUrls)
+            .ifBlank { null }
+        val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
+        return ReadableContent(
+            url = targetUrl,
+            title = preview.title ?: title?.let(HtmlToMarkdown::decode),
+            markdown = cover?.let { image ->
+                markdown?.let { ArticleCover.stripLeadingImage(it, image) }
+            } ?: markdown,
+            publishedAt = PublishedTime.fromHtml(text),
+            imageUrl = cover,
+            summary = preview.description,
+        )
     }
 
     private fun withCover(content: ReadableContent): ReadableContent {
@@ -212,8 +197,6 @@ class ReaderRepository(
         )
     }
 
-    private fun toProxyUrl(url: String): String = "https://r.jina.ai/$url"
-
     companion object {
         @Volatile
         private var httpCacheDir: File? = null
@@ -227,13 +210,10 @@ class ReaderRepository(
             httpCacheBytes = maxBytes
         }
 
-        /** Bytes of a FORCE_CACHE hit for [url] (or its jina proxy), or 0 if uncached. */
+        /** Bytes of a FORCE_CACHE hit for [url], or 0 if uncached. */
         fun cachedBodyBytes(url: String): Long {
             val normalized = UrlExtractor.normalize(url)
-            val candidates = listOf(
-                "https://r.jina.ai/$normalized",
-                normalized,
-            ).distinct()
+            val candidates = listOf(UrlExtractor.preferHttps(normalized))
             for (candidate in candidates) {
                 val request = Request.Builder()
                     .url(candidate)
@@ -258,8 +238,8 @@ class ReaderRepository(
                 .apply {
                     val dir = httpCacheDir ?: return@apply
                     cache(Cache(dir, httpCacheBytes))
-                    // jina sends no cache headers; force responses into the cache
-                    // so previously opened articles render offline.
+                    // Origins often send no-store; force successful responses into
+                    // the cache so previously opened articles render offline.
                     addNetworkInterceptor { chain ->
                         chain.proceed(chain.request()).newBuilder()
                             .removeHeader("Pragma")
@@ -277,15 +257,10 @@ class ReaderRepository(
         /** Feed bodies shorter than this are teasers; fetch the web page instead. */
         private const val MIN_RSS_MARKDOWN_CHARS = 500
 
-        private val markdownBlockRegex = Regex("""Markdown Content:\s""", RegexOption.IGNORE_CASE)
-        private val titleRegex = Regex(
-            """Title:\s*(.*?)(?:\s+URL Source:|\s+Markdown Content:)""",
-            RegexOption.IGNORE_CASE,
-        )
-        private val markdownRegex = Regex(
-            """Markdown Content:\s*([\s\S]*)$""",
-            RegexOption.IGNORE_CASE,
-        )
+        private val BORIS_UA =
+            "Boris/${org.dergigi.boris.BuildConfig.VERSION_NAME} " +
+                "(Android; +https://github.com/dergigi/boris-android)"
+
         private val htmlTitleRegex = Regex(
             """<title[^>]*>(.*?)</title>""",
             setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
