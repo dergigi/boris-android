@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader selection keeps the gesture alive so you can drag past a word and move the handles
+
 ## [1.4.39] - 2026-08-20
 
 ### Fixed

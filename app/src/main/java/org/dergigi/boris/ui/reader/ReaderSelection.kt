@@ -443,18 +443,14 @@ fun Modifier.readerSelectable(
             state.refreshToolbar()
         }
     }
-        .then(
-            if (state.ownsLoupe(owner)) {
-                Modifier.magnifier(
-                    sourceCenter = { state.loupeCenter },
-                    zoom = LOUPE_ZOOM,
-                    size = DpSize(LOUPE_WIDTH, LOUPE_HEIGHT),
-                    cornerRadius = LOUPE_HEIGHT / 2,
-                    elevation = 8.dp,
-                )
-            } else {
-                Modifier
+        .magnifier(
+            sourceCenter = {
+                if (state.ownsLoupe(owner)) state.loupeCenter else Offset.Unspecified
             },
+            zoom = LOUPE_ZOOM,
+            size = DpSize(LOUPE_WIDTH, LOUPE_HEIGHT),
+            cornerRadius = LOUPE_HEIGHT / 2,
+            elevation = 8.dp,
         )
         .drawWithContent {
             val current = layoutRef.value
@@ -476,7 +472,7 @@ fun Modifier.readerSelectable(
         .pointerInput(owner) {
             val touchSlop = viewConfig.touchSlop
             val longPressTimeout = viewConfig.longPressTimeoutMillis
-            val handleSlop = 24.dp.toPx()
+            val handleSlop = 40.dp.toPx()
             while (true) {
                 awaitPointerEventScope {
                     handleReaderGesture(
@@ -522,9 +518,9 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
             val startHandle = handleCenter(currentLayout, local.min, start = true)
             val endHandle = handleCenter(currentLayout, local.max, start = false)
             val movingMin = state.hasStartHandle(owner) &&
-                (down.position - startHandle).getDistance() <= handleSlop
+                nearHandle(down.position, startHandle, handleSlop)
             val movingMax = state.hasEndHandle(owner) &&
-                (down.position - endHandle).getDistance() <= handleSlop
+                nearHandle(down.position, endHandle, handleSlop)
             if (movingMin || movingMax) {
                 down.consume()
                 state.hideToolbar()
@@ -559,28 +555,68 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         val index = JustifiedLayout.offsetAt(laid, change.position)
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
         state.showLoupe(owner, loupeSource(laid, index))
-        while (true) {
-            val event = awaitPointerEvent(pass)
-            val drag = event.changes.firstOrNull { it.id == down.id } ?: break
-            if (!drag.pressed) break
-            drag.consume()
-            val next = layout() ?: break
-            val hit = selectionAt(owner, drag.position, state, next, coordinates())
-            state.extendTo(hit.owner, hit.offset)
-            showHitLoupe(state, hit, owner, next)
-        }
-        showToolbar(state)
+        dragExtendSelection(down.id, owner, state, layout, coordinates, pass)
         return
     }
 
     val change = currentEvent.changes.firstOrNull { it.id == down.id } ?: return
-    if (!change.pressed && (change.position - down.position).getDistance() <= touchSlop) {
+    val travel = (change.position - down.position).getDistance()
+    if (change.pressed && travel > touchSlop) {
+        val delta = change.position - down.position
+        if (state.owns(owner)) {
+            val local = state.rangeIn(owner) ?: return
+            change.consume()
+            state.hideToolbar()
+            val at = JustifiedLayout.offsetAt(currentLayout, down.position)
+            val movingMin = closerToMin(at, local)
+            state.moveBound(movingMin, owner, JustifiedLayout.offsetAt(currentLayout, change.position))
+            state.showLoupe(owner, loupeSource(currentLayout, if (movingMin) local.min else local.max))
+            dragSelectionBound(down.id, movingMin, owner, state, layout, coordinates, pass)
+            return
+        }
+        if (kotlin.math.abs(delta.x) > kotlin.math.abs(delta.y)) {
+            val laid = layout() ?: return
+            change.consume()
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            val start = JustifiedLayout.offsetAt(laid, down.position)
+            state.begin(owner, text(), laid.getWordBoundary(start), ttsStartIndex())
+            val hit = selectionAt(owner, change.position, state, laid, coordinates())
+            state.extendTo(hit.owner, hit.offset)
+            showHitLoupe(state, hit, owner, laid)
+            dragExtendSelection(down.id, owner, state, layout, coordinates, pass)
+            return
+        }
+        return
+    }
+    if (!change.pressed && travel <= touchSlop) {
         if (state.hasSelection) {
             state.clear()
         } else if (onTap(down.position)) {
             change.consume()
         }
     }
+}
+
+private suspend fun AwaitPointerEventScope.dragExtendSelection(
+    pointerId: PointerId,
+    owner: Any,
+    state: ReaderSelectionState,
+    layout: () -> TextLayoutResult?,
+    coordinates: () -> LayoutCoordinates?,
+    pass: PointerEventPass,
+) {
+    while (true) {
+        val event = awaitPointerEvent(pass)
+        val drag = event.changes.firstOrNull { it.id == pointerId } ?: break
+        if (!drag.pressed) break
+        drag.consume()
+        val next = layout() ?: break
+        val hit = selectionAt(owner, drag.position, state, next, coordinates())
+        state.extendTo(hit.owner, hit.offset)
+        showHitLoupe(state, hit, owner, next)
+    }
+    showToolbar(state)
 }
 
 private suspend fun AwaitPointerEventScope.dragSelectionBound(
@@ -635,6 +671,15 @@ private fun showHitLoupe(
     } else {
         state.showLoupeAt(hit.owner, hit.offset)
     }
+}
+
+internal fun closerToMin(offset: Int, range: TextRange): Boolean {
+    return kotlin.math.abs(offset - range.min) <= kotlin.math.abs(offset - range.max)
+}
+
+private fun nearHandle(down: Offset, handle: Offset, slop: Float): Boolean {
+    return kotlin.math.abs(down.x - handle.x) <= slop &&
+        kotlin.math.abs(down.y - handle.y) <= slop
 }
 
 private fun showToolbar(state: ReaderSelectionState) {
