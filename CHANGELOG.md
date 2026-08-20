@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.29] - 2026-08-20
+
+### Fixed
+
+- TTS no longer sits idle between paragraphs, especially with German voices
+- Home shows articles as archived without opening them first
+- TTS skips bare URLs and reads only the domain after Source:
+
 ## [1.4.28] - 2026-08-20
 
 ### Fixed
@@ -1195,7 +1203,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.28...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.29...HEAD
+[1.4.29]: https://github.com/dergigi/boris-android/releases/tag/v1.4.29
 [1.4.28]: https://github.com/dergigi/boris-android/releases/tag/v1.4.28
 [1.4.27]: https://github.com/dergigi/boris-android/releases/tag/v1.4.27
 [1.4.26]: https://github.com/dergigi/boris-android/releases/tag/v1.4.26
