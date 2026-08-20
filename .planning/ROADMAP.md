@@ -11,6 +11,7 @@ Boris already reads articles. This milestone adds optional identity on Home (Amb
 - [x] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern (completed 2026-08-16)
 - [ ] **Phase 4: Listen to articles** - Speak the current article from the reader
 - [ ] **Phase 5: Resolve nostr profile references** - Turn `nostr:nprofile` mentions in articles into profile links
+- [ ] **Phase 6: On-device article extraction** - Fetch web HTML on-device and extract readable content without `r.jina.ai`
 
 ## Phase Details
 
@@ -66,6 +67,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 | 4. Listen to articles | 3/3 | Verifying | |
 | 5. Resolve nostr profile references | 2/2 | In Progress|  |
+| 6. On-device article extraction | 0/0 | Not started |  |
 
 ### Phase 3: Nostr highlights
 
@@ -195,6 +197,17 @@ Plans:
 Plans:
 
 - [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 6: On-device article extraction
+
+**Goal:** Ordinary http(s) articles load by fetching the page on-device and extracting readable Markdown locally, so reading does not depend on `r.jina.ai` being available or authenticated. Nostr and RSS paths stay as they are. Offline cache still works. GitHub issue #54.
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 6 to break down)
 
 ---
 *Roadmap created: 2026-08-14*

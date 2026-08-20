@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 05
-current_phase_name: Resolve nostr profile references
-status: in_progress
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-08-18T16:12:44.512Z"
+current_phase: 06
+current_phase_name: On-device article extraction
+status: context_gathered
+stopped_at: Phase 6 context gathered
+last_updated: "2026-08-20T06:13:39.778Z"
 last_activity: 2026-08-18
 last_activity_desc: Phase 5 plans executed (hinted relay persist + fetch union)
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
   total_plans: 8
   completed_plans: 8
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 5 Resolve nostr profile references — 05-01 and 05-02 executed, awaiting verify
+**Current focus:** Phase 6 On-device article extraction — context gathered, ready to plan
 
 ## Current Position
 
-Phase: 05 of 5 (Resolve nostr profile references)
-Plan: 02 of 02 complete
-Status: Executed — both plans done; HintedRelays persist unions into kind 0 fetch
-Last activity: 2026-08-18 — Completed 05-02 (hinted_relays.json + fetchProfile union)
+Phase: 06 of 6 (On-device article extraction)
+Plan: 0 of 0
+Status: Context gathered — ready for `/gsd-plan-phase 6`
+Last activity: 2026-08-20 — Phase 6 CONTEXT.md captured (GitHub #54)
 
-Progress: [██████████] 100%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -99,6 +99,7 @@ Recent decisions affecting current work:
 - Backlog 999.6 added: friends-of-friends scope (2026-08-17)
 - Phase 4 added: Listen to articles
 - Phase 5 added: Resolve nostr profile references (GitHub #5)
+- Phase 6 added: On-device article extraction (GitHub #54)
 
 ### Pending Todos
 
@@ -126,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-18T16:12:44.505Z
-Stopped at: Completed 05-02-PLAN.md
-Resume file: None
+Last session: 2026-08-20T06:13:39.768Z
+Stopped at: Phase 6 context gathered
+Resume file: .planning/phases/06-on-device-article-extraction/06-CONTEXT.md
