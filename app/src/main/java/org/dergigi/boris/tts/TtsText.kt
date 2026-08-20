@@ -234,7 +234,9 @@ object TtsText {
         text = QUOTE_MARK.replace(text, "")
         text = LIST_MARK.replace(text, "")
         text = REFERENCE_LINK.replace(text) { it.groupValues[1] }
+        text = MARKDOWN_IMAGE.replace(text, " ")
         text = MarkdownInline.plain(text)
+        text = BARE_URL.replace(text, " ")
         text = EMPHASIS.replace(text, "")
         text = WHITESPACE.replace(text, " ").trim()
         return text.takeIf { it.isNotEmpty() }
@@ -289,6 +291,8 @@ object TtsText {
     private val LIST_MARK = Regex("""^\s*(?:[-*+]|\d+[.)])\s+""")
     private val REFERENCE_LINK = Regex("""\[([^\]\n]+)]\[[^\]\n]*]""")
     private val REFERENCE_DEFINITION = Regex("""^[ \t]{0,3}\[(?!\^)[^\]\n]+]:[ \t]*.*$""")
+    private val MARKDOWN_IMAGE = Regex("""!\[[^\]\n]*]\([^)\s]+(?:\s+"[^"]*")?\)""")
+    private val BARE_URL = Regex("""(?i)\b(?:https?://|www\.)[^\s<>)]+""")
     private val EMPHASIS = Regex("""[*_~`]+""")
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")

@@ -57,6 +57,29 @@ class TtsTextTest {
     }
 
     @Test
+    fun paragraphsDropBareUrlsAndAutolinks() {
+        val content = ReadableContent(
+            url = "https://example.com/urls",
+            markdown = "Read this https://example.com/docs and <https://example.com/extra> today.",
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(listOf("Read this and today."), paragraphs)
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
+    fun paragraphsDropInlineImages() {
+        val content = ReadableContent(
+            url = "https://example.com/images",
+            markdown = "Intro ![chart of adoption](https://example.com/chart.png) continues.",
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(listOf("Intro continues."), paragraphs)
+        assertFalse(paragraphs.any { it.contains("chart of adoption") })
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
     fun paragraphsSpeakAtNameForRawNpubMention() {
         val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
         val label = "@" + org.dergigi.boris.nostr.Profile.displayName(
