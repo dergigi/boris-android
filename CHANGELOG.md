@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.23] - 2026-08-20
+
+### Fixed
+
+- Reader drops share bars, follow widgets, and image-credit captions above the article
+
 ## [1.4.22] - 2026-08-20
 
 ### Fixed
@@ -1152,7 +1158,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.22...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.23...HEAD
+[1.4.23]: https://github.com/dergigi/boris-android/releases/tag/v1.4.23
 [1.4.22]: https://github.com/dergigi/boris-android/releases/tag/v1.4.22
 [1.4.21]: https://github.com/dergigi/boris-android/releases/tag/v1.4.21
 [1.4.20]: https://github.com/dergigi/boris-android/releases/tag/v1.4.20
