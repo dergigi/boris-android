@@ -41,9 +41,11 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
+import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -468,6 +470,16 @@ fun HomeScreenContent(
                     highlights.archivedKeys,
                     hideArchived,
                 )
+                val shortReads = ArchivedArticles.visible(
+                    highlights.shortReads,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
+                val longReads = ArchivedArticles.visible(
+                    highlights.longReads,
+                    highlights.archivedKeys,
+                    hideArchived,
+                )
                 val randomArticles = ArchivedArticles.visible(
                     highlights.randomArticles,
                     highlights.archivedKeys,
@@ -480,6 +492,7 @@ fun HomeScreenContent(
                 ) {
                     val empty = yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
                         continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+                        shortReads.isEmpty() && longReads.isEmpty() &&
                         randomArticles.isEmpty()
                     if (empty && !hasPrompts) {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -593,6 +606,32 @@ fun HomeScreenContent(
                                                 items = mostHighlighted,
                                                 rowKey = "most",
                                                 tint = nostrverseColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
+                                                onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
+                                            )
+                                        }
+                                        HomeSections.SHORT -> if (shortReads.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_short_reads),
+                                                items = shortReads,
+                                                rowKey = "short",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                icon = Icons.Outlined.Timer,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
+                                                onRead = onRead,
+                                                onMarkAsRead = onMarkAsRead,
+                                            )
+                                        }
+                                        HomeSections.LONG -> if (longReads.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_long_reads),
+                                                items = longReads,
+                                                rowKey = "long",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                icon = Icons.Outlined.AutoStories,
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,

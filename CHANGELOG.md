@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Home can surface unread short reads (5 min or less) and long reads (15 min or more)
+
 ## [1.4.29] - 2026-08-20
 
 ### Fixed

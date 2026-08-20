@@ -171,6 +171,7 @@ import org.dergigi.boris.data.NoteCover
 import org.dergigi.boris.data.ResolvedEventRef
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReadingTime
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.SettingsSync
@@ -199,8 +200,6 @@ import org.dergigi.boris.ui.theme.HighlightOther
 import coil3.compose.AsyncImage
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
-import kotlin.math.max
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -2122,12 +2121,7 @@ private fun readingColor(hex: String, fallback: Color): Color {
     return Color(argb)
 }
 
-internal fun readingTimeLabel(text: String): String? {
-    val words = text.split(Regex("\\s+")).count { it.isNotBlank() }
-    if (words == 0) return null
-    val minutes = max(1, (words / 200.0).roundToInt())
-    return if (minutes == 1) "1 min read" else "$minutes min read"
-}
+internal fun readingTimeLabel(text: String): String? = ReadingTime.labelFor(text)
 
 internal fun highlightCountLabel(count: Int): String? {
     if (count <= 0) return null

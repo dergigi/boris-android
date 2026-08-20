@@ -30,8 +30,22 @@ class ReaderRepository(
         }
         val ready = content.copy(markdown = content.markdown?.let(UrlExtractor::embedImageLinks))
         ArticlePreview.remember(ready)
+        ReadingTime.minutes(ready.body)?.let { ReadingTimeStore.put(url, it) }
         OfflineStore.markDownloaded(url)
         return ready
+    }
+
+    fun peekCached(url: String): ReadableContent? {
+        val content = rssContent(url)?.takeIf { it.body.isNotBlank() }
+            ?: run {
+                if (NostrLink.parse(url) != null) return null
+                val origin = UrlExtractor.preferHttps(UrlExtractor.normalize(url))
+                val text = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA)) ?: return null
+                runCatching { parse(origin, text) }.getOrNull()?.takeIf { it.body.isNotBlank() }
+            }
+            ?: return null
+        ReadingTime.minutes(content.body)?.let { ReadingTimeStore.put(url, it) }
+        return content
     }
 
     // D-09: honest Boris UA first; one browser-UA retry on 401/403 or an

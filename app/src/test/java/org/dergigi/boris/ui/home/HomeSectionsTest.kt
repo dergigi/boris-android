@@ -12,7 +12,7 @@ class HomeSectionsTest {
     @Test
     fun orderKeepsSavedOrderAndAppendsMissing() {
         assertEquals(
-            listOf("most", "yours", "continue", "friends", "others", "random"),
+            listOf("most", "yours", "continue", "friends", "others", "short", "long", "random"),
             HomeSections.order(listOf("most", "yours")),
         )
     }
@@ -22,27 +22,31 @@ class HomeSectionsTest {
         assertEquals(
             HomeSections.DEFAULT,
             HomeSections.order(
-                listOf("bogus", "continue", "yours", "friends", "others", "most", "random"),
+                listOf("bogus", "continue", "yours", "friends", "others", "most", "short", "long", "random"),
             ),
         )
     }
 
     @Test
-    fun orderAppendsRandomWhenUpgradingFromOlderSavedOrder() {
+    fun orderAppendsNewSectionsWhenUpgradingFromOlderSavedOrder() {
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "random"),
+            listOf("continue", "yours", "friends", "others", "most", "short", "long", "random"),
             HomeSections.order(listOf("continue", "yours", "friends", "others", "most")),
+        )
+        assertEquals(
+            listOf("continue", "yours", "friends", "others", "most", "random", "short", "long"),
+            HomeSections.order(listOf("continue", "yours", "friends", "others", "most", "random")),
         )
     }
 
     @Test
     fun moveSwapsNeighbors() {
         assertEquals(
-            listOf("yours", "continue", "friends", "others", "most", "random"),
+            listOf("yours", "continue", "friends", "others", "most", "short", "long", "random"),
             HomeSections.move(HomeSections.DEFAULT, "yours", -1),
         )
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "random", "most"),
+            listOf("continue", "yours", "friends", "others", "most", "short", "random", "long"),
             HomeSections.move(HomeSections.DEFAULT, "random", -1),
         )
     }
