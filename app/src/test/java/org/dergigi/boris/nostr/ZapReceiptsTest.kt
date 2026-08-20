@@ -78,6 +78,7 @@ class ZapReceiptsTest {
         assertEquals(false, supporters[1].legend)
     }
 
+    /** All positive zap receipts remain available for lightweight avatar attribution. */
     @Test
     fun allSupportersIncludesSmallPositiveZaps() {
         val big = "aa".repeat(32)
