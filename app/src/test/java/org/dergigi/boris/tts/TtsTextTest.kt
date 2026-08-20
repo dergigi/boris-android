@@ -305,6 +305,20 @@ class TtsTextTest {
     }
 
     @Test
+    fun sentenceIndexForProgressMovesThroughTheParagraph() {
+        val paragraph = "One two three four five. Next sentence is here now."
+        assertEquals(0, TtsText.sentenceIndexForProgress(paragraph, 0, 1.0))
+        val later = TtsText.sentenceIndexForProgress(
+            paragraph,
+            TtsText.spokenDurationMs(paragraph, 1.0),
+            1.0,
+        )
+        assertEquals(1, later)
+        val long = List(80) { "word" }.joinToString(" ")
+        assertTrue(TtsText.spokenDurationMs(long, 2.0) < TtsText.spokenDurationMs(long, 1.0))
+    }
+
+    @Test
     fun speechUnitsFollowSentenceBoundaries() {
         assertEquals(
             listOf("First sentence.", "Second sentence!", "Third one?"),

@@ -178,6 +178,20 @@ object TtsText {
         return pieces.ifEmpty { listOf(text.take(maxLength)) }
     }
 
+    fun spokenDurationMs(text: String, rate: Double): Long {
+        val words = text.split(Regex("\\s+")).count { it.isNotBlank() }.coerceAtLeast(1)
+        val wpm = FOLLOW_ALONG_WPM * rate.coerceIn(0.4, 4.0)
+        return (words / wpm * 60_000.0).toLong().coerceIn(MIN_SENTENCE_MS, MAX_PARAGRAPH_MS)
+    }
+
+    fun sentenceIndexForProgress(paragraph: String, elapsedMs: Long, rate: Double): Int {
+        val total = spokenDurationMs(paragraph, rate).coerceAtLeast(1)
+        val offset = ((elapsedMs.toDouble() / total) * paragraph.length)
+            .toInt()
+            .coerceIn(0, (paragraph.length - 1).coerceAtLeast(0))
+        return sentenceIndexAt(paragraph, offset)
+    }
+
     /**
      * Cumulative delays (ms) at which follow-along should leave each sentence
      * when the engine speaks a whole paragraph and never fires onRangeStart.
@@ -374,6 +388,7 @@ object TtsText {
     private const val FOLLOW_ALONG_WPM = 170.0
     private const val MIN_SENTENCE_MS = 400L
     private const val MAX_SENTENCE_MS = 12_000L
+    private const val MAX_PARAGRAPH_MS = 180_000L
 
     private val ABBREVIATIONS = setOf(
         "abs", "art", "aufl", "bd", "bzw", "ca", "chr", "corp", "dept", "dipl",

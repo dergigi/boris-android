@@ -20,6 +20,7 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.ServiceCompat
@@ -59,7 +60,10 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     private var resolvedLanguageUrl: String? = null
     private var queuedThrough = -1
     private var followAlongToken = 0
-    private val followAlongRunnables = mutableListOf<Runnable>()
+    private var followAlongTick: Runnable? = null
+    private var followAlongStartedAt = 0L
+    private var followAlongParagraph: String? = null
+    private var followAlongIndex = -1
     private var previewing = false
     private var foregrounded = false
     private var artworkUrl: String? = null
@@ -324,6 +328,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                     return@post
                 }
                 if (utteranceId?.endsWith(".end") != true) return@post
+                cancelFollowAlongClock()
                 val pos = parsePosition(utteranceId) ?: return@post
                 val session = TtsPlayback.session.value ?: return@post
                 if (!session.playing) return@post
@@ -364,31 +369,42 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
             cancelFollowAlongClock()
             return
         }
-        if (!fromRange) scheduleFollowAlongClock(paragraph, pos)
+        if (!fromRange && (pos.chunkIndex == 0 || followAlongIndex != pos.paragraphIndex)) {
+            scheduleFollowAlongClock(paragraph, pos)
+        }
     }
 
     private fun scheduleFollowAlongClock(paragraph: String, pos: SpeechPosition) {
         cancelFollowAlongClock()
-        val rate = TtsPlayback.session.value?.rate ?: 1.0
-        val delays = TtsText.sentenceAdvanceAtMs(paragraph, rate)
-        if (delays.isEmpty()) return
+        if (TtsText.sentences(paragraph).size <= 1) return
+        followAlongParagraph = paragraph
+        followAlongIndex = pos.paragraphIndex
+        followAlongStartedAt = SystemClock.uptimeMillis()
         val token = followAlongToken
-        delays.forEachIndexed { index, delayMs ->
-            val runnable = Runnable {
-                if (token != followAlongToken) return@Runnable
-                val session = TtsPlayback.session.value ?: return@Runnable
-                if (!session.playing || session.index != pos.paragraphIndex) return@Runnable
-                val sentence = TtsText.sentences(paragraph).getOrNull(index + 1) ?: return@Runnable
-                TtsPlayback.onSpeechStarted(pos.paragraphIndex, index + 1, sentence)
+        val tick = object : Runnable {
+            override fun run() {
+                if (token != followAlongToken) return
+                val session = TtsPlayback.session.value ?: return
+                val text = followAlongParagraph ?: return
+                if (!session.playing || session.index != followAlongIndex) return
+                val elapsed = SystemClock.uptimeMillis() - followAlongStartedAt
+                val index = TtsText.sentenceIndexForProgress(text, elapsed, session.rate)
+                val spoken = TtsText.sentences(text).getOrNull(index) ?: return
+                TtsPlayback.onSpeechStarted(followAlongIndex, index, spoken)
+                if (elapsed < TtsText.spokenDurationMs(text, session.rate)) {
+                    handler.postDelayed(this, FOLLOW_ALONG_TICK_MS)
+                }
             }
-            followAlongRunnables += runnable
-            handler.postDelayed(runnable, delayMs)
         }
+        followAlongTick = tick
+        handler.postDelayed(tick, FOLLOW_ALONG_TICK_MS)
     }
 
     private fun cancelFollowAlongClock() {
-        followAlongRunnables.forEach { handler.removeCallbacks(it) }
-        followAlongRunnables.clear()
+        followAlongTick?.let { handler.removeCallbacks(it) }
+        followAlongTick = null
+        followAlongParagraph = null
+        followAlongIndex = -1
         followAlongToken += 1
     }
 
@@ -667,6 +683,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         const val MAX_ARTWORK_BYTES = 5L * 1024L * 1024L
         const val MAX_ARTWORK_SIZE = 512
         const val PREVIEW_ID = "preview"
+        const val FOLLOW_ALONG_TICK_MS = 200L
         const val ACTION_PLAY = "org.dergigi.boris.tts.PLAY"
         const val ACTION_PAUSE = "org.dergigi.boris.tts.PAUSE"
         const val ACTION_STOP = "org.dergigi.boris.tts.STOP"
