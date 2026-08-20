@@ -22,6 +22,27 @@ object HtmlToMarkdown {
             .replace(Regex("(?is)<head.*?</head>"), "")
             .replace(Regex("(?s)<!--.*?-->"), "")
 
+        // Footnote refs before the anchor rule so <sup><a href="#id"> does not
+        // become a plain link. Only ids with a matching <li id> get a pair.
+        val footnoteIds = linkedMapOf<String, Int>()
+        supRefRegex.findAll(s).forEach { m ->
+            val id = m.groupValues[1]
+            if (id in footnoteIds) return@forEach
+            if (Regex("(?is)<li[^>]*\\bid=[\"']${Regex.escape(id)}[\"']").containsMatchIn(s)) {
+                footnoteIds[id] = footnoteIds.size + 1
+            }
+        }
+        s = supRefRegex.replace(s) { m ->
+            footnoteIds[m.groupValues[1]]?.let { "[^$it]" } ?: m.value
+        }
+        footnoteIds.forEach { (id, n) ->
+            s = s.replace(
+                Regex("(?is)<li[^>]*\\bid=[\"']${Regex.escape(id)}[\"'][^>]*>(.*?)</li>"),
+            ) {
+                "\n\n[^$n]: ${stripTags(it.groupValues[1]).trim()}\n\n"
+            }
+        }
+
         s = s.replace(Regex("(?is)<pre[^>]*>\\s*<code[^>]*>(.*?)</code>\\s*</pre>")) {
             stash("\n\n```\n" + decode(it.groupValues[1]).trim('\n') + "\n```\n\n")
         }
@@ -54,6 +75,34 @@ object HtmlToMarkdown {
                 .joinToString("\n") { "> $it" }
             "\n\n$quoted\n\n"
         }
+        s = s.replace(Regex("(?is)<table[^>]*>(.*?)</table>")) { m ->
+            val rows = Regex("(?is)<tr[^>]*>(.*?)</tr>").findAll(m.groupValues[1])
+                .map { row ->
+                    Regex("(?is)<t[hd][^>]*>(.*?)</t[hd]>").findAll(row.groupValues[1])
+                        .map { cell -> stripTags(cell.groupValues[1]).replace('\n', ' ').trim() }
+                        .toList()
+                }
+                .filter { it.isNotEmpty() }
+                .toList()
+            if (rows.isEmpty()) {
+                ""
+            } else {
+                val lines = buildList {
+                    add(rows.first().joinToString(" | ", "| ", " |"))
+                    add(rows.first().joinToString(" | ", "| ", " |") { "---" })
+                    rows.drop(1).forEach { add(it.joinToString(" | ", "| ", " |")) }
+                }
+                "\n\n" + lines.joinToString("\n") + "\n\n"
+            }
+        }
+        s = s.replace(Regex("(?is)<ol[^>]*>(.*?)</ol>")) { m ->
+            var n = 0
+            val items = Regex("(?is)<li[^>]*>(.*?)</li>").replace(m.groupValues[1]) { li ->
+                n += 1
+                "\n$n. ${li.groupValues[1].trim()}"
+            }
+            "\n\n$items\n\n"
+        }
         s = s.replace(Regex("(?is)<li[^>]*>(.*?)</li>")) { "\n- ${it.groupValues[1].trim()}" }
         s = s.replace(Regex("(?i)<br\\s*/?>"), "\n")
         s = s.replace(Regex("(?i)<hr[^>]*>"), "\n\n---\n\n")
@@ -69,7 +118,17 @@ object HtmlToMarkdown {
         stash.forEachIndexed { i, text ->
             s = s.replace("\u0000$i\u0000", text)
         }
-        return s.replace(Regex("\\n{3,}"), "\n\n").trim()
+        val body = s.replace(Regex("\\n{3,}"), "\n\n").trim()
+        val author = byline(html)
+        return if (author == null || body.isEmpty()) body else "*$author*\n\n$body"
+    }
+
+    private fun byline(html: String): String? {
+        val meta = Regex("(?is)<meta\\b[^>]*\\b(?:name|itemprop)=[\"']author[\"'][^>]*>")
+            .find(html)?.value?.let { attr(it, "content") }
+        val raw = meta ?: Regex("(?is)<(\\w+)\\b[^>]*\\b(?:rel|itemprop)=[\"']author[\"'][^>]*>(.*?)</\\1>")
+            .find(html)?.groupValues?.getOrNull(2)?.let { stripTags(it) }
+        return raw?.let(::decode)?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     private fun image(tag: String, baseUrl: String?): String {
@@ -88,6 +147,9 @@ object HtmlToMarkdown {
             .find(tag)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
 
     private fun stripTags(s: String): String = s.replace(Regex("<[^>]+>"), "")
+
+    private val supRefRegex =
+        Regex("(?is)<sup[^>]*>\\s*<a[^>]*\\bhref=[\"']#([^\"']+)[\"'][^>]*>.*?</a>\\s*</sup>")
 
     fun decode(s: String): String = s
         .replace(Regex("&#(\\d+);")) { m ->
