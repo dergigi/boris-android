@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader errors can open the page in an in-app browser
+
 ## [1.4.26] - 2026-08-20
 
 ### Fixed

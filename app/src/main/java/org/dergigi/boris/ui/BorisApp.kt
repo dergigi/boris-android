@@ -44,6 +44,7 @@ import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.nostr.HintedRelays
 import org.dergigi.boris.nostr.Nip19
+import org.dergigi.boris.ui.browser.BrowserScreen
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
 import org.dergigi.boris.ui.account.AccountScreen
@@ -80,6 +81,7 @@ object Routes {
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}&highlight={${ReaderViewModel.HIGHLIGHT_ARG}}"
+    const val BROWSER = "browser?url={${ReaderViewModel.URL_ARG}}"
 
     fun reader(url: String, highlightId: String? = null, quote: String? = null): String {
         if (!highlightId.isNullOrBlank()) {
@@ -88,6 +90,11 @@ object Routes {
         val encoded = URLEncoder.encode(url, StandardCharsets.UTF_8.name())
         val hid = URLEncoder.encode(highlightId.orEmpty(), StandardCharsets.UTF_8.name())
         return "reader?url=$encoded&highlight=$hid"
+    }
+
+    fun browser(url: String): String {
+        val encoded = URLEncoder.encode(url, StandardCharsets.UTF_8.name())
+        return "browser?url=$encoded"
     }
 
     fun profile(npub: String): String = "profile/$npub"
@@ -419,12 +426,28 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenBrowser = { url ->
+                            navController.navigate(Routes.browser(url)) {
+                                launchSingleTop = true
+                            }
+                        },
+                    )
+                }
+                composable(
+                    route = Routes.BROWSER,
+                    arguments = listOf(
+                        navArgument(ReaderViewModel.URL_ARG) { type = NavType.StringType },
+                    ),
+                ) { entry ->
+                    BrowserScreen(
+                        url = entry.arguments?.getString(ReaderViewModel.URL_ARG).orEmpty(),
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }
             // Off-tab screens without a bottom bar overlay the mini player, except
             // the reader: it stacks the player above the progress bar itself.
-            if (selectedTab == null && currentRoute != Routes.READER) {
+            if (selectedTab == null && currentRoute != Routes.READER && currentRoute != Routes.BROWSER) {
                 TtsMiniPlayerHost(
                     currentArticleUrl = currentArticleUrl,
                     onOpenArticle = ::openSpeakingArticle,

@@ -44,7 +44,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
@@ -186,6 +185,7 @@ import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.copyArticleLink
 import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.browser.InAppBrowser
 import org.dergigi.boris.ui.openOriginalArticle
 import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
@@ -216,6 +216,7 @@ fun ReaderScreen(
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
+    onOpenBrowser: (String) -> Unit,
     viewModel: ReaderViewModel = viewModel(),
     menuViewModel: HighlightMenuViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel(),
@@ -325,6 +326,7 @@ fun ReaderScreen(
         onOpenProfile = onOpenProfile,
         onOpenReaderSettings = onOpenReaderSettings,
         onOpenHighlightSettings = onOpenHighlightSettings,
+        onOpenBrowser = onOpenBrowser,
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
@@ -538,6 +540,7 @@ fun ReaderScreenContent(
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit = {},
     onOpenHighlightSettings: () -> Unit = {},
+    onOpenBrowser: (String) -> Unit,
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
@@ -605,7 +608,8 @@ fun ReaderScreenContent(
 
     fun openOriginal() {
         val url = articleUrl ?: return
-        openOriginalArticle(context, url)
+        val target = InAppBrowser.targetUrl(url)
+        if (target != null) onOpenBrowser(target) else openOriginalArticle(context, url)
     }
 
     fun openNative() {
@@ -745,9 +749,9 @@ fun ReaderScreenContent(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_open_original)) },
+                                    text = { Text(stringResource(R.string.reader_open_in_browser)) },
                                     leadingIcon = {
-                                        Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null)
+                                        Icon(Icons.Outlined.Language, contentDescription = null)
                                     },
                                     onClick = {
                                         menuOpen = false
@@ -934,12 +938,12 @@ fun ReaderScreenContent(
                             modifier = Modifier.padding(top = 8.dp),
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                imageVector = Icons.Outlined.Language,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.reader_open_original))
+                            Text(stringResource(R.string.reader_open_in_browser))
                         }
                     }
                 }

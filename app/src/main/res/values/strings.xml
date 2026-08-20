@@ -177,6 +177,8 @@
     <string name="reader_copy_link">Copy link</string>
     <string name="reader_copied">Copied.</string>
     <string name="reader_open_original">Open original</string>
+    <string name="reader_open_in_browser">Open in browser</string>
+    <string name="browser_open_external">Open in another app</string>
     <string name="reader_error_unreachable">Could not reach this page.</string>
     <string name="reader_error_no_article">Could not find an article on this page.</string>
     <string name="reader_error_details">Details</string>
