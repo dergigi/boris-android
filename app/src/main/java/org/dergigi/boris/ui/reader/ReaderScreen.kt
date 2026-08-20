@@ -1843,6 +1843,7 @@ private fun ArticleBody(
                 content.title?.takeIf { it.isNotBlank() },
                 content.body,
             ),
+            topPadding = with(density) { topScrollInsetPx.toDp() },
             menuFor = { item ->
                 HighlightCardMenu(
                     highlightId = item.id,

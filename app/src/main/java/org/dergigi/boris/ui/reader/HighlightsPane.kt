@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
@@ -94,6 +95,7 @@ fun HighlightsPane(
     onToggleMarks: () -> Unit,
     articleUrl: String? = null,
     articleTexts: List<String> = emptyList(),
+    topPadding: Dp = 0.dp,
     menuFor: (PaintedHighlight) -> HighlightCardMenu,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
@@ -124,6 +126,7 @@ fun HighlightsPane(
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
+                    .padding(top = topPadding)
                     .animateEnterExit(
                         enter = slideInHorizontally { it },
                         exit = slideOutHorizontally { it },
