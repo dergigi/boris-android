@@ -128,6 +128,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
@@ -200,6 +202,9 @@ import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
 import coil3.compose.AsyncImage
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.IElementType
+import org.intellij.markdown.MarkdownTokenTypes
+import org.intellij.markdown.ast.findChildOfType
 import org.intellij.markdown.parser.MarkdownParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1467,6 +1472,8 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
                 )
             },
             heading2 = {
@@ -1485,6 +1492,8 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
                 )
             },
             heading3 = {
@@ -1503,6 +1512,8 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
                 )
             },
             heading4 = {
@@ -1521,6 +1532,8 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
                 )
             },
             heading5 = {
@@ -1539,6 +1552,8 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
                 )
             },
             heading6 = {
@@ -1557,6 +1572,48 @@ private fun ArticleBody(
                     TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
+                    MarkdownTokenTypes.ATX_CONTENT,
+                    isHeading = true,
+                )
+            },
+            setextHeading1 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h1,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    spokenMark,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
+                    MarkdownTokenTypes.SETEXT_CONTENT,
+                    isHeading = true,
+                )
+            },
+            setextHeading2 = {
+                HighlightedMarkdownNode(
+                    it,
+                    it.typography.h2,
+                    paintedHolder.value,
+                    mineColor,
+                    friendsColor,
+                    otherColor,
+                    underline,
+                    selection,
+                    navigator,
+                    openFromStop,
+                    spokenMark,
+                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    outlineItems,
+                    it.node.startOffset,
+                    MarkdownTokenTypes.SETEXT_CONTENT,
+                    isHeading = true,
                 )
             },
         )
@@ -2113,11 +2170,16 @@ private fun HighlightedMarkdownNode(
     ttsStartIndex: Int?,
     outlineItems: List<ArticleOutlineItem> = emptyList(),
     outlineStartOffset: Int? = null,
+    contentChildType: IElementType? = null,
+    isHeading: Boolean = false,
 ) {
     val annotator = annotatorSettings()
-    val styledText = remember(model.node, style) {
+    val textNode = remember(model.node, contentChildType) {
+        contentChildType?.let { model.node.findChildOfType(it) } ?: model.node
+    }
+    val styledText = remember(textNode, style) {
         model.content.buildMarkdownAnnotatedString(
-            model.node,
+            textNode,
             style,
             annotator,
         )
@@ -2136,11 +2198,13 @@ private fun HighlightedMarkdownNode(
         }
         if (extra == null) marks else marks + extra
     }
+    val textModifier = Modifier
+        .fillMaxWidth()
+        .then(if (isHeading) Modifier.semantics { heading() } else Modifier)
     MarkdownText(
         content = styledText,
         style = style,
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = textModifier
             .drawHighlightMarks(
                 layout,
                 spans,
