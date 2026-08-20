@@ -43,7 +43,7 @@ fun SupportHeart(
     val state by SupportStore.state.collectAsStateWithLifecycle()
     val avatars = remember(state) {
         val ready = state as? SupportUiState.Ready ?: return@remember emptyList()
-        SupportAvatars.from(ready.supporters, ready.profiles)
+        SupportAvatars.from(ready.avatarSupporters, ready.profiles)
     }
     Row(
         modifier = modifier,

@@ -353,6 +353,17 @@ object RelayQuery {
         return query(urls, listOf(filter))
     }
 
+    /** Zap receipts (kind 9735) tagging an addressable event coordinate. */
+    fun fetchZapReceiptsByAddress(address: String, limit: Int = 1000): List<Nip01Event> {
+        val urls = relayUrls((globalReadRelays() + ZAP_RELAYS).distinct())
+        if (urls.isEmpty()) return emptyList()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_ZAP_RECEIPT))
+            .put("#a", JSONArray().put(address))
+            .put("limit", limit)
+        return query(urls, listOf(filter))
+    }
+
     /** Reading progress events (kind 39802) authored by [pubkeyHex]. */
     fun fetchReadingPositions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
         val urls = relayUrls((readRelays + globalReadRelays()).distinct())
@@ -950,7 +961,10 @@ object RelayQuery {
         Thread(runnable, "relay-refresh").apply { isDaemon = true }
     }
 
-    private val ZAP_RELAYS = listOf("wss://relay.getalby.com/v1")
+    private val ZAP_RELAYS = listOf(
+        "wss://relay.getalby.com/v1",
+        "wss://relay.zapstore.dev",
+    )
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val QUERY_MAJORITY_WAIT_MS = 2_000L

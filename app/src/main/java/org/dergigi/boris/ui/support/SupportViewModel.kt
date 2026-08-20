@@ -10,6 +10,7 @@ sealed interface SupportUiState {
     data class Ready(
         val supporters: List<ZapSupporter>,
         val profiles: Map<String, Profile>,
+        val avatarSupporters: List<ZapSupporter> = supporters,
     ) : SupportUiState {
         val totalZaps: Int get() = supporters.sumOf { it.zapCount }
     }
