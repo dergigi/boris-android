@@ -1635,9 +1635,7 @@ private fun ArticleBody(
                 onOpenArticle = onOpenArticle,
                 showCurrentArticle = true,
             )
-            ReadingProgressBar(
-                percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
-            )
+            ArticleScrollProgress(scrollState)
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1752,11 +1750,14 @@ private fun HighlightedMarkdownNode(
     onHighlightTap: (HighlightStop) -> Unit,
     ttsStartIndex: Int?,
 ) {
-    val styledText = model.content.buildMarkdownAnnotatedString(
-        model.node,
-        style,
-        annotatorSettings(),
-    )
+    val annotator = annotatorSettings()
+    val styledText = remember(model.node, style) {
+        model.content.buildMarkdownAnnotatedString(
+            model.node,
+            style,
+            annotator,
+        )
+    }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
@@ -1800,6 +1801,13 @@ private fun HighlightedMarkdownNode(
                 },
             ),
         onTextLayout = { result, _ -> layout = result },
+    )
+}
+
+@Composable
+private fun ArticleScrollProgress(scrollState: ScrollState) {
+    ReadingProgressBar(
+        percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
     )
 }
 
