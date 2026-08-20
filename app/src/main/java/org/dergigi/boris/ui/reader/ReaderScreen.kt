@@ -1368,6 +1368,29 @@ private fun ArticleBody(
         findIndex = index
         findJump++
     }
+    val noteByAuthor = stringResource(R.string.reader_note_by)
+    var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
+    LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
+        markdownBody = withContext(Dispatchers.Default) {
+            NostrMentions.rewrite(
+                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
+                    noteByAuthor.format(name)
+                },
+            )
+        }
+    }
+    LaunchedEffect(markdownBody) {
+        val body = markdownBody ?: return@LaunchedEffect
+        onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
+    }
+    fun ttsStartIndexForRenderedMarkdown(markdownOffset: Int): Int? {
+        val rendered = markdownBody
+        return if (rendered == null) {
+            TtsText.startIndexForMarkdownOffset(content, markdownOffset)
+        } else {
+            TtsText.startIndexForMarkdownOffset(content, rendered, markdownOffset)
+        }
+    }
     val highlightedComponents = remember(
         mineColor,
         friendsColor,
@@ -1381,6 +1404,7 @@ private fun ArticleBody(
         content.title,
         content.summary,
         content.body,
+        markdownBody,
         fullWidthImages,
         maxImageHeight,
         onImageClick,
@@ -1403,7 +1427,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                 )
             },
             paragraph = { model ->
@@ -1450,7 +1474,7 @@ private fun ArticleBody(
                             navigator,
                             openFromStop,
                             spokenMark,
-                            TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
+                            ttsStartIndexForRenderedMarkdown(model.node.startOffset),
                         )
                     }
                 }
@@ -1479,7 +1503,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1499,7 +1523,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1519,7 +1543,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1539,7 +1563,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1559,7 +1583,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1579,7 +1603,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1599,7 +1623,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
@@ -1619,7 +1643,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
@@ -1644,21 +1668,6 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
-    val noteByAuthor = stringResource(R.string.reader_note_by)
-    var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
-    LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
-        markdownBody = withContext(Dispatchers.Default) {
-            NostrMentions.rewrite(
-                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
-                    noteByAuthor.format(name)
-                },
-            )
-        }
-    }
-    LaunchedEffect(markdownBody) {
-        val body = markdownBody ?: return@LaunchedEffect
-        onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
-    }
     val markdownState = rememberMarkdownState(
         content = markdownBody.orEmpty(),
         flavour = flavour,

@@ -320,6 +320,33 @@ class TtsTextTest {
     }
 
     @Test
+    fun startIndexForMarkdownOffsetCanUseRenderedMarkdownOffsets() {
+        val original = """
+            First paragraph.
+
+            nostr:nevent1qqsqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+            Final paragraph.
+        """.trimIndent()
+        val rendered = """
+            First paragraph.
+
+            Note by Alice.
+
+            Final paragraph.
+        """.trimIndent()
+        val content = ReadableContent(
+            url = "https://example.com/rendered",
+            markdown = original,
+        )
+
+        assertEquals(
+            2,
+            TtsText.startIndexForMarkdownOffset(content, rendered, rendered.indexOf("Final")),
+        )
+    }
+
+    @Test
     fun chunksSplitLongTextOnSentencesThenSpaces() {
         val sentence = "This is a sentence. " // 20 chars
         val long = sentence.repeat(10).trim()
