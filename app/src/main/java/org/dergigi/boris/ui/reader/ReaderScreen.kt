@@ -1892,7 +1892,7 @@ private fun ArticleBody(
             },
         )
         var activeOutlineId by remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(outlineOpen, outlineItems) {
+        LaunchedEffect(outlineOpen, outlineItems, topScrollInsetPx) {
             if (!outlineOpen) {
                 activeOutlineId = null
                 return@LaunchedEffect
@@ -1901,7 +1901,7 @@ private fun ArticleBody(
                 scrollState.value
                 navigator.stops
                 val viewport = scrollViewport
-                val pad = with(density) { 48.dp.toPx() }
+                val pad = topScrollInsetPx + with(density) { 48.dp.toPx() }
                 ArticleOutline.activeId(outlineItems, { id ->
                     val stop = navigator.firstStop(id) ?: return@activeId null
                     val coords = navigator.coordinates(stop.owner) ?: return@activeId null
