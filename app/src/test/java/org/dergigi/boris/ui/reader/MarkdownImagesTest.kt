@@ -100,16 +100,38 @@ class MarkdownImagesTest {
         )
     }
 
+    @Test
+    fun linkedImageParagraphYieldsTheImageUrl() {
+        val md = "[![](https://dergigi.com/prompt.png)](https://github.com/fabianfabian/openclaw-nostr-nip17)"
+        val paragraph = firstParagraphWithImage(md)
+        assertEquals("https://dergigi.com/prompt.png", standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(
+            listOf("https://dergigi.com/prompt.png"),
+            standaloneMarkdownImageUrls(md, paragraph),
+        )
+    }
+
+    @Test
+    fun mixedParagraphWithLinkedImageStaysInline() {
+        val md = "See [![](https://dergigi.com/prompt.png)](https://github.com/foo) here"
+        val paragraph = firstParagraphWithImage(md)
+        assertNull(standaloneMarkdownImageUrl(md, paragraph))
+        assertEquals(emptyList<String>(), standaloneMarkdownImageUrls(md, paragraph))
+    }
+
     private fun firstParagraphWithImage(markdown: String): ASTNode {
         val root = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(markdown)
         fun walk(node: ASTNode): ASTNode? {
-            if (node.type == MarkdownElementTypes.PARAGRAPH &&
-                node.children.any { it.type == MarkdownElementTypes.IMAGE }
-            ) {
+            if (node.type == MarkdownElementTypes.PARAGRAPH && containsImage(node)) {
                 return node
             }
             return node.children.firstNotNullOfOrNull(::walk)
         }
         return checkNotNull(walk(root))
+    }
+
+    private fun containsImage(node: ASTNode): Boolean {
+        if (node.type == MarkdownElementTypes.IMAGE) return true
+        return node.children.any(::containsImage)
     }
 }

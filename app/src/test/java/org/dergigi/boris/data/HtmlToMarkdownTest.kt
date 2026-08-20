@@ -83,6 +83,19 @@ class HtmlToMarkdownTest {
             """<a href="https://example.com"><img src="https://example.com/i.png" alt="x"></a>""",
         )
         assertTrue(markdown.contains("![x](https://example.com/i.png)"))
+        assertFalse(markdown.contains("[![x]"))
+    }
+
+    @Test
+    fun linkedFigureImageStaysAStandaloneImage() {
+        val markdown = HtmlToMarkdown.convert(
+            """<figure> <a href="https://github.com/fabianfabian/openclaw-nostr-nip17"> """ +
+                """<img src="https://dergigi.com/prompt.png" /> """ +
+                """</a><figcaption>Default agent setup prompt (one agent per project)</figcaption></figure>""",
+        )
+        assertTrue(markdown.contains("![](https://dergigi.com/prompt.png)"))
+        assertFalse(markdown.contains("[![]("))
+        assertTrue(markdown.contains("Default agent setup prompt (one agent per project)"))
     }
 
     @Test

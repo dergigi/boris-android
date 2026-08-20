@@ -24,16 +24,31 @@ internal fun standaloneMarkdownImageUrls(content: String, node: ASTNode): List<S
     if (node.type == MarkdownElementTypes.IMAGE) {
         return markdownImageDestination(content, node)?.let(::listOf).orEmpty()
     }
-    val images = node.children.filter { it.type == MarkdownElementTypes.IMAGE }
-    if (images.isEmpty()) return emptyList()
-    val leftover = node.children.any { child ->
-        child.type != MarkdownElementTypes.IMAGE &&
-            content.substring(child.startOffset, child.endOffset).isNotBlank()
-    }
-    if (leftover) return emptyList()
+    val images = descendantImages(node)
+    if (images.isEmpty() || hasLeftoverText(node, content)) return emptyList()
     val urls = images.map { markdownImageDestination(content, it) }
     if (urls.any { it == null }) return emptyList()
     return urls.filterNotNull()
+}
+
+private fun descendantImages(node: ASTNode): List<ASTNode> {
+    if (node.type == MarkdownElementTypes.IMAGE) return listOf(node)
+    return node.children.flatMap(::descendantImages)
+}
+
+private val syntaxNames = setOf("[", "]", "(", ")", "!", "EOL", "WHITE_SPACE")
+
+private fun hasLeftoverText(node: ASTNode, content: String): Boolean {
+    when (node.type) {
+        MarkdownElementTypes.IMAGE,
+        MarkdownElementTypes.LINK_DESTINATION,
+        -> return false
+    }
+    if (node.type.name in syntaxNames) return false
+    if (node.children.isEmpty()) {
+        return content.substring(node.startOffset, node.endOffset).isNotBlank()
+    }
+    return node.children.any { hasLeftoverText(it, content) }
 }
 
 private fun ASTNode.findType(type: IElementType): ASTNode? {

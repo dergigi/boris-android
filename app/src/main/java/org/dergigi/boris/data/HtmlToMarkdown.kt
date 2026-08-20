@@ -63,7 +63,11 @@ object HtmlToMarkdown {
         s = s.replace(Regex("(?is)<img[^>]*>")) { image(it.value, baseUrl) }
         s = s.replace(Regex("(?is)<a\\s[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>")) { m ->
             val text = stripTags(m.groupValues[2]).trim()
-            if (text.isEmpty()) m.groupValues[1] else "[$text](${m.groupValues[1]})"
+            when {
+                text.isEmpty() -> m.groupValues[1]
+                onlyMarkdownImage.matches(text) -> "\n\n$text\n\n"
+                else -> "[$text](${m.groupValues[1]})"
+            }
         }
         for (level in 1..6) {
             s = s.replace(Regex("(?is)<h$level[^>]*>(.*?)</h$level>")) { m ->
@@ -158,6 +162,8 @@ object HtmlToMarkdown {
             .find(tag)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
 
     private fun stripTags(s: String): String = s.replace(Regex("<[^>]+>"), "")
+
+    private val onlyMarkdownImage = Regex("""^!\[[^\]]*]\([^)]+\)$""")
 
     private val supRefRegex =
         Regex("(?is)<sup[^>]*>\\s*<a[^>]*\\bhref=[\"']#([^\"']+)[\"'][^>]*>.*?</a>\\s*</sup>")
