@@ -79,10 +79,19 @@ class TtsTextTest {
     fun paragraphsDropBareUrlsAndAutolinks() {
         val content = ReadableContent(
             url = "https://example.com/urls",
-            markdown = "Read this https://example.com/docs and <https://example.com/extra> today.",
+            markdown = """
+                Read this https://example.com/docs and <https://example.com/extra> today.
+
+                https://example.com/only
+
+                Keep punctuation after https://example.com/trailing.
+            """.trimIndent(),
         )
         val paragraphs = TtsText.paragraphs(content)
-        assertEquals(listOf("Read this and today."), paragraphs)
+        assertEquals(
+            listOf("Read this and today.", "Keep punctuation after."),
+            paragraphs,
+        )
         assertFalse(paragraphs.any { it.contains("https://") })
     }
 
@@ -95,6 +104,39 @@ class TtsTextTest {
         val paragraphs = TtsText.paragraphs(content)
         assertEquals(listOf("Intro continues."), paragraphs)
         assertFalse(paragraphs.any { it.contains("chart of adoption") })
+        assertFalse(paragraphs.any { it.contains("https://") })
+    }
+
+    @Test
+    fun paragraphsDropMarkdownImageForms() {
+        val content = ReadableContent(
+            url = "https://example.com/image-forms",
+            markdown = """
+                A ![nested](https://example.com/image(foo).png) B.
+
+                C ![angle](<https://example.com/image two.png> "caption") D.
+
+                E ![single](https://example.com/one.png 'caption') F.
+
+                G ![paren](https://example.com/one.png (caption)) H.
+
+                I ![referenced][img] J.
+
+                K ![collapsed][] L.
+
+                M ![shortcut] N.
+
+                [img]: https://example.com/img.png
+                [collapsed]: https://example.com/collapsed.png
+                [shortcut]: https://example.com/shortcut.png
+            """.trimIndent(),
+        )
+        val paragraphs = TtsText.paragraphs(content)
+        assertEquals(
+            listOf("A B.", "C D.", "E F.", "G H.", "I J.", "K L.", "M N."),
+            paragraphs,
+        )
+        assertFalse(paragraphs.any { it.contains("nested") })
         assertFalse(paragraphs.any { it.contains("https://") })
     }
 

@@ -325,13 +325,13 @@ object TtsText {
         text = HEADING_MARK.replace(text, "")
         text = QUOTE_MARK.replace(text, "")
         text = LIST_MARK.replace(text, "")
+        text = stripMarkdownImages(text)
         text = REFERENCE_LINK.replace(text) { it.groupValues[1] }
-        text = MARKDOWN_IMAGE.replace(text, " ")
         text = MarkdownInline.plain(text)
-        text = BARE_URL.replace(text, " ")
         text = EMPHASIS.replace(text, "")
         text = speakSourceDomains(text)
-        text = BARE_URL.replace(text, "")
+        text = stripBareUrls(text)
+        text = SPACE_BEFORE_PUNCT.replace(text) { it.groupValues[1] }
         text = WHITESPACE.replace(text, " ").trim()
         return text.takeIf { it.isNotEmpty() }
     }
@@ -339,10 +339,86 @@ object TtsText {
     private fun speakSourceDomains(text: String): String =
         SOURCE_URL.replace(text) { match ->
             val label = match.groupValues[1]
-            val raw = match.groupValues[2].trimEnd('.', ',', ';', ':', '!', '?', ')', ']')
-            val host = ArticleUrl.host(raw) ?: return@replace label
-            "$label $host"
+            val raw = match.groupValues[2]
+            val url = raw.trimEnd { it in URL_TRAILING_PUNCT }
+            val punctuation = raw.drop(url.length)
+            val host = ArticleUrl.host(url) ?: return@replace label
+            "$label $host$punctuation"
         }
+
+    private fun stripBareUrls(text: String): String =
+        BARE_URL.replace(text) { match ->
+            val raw = match.value
+            val url = raw.trimEnd { it in URL_TRAILING_PUNCT }
+            val punctuation = raw.drop(url.length)
+            " $punctuation"
+        }
+
+    private fun stripMarkdownImages(text: String): String {
+        val out = StringBuilder(text.length)
+        var index = 0
+        while (index < text.length) {
+            if (index + 1 < text.length && text[index] == '!' && text[index + 1] == '[') {
+                val altEnd = findClosingBracket(text, index + 1)
+                if (altEnd >= 0) {
+                    val imageEnd = when (text.getOrNull(altEnd + 1)) {
+                        '(' -> findClosingImageDestination(text, altEnd + 1)
+                        '[' -> findClosingBracket(text, altEnd + 1)
+                        else -> altEnd
+                    }
+                    if (imageEnd >= altEnd) {
+                        out.append(' ')
+                        index = imageEnd + 1
+                        continue
+                    }
+                }
+            }
+            out.append(text[index])
+            index++
+        }
+        return out.toString()
+    }
+
+    private fun findClosingBracket(text: String, open: Int): Int {
+        var depth = 1
+        var index = open + 1
+        while (index < text.length) {
+            when (text[index]) {
+                '\\' -> index++
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) return index
+                }
+            }
+            index++
+        }
+        return -1
+    }
+
+    private fun findClosingImageDestination(text: String, open: Int): Int {
+        var depth = 1
+        var index = open + 1
+        var quote: Char? = null
+        var inAngleDestination = false
+        while (index < text.length) {
+            val char = text[index]
+            when {
+                char == '\\' -> index++
+                quote != null -> if (char == quote) quote = null
+                inAngleDestination -> if (char == '>') inAngleDestination = false
+                char == '<' -> inAngleDestination = true
+                char == '"' || char == '\'' -> quote = char
+                char == '(' -> depth++
+                char == ')' -> {
+                    depth--
+                    if (depth == 0) return index
+                }
+            }
+            index++
+        }
+        return -1
+    }
 
     private fun String.matchKey(): String =
         WHITESPACE.replace(this, " ").trim().lowercase()
@@ -354,7 +430,7 @@ object TtsText {
     private fun isTableRow(line: String): Boolean =
         line.startsWith("|") || (line.contains("|") && TABLE_SEPARATOR.matches(line))
 
-    private fun isImageOnly(line: String): Boolean = IMAGE_ONLY.matches(line)
+    private fun isImageOnly(line: String): Boolean = stripMarkdownImages(line).isBlank()
 
     private fun isRule(line: String): Boolean = RULE.matches(line)
 
@@ -404,17 +480,16 @@ object TtsText {
     private val LIST_MARK = Regex("""^\s*(?:[-*+]|\d+[.)])\s+""")
     private val REFERENCE_LINK = Regex("""\[([^\]\n]+)]\[[^\]\n]*]""")
     private val REFERENCE_DEFINITION = Regex("""^[ \t]{0,3}\[(?!\^)[^\]\n]+]:[ \t]*.*$""")
-    private val MARKDOWN_IMAGE = Regex("""!\[[^\]\n]*]\([^)\s]+(?:\s+"[^"]*")?\)""")
-    private val BARE_URL = Regex("""(?i)\b(?:https?://|www\.)[^\s<>)]+""")
     private val EMPHASIS = Regex("""[*_~`]+""")
-    private val BARE_URL = Regex("""(?:https?://|www\.)[^\s<>\[\]()]+""")
+    private val BARE_URL = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\[\]]+""")
     private val SOURCE_URL = Regex(
-        """(source:)\s*((?:https?://|www\.)[^\s<>\[\]()]+)""",
+        """(source:)\s*((?:https?://|www\.)[^\s<>\[\]]+)""",
         RegexOption.IGNORE_CASE,
     )
+    private val SPACE_BEFORE_PUNCT = Regex("""\s+([.,;:!?])""")
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
-    private val IMAGE_ONLY = Regex("""^(?:!\[[^\]]*]\([^)\s]+\)\s*)+$""")
+    private val URL_TRAILING_PUNCT = ".,;:!?"
     private val RULE = Regex("""^(?:-{3,}|\*{3,}|_{3,})$""")
 
     private data class MarkdownBlock(
