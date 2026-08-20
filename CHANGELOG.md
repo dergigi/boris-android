@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Markdown links to image URLs stay as links instead of being embedded over the article text
+
 ## [1.4.43] - 2026-08-20
 
 ### Fixed

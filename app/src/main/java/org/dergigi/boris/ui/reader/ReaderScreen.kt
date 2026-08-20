@@ -2602,7 +2602,7 @@ private class ClickableCoilImageTransformer(
         val data = Coil3ImageTransformerImpl.transform(https)
         return data.copy(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .clipToBounds()
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { onImageClick(https) },

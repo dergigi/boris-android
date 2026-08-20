@@ -140,7 +140,7 @@ class UrlExtractorTest {
     }
 
     @Test
-    fun embedImageLinksTurnsBareAndLinkedImagesIntoMarkdown() {
+    fun embedImageLinksTurnsBareUrlsIntoMarkdownImages() {
         val src = """
             photo https://cdn.example.com/a.jpg.
             already ![keep](https://cdn.example.com/b.png)
@@ -150,9 +150,24 @@ class UrlExtractorTest {
         val out = UrlExtractor.embedImageLinks(src)
         assertEquals(true, out.contains("![](https://cdn.example.com/a.jpg)."))
         assertEquals(true, out.contains("![keep](https://cdn.example.com/b.png)"))
-        assertEquals(true, out.contains("![caption](https://cdn.example.com/c.webp)"))
+        assertEquals(true, out.contains("[caption](https://cdn.example.com/c.webp)"))
+        assertEquals(false, out.contains("![caption](https://cdn.example.com/c.webp)"))
         assertEquals(true, out.contains("see https://example.com/post"))
         assertEquals(false, out.contains("![](https://example.com/post)"))
+    }
+
+    @Test
+    fun embedImageLinksLeavesMarkdownLinksToImagesAsLinks() {
+        val src = """
+            I am the Grug-brained developer. [The Grug Brained Developer](https://image.nostr.build/grug.png)
+
+            [chat](https://cdn.example.com/shot.webp)
+        """.trimIndent()
+        val out = UrlExtractor.embedImageLinks(src)
+        assertEquals(true, out.contains("[The Grug Brained Developer](https://image.nostr.build/grug.png)"))
+        assertEquals(true, out.contains("[chat](https://cdn.example.com/shot.webp)"))
+        assertEquals(false, out.contains("![The Grug Brained Developer]"))
+        assertEquals(false, out.contains("![chat]"))
     }
 
     @Test

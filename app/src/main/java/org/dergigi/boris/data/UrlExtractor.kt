@@ -99,16 +99,8 @@ object UrlExtractor {
     fun embedImageLinks(markdown: String): String {
         val (protected, restore) = protectCode(markdown)
         val prepared = upgradeImageHttpUrls(protected)
-        val linked = markdownLinkRegex.replace(prepared) { match ->
-            val url = match.groupValues[2]
-            if (isImageUrl(url)) {
-                "![${match.groupValues[1]}](${preferHttps(url)})"
-            } else {
-                match.value
-            }
-        }
-        val embedded = urlRegex.replace(linked) { match ->
-            if (alreadyLinked(linked, match.range.first)) return@replace match.value
+        val embedded = urlRegex.replace(prepared) { match ->
+            if (alreadyLinked(prepared, match.range.first)) return@replace match.value
             val raw = match.value.trimEnd('.', ',', ';', ')', ']', '"', '\'')
             val suffix = match.value.removePrefix(raw)
             if (isImageUrl(raw)) "![](${preferHttps(raw)})$suffix" else match.value
@@ -159,10 +151,6 @@ object UrlExtractor {
     }
 
     private val markdownImageRegex = Regex("""!\[[^\]]*]\(\s*<?([^)\s>]+)>?""")
-    private val markdownLinkRegex = Regex(
-        """(?<!!)\[([^]]*)]\(\s*<?(https?://[^)\s>]+)>?[^)]*\)""",
-        RegexOption.IGNORE_CASE,
-    )
     private val htmlImgRegex = Regex(
         """<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']""",
         RegexOption.IGNORE_CASE,
