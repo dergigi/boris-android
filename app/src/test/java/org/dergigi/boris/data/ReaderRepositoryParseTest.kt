@@ -1,10 +1,17 @@
 package org.dergigi.boris.data
 
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
 
 class ReaderRepositoryParseTest {
     private val repository = ReaderRepository()
@@ -80,4 +87,62 @@ class ReaderRepositoryParseTest {
         val out = repository.noteMarkdown("hello\nhttps://cdn.example.com/shot.jpg")
         assertEquals("hello  \n![](https://cdn.example.com/shot.jpg)", out)
     }
+
+    @Test
+    fun fetchMapsThinExtractToNoArticleAfterUaRetry() {
+        val agents = mutableListOf<String>()
+        val client = stubClient { request ->
+            agents += request.header("User-Agent").orEmpty()
+            stubResponse(request, 200, "<html><body><p>Hi</p></body></html>")
+        }
+        val error = fetchError(client, "https://example.com/thin")
+        assertEquals("Could not find an article on this page.", error?.message)
+        assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
+    }
+
+    @Test
+    fun fetchMapsLiveFailWithoutCacheToUnreachable() {
+        val client = stubClient { throw IOException("connect timed out") }
+        val error = fetchError(client, "https://example.com/gone")
+        assertEquals("Could not reach this page.", error?.message)
+    }
+
+    @Test
+    fun fetchRetriesWithBrowserUaWhenBlocked() {
+        val agents = mutableListOf<String>()
+        val page = """
+            <html><head><title>Page Title</title>
+            <meta property="og:image" content="https://example.com/hero.png">
+            <meta property="og:description" content="A short lede">
+            </head><body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            agents += request.header("User-Agent").orEmpty()
+            if (agents.size == 1) stubResponse(request, 403, "") else stubResponse(request, 200, page)
+        }
+        val content = ReaderRepository(client).fetch("https://example.com/blocked")
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
+        assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
+    }
+
+    private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
+        ReaderRepository(client).fetch(url)
+        null
+    } catch (e: IOException) {
+        e
+    }
+
+    private fun stubClient(handler: (Request) -> Response): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor { chain -> handler(chain.request()) }
+            .build()
+
+    private fun stubResponse(request: Request, code: Int, body: String): Response =
+        Response.Builder()
+            .request(request)
+            .protocol(Protocol.HTTP_1_1)
+            .code(code)
+            .message("stub")
+            .body(body.toResponseBody("text/html; charset=utf-8".toMediaType()))
+            .build()
 }

@@ -29,29 +29,6 @@ class PublishedTimeTest {
     }
 
     @Test
-    fun fromJinaHeader() {
-        val text = """
-            Title: Hello
-            URL Source: https://example.com/hello
-            Published Time: 2024-01-15T10:00:00.000Z
-            Markdown Content:
-            Body
-        """.trimIndent()
-        assertEquals(1_705_312_800L, PublishedTime.fromJinaHeader(text))
-    }
-
-    @Test
-    fun fromJinaHeaderMissing() {
-        val text = """
-            Title: Hello
-            URL Source: https://example.com/hello
-            Markdown Content:
-            Body
-        """.trimIndent()
-        assertNull(PublishedTime.fromJinaHeader(text))
-    }
-
-    @Test
     fun fromHtmlMeta() {
         val html = """
             <html><head>
