@@ -33,6 +33,18 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun spokenSpansMatchWhenDisplayedKeepsAUrl() {
+        val displayed = "Read this https://example.com/docs and keep going."
+        val spoken = "Read this and keep going."
+        val spans = matchSpokenSpans(displayed, spoken, spoken)
+        assertEquals(1, spans.size)
+        val marked = displayed.substring(spans[0].start, spans[0].end)
+        assertTrue(marked.startsWith("Read this"))
+        assertTrue(marked.contains("https://example.com/docs"))
+        assertTrue(marked.endsWith("going"))
+    }
+
+    @Test
     fun spokenHighlightUsesParagraphContext() {
         val spoken = ArticleFind.paintedSpoken(
             sentence = "Repeated sentence.",

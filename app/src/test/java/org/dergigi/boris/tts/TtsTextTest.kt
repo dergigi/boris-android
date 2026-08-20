@@ -289,6 +289,22 @@ class TtsTextTest {
     }
 
     @Test
+    fun sentenceAdvanceAtMsLeavesADelayPerEarlierSentence() {
+        val delays = TtsText.sentenceAdvanceAtMs(
+            "One two three four. Next sentence is shorter.",
+            rate = 1.0,
+        )
+        assertEquals(1, delays.size)
+        assertTrue(delays.single() >= 400L)
+        val faster = TtsText.sentenceAdvanceAtMs(
+            "One two three four. Next sentence is shorter.",
+            rate = 2.0,
+        )
+        assertTrue(faster.single() < delays.single())
+        assertTrue(TtsText.sentenceAdvanceAtMs("Only one sentence.", 1.0).isEmpty())
+    }
+
+    @Test
     fun speechUnitsFollowSentenceBoundaries() {
         assertEquals(
             listOf("First sentence.", "Second sentence!", "Third one?"),

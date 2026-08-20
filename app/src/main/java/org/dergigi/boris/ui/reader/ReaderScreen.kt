@@ -1917,6 +1917,7 @@ private fun TtsSpokenSync(
             followAlongScrolling = true
             try {
                 scrollState.animateScrollTo(target)
+                snapshotFlow { scrollState.isScrollInProgress }.first { !it }
             } finally {
                 followAlongScrolling = false
             }

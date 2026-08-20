@@ -58,6 +58,8 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     private var pausedByFocusLoss = false
     private var resolvedLanguageUrl: String? = null
     private var queuedThrough = -1
+    private var followAlongToken = 0
+    private val followAlongRunnables = mutableListOf<Runnable>()
     private var previewing = false
     private var foregrounded = false
     private var artworkUrl: String? = null
@@ -123,6 +125,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     }
 
     override fun onDestroy() {
+        cancelFollowAlongClock()
         if (TtsPlayback.engine === this) TtsPlayback.engine = null
         scope.cancel()
         artworkJob?.cancel()
@@ -140,6 +143,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
 
     override fun pause() {
         handler.post {
+            cancelFollowAlongClock()
             tts?.stop()
             abandonFocus()
         }
@@ -192,6 +196,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     }
 
     private fun speakCurrent() {
+        cancelFollowAlongClock()
         val session = TtsPlayback.session.value ?: return
         previewing = false
         if (!applyLanguage(session)) return
@@ -299,14 +304,14 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         override fun onStart(utteranceId: String?) {
             handler.post {
                 if (utteranceId == PREVIEW_ID) return@post
-                parsePosition(utteranceId)?.let { started(it, rangeStart = 0) }
+                parsePosition(utteranceId)?.let { started(it, rangeStart = 0, fromRange = false) }
             }
         }
 
         override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
             handler.post {
                 if (utteranceId == PREVIEW_ID) return@post
-                parsePosition(utteranceId)?.let { started(it, rangeStart = start) }
+                parsePosition(utteranceId)?.let { started(it, rangeStart = start, fromRange = true) }
             }
         }
 
@@ -332,15 +337,21 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
 
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String?) {
-            handler.post { TtsPlayback.onError(TtsPlayback.ERROR_ENGINE) }
+            handler.post {
+                cancelFollowAlongClock()
+                TtsPlayback.onError(TtsPlayback.ERROR_ENGINE)
+            }
         }
 
         override fun onError(utteranceId: String?, errorCode: Int) {
-            handler.post { TtsPlayback.onError(TtsPlayback.ERROR_ENGINE) }
+            handler.post {
+                cancelFollowAlongClock()
+                TtsPlayback.onError(TtsPlayback.ERROR_ENGINE)
+            }
         }
     }
 
-    private fun started(pos: SpeechPosition, rangeStart: Int) {
+    private fun started(pos: SpeechPosition, rangeStart: Int, fromRange: Boolean) {
         val session = TtsPlayback.session.value ?: return
         val paragraph = session.paragraphs.getOrNull(pos.paragraphIndex) ?: return
         val offset = (
@@ -349,6 +360,36 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         val sentenceIndex = TtsText.sentenceIndexAt(paragraph, offset)
         val spoken = TtsText.sentences(paragraph).getOrNull(sentenceIndex) ?: paragraph
         TtsPlayback.onSpeechStarted(pos.paragraphIndex, sentenceIndex, spoken)
+        if (fromRange && rangeStart > 0) {
+            cancelFollowAlongClock()
+            return
+        }
+        if (!fromRange) scheduleFollowAlongClock(paragraph, pos)
+    }
+
+    private fun scheduleFollowAlongClock(paragraph: String, pos: SpeechPosition) {
+        cancelFollowAlongClock()
+        val rate = TtsPlayback.session.value?.rate ?: 1.0
+        val delays = TtsText.sentenceAdvanceAtMs(paragraph, rate)
+        if (delays.isEmpty()) return
+        val token = followAlongToken
+        delays.forEachIndexed { index, delayMs ->
+            val runnable = Runnable {
+                if (token != followAlongToken) return@Runnable
+                val session = TtsPlayback.session.value ?: return@Runnable
+                if (!session.playing || session.index != pos.paragraphIndex) return@Runnable
+                val sentence = TtsText.sentences(paragraph).getOrNull(index + 1) ?: return@Runnable
+                TtsPlayback.onSpeechStarted(pos.paragraphIndex, index + 1, sentence)
+            }
+            followAlongRunnables += runnable
+            handler.postDelayed(runnable, delayMs)
+        }
+    }
+
+    private fun cancelFollowAlongClock() {
+        followAlongRunnables.forEach { handler.removeCallbacks(it) }
+        followAlongRunnables.clear()
+        followAlongToken += 1
     }
 
     private fun parsePosition(utteranceId: String?): SpeechPosition? {
@@ -444,6 +485,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     }
 
     private fun stopPlaybackAndSelf() {
+        cancelFollowAlongClock()
         tts?.stop()
         clearArtwork()
         abandonFocus()

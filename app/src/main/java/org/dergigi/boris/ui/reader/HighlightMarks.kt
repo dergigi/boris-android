@@ -72,22 +72,50 @@ private fun spokenContextSpans(displayed: String, item: PaintedHighlight): List<
     val context = item.context?.takeIf { item.spoken && it.isNotBlank() } ?: return emptyList()
     val mark = highlightMark(item.quote, context)
     if (mark.isBlank()) return emptyList()
-    return QuoteMatch.occurrences(
-        displayed,
-        context,
-        ignoreCase = item.ignoreCase,
-    ).flatMap { contextRange ->
-        val contextStart = contextRange.first
-        val contextText = displayed.substring(contextStart, contextRange.last + 1)
-        QuoteMatch.occurrences(contextText, mark, ignoreCase = item.ignoreCase).map { range ->
-            HighlightSpan(
-                item = item,
-                start = contextStart + range.first,
-                end = contextStart + range.last + 1,
-            )
+    val ignoreCase = item.ignoreCase
+    val exact = QuoteMatch.occurrences(displayed, context, ignoreCase = ignoreCase)
+        .flatMap { contextRange ->
+            val contextStart = contextRange.first
+            val contextText = displayed.substring(contextStart, contextRange.last + 1)
+            QuoteMatch.occurrences(contextText, mark, ignoreCase = ignoreCase).map { range ->
+                HighlightSpan(
+                    item = item,
+                    start = contextStart + range.first,
+                    end = contextStart + range.last + 1,
+                )
+            }
         }
-    }
+    if (exact.isNotEmpty()) return exact
+    if (!spokenContextBelongs(displayed, context)) return emptyList()
+    val range = spokenRange(displayed, mark) ?: return emptyList()
+    return listOf(HighlightSpan(item, range.first, range.last + 1))
 }
+
+internal fun spokenContextBelongs(displayed: String, context: String): Boolean {
+    val words = spokenWords(context)
+    if (words.isEmpty()) return true
+    if (words.size == 1) return displayed.contains(words[0], ignoreCase = true)
+    val first = displayed.indexOf(words[0], ignoreCase = true)
+    if (first < 0) return false
+    return displayed.indexOf(words[1], first + words[0].length, ignoreCase = true) >= 0
+}
+
+internal fun spokenRange(displayed: String, spoken: String): IntRange? {
+    val words = spokenWords(spoken)
+    if (words.isEmpty()) return null
+    val start = displayed.indexOf(words.first(), ignoreCase = true)
+    if (start < 0) return null
+    val last = words.last()
+    val lastAt = displayed.indexOf(last, start, ignoreCase = true)
+    if (lastAt < 0) return start until start + words.first().length
+    return start until lastAt + last.length
+}
+
+private fun spokenWords(text: String): List<String> =
+    text.replace(Regex("""(?i)(?:https?://|www\.)\S+"""), " ")
+        .split(Regex("\\s+"))
+        .map { it.trim('"', '\'', '.', ',', ';', ':', '!', '?') }
+        .filter { it.length >= 2 }
 
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()

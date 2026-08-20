@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- TTS follow-along keeps highlighting and scrolling through a paragraph when the voice never reports sentence ranges
+
 ## [1.4.32] - 2026-08-20
 
 ### Fixed
