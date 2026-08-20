@@ -241,6 +241,35 @@ class TtsTextTest {
     }
 
     @Test
+    fun sentencesKeepGermanAbbreviationsAndOrdinalsTogether() {
+        assertEquals(
+            listOf(
+                "Am 1. Januar sprach Dr. Müller z. B. über Art. 5 GG.",
+                "Dann ging er.",
+            ),
+            TtsText.sentences(
+                "Am 1. Januar sprach Dr. Müller z. B. über Art. 5 GG. Dann ging er.",
+            ),
+        )
+        assertEquals(
+            listOf("Nr. 12 bzw. 13 usw. stehen bereit.", "Weiter gehts."),
+            TtsText.sentences("Nr. 12 bzw. 13 usw. stehen bereit. Weiter gehts."),
+        )
+    }
+
+    @Test
+    fun sentencesStillSplitEnglishAndQuestions() {
+        assertEquals(
+            listOf("Mr. Smith went home.", "Did he sleep?"),
+            TtsText.sentences("Mr. Smith went home. Did he sleep?"),
+        )
+        assertEquals(
+            1,
+            TtsText.sentenceIndexAt("First sentence. Second one.", "First sentence. ".length),
+        )
+    }
+
+    @Test
     fun speechUnitsFollowSentenceBoundaries() {
         assertEquals(
             listOf("First sentence.", "Second sentence!", "Third one?"),

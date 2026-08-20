@@ -57,7 +57,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     private var focusRequest: AudioFocusRequest? = null
     private var pausedByFocusLoss = false
     private var resolvedLanguageUrl: String? = null
-    private var lastChunkId: String? = null
+    private var queuedThrough = -1
     private var previewing = false
     private var foregrounded = false
     private var artworkUrl: String? = null
@@ -192,25 +192,38 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
     }
 
     private fun speakCurrent() {
-        val engine = tts ?: return
-        if (!ttsReady) return
         val session = TtsPlayback.session.value ?: return
         previewing = false
         if (!applyLanguage(session)) return
         if (!requestFocus()) return
-        engine.setSpeechRate(session.rate.toFloat())
-        val paragraph = session.paragraphs.getOrNull(session.index) ?: return
-        val units = TtsText.speechUnits(paragraph, maxSpeechLength())
+        tts?.setSpeechRate(session.rate.toFloat())
+        queuedThrough = session.index - 1
+        if (!enqueueParagraph(session.index, flush = true)) return
+        enqueueParagraph(session.index + 1, flush = false)
+    }
+
+    private fun enqueueParagraph(index: Int, flush: Boolean): Boolean {
+        val engine = tts ?: return false
+        if (!ttsReady) return false
+        val session = TtsPlayback.session.value ?: return false
+        if (index !in session.paragraphs.indices) return false
+        if (index <= queuedThrough) return true
+        val paragraph = session.paragraphs[index]
+        val units = TtsText.chunks(paragraph, maxSpeechLength())
         units.forEachIndexed { j, unit ->
-            val id = "p${session.index}.s$j"
-            if (j == units.lastIndex) lastChunkId = id
+            val id = buildString {
+                append('p').append(index).append(".c").append(j)
+                if (j == units.lastIndex) append(".end")
+            }
             engine.speak(
                 unit,
-                if (j == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
+                if (flush && j == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
                 null,
                 id,
             )
         }
+        queuedThrough = index
+        return true
     }
 
     private fun speakPreview(text: String) {
@@ -224,7 +237,6 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         applyLanguageFor(text)
         requestFocus()
         engine.setSpeechRate(TtsSpeed.snap(SettingsSync.settings.value.ttsDefaultSpeed).toFloat())
-        lastChunkId = PREVIEW_ID
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, PREVIEW_ID)
     }
 
@@ -287,14 +299,14 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         override fun onStart(utteranceId: String?) {
             handler.post {
                 if (utteranceId == PREVIEW_ID) return@post
-                parsePosition(utteranceId)?.let {
-                    val session = TtsPlayback.session.value ?: return@post
-                    val paragraph = session.paragraphs.getOrNull(it.paragraphIndex) ?: return@post
-                    val unit = TtsText.speechUnits(paragraph, maxSpeechLength())
-                        .getOrNull(it.sentenceIndex)
-                        ?: return@post
-                    TtsPlayback.onSpeechStarted(it.paragraphIndex, it.sentenceIndex, unit)
-                }
+                parsePosition(utteranceId)?.let { started(it, rangeStart = 0) }
+            }
+        }
+
+        override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+            handler.post {
+                if (utteranceId == PREVIEW_ID) return@post
+                parsePosition(utteranceId)?.let { started(it, rangeStart = start) }
             }
         }
 
@@ -306,10 +318,15 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                     if (TtsPlayback.session.value == null) stopPlaybackAndSelf()
                     return@post
                 }
-                if (utteranceId != lastChunkId) return@post
-                parsePosition(utteranceId)?.let {
-                    TtsPlayback.onParagraphFinished(it.paragraphIndex)
+                if (utteranceId?.endsWith(".end") != true) return@post
+                val pos = parsePosition(utteranceId) ?: return@post
+                val session = TtsPlayback.session.value ?: return@post
+                if (!session.playing) return@post
+                if (pos.paragraphIndex >= session.paragraphs.lastIndex) {
+                    TtsPlayback.onParagraphFinished(pos.paragraphIndex)
+                    return@post
                 }
+                enqueueParagraph(pos.paragraphIndex + 2, flush = false)
             }
         }
 
@@ -323,17 +340,33 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
         }
     }
 
+    private fun started(pos: SpeechPosition, rangeStart: Int) {
+        val session = TtsPlayback.session.value ?: return
+        val paragraph = session.paragraphs.getOrNull(pos.paragraphIndex) ?: return
+        val offset = (
+            TtsText.chunkStart(paragraph, maxSpeechLength(), pos.chunkIndex) + rangeStart
+            ).coerceIn(0, paragraph.length)
+        val sentenceIndex = TtsText.sentenceIndexAt(paragraph, offset)
+        val spoken = TtsText.sentences(paragraph).getOrNull(sentenceIndex) ?: paragraph
+        TtsPlayback.onSpeechStarted(pos.paragraphIndex, sentenceIndex, spoken)
+    }
+
     private fun parsePosition(utteranceId: String?): SpeechPosition? {
         if (utteranceId == null || !utteranceId.startsWith("p")) return null
-        val body = utteranceId.drop(1)
+        val body = utteranceId.drop(1).removeSuffix(".end")
         val paragraphIndex = body.substringBefore(".").toIntOrNull() ?: return null
-        val sentenceIndex = body.substringAfter(".s", "0").toIntOrNull() ?: 0
-        return SpeechPosition(paragraphIndex, sentenceIndex)
+        val chunkPart = when {
+            ".c" in body -> body.substringAfter(".c")
+            ".s" in body -> body.substringAfter(".s")
+            else -> "0"
+        }
+        val chunkIndex = chunkPart.toIntOrNull() ?: 0
+        return SpeechPosition(paragraphIndex, chunkIndex)
     }
 
     private data class SpeechPosition(
         val paragraphIndex: Int,
-        val sentenceIndex: Int,
+        val chunkIndex: Int,
     )
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->

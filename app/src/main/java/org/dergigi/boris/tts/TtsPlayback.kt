@@ -237,13 +237,15 @@ object TtsPlayback {
 
     internal fun onSpeechStarted(index: Int, sentenceIndex: Int, spokenText: String) {
         val current = _session.value ?: return
-        if (index != current.index) return
+        if (!current.playing) return
+        if (index !in current.paragraphs.indices) return
         val nextSentence = sentenceIndex.coerceAtLeast(0)
         val nextSpoken = spokenText.takeIf { it.isNotBlank() }
-        if (!current.started || current.sentenceIndex != nextSentence ||
+        if (current.index != index || !current.started || current.sentenceIndex != nextSentence ||
             current.spokenText != nextSpoken || current.errorMessage != null
         ) {
             _session.value = current.copy(
+                index = index,
                 started = true,
                 sentenceIndex = nextSentence,
                 spokenText = nextSpoken,
