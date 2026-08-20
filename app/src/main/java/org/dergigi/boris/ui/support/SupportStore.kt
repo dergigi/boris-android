@@ -24,10 +24,13 @@ object SupportStore {
     fun ensureLoaded() {
         if (!started.compareAndSet(false, true)) return
         scope.launch {
-            val receipts = runCatching {
-                RelayQuery.fetchZapReceipts(ZapSplits.BORIS_PUBKEY) +
-                    RelayQuery.fetchZapReceiptsByAddress(ZAPSTORE_BORIS_APP_ADDRESS)
+            val directReceipts = runCatching {
+                RelayQuery.fetchZapReceipts(ZapSplits.BORIS_PUBKEY)
             }.getOrDefault(emptyList())
+            val zapstoreReceipts = runCatching {
+                RelayQuery.fetchZapReceiptsByAddress(ZAPSTORE_BORIS_APP_ADDRESS)
+            }.getOrDefault(emptyList())
+            val receipts = directReceipts + zapstoreReceipts
             val supporters = ZapReceipts.supporters(receipts)
             val avatarSupporters = ZapReceipts.allSupporters(receipts)
             val profilePubkeys = (supporters + avatarSupporters).map { it.pubkey }.distinct()
