@@ -97,6 +97,7 @@ class ReaderRepositoryParseTest {
         }
         val error = fetchError(client, "https://example.com/thin")
         assertEquals("Could not find an article on this page.", error?.message)
+        assertEquals("No readable article in the page", (error as? ReaderFetchException)?.detail)
         assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
     }
 
@@ -105,6 +106,15 @@ class ReaderRepositoryParseTest {
         val client = stubClient { throw IOException("connect timed out") }
         val error = fetchError(client, "https://example.com/gone")
         assertEquals("Could not reach this page.", error?.message)
+        assertTrue((error as? ReaderFetchException)?.detail.orEmpty().contains("connect timed out"))
+    }
+
+    @Test
+    fun fetchKeepsHttpStatusInUnreachableDetail() {
+        val client = stubClient { request -> stubResponse(request, 502, "") }
+        val error = fetchError(client, "https://example.com/bad-gateway")
+        assertEquals("Could not reach this page.", error?.message)
+        assertEquals("HTTP 502", (error as? ReaderFetchException)?.detail)
     }
 
     @Test

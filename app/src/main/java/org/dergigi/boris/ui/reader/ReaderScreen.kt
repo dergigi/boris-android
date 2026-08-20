@@ -845,6 +845,7 @@ fun ReaderScreenContent(
                 }
             }
             is ReaderUiState.Error -> {
+                var detailsOpen by remember(state.detail) { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -857,6 +858,28 @@ fun ReaderScreenContent(
                         text = state.message,
                         style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
                     )
+                    if (!state.detail.isNullOrBlank()) {
+                        TextButton(onClick = { detailsOpen = !detailsOpen }) {
+                            Text(
+                                stringResource(
+                                    if (detailsOpen) {
+                                        R.string.reader_error_hide_details
+                                    } else {
+                                        R.string.reader_error_details
+                                    },
+                                ),
+                            )
+                        }
+                        if (detailsOpen) {
+                            Text(
+                                text = state.detail,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    textAlign = TextAlign.Center,
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     Button(
                         onClick = onRetry,
                         modifier = Modifier.padding(top = 16.dp),

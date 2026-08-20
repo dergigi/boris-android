@@ -179,6 +179,8 @@
     <string name="reader_open_original">Open original</string>
     <string name="reader_error_unreachable">Could not reach this page.</string>
     <string name="reader_error_no_article">Could not find an article on this page.</string>
+    <string name="reader_error_details">Details</string>
+    <string name="reader_error_hide_details">Hide details</string>
     <string name="reader_share_article">Share article</string>
     <string name="reader_scroll_to_top">Scroll to top</string>
     <string name="reader_highlights_settings">Highlight settings</string>

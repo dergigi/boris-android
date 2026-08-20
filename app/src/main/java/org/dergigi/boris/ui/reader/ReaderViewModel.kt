@@ -22,6 +22,7 @@ import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReaderFetchException
 import org.dergigi.boris.data.ResolvedEventRef
 import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.data.ReaderRepository
@@ -218,6 +219,7 @@ class ReaderViewModel(
                 _state.value = ReaderUiState.Error(
                     e.message ?: "Could not reach this page.",
                     url,
+                    detail = (e as? ReaderFetchException)?.detail,
                 )
                 publishSaveState()
             }
@@ -1152,7 +1154,11 @@ sealed interface ReaderUiState {
         val imageUrl: String? = null,
     ) : ReaderUiState
     data class Ready(val content: ReadableContent) : ReaderUiState
-    data class Error(val message: String, val url: String) : ReaderUiState
+    data class Error(
+        val message: String,
+        val url: String,
+        val detail: String? = null,
+    ) : ReaderUiState
 }
 
 internal fun readerLoadingState(url: String): ReaderUiState.Loading {

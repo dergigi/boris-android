@@ -40,38 +40,44 @@ class ReaderRepository(
         val first = originAttempt(origin, HttpUserAgents.BORIS_UA)
         val second = when (first) {
             is OriginResult.Article -> return first.content
-            OriginResult.Blocked, OriginResult.NoArticle ->
+            is OriginResult.Blocked, is OriginResult.NoArticle ->
                 originAttempt(origin, HttpUserAgents.BROWSER_UA)
-            OriginResult.Unreachable -> first
+            is OriginResult.Unreachable -> first
         }
         if (second is OriginResult.Article) return second.content
-        if (second == OriginResult.NoArticle) throw IOException(ERROR_NO_ARTICLE)
+        if (second is OriginResult.NoArticle) {
+            throw ReaderFetchException(ERROR_NO_ARTICLE, second.detail)
+        }
         val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
-            ?: throw IOException(ERROR_UNREACHABLE)
+            ?: throw ReaderFetchException(ERROR_UNREACHABLE, reachDetail(second, first))
         val content = parse(origin, cached)
-        if (content.markdown == null) throw IOException(ERROR_NO_ARTICLE)
+        if (content.markdown == null) throw ReaderFetchException(ERROR_NO_ARTICLE, "Cached page had no readable article")
         return content
     }
 
     private fun originAttempt(origin: String, userAgent: String): OriginResult = try {
         client.newCall(originRequest(origin, userAgent)).execute().use { response ->
             when {
-                response.code == 401 || response.code == 403 -> OriginResult.Blocked
-                !response.isSuccessful -> OriginResult.Unreachable
-                !looksLikeHtml(response) -> OriginResult.NoArticle
+                response.code == 401 || response.code == 403 -> OriginResult.Blocked(response.code)
+                !response.isSuccessful -> OriginResult.Unreachable("HTTP ${response.code}")
+                !looksLikeHtml(response) -> OriginResult.NoArticle(
+                    "Not HTML (${response.header("Content-Type") ?: "unknown"})",
+                )
                 else -> {
                     val text = readCapped(response)
                     val content = if (text.isBlank()) null else parse(origin, text)
                     if (content?.markdown == null) {
-                        OriginResult.NoArticle
+                        OriginResult.NoArticle(
+                            if (text.isBlank()) "Empty page" else "No readable article in the page",
+                        )
                     } else {
                         OriginResult.Article(content)
                     }
                 }
             }
         }
-    } catch (_: IOException) {
-        OriginResult.Unreachable
+    } catch (e: IOException) {
+        OriginResult.Unreachable(networkDetail(e))
     }
 
     private fun originRequest(origin: String, userAgent: String): Request =
@@ -96,9 +102,25 @@ class ReaderRepository(
 
     private sealed interface OriginResult {
         data class Article(val content: ReadableContent) : OriginResult
-        data object Blocked : OriginResult
-        data object NoArticle : OriginResult
-        data object Unreachable : OriginResult
+        data class Blocked(val code: Int) : OriginResult
+        data class NoArticle(val detail: String? = null) : OriginResult
+        data class Unreachable(val detail: String) : OriginResult
+    }
+
+    private fun reachDetail(vararg results: OriginResult): String? =
+        results.firstNotNullOfOrNull { result ->
+            when (result) {
+                is OriginResult.Unreachable -> result.detail
+                is OriginResult.Blocked -> "HTTP ${result.code}"
+                is OriginResult.NoArticle -> result.detail
+                is OriginResult.Article -> null
+            }
+        }
+
+    private fun networkDetail(e: IOException): String {
+        val name = e.javaClass.simpleName.removeSuffix("Exception")
+        val msg = e.message?.trim()?.takeIf { it.isNotEmpty() }
+        return if (msg == null) name else "$name: $msg"
     }
 
     private fun executeFromCache(request: Request): String? = try {
@@ -321,3 +343,9 @@ class ReaderRepository(
         )
     }
 }
+
+internal class ReaderFetchException(
+    message: String,
+    val detail: String? = null,
+    cause: Throwable? = null,
+) : IOException(message, cause)
