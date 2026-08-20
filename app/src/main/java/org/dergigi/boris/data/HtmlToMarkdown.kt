@@ -6,8 +6,16 @@ package org.dergigi.boris.data
  * enough; no full DOM parsing needed.
  */
 object HtmlToMarkdown {
-    fun convert(element: org.jsoup.nodes.Element, baseUrl: String): String =
-        convert(element.outerHtml(), baseUrl)
+    fun convert(element: org.jsoup.nodes.Element, baseUrl: String): String {
+        val doc = element.ownerDocument()
+        val pretty = doc?.outputSettings()?.prettyPrint() ?: true
+        doc?.outputSettings()?.prettyPrint(false)
+        return try {
+            convert(element.outerHtml(), baseUrl)
+        } finally {
+            doc?.outputSettings()?.prettyPrint(pretty)
+        }
+    }
 
     fun convert(html: String, baseUrl: String? = null): String {
         val stash = mutableListOf<String>()
@@ -112,6 +120,9 @@ object HtmlToMarkdown {
         )
         s = stripTags(s)
         s = decode(s)
+        // Jekyll and jsoup pretty-print with 4-space indent. Those spaces
+        // survive tag stripping and become CommonMark indented code blocks.
+        s = s.replace(Regex("(?m)^[ \\t]+"), "")
         s = s.replace(Regex("[ \\t]+\\n"), "\n")
             .replace(Regex("\\n{3,}"), "\n\n")
             .trim()

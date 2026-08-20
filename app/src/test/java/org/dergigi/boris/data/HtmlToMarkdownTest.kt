@@ -1,6 +1,7 @@
 package org.dergigi.boris.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -123,6 +124,36 @@ class HtmlToMarkdownTest {
                 "<body><p>Body text.</p></body></html>",
         )
         assertEquals("*Jane Doe*\n\nBody text.", markdown)
+    }
+
+    @Test
+    fun prettyPrintedHtmlDoesNotBecomeIndentedCode() {
+        val markdown = HtmlToMarkdown.convert(
+            """
+            <article class="post">
+              <div class="post-content" itemprop="articleBody">
+                <p>I'm coming back to America for the summer.</p>
+                <p><strong>1 - Back the money by Gold.</strong></p>
+                <p>You work in a Ponzi scheme. The best time was 50 years ago.</p>
+              </div>
+            </article>
+            """.trimIndent(),
+        )
+        assertFalse(
+            "leftover HTML indent must not become a CommonMark code block",
+            markdown.lines().any { it.startsWith("    ") || it.startsWith("\t") },
+        )
+        assertTrue(markdown.contains("I'm coming back to America for the summer."))
+        assertTrue(markdown.contains("**1 - Back the money by Gold.**"))
+        assertFalse(markdown.contains("```"))
+    }
+
+    @Test
+    fun realCodeBlocksKeepInternalIndent() {
+        val markdown = HtmlToMarkdown.convert(
+            "<p>Intro</p><pre><code>def hi():\n    return 1\n</code></pre>",
+        )
+        assertTrue(markdown.contains("```\ndef hi():\n    return 1\n```"))
     }
 
     @Test
