@@ -39,7 +39,8 @@ class ArticleOutlineTest {
             ## Two
             """.trimIndent(),
         )
-        assertEquals("outline:1", ArticleOutline.idForHeading(items, 0, "Two"))
+        val renderedOffset = items[0].startOffset + 1
+        assertEquals("outline:1", ArticleOutline.idForHeading(items, renderedOffset, "Two"))
     }
 
     @Test
