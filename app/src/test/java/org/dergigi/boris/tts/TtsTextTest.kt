@@ -85,11 +85,17 @@ class TtsTextTest {
                 https://example.com/only
 
                 Keep punctuation after https://example.com/trailing.
+
+                Keep parenthetical link (see https://example.com/paren).
             """.trimIndent(),
         )
         val paragraphs = TtsText.paragraphs(content)
         assertEquals(
-            listOf("Read this and today.", "Keep punctuation after."),
+            listOf(
+                "Read this and today.",
+                "Keep punctuation after.",
+                "Keep parenthetical link (see).",
+            ),
             paragraphs,
         )
         assertFalse(paragraphs.any { it.contains("https://") })
@@ -350,6 +356,26 @@ class TtsTextTest {
         assertEquals(
             1,
             TtsText.sentenceIndexAt("First sentence. Second one.", "First sentence. ".length),
+        )
+    }
+
+    @Test
+    fun sentencesKeepClosingDelimitersWithPreviousSentence() {
+        assertEquals(
+            listOf("He said \"Done.\"", "Next one."),
+            TtsText.sentences("He said \"Done.\" Next one."),
+        )
+        assertEquals(
+            listOf("(See below.)", "Next one."),
+            TtsText.sentences("(See below.) Next one."),
+        )
+        assertEquals(
+            0,
+            TtsText.sentenceIndexAt("He said \"Done.\" Next one.", "He said \"Done.".length),
+        )
+        assertEquals(
+            1,
+            TtsText.sentenceIndexAt("He said \"Done.\" Next one.", "He said \"Done.\" ".length),
         )
     }
 

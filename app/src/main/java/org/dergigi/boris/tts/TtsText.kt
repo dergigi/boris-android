@@ -92,10 +92,11 @@ object TtsText {
         var start = 0
         var i = 0
         while (i < text.length) {
-            if (isSentenceBoundary(text, i)) {
-                val piece = text.substring(start, i + 1).trim()
+            val boundaryEnd = sentenceBoundaryEnd(text, i)
+            if (boundaryEnd != null) {
+                val piece = text.substring(start, boundaryEnd).trim()
                 if (piece.isNotEmpty()) parts += piece
-                i++
+                i = boundaryEnd
                 while (i < text.length && text[i].isWhitespace()) i++
                 start = i
                 continue
@@ -114,9 +115,11 @@ object TtsText {
         var i = 0
         while (i < text.length) {
             if (clamped <= i) return index
-            if (isSentenceBoundary(text, i)) {
+            val boundaryEnd = sentenceBoundaryEnd(text, i)
+            if (boundaryEnd != null) {
+                if (clamped < boundaryEnd) return index
                 index++
-                i++
+                i = boundaryEnd
                 while (i < text.length && text[i].isWhitespace()) i++
                 continue
             }
@@ -294,17 +297,18 @@ object TtsText {
 
     private fun sentenceIndex(text: String, offset: Int): Int = sentenceIndexAt(text, offset)
 
-    private fun isSentenceBoundary(text: String, punct: Int): Boolean {
+    private fun sentenceBoundaryEnd(text: String, punct: Int): Int? {
         val mark = text[punct]
-        if (mark != '.' && mark != '!' && mark != '?' && mark != '…') return false
-        val after = punct + 1
-        if (after < text.length && !text[after].isWhitespace()) return false
-        if (mark == '!' || mark == '?' || mark == '…') return true
+        if (mark != '.' && mark != '!' && mark != '?' && mark != '…') return null
+        var after = punct + 1
+        while (after < text.length && text[after] in SENTENCE_CLOSERS) after++
+        if (after < text.length && !text[after].isWhitespace()) return null
+        if (mark == '!' || mark == '?' || mark == '…') return after
         val word = wordBefore(text, punct)
-        if (word.length == 1 && word[0].isLetter()) return false
-        if (word.isNotEmpty() && word.all { it.isDigit() }) return false
-        if (word.lowercase() in ABBREVIATIONS) return false
-        return true
+        if (word.length == 1 && word[0].isLetter()) return null
+        if (word.isNotEmpty() && word.all { it.isDigit() }) return null
+        if (word.lowercase() in ABBREVIATIONS) return null
+        return after
     }
 
     private fun wordBefore(text: String, punct: Int): String {
@@ -340,7 +344,7 @@ object TtsText {
         SOURCE_URL.replace(text) { match ->
             val label = match.groupValues[1]
             val raw = match.groupValues[2]
-            val url = raw.trimEnd { it in URL_TRAILING_PUNCT }
+            val url = raw.trimEnd { it in URL_TRAILING_CHARS }
             val punctuation = raw.drop(url.length)
             val host = ArticleUrl.host(url) ?: return@replace label
             "$label $host$punctuation"
@@ -349,7 +353,7 @@ object TtsText {
     private fun stripBareUrls(text: String): String =
         BARE_URL.replace(text) { match ->
             val raw = match.value
-            val url = raw.trimEnd { it in URL_TRAILING_PUNCT }
+            val url = raw.trimEnd { it in URL_TRAILING_CHARS }
             val punctuation = raw.drop(url.length)
             " $punctuation"
         }
@@ -486,10 +490,11 @@ object TtsText {
         """(source:)\s*((?:https?://|www\.)[^\s<>\[\]]+)""",
         RegexOption.IGNORE_CASE,
     )
-    private val SPACE_BEFORE_PUNCT = Regex("""\s+([.,;:!?])""")
+    private val SPACE_BEFORE_PUNCT = Regex("""\s+([.,;:!?)"'\]»”’])""")
     private val WHITESPACE = Regex("""\s+""")
     private val TABLE_SEPARATOR = Regex("""^[\s|:\-]+$""")
-    private val URL_TRAILING_PUNCT = ".,;:!?"
+    private const val SENTENCE_CLOSERS = "\"'”’)]»"
+    private const val URL_TRAILING_CHARS = ".,;:!?)\"'”’]»"
     private val RULE = Regex("""^(?:-{3,}|\*{3,}|_{3,})$""")
 
     private data class MarkdownBlock(
