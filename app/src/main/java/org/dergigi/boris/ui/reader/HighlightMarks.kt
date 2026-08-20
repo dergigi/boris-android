@@ -120,6 +120,7 @@ private fun spokenWords(text: String): List<String> =
 fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighlight> {
     if (!settings.showHighlights) return emptyList()
     return filter { item ->
+        if (item.outline) return@filter false
         if (item.find) return@filter true
         when {
             item.mine -> settings.defaultHighlightVisibilityMine
@@ -152,9 +153,9 @@ fun Modifier.drawHighlightMarks(
     paint({ it.spoken }, spokenColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
     // Find matches always use a filled selection-like mark, never underline.
     paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
-    paint({ !it.find && !it.spoken && !it.mine && !it.friend }, otherColor, underline)
-    paint({ !it.find && !it.spoken && it.friend && !it.mine }, friendsColor, underline)
-    paint({ !it.find && !it.spoken && it.mine }, mineColor, underline)
+    paint({ !it.find && !it.spoken && !it.outline && !it.mine && !it.friend }, otherColor, underline)
+    paint({ !it.find && !it.spoken && !it.outline && it.friend && !it.mine }, friendsColor, underline)
+    paint({ !it.find && !it.spoken && !it.outline && it.mine }, mineColor, underline)
 }
 
 fun DrawScope.paintHighlight(
