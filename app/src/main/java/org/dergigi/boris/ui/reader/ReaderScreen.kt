@@ -82,6 +82,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -102,6 +103,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -595,7 +598,7 @@ fun ReaderScreenContent(
         copyArticleLink(context, clipboard, url)
     }
 
-    val topBarScroll = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val topBarScroll = rememberReaderBarScroll()
     var findOpen by remember { mutableStateOf(false) }
     var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
     rssConfirmFeed?.let { feedUrl ->
@@ -1826,6 +1829,36 @@ private fun HighlightedMarkdownNode(
             ),
         onTextLayout = { result, _ -> layout = result },
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun rememberReaderBarScroll(): TopAppBarScrollBehavior {
+    val behavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+        snapAnimationSpec = null,
+        flingAnimationSpec = null,
+    )
+    val connection = remember(behavior.state) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                behavior.state.heightOffset += consumed.y
+                return Offset.Zero
+            }
+        }
+    }
+    return remember(behavior, connection) {
+        object : TopAppBarScrollBehavior {
+            override val state = behavior.state
+            override val isPinned = false
+            override val snapAnimationSpec = null
+            override val flingAnimationSpec = null
+            override val nestedScrollConnection = connection
+        }
+    }
 }
 
 @Composable
