@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.33] - 2026-08-20
+
 ### Fixed
 
 - TTS follow-along keeps highlighting and scrolling through a paragraph when the voice never reports sentence ranges
@@ -1225,7 +1227,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.32...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.33...HEAD
+[1.4.33]: https://github.com/dergigi/boris-android/releases/tag/v1.4.33
 [1.4.32]: https://github.com/dergigi/boris-android/releases/tag/v1.4.32
 [1.4.31]: https://github.com/dergigi/boris-android/releases/tag/v1.4.31
 [1.4.30]: https://github.com/dergigi/boris-android/releases/tag/v1.4.30
