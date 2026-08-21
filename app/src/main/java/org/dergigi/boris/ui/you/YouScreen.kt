@@ -25,8 +25,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.StickyNote2
-import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,14 +60,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkItem
-import org.dergigi.boris.data.NostrLink
-import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.bookmarkFallbackIcon
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.rememberArticleActions
 import org.dergigi.boris.ui.ContentTabs
@@ -315,6 +312,7 @@ fun YouHighlightsContent(
                                 emptyRes = R.string.you_public_empty,
                                 onRefresh = { onRefresh(tab) },
                                 onOpenArticle = onOpenArticle,
+                                onOpenHighlight = onOpenHighlight,
                                 actions = actions,
                             )
                         }
@@ -325,6 +323,7 @@ fun YouHighlightsContent(
                                 emptyRes = R.string.you_web_empty,
                                 onRefresh = { onRefresh(tab) },
                                 onOpenArticle = onOpenArticle,
+                                onOpenHighlight = onOpenHighlight,
                                 actions = actions,
                             )
                         }
@@ -342,6 +341,7 @@ private fun LazyListScope.profileBookmarkItems(
     emptyRes: Int,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     actions: ArticleActionHandlers,
 ) {
     val visible = items.filter { it.matchesQuery(query) }
@@ -358,7 +358,12 @@ private fun LazyListScope.profileBookmarkItems(
         }
     } else {
         items(visible, key = { it.id }) { item ->
-            YouBookmarkCard(item = item, actions = actions, onOpenArticle = onOpenArticle)
+            YouBookmarkCard(
+                item = item,
+                actions = actions,
+                onOpenArticle = onOpenArticle,
+                onOpenHighlight = onOpenHighlight,
+            )
         }
     }
 }
@@ -368,22 +373,19 @@ private fun YouBookmarkCard(
     item: BookmarkItem,
     actions: ArticleActionHandlers,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
 ) {
-    val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
     val url = item.url
     ArticleRowWithMenu(
         title = item.title,
+        summary = item.summary,
         imageUrl = item.imageUrl,
-        imageFallbackIcon = if (note) {
-            Icons.AutoMirrored.Outlined.StickyNote2
-        } else {
-            Icons.Outlined.Bookmark
-        },
+        imageFallbackIcon = bookmarkFallbackIcon(item),
         byline = item.host,
         url = url,
         loggedIn = actions.loggedIn,
         archived = actions.archived(url),
-        onClick = { url?.let(onOpenArticle) },
+        onClick = { item.open(onOpenArticle, onOpenHighlight) },
         onListen = { url?.let(actions.onListen) },
         onMarkAsRead = {
             if (url != null) actions.onMarkAsRead(url, item.title, item.imageUrl)

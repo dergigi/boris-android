@@ -16,6 +16,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,8 +42,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.BookmarkItem
+import org.dergigi.boris.data.NostrLink
+import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.ui.reader.CardReadingProgress
+
+fun bookmarkFallbackIcon(item: BookmarkItem): ImageVector = when {
+    item.isHighlight -> Icons.Outlined.FormatQuote
+    item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true -> {
+        Icons.AutoMirrored.Outlined.StickyNote2
+    }
+    else -> Icons.Outlined.Bookmark
+}
 
 /** Shared list row for writings, bookmarks, RSS, and search article hits. */
 @OptIn(ExperimentalFoundationApi::class)

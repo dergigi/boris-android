@@ -27,7 +27,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
@@ -73,10 +72,9 @@ import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
-import org.dergigi.boris.data.NostrLink
-import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.bookmarkFallbackIcon
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.auth.AuthBar
@@ -88,6 +86,9 @@ import org.dergigi.boris.ui.theme.BorisIcons
 @Composable
 fun LibraryScreen(
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     onOpenLibrarySettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = viewModel(),
@@ -140,6 +141,7 @@ fun LibraryScreen(
         onRefresh = viewModel::refresh,
         onUnlock = { viewModel.unlockPrivate()?.let(decryptLauncher::launch) },
         onOpenArticle = onOpenArticle,
+        onOpenHighlight = onOpenHighlight,
         onListen = { item ->
             item.url?.let { url ->
                 requestTtsNotificationPermissionOnce(context) {
@@ -172,6 +174,9 @@ fun LibraryScreenContent(
     onRefresh: () -> Unit,
     onUnlock: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     onListen: (BookmarkItem) -> Unit = {},
     onMarkAsRead: (BookmarkItem) -> Unit = {},
     onConnect: () -> Unit,
@@ -252,6 +257,7 @@ fun LibraryScreenContent(
                         onRefresh = onRefresh,
                         onUnlock = onUnlock,
                         onOpenArticle = onOpenArticle,
+                        onOpenHighlight = onOpenHighlight,
                         onListen = onListen,
                         onMarkAsRead = onMarkAsRead,
                     )
@@ -271,6 +277,7 @@ private fun ReadyLibrary(
     onRefresh: () -> Unit,
     onUnlock: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onListen: (BookmarkItem) -> Unit,
     onMarkAsRead: (BookmarkItem) -> Unit,
 ) {
@@ -360,6 +367,7 @@ private fun ReadyLibrary(
                                     ArchivedArticles.isArchived(it, archivedKeys)
                                 } == true || item.bucket == BookmarkBucket.Archive,
                                 onOpenArticle = onOpenArticle,
+                                onOpenHighlight = onOpenHighlight,
                                 onListen = { onListen(item) },
                                 onMarkAsRead = { onMarkAsRead(item) },
                             )
@@ -402,19 +410,20 @@ private fun BookmarkRow(
     item: BookmarkItem,
     archived: Boolean,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onListen: () -> Unit,
     onMarkAsRead: () -> Unit,
 ) {
-    val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
     ArticleRowWithMenu(
         title = item.title,
+        summary = item.summary,
         imageUrl = item.imageUrl,
-        imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
+        imageFallbackIcon = bookmarkFallbackIcon(item),
         byline = item.host,
         url = item.url,
         loggedIn = true,
         archived = archived,
-        onClick = { item.url?.let(onOpenArticle) },
+        onClick = { item.open(onOpenArticle, onOpenHighlight) },
         onListen = onListen,
         onMarkAsRead = onMarkAsRead,
     )

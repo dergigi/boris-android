@@ -265,6 +265,9 @@ fun BorisApp(
                 composable(Routes.LIBRARY) {
                     LibraryScreen(
                         onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
+                        },
                         onOpenLibrarySettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Library)) {
                                 launchSingleTop = true

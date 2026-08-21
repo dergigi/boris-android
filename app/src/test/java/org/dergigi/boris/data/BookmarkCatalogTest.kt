@@ -93,6 +93,65 @@ class BookmarkCatalogTest {
     }
 
     @Test
+    fun publicHighlightBookmarksShowQuoteAndSource() {
+        val eventId = "aa".repeat(32)
+        val list = event(
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = listOf(listOf("e", eventId)),
+        )
+        val highlight = event(
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(
+                listOf("r", "https://example.com/essay"),
+                listOf("context", "Before the quote. The selected line. After."),
+            ),
+            content = "The selected line",
+            createdAt = 9,
+        ).copy(id = eventId)
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            notes = mapOf(eventId to highlight),
+        )
+        assertEquals(1, shelves.public.size)
+        val item = shelves.public[0]
+        assertEquals("The selected line", item.title)
+        assertEquals("https://example.com/essay", item.url)
+        assertEquals("example.com", item.host)
+        assertEquals("Before the quote. The selected line. After.", item.summary)
+        assertEquals(eventId, item.highlightId)
+        assertTrue(item.isHighlight)
+    }
+
+    @Test
+    fun highlightBookmarkWithoutSourceFallsBackToNoteUrl() {
+        val eventId = "bb".repeat(32)
+        val list = event(
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = listOf(listOf("e", eventId)),
+        )
+        val highlight = event(
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = emptyList(),
+            content = "A lonely quote",
+            createdAt = 8,
+        ).copy(id = eventId)
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            notes = mapOf(eventId to highlight),
+        )
+        val item = shelves.public.single()
+        assertEquals("A lonely quote", item.title)
+        assertTrue(item.url!!.startsWith("nostr:note1"))
+        assertEquals("highlight", item.host)
+        assertEquals(eventId, item.highlightId)
+        assertTrue(item.isHighlight)
+    }
+
+    @Test
     fun publicNotesUseFetchedContentAsTitle() {
         val eventId = "aa".repeat(32)
         val list = event(

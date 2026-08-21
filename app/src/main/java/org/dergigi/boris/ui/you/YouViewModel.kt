@@ -72,6 +72,7 @@ internal fun BookmarkItem.matchesQuery(query: String): Boolean {
     val q = query.trim()
     if (q.isEmpty()) return true
     return title.contains(q, ignoreCase = true) ||
+        summary.orEmpty().contains(q, ignoreCase = true) ||
         host.orEmpty().contains(q, ignoreCase = true) ||
         url.orEmpty().contains(q, ignoreCase = true)
 }

@@ -7,6 +7,7 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Archive
 import org.dergigi.boris.nostr.Lookmarks
 import org.dergigi.boris.nostr.Nip51
+import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.NipB0
 
 enum class BookmarkBucket {
@@ -26,7 +27,25 @@ data class BookmarkItem(
     val imageUrl: String?,
     val createdAt: Long,
     val bucket: BookmarkBucket,
-)
+    val summary: String? = null,
+    val highlightId: String? = null,
+    val highlightQuote: String? = null,
+) {
+    val isHighlight: Boolean get() = !highlightId.isNullOrBlank()
+
+    fun open(
+        onArticle: (String) -> Unit,
+        onHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    ) {
+        val dest = url ?: return
+        val hid = highlightId
+        if (!hid.isNullOrBlank()) {
+            onHighlight(dest, hid, highlightQuote ?: title)
+        } else {
+            onArticle(dest)
+        }
+    }
+}
 
 data class BookmarkShelves(
     val private: List<BookmarkItem> = emptyList(),
@@ -155,6 +174,9 @@ object BookmarkCatalog {
                     return null
                 }
                 val event = notes[eventId]
+                if (event?.kind == Nip01Event.KIND_HIGHLIGHT) {
+                    return highlightItem(event, encoded, bucket)
+                }
                 BookmarkItem(
                     id = "e:$eventId",
                     title = NoteCover.title(event),
@@ -166,6 +188,31 @@ object BookmarkCatalog {
                 )
             }
         }
+    }
+
+    private fun highlightItem(
+        event: Nip01Event,
+        encodedNote: String,
+        bucket: BookmarkBucket,
+    ): BookmarkItem {
+        val quote = MarkdownInline.plain(event.content.trim()).ifBlank { "Highlight" }
+        val articleUrl = Nip84.articleUrl(event)
+        val context = event.tagValue("context")
+            ?.trim()
+            ?.let(MarkdownInline::plain)
+            ?.takeIf { it.isNotBlank() && !it.equals(quote, ignoreCase = true) }
+        return BookmarkItem(
+            id = "e:${event.id.lowercase()}",
+            title = quote,
+            url = articleUrl ?: "nostr:$encodedNote",
+            host = articleUrl?.let { ArticleUrl.host(it) } ?: "highlight",
+            imageUrl = null,
+            createdAt = event.createdAt,
+            bucket = bucket,
+            summary = context,
+            highlightId = event.id,
+            highlightQuote = quote,
+        )
     }
 
     private fun itemFromWeb(
