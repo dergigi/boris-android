@@ -16,6 +16,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 
 - Support page copies the Lightning Address from a secondary button and opens a wallet from Open in Wallet
+- Find in article search field is shorter
 
 ## [1.4.47] - 2026-08-21
 
