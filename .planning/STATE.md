@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
 status: complete
-stopped_at: Phases 4 and 6 UAT passed; milestone close still pending
-last_updated: "2026-08-21T15:41:00.000Z"
+stopped_at: All six phases UAT-closed; milestone close still pending
+last_updated: "2026-08-21T15:46:00.000Z"
 last_activity: 2026-08-21
-last_activity_desc: Phase 6 device UAT accepted as shipped through 1.4.53
+last_activity_desc: Phase 5 accepted as shipped without dedicated UAT
 progress:
   total_phases: 6
   completed_phases: 6
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** All six phase plans are built and UAT-closed. Milestone has not been archived.
+**Current focus:** All six phases are built and UAT-closed. Milestone has not been archived.
 
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
 Plan: 3 of 3
 Status: Complete — device UAT accepted as shipped
-Last activity: 2026-08-21 — Phase 4 and Phase 6 UAT passed (daily use through 1.4.53)
+Last activity: 2026-08-21 — Phase 5 accepted as shipped; all six phases UAT-closed
 
 Progress: [██████████] 100%
 
@@ -137,6 +137,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-21T15:41:00+02:00
-Stopped at: Phase 4 and 6 UAT passed; gsd-complete-milestone not run
+Last session: 2026-08-21T15:46:00+02:00
+Stopped at: All six phases UAT-closed; gsd-complete-milestone not run
 Resume file: none

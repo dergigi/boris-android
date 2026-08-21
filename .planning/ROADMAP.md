@@ -10,7 +10,7 @@ Boris already reads articles. This milestone adds optional identity on Home (Amb
 - [x] **Phase 2: Bunker login (NIP-46)** - Paste `bunker://`, persist npub, sign out, Amber path unchanged
 - [x] **Phase 3: Nostr highlights** - Create and show kind 9802 highlights in the article, like Lantern (completed 2026-08-16)
 - [x] **Phase 4: Listen to articles** - Speak the current article from the reader (completed 2026-08-21)
-- [ ] **Phase 5: Resolve nostr profile references** - Turn `nostr:nprofile` mentions in articles into profile links
+- [x] **Phase 5: Resolve nostr profile references** - Turn `nostr:nprofile` mentions in articles into profile links (completed 2026-08-21)
 - [x] **Phase 6: On-device article extraction** - Fetch web HTML on-device and extract readable content without `r.jina.ai` (completed 2026-08-21)
 
 ## Phase Details
@@ -66,7 +66,7 @@ Phases execute in numeric order: 1, 2, 3, 4
 | 2. Bunker login (NIP-46) | 1/1 | Complete | 2026-08-14 |
 | 3. Nostr highlights | 1/1 | Complete    | 2026-08-16 |
 | 4. Listen to articles | 3/3 | Complete | 2026-08-21 |
-| 5. Resolve nostr profile references | 2/2 | In Progress|  |
+| 5. Resolve nostr profile references | 2/2 | Complete | 2026-08-21 |
 | 6. On-device article extraction | 3/3 | Complete | 2026-08-21 |
 
 ### Phase 3: Nostr highlights
