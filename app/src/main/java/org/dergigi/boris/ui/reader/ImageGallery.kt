@@ -65,12 +65,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.ImageStore
-import org.dergigi.boris.data.UrlExtractor
 
 
 data class ImageGalleryState(
@@ -338,8 +339,14 @@ private fun ZoomableImage(
         if (!isCurrent) applyScale(1f)
     }
 
+    val context = LocalContext.current
+    val request = remember(url) {
+        ImageRequest.Builder(context)
+            .data(ArticleImages.displaySource(url))
+            .build()
+    }
     AsyncImage(
-        model = UrlExtractor.preferHttps(url),
+        model = request,
         contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = Modifier

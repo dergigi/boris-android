@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Available Offline can download compressed article images for airplane-mode reading
+
 ## [1.4.50] - 2026-08-21
 
 ### Added

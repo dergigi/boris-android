@@ -171,6 +171,7 @@ import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrMentions
 import org.dergigi.boris.data.NoteCover
 import org.dergigi.boris.data.ResolvedEventRef
+import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.PublishedTime
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingTime
@@ -1288,6 +1289,12 @@ private fun ArticleBody(
         ReaderFocus.clear()
     }
     val appContext = LocalContext.current.applicationContext
+    LaunchedEffect(content.url, content.body) {
+        if (!ArticleImages.enabled()) return@LaunchedEffect
+        withContext(Dispatchers.IO) {
+            ArticleImages.ensure(appContext, ArticleImages.urlsFor(content))
+        }
+    }
     var positionRestored by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
         if (positionRestored) return@LaunchedEffect
@@ -2348,8 +2355,15 @@ private fun ArticleHero(
     ttsStartIndex: Int? = null,
     onClick: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val height = (screenHeight * 0.42f).dp.coerceIn(240.dp, 420.dp)
+    val widthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.roundToPx() }
+    val heightPx = with(density) { height.roundToPx() }
+    val request = remember(imageUrl, widthPx, heightPx) {
+        articleImageRequest(context, imageUrl, widthPx, heightPx)
+    }
     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val titleOwner = remember { Any() }
@@ -2360,7 +2374,7 @@ private fun ArticleHero(
             .clickable(onClick = onClick),
     ) {
         AsyncImage(
-            model = imageUrl,
+            model = request,
             contentDescription = title,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),

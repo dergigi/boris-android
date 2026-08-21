@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Precision
+import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.UrlExtractor
 
 private const val FALLBACK_ASPECT = 16f / 9f
@@ -81,7 +82,7 @@ internal fun articleImageRequest(
     widthPx: Int,
     heightPx: Int,
 ): ImageRequest = ImageRequest.Builder(context)
-    .data(url)
+    .data(ArticleImages.displaySource(url))
     .size(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1))
     .precision(Precision.INEXACT)
     .build()

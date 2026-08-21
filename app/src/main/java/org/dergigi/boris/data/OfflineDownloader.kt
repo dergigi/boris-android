@@ -1,8 +1,6 @@
 package org.dergigi.boris.data
 
 import android.content.Context
-import coil3.SingletonImageLoader
-import coil3.request.ImageRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,7 +41,7 @@ data class OfflineProgress(
 /**
  * Prefetches library articles for offline reading. Walks every shelf,
  * fetches missing article text through the reader pipeline (which caches
- * web bodies and nostr events), and prefetches cover images.
+ * web bodies and nostr events), and compresses article images when enabled.
  */
 object OfflineDownloader {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -88,7 +86,9 @@ object OfflineDownloader {
                 if (OfflineStore.isDownloaded(url)) continue
                 runCatching {
                     val content = repository.fetch(url)
-                    content.imageUrl?.let { prefetchImage(app, it) }
+                    if (ArticleImages.enabled()) {
+                        ArticleImages.ensure(app, ArticleImages.urlsFor(content))
+                    }
                 }
                 val added = estimatedBytes(url)
                 update(shelf) {
@@ -184,12 +184,6 @@ object OfflineDownloader {
         BookmarkRefKind.Article -> NostrArticle.fromCoordinate(ref.value)?.uri
         BookmarkRefKind.Url -> ref.value
         BookmarkRefKind.Note -> runCatching { "nostr:${Nip19.noteEncode(ref.value.lowercase())}" }.getOrNull()
-    }
-
-    private fun prefetchImage(context: Context, url: String) {
-        SingletonImageLoader.get(context).enqueue(
-            ImageRequest.Builder(context).data(url).build(),
-        )
     }
 
     private const val HIGHLIGHT_LIMIT = 400

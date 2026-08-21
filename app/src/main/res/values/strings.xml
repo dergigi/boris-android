@@ -360,13 +360,14 @@
     <string name="settings_relay_connected">Connected</string>
     <string name="settings_relay_disconnected">Not reachable</string>
     <string name="settings_relay_coverage">%1$d of your follows write here</string>
-    <string name="settings_offline_intro">Boris downloads article text so your library stays readable offline. Articles you open are always cached, regardless of these settings.</string>
+    <string name="settings_offline_intro">Boris downloads article text and images so your library stays readable offline. Articles you open are always cached, regardless of these settings.</string>
     <string name="settings_offline_available">Available offline</string>
     <string name="settings_offline_bookmarks">Bookmarks</string>
     <string name="settings_offline_web">Web Bookmarks</string>
     <string name="settings_offline_lookmarks">Lookmarks</string>
     <string name="settings_offline_archive">Archive</string>
     <string name="settings_offline_highlights">Highlights</string>
+    <string name="settings_offline_images">Article images</string>
     <string name="settings_offline_progress">%1$d of %2$d downloaded</string>
     <string name="settings_offline_progress_sized">%1$d of %2$d downloaded · %3$s</string>
     <string name="settings_offline_using">Using %1$s</string>

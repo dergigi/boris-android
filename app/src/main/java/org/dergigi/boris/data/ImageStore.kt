@@ -74,20 +74,25 @@ object ImageStore {
         }
     }
 
-    private fun fetch(url: String, index: Int): FetchedImage {
+    internal fun download(url: String): DownloadedImage {
         val request = Request.Builder().url(UrlExtractor.preferHttps(url)).get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IOException("Failed to download image (${response.code})")
             }
             val bytes = response.body?.bytes() ?: throw IOException("Empty image")
-            val filename = filenameFor(url, index)
-            return FetchedImage(
-                bytes = bytes,
-                filename = filename,
-                mime = mimeFor(filename, response.header("Content-Type")),
-            )
+            return DownloadedImage(bytes, response.header("Content-Type"))
         }
+    }
+
+    private fun fetch(url: String, index: Int): FetchedImage {
+        val downloaded = download(url)
+        val filename = filenameFor(url, index)
+        return FetchedImage(
+            bytes = downloaded.bytes,
+            filename = filename,
+            mime = mimeFor(filename, downloaded.contentType),
+        )
     }
 
     private fun writeToPictures(context: Context, image: FetchedImage): Uri {
@@ -120,6 +125,11 @@ object ImageStore {
             throw e
         }
     }
+
+    internal data class DownloadedImage(
+        val bytes: ByteArray,
+        val contentType: String?,
+    )
 
     private data class FetchedImage(
         val bytes: ByteArray,

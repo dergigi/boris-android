@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Icon
@@ -44,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.ByteSize
 import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.CacheUsage
@@ -110,6 +112,13 @@ fun OfflineSection(
                 },
             )
         }
+        ImagesRow(
+            enabled = settings.offlineDownloadEnabled(ArticleImages.SETTINGS_KEY),
+            onToggle = { on ->
+                onUpdate(settings.withBoolean(ArticleImages.SETTINGS_KEY, on))
+                if (on) OfflineDownloader.kickoff(context)
+            },
+        )
         StorageLimit(usedBytes = usedBytes)
     }
 }
@@ -173,6 +182,37 @@ private fun ShelfRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun ImagesRow(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.alpha(if (enabled) 1f else 0.5f),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Image,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                text = stringResource(R.string.settings_offline_images),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+        Switch(checked = enabled, onCheckedChange = onToggle)
     }
 }
 

@@ -41,6 +41,7 @@ class UserSettingsTest {
         assertTrue(settings.ttsDetectContentLanguage)
         assertTrue(settings.ttsFollowAlong)
         assertFalse(settings.firstTimeDismissed)
+        assertTrue(settings.offlineDownloadEnabled("offlineDownloadImages"))
     }
 
     @Test

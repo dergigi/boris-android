@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.CacheLimit
 import org.dergigi.boris.data.OfflineDownloader
 import org.dergigi.boris.data.OfflineStore
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
         var composeDrawn = false
         splash.setKeepOnScreenCondition { !composeDrawn }
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
+        ArticleImages.init(File(filesDir, ArticleImages.DIR_NAME))
         RelayHealth.init(File(filesDir, "relay_health.json"))
         HintedRelays.init(File(filesDir, "hinted_relays.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
