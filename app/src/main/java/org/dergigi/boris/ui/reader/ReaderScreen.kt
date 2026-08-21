@@ -1190,9 +1190,13 @@ private fun ArticleBody(
     val clipboard = LocalClipboardManager.current
     val density = LocalDensity.current
     val selection = remember { ReaderSelectionState() }
-    val titleTtsIndex = remember(content.title, content.summary, content.body) {
-        content.title?.let {
-            TtsText.startIndexForSelection(content, ownerText = it, selectedText = it)
+    val scope = rememberCoroutineScope()
+    var titleTtsIndex by remember(content.url) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(content.title, content.summary, content.body) {
+        titleTtsIndex = withContext(Dispatchers.Default) {
+            content.title?.let {
+                TtsText.startIndexForSelection(content, ownerText = it, selectedText = it)
+            }
         }
     }
     fun startTtsFromSelection() {
@@ -1200,33 +1204,37 @@ private fun ArticleBody(
         val ownerText = selection.text
         val ownerOffset = selection.range.min
         val explicitStartIndex = selection.ttsStartIndex
-        val paragraphs = TtsText.paragraphs(content)
-        if (selected.isBlank() || paragraphs.isEmpty()) return
+        if (selected.isBlank()) return
         selection.clear()
         requestTtsNotificationPermissionOnce(ttsContext) {
             ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        val authorName = content.authorPubkey?.trim()
-            ?.takeIf { it.length == 64 }
-            ?.let { Profile.displayName(it, author) }
-        TtsPlayback.playFrom(
-            context = ttsContext,
-            content = content,
-            startIndex = explicitStartIndex ?: TtsText.startIndexForSelection(
+        scope.launch {
+            val startIndex = withContext(Dispatchers.Default) {
+                if (TtsText.paragraphs(content).isEmpty()) return@withContext null
+                explicitStartIndex ?: TtsText.startIndexForSelection(
+                    content = content,
+                    ownerText = ownerText,
+                    selectedText = selected,
+                )
+            } ?: return@launch
+            val authorName = content.authorPubkey?.trim()
+                ?.takeIf { it.length == 64 }
+                ?.let { Profile.displayName(it, author) }
+            TtsPlayback.playFrom(
+                context = ttsContext,
                 content = content,
-                ownerText = ownerText,
+                startIndex = startIndex,
+                author = authorName,
                 selectedText = selected,
-            ),
-            author = authorName,
-            selectedText = selected,
-            ownerText = ownerText,
-            ownerOffset = ownerOffset,
-        )
+                ownerText = ownerText,
+                ownerOffset = ownerOffset,
+            )
+        }
     }
     val navigator = remember { HighlightNavigator() }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
-    val scope = rememberCoroutineScope()
     var viewportHeight by remember { mutableIntStateOf(0) }
     var scrollViewport by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val jumpState = rememberUpdatedState<(HighlightStop) -> Unit> { stop ->
@@ -1365,27 +1373,29 @@ private fun ArticleBody(
     }
     val noteByAuthor = stringResource(R.string.reader_note_by)
     var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
+    var ttsOffsetIndex by remember(content.url) {
+        mutableStateOf<TtsText.MarkdownOffsetIndex?>(null)
+    }
     LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
-        markdownBody = withContext(Dispatchers.Default) {
+        val body = withContext(Dispatchers.Default) {
             NostrMentions.rewrite(
                 NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
                     noteByAuthor.format(name)
                 },
             )
         }
+        markdownBody = body
+        ttsOffsetIndex = withContext(Dispatchers.Default) {
+            TtsText.markdownOffsetIndex(content, body)
+        }
     }
     LaunchedEffect(markdownBody) {
         val body = markdownBody ?: return@LaunchedEffect
         onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
     }
-    fun ttsStartIndexForRenderedMarkdown(markdownOffset: Int): Int? {
-        val rendered = markdownBody
-        return if (rendered == null) {
-            TtsText.startIndexForMarkdownOffset(content, markdownOffset)
-        } else {
-            TtsText.startIndexForMarkdownOffset(content, rendered, markdownOffset)
-        }
-    }
+    // Cheap range lookup; the regex-heavy walk happens once, off the main thread.
+    fun ttsStartIndexForRenderedMarkdown(markdownOffset: Int): Int? =
+        ttsOffsetIndex?.startIndexFor(markdownOffset)
     val highlightedComponents = remember(
         mineColor,
         friendsColor,
@@ -1400,6 +1410,7 @@ private fun ArticleBody(
         content.summary,
         content.body,
         markdownBody,
+        ttsOffsetIndex,
         fullWidthImages,
         maxImageHeight,
         onImageClick,

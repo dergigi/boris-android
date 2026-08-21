@@ -158,16 +158,31 @@ object TtsText {
         content: ReadableContent,
         markdown: String,
         markdownOffset: Int,
-    ): Int? {
+    ): Int? = markdownOffsetIndex(content, markdown).startIndexFor(markdownOffset)
+
+    /**
+     * Walks the article once (regex-heavy) so that per-node offset lookups during
+     * composition are cheap. Computing this per markdown node froze the reader
+     * on long articles (ANR, issue #77).
+     */
+    fun markdownOffsetIndex(content: ReadableContent, markdown: String): MarkdownOffsetIndex {
         var index = 0
         content.title?.let { if (clean(it) != null) index++ }
         content.summary?.let { if (clean(it) != null) index++ }
+        val ranges = mutableListOf<MarkdownOffsetIndex.Range>()
         for (block in splitMarkdownBlocksWithRanges(markdown)) {
             if (clean(block.text) == null) continue
-            if (markdownOffset in block.start..block.end) return index
+            ranges += MarkdownOffsetIndex.Range(block.start, block.end, index)
             index++
         }
-        return null
+        return MarkdownOffsetIndex(ranges)
+    }
+
+    class MarkdownOffsetIndex internal constructor(private val ranges: List<Range>) {
+        fun startIndexFor(markdownOffset: Int): Int? =
+            ranges.firstOrNull { markdownOffset in it.start..it.end }?.index
+
+        internal data class Range(val start: Int, val end: Int, val index: Int)
     }
 
     /**

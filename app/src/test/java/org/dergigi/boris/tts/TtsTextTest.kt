@@ -356,6 +356,32 @@ class TtsTextTest {
     }
 
     @Test
+    fun markdownOffsetIndexMatchesDirectLookup() {
+        val markdown = """
+            # Heading
+
+            First paragraph.
+
+            ![image](https://example.com/pic.png)
+
+            Second paragraph.
+        """.trimIndent()
+        val content = ReadableContent(
+            url = "https://example.com/index",
+            title = "A Title",
+            markdown = markdown,
+        )
+        val index = TtsText.markdownOffsetIndex(content, markdown)
+        for (offset in listOf(0, markdown.indexOf("First"), markdown.indexOf("Second"))) {
+            assertEquals(
+                TtsText.startIndexForMarkdownOffset(content, markdown, offset),
+                index.startIndexFor(offset),
+            )
+        }
+        assertEquals(null, index.startIndexFor(markdown.indexOf("![image]")))
+    }
+
+    @Test
     fun chunksSplitLongTextOnSentencesThenSpaces() {
         val sentence = "This is a sentence. " // 20 chars
         val long = sentence.repeat(10).trim()
