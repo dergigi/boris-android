@@ -15,8 +15,7 @@ sealed interface SupportUiState {
         val profiles: Map<String, Profile>,
         val avatarSupporters: List<ZapSupporter> = supporters,
     ) : SupportUiState {
-        /** Number of zaps represented in the visible supporter list. */
-        val totalZaps: Int get() = supporters.sumOf { it.zapCount }
+        val totalZaps: Int get() = avatarSupporters.sumOf { it.zapCount }
     }
 }
 

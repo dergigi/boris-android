@@ -36,4 +36,17 @@ class SupportAvatarsTest {
             avatars.map { it.pubkey },
         )
     }
+
+    @Test
+    fun quietKeepsSmallZappersOffTheNamedList() {
+        val named = ZapSupporter("aa".repeat(32), 3_100, 2, legend = false)
+        val quiet = ZapSupporter("bb".repeat(32), 500, 1, legend = false)
+        assertEquals(
+            listOf(quiet),
+            SupportAvatars.quiet(
+                named = listOf(named),
+                all = listOf(named, quiet),
+            ),
+        )
+    }
 }

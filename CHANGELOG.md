@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Support page lists every zapper: named cards for a meaningful amount, smaller avatars for the rest
+
 ## [1.4.45] - 2026-08-21
 
 ### Fixed

@@ -125,7 +125,7 @@
     <string name="support_footer_boris">Boris</string>
     <string name="support_footer_a">\u0020a\u0020</string>
     <string name="support_footer_amount">meaningful amount of sats</string>
-    <string name="support_footer_after">\u0020and your avatar will show above.</string>
+    <string name="support_footer_after">\u0020and your name will show above.</string>
     <string name="support_totals">Total supporters: %1$d • Total zaps: %2$d</string>
     <string name="support_sats">%1$s sats</string>
     <string name="auth_connect">Amber</string>

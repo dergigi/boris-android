@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -181,6 +182,7 @@ private fun SupporterSections(
 ) {
     val legends = state.supporters.filter { it.legend }
     val others = state.supporters.filterNot { it.legend }
+    val quiet = SupportAvatars.quiet(state.supporters, state.avatarSupporters)
     if (legends.isNotEmpty()) {
         SupporterSection(
             title = stringResource(R.string.support_legends),
@@ -188,12 +190,26 @@ private fun SupporterSections(
             profiles = state.profiles,
             onOpenProfile = onOpenProfile,
         )
-        Spacer(Modifier.height(28.dp))
+        if (others.isNotEmpty() || quiet.isNotEmpty()) {
+            Spacer(Modifier.height(28.dp))
+        }
     }
     if (others.isNotEmpty()) {
         SupporterSection(
             title = stringResource(R.string.support_supporters),
             supporters = others,
+            profiles = state.profiles,
+            onOpenProfile = onOpenProfile,
+        )
+    }
+    if (quiet.isNotEmpty()) {
+        if (legends.isNotEmpty() || others.isNotEmpty()) {
+            Spacer(Modifier.height(28.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(Modifier.height(28.dp))
+        }
+        QuietAvatarRow(
+            supporters = quiet,
             profiles = state.profiles,
             onOpenProfile = onOpenProfile,
         )
@@ -245,22 +261,7 @@ private fun SupporterItem(
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (profile?.picture.isNullOrBlank()) {
-            Icon(
-                imageVector = Icons.Outlined.AccountCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(56.dp),
-            )
-        } else {
-            AsyncImage(
-                model = profile?.picture,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape),
-            )
-        }
+        SupporterAvatar(profile = profile, size = 56.dp)
         Spacer(Modifier.height(6.dp))
         Text(
             text = Profile.displayName(supporter.pubkey, profile),
@@ -276,6 +277,54 @@ private fun SupporterItem(
             ),
             style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QuietAvatarRow(
+    supporters: List<ZapSupporter>,
+    profiles: Map<String, Profile>,
+    onOpenProfile: (String) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        supporters.forEach { supporter ->
+            SupporterAvatar(
+                profile = profiles[supporter.pubkey],
+                size = 36.dp,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable { onOpenProfile(supporter.pubkey) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SupporterAvatar(
+    profile: Profile?,
+    size: Dp,
+    modifier: Modifier = Modifier,
+) {
+    if (profile?.picture.isNullOrBlank()) {
+        Icon(
+            imageVector = Icons.Outlined.AccountCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier.size(size),
+        )
+    } else {
+        AsyncImage(
+            model = profile?.picture,
+            contentDescription = null,
+            modifier = modifier
+                .size(size)
+                .clip(CircleShape),
         )
     }
 }
@@ -312,12 +361,12 @@ private fun SupportFooter(
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    if (state != null && state.supporters.isNotEmpty()) {
+    if (state != null && state.avatarSupporters.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
         Text(
             text = stringResource(
                 R.string.support_totals,
-                state.supporters.size,
+                state.avatarSupporters.size,
                 state.totalZaps,
             ),
             style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),

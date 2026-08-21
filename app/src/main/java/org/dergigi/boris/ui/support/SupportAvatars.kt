@@ -23,4 +23,12 @@ object SupportAvatars {
                 SupportAvatar(supporter.pubkey, picture)
             }
         }
+
+    fun quiet(
+        named: List<ZapSupporter>,
+        all: List<ZapSupporter>,
+    ): List<ZapSupporter> {
+        val shown = named.map { it.pubkey }.toSet()
+        return all.filter { it.pubkey !in shown }
+    }
 }
