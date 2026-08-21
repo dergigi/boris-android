@@ -5,20 +5,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -35,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -58,10 +61,9 @@ import org.dergigi.boris.R
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.ZapSplits
 import org.dergigi.boris.nostr.ZapSupporter
+import org.dergigi.boris.ui.openLightningAddress
 import org.dergigi.boris.ui.theme.SourceSerif
 import java.text.NumberFormat
-
-private const val PRICING_URL = "https://www.readwithboris.com/#pricing"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,7 +134,6 @@ fun SupportScreen(
 @Composable
 private fun ThankYouHeader() {
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     AsyncImage(
         model = ImageRequest.Builder(context)
             .data("file:///android_asset/thank-you.svg")
@@ -158,13 +159,7 @@ private fun ThankYouHeader() {
     Text(
         text = buildAnnotatedString {
             append(stringResource(R.string.support_subtitle_before))
-            withLink(
-                LinkAnnotation.Clickable(tag = "zaps", styles = supportLinkStyle()) {
-                    uriHandler.openUri(PRICING_URL)
-                },
-            ) {
-                append(stringResource(R.string.support_subtitle_link))
-            }
+            append(stringResource(R.string.support_subtitle_link))
             append(stringResource(R.string.support_subtitle_after))
         },
         style = MaterialTheme.typography.bodyLarge.copy(
@@ -334,7 +329,8 @@ private fun SupportFooter(
     state: SupportUiState.Ready?,
     onOpenProfile: (String) -> Unit,
 ) {
-    val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val lightningAddress = state?.lightningAddress
     Text(
         text = buildAnnotatedString {
             append(stringResource(R.string.support_footer_zap))
@@ -346,13 +342,7 @@ private fun SupportFooter(
                 append(stringResource(R.string.support_footer_boris))
             }
             append(stringResource(R.string.support_footer_a))
-            withLink(
-                LinkAnnotation.Clickable(tag = "amount", styles = supportLinkStyle()) {
-                    uriHandler.openUri(PRICING_URL)
-                },
-            ) {
-                append(stringResource(R.string.support_footer_amount))
-            }
+            append(stringResource(R.string.support_footer_amount))
             append(stringResource(R.string.support_footer_after))
         },
         style = MaterialTheme.typography.bodyMedium.copy(
@@ -361,6 +351,42 @@ private fun SupportFooter(
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = stringResource(R.string.support_footer_public_only),
+        style = MaterialTheme.typography.bodySmall.copy(
+            fontFamily = FontFamily.SansSerif,
+            textAlign = TextAlign.Center,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(16.dp))
+    Button(
+        onClick = {
+            if (lightningAddress != null) {
+                openLightningAddress(context, lightningAddress)
+            }
+        },
+        enabled = lightningAddress != null,
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+    ) {
+        Text(stringResource(R.string.support_send_privately))
+    }
+    if (lightningAddress != null) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = lightningAddress,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = FontFamily.SansSerif,
+                textAlign = TextAlign.Center,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     if (state != null && state.avatarSupporters.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
         Text(

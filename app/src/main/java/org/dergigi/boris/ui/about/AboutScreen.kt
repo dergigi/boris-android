@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.about
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -65,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.svg.SvgDecoder
@@ -72,6 +75,9 @@ import kotlinx.coroutines.launch
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.ui.openExternalUri
+import org.dergigi.boris.ui.openLightningAddress
+import org.dergigi.boris.ui.support.SupportStore
+import org.dergigi.boris.ui.support.SupportUiState
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.SourceSerif
 
@@ -83,6 +89,9 @@ fun AboutScreen(
     val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { ABOUT_PAGES.size })
     val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        SupportStore.ensureLoaded()
+    }
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
             if (page == ABOUT_PAGES.lastIndex) {
@@ -220,7 +229,9 @@ private fun FeaturePage(feature: AboutFeature) {
 
 @Composable
 private fun FreeAsInBeerParagraph() {
-    val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val supportState by SupportStore.state.collectAsStateWithLifecycle()
+    val lightningAddress = (supportState as? SupportUiState.Ready)?.lightningAddress
     val linkStyle = TextLinkStyles(
         style = SpanStyle(
             color = MaterialTheme.colorScheme.primary,
@@ -232,7 +243,15 @@ private fun FreeAsInBeerParagraph() {
             append(stringResource(R.string.about_free_2_before))
             withLink(
                 LinkAnnotation.Clickable(tag = "sats", styles = linkStyle) {
-                    uriHandler.openUri(AboutLinks.VALUE)
+                    if (lightningAddress != null) {
+                        openLightningAddress(context, lightningAddress)
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.support_lightning_unavailable),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 },
             ) {
                 append(stringResource(R.string.about_free_2_link))

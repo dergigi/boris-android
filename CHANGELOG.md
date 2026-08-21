@@ -9,6 +9,15 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Support page can send sats privately through Boris's Lightning Address
+
+### Changed
+
+- About "send me sats" opens a Lightning wallet instead of the web zapper
+- Support page public zaps stay on Nostr; the down web zapper links are gone
+
 ## [1.4.46] - 2026-08-21
 
 ### Changed
