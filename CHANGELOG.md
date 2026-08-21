@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-08-21
+
+### Added
+
+- Long-press article actions on profile writings, bookmarks, and feed writings or RSS
+
+### Fixed
+
+- Bookmarked highlights show the quote and source instead of a blank note row
+
 ## [1.5.0] - 2026-08-21
 
 ### Added
@@ -1387,7 +1397,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/dergigi/boris-android/releases/tag/v1.5.1
 [1.5.0]: https://github.com/dergigi/boris-android/releases/tag/v1.5.0
 [1.4.53]: https://github.com/dergigi/boris-android/releases/tag/v1.4.53
 [1.4.52]: https://github.com/dergigi/boris-android/releases/tag/v1.4.52
