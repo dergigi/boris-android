@@ -43,18 +43,23 @@ object SupportStore {
             val receipts = directReceipts + zapstoreReceipts
             val supporters = ZapReceipts.supporters(receipts)
             val avatarSupporters = ZapReceipts.allSupporters(receipts)
-            val profilePubkeys = (supporters + avatarSupporters).map { it.pubkey }.distinct()
-            val profiles = if (profilePubkeys.isEmpty()) {
-                emptyMap()
-            } else {
-                runCatching {
-                    RelayQuery.fetchProfiles(
-                        RelayQuery.globalReadRelays() + RelayQuery.zapRelays(),
-                        profilePubkeys,
-                    )
-                }.getOrDefault(emptyMap())
-            }
-            _state.value = SupportUiState.Ready(supporters, profiles, avatarSupporters)
+            val profilePubkeys = buildList {
+                add(ZapSplits.BORIS_PUBKEY)
+                supporters.forEach { add(it.pubkey) }
+                avatarSupporters.forEach { add(it.pubkey) }
+            }.distinct()
+            val profiles = runCatching {
+                RelayQuery.fetchProfiles(
+                    RelayQuery.globalReadRelays() + RelayQuery.zapRelays(),
+                    profilePubkeys,
+                )
+            }.getOrDefault(emptyMap())
+            _state.value = SupportUiState.Ready(
+                supporters = supporters,
+                profiles = profiles,
+                avatarSupporters = avatarSupporters,
+                lightningAddress = profiles[ZapSplits.BORIS_PUBKEY]?.lud16,
+            )
         }
     }
 }

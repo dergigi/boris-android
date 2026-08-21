@@ -4,6 +4,7 @@ data class Profile(
     val name: String?,
     val picture: String?,
     val about: String? = null,
+    val lud16: String? = null,
 ) {
     companion object {
         fun displayName(pubkeyHex: String, profile: Profile?): String {
@@ -25,12 +26,14 @@ data class Profile(
             val name = jsonString(content, "name")
             val picture = jsonString(content, "picture")
             val about = jsonString(content, "about")
+            val lud16 = LightningAddress.parse(jsonString(content, "lud16"))
             return Profile(
                 name = display ?: name,
                 picture = picture?.takeIf {
                     it.startsWith("http://") || it.startsWith("https://")
                 },
                 about = about,
+                lud16 = lud16,
             )
         }
 

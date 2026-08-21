@@ -52,4 +52,20 @@ class ProfileTest {
         assertEquals("short", profile.name)
         assertNull(profile.picture)
     }
+
+    @Test
+    fun parseReadsLud16() {
+        val profile = Profile.parse(
+            """{"name":"Boris","lud16":"boris@dergigi.com"}""",
+        )
+        assertEquals("boris@dergigi.com", profile.lud16)
+    }
+
+    @Test
+    fun parseIgnoresBlankAndInvalidLud16() {
+        assertNull(Profile.parse("""{"lud16":"   "}""").lud16)
+        assertNull(Profile.parse("""{"lud16":"not-an-address"}""").lud16)
+        assertNull(Profile.parse("""{"lud16":"user@"}""").lud16)
+        assertNull(Profile.parse("""{"name":"Boris"}""").lud16)
+    }
 }
