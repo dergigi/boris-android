@@ -38,12 +38,21 @@ fun openLightningAddress(context: Context, address: String) {
         context.startActivity(intent)
     }
     if (opened.isFailure) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-        clipboard?.setPrimaryClip(ClipData.newPlainText(parsed, parsed))
-        Toast.makeText(
+        copyLightningAddress(
             context,
-            context.getString(R.string.support_lightning_no_wallet),
-            Toast.LENGTH_SHORT,
-        ).show()
+            parsed,
+            toast = R.string.support_lightning_no_wallet,
+        )
     }
+}
+
+fun copyLightningAddress(
+    context: Context,
+    address: String,
+    toast: Int = R.string.action_copied,
+) {
+    val parsed = LightningAddress.parse(address) ?: return
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    clipboard?.setPrimaryClip(ClipData.newPlainText(parsed, parsed))
+    Toast.makeText(context, context.getString(toast), Toast.LENGTH_SHORT).show()
 }

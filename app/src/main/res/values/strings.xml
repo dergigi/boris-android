@@ -130,7 +130,7 @@
     <string name="support_totals">Total supporters: %1$d • Total zaps: %2$d</string>
     <string name="support_sats">%1$s sats</string>
     <string name="support_footer_public_only">Only public zaps appear here.</string>
-    <string name="support_send_privately">Send sats privately</string>
+    <string name="support_open_wallet">Open in Wallet</string>
     <string name="support_lightning_no_wallet">No Lightning wallet found. Address copied.</string>
     <string name="support_lightning_unavailable">Lightning address isn\'t available yet.</string>
     <string name="auth_connect">Amber</string>

@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - About tutorial ends with a Say thanks button to the Support page
 
+### Changed
+
+- Support page copies the Lightning Address from a secondary button and opens a wallet from Open in Wallet
+
 ## [1.4.47] - 2026-08-21
 
 ### Added

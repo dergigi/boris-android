@@ -22,13 +22,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -61,6 +64,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.ZapSplits
 import org.dergigi.boris.nostr.ZapSupporter
+import org.dergigi.boris.ui.copyLightningAddress
 import org.dergigi.boris.ui.openLightningAddress
 import org.dergigi.boris.ui.theme.SourceSerif
 import java.text.NumberFormat
@@ -361,6 +365,32 @@ private fun SupportFooter(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(16.dp))
+    if (lightningAddress != null) {
+        OutlinedButton(
+            onClick = { copyLightningAddress(context, lightningAddress) },
+            shape = RoundedCornerShape(8.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = lightningAddress,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+    }
     Button(
         onClick = {
             if (lightningAddress != null) {
@@ -374,18 +404,7 @@ private fun SupportFooter(
             .fillMaxWidth()
             .heightIn(min = 48.dp),
     ) {
-        Text(stringResource(R.string.support_send_privately))
-    }
-    if (lightningAddress != null) {
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = lightningAddress,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = FontFamily.SansSerif,
-                textAlign = TextAlign.Center,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(stringResource(R.string.support_open_wallet))
     }
     if (state != null && state.avatarSupporters.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
