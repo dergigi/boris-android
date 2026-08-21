@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.reader
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,11 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.size.Precision
 import org.dergigi.boris.data.UrlExtractor
 
 private const val FALLBACK_ASPECT = 16f / 9f
@@ -34,9 +38,17 @@ internal fun ArticleImage(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val widthPx = with(density) {
+        LocalConfiguration.current.screenWidthDp.dp.roundToPx()
+    }
+    val heightPx = with(density) { maxHeight.roundToPx() }
     val httpsUrl = remember(url) { UrlExtractor.preferHttps(url) }
     var aspect by remember(httpsUrl) { mutableStateOf<Float?>(null) }
     val ratio = aspect ?: FALLBACK_ASPECT
+    val request = remember(httpsUrl, widthPx, heightPx, fullWidth) {
+        articleImageRequest(context, httpsUrl, widthPx, heightPx)
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -44,9 +56,7 @@ internal fun ArticleImage(
             .clipToBounds(),
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(httpsUrl)
-                .build(),
+            model = request,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             onSuccess = { result ->
@@ -58,9 +68,20 @@ internal fun ArticleImage(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(ratio)
-                .then(if (fullWidth) Modifier else Modifier.heightIn(max = maxHeight))
+                .heightIn(max = maxHeight)
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { onClick(httpsUrl) },
         )
     }
 }
+
+internal fun articleImageRequest(
+    context: Context,
+    url: String,
+    widthPx: Int,
+    heightPx: Int,
+): ImageRequest = ImageRequest.Builder(context)
+    .data(url)
+    .size(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1))
+    .precision(Precision.INEXACT)
+    .build()

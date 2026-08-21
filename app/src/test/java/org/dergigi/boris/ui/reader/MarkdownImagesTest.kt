@@ -23,6 +23,18 @@ class MarkdownImagesTest {
     }
 
     @Test
+    fun fullWidthCapsHeightAtSeventyPercent() {
+        val box = markdownImageBox(
+            container = Size(1080f, 2000f),
+            intrinsic = Size(800f, 4000f),
+            fullWidth = true,
+            maxHeightPx = 1400f,
+        )
+        assertEquals(1080f, box.width)
+        assertEquals(1400f, box.height, 0.01f)
+    }
+
+    @Test
     fun fullWidthScalesAWideImageDownToTheColumn() {
         val box = markdownImageBox(
             container = Size(1080f, 2000f),

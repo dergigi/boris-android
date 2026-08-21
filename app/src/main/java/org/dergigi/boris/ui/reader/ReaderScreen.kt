@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -2626,7 +2627,8 @@ private class ClickableCoilImageTransformer(
         val data = Coil3ImageTransformerImpl.transform(https)
         return data.copy(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .heightIn(max = maxHeight)
                 .clipToBounds()
                 .clip(RoundedCornerShape(6.dp))
                 .clickable { onImageClick(https) },

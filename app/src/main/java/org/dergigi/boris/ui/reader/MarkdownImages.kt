@@ -77,7 +77,8 @@ internal fun markdownImageBox(
     val srcH = intrinsic.height
     if (fullWidth) {
         val width = if (hasContainer) container.width else srcW
-        return Size(width, srcH * (width / srcW))
+        val height = srcH * (width / srcW)
+        return Size(width, if (maxHeightPx > 0f) height.coerceAtMost(maxHeightPx) else height)
     }
     val maxWidth = if (hasContainer) container.width else srcW
     val scale = minOf(1f, maxWidth / srcW, maxHeightPx / srcH)

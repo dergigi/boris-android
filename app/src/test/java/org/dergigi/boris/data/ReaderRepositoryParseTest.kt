@@ -8,6 +8,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -63,6 +64,18 @@ class ReaderRepositoryParseTest {
         val teaser = "Subscribe now to keep reading this exclusive story from our newsroom."
         val raw = "<html><body><article><p>$teaser</p></article></body></html>"
         assertNull(repository.parse("https://example.com/post", raw).markdown)
+    }
+
+    @Test
+    fun parseSurvivesInvalidNumericEntities() {
+        val raw = """
+            <html><body>
+            <article><p>$longBody &#1114112; leftover &#xD800;</p></article>
+            </body></html>
+        """.trimIndent()
+        val markdown = repository.parse("https://example.com/post", raw).markdown
+        assertNotNull(markdown)
+        assertTrue(markdown!!.contains("The article paragraph carries the real story."))
     }
 
     @Test

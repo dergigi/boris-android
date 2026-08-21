@@ -105,6 +105,8 @@ class ReaderRepository(
                 }
             }
         }
+    } catch (e: ReaderFetchException) {
+        OriginResult.NoArticle(e.detail ?: e.message)
     } catch (e: IOException) {
         OriginResult.Unreachable(networkDetail(e))
     }
@@ -328,9 +330,20 @@ class ReaderRepository(
     internal fun parse(targetUrl: String, text: String): ReadableContent {
         val preview = OgMeta.parse(text, targetUrl)
         val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
+        val extracted = runCatching { ArticleExtractor.markdown(text, targetUrl) }
+            .getOrElse { e ->
+                throw ReaderFetchException(ERROR_NO_ARTICLE, "Article extraction failed: ${e.message}", e)
+            }
         val markdown = (
-            ArticleExtractor.markdown(text, targetUrl)
-                ?: HtmlToMarkdown.convert(text, targetUrl)
+            extracted
+                ?: runCatching { HtmlToMarkdown.convert(text, targetUrl) }
+                    .getOrElse { e ->
+                        throw ReaderFetchException(
+                            ERROR_NO_ARTICLE,
+                            "HTML to markdown failed: ${e.message}",
+                            e,
+                        )
+                    }
             )
             .let(UrlExtractor::upgradeImageHttpUrls)
             .takeIf { it.length >= MIN_ARTICLE_MARKDOWN_CHARS }

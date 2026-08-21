@@ -170,10 +170,10 @@ object HtmlToMarkdown {
 
     fun decode(s: String): String = s
         .replace(Regex("&#(\\d+);")) { m ->
-            m.groupValues[1].toIntOrNull()?.let { String(Character.toChars(it)) } ?: m.value
+            decodeCodePoint(m.groupValues[1].toIntOrNull()) ?: m.value
         }
         .replace(Regex("&#[xX]([0-9a-fA-F]+);")) { m ->
-            m.groupValues[1].toIntOrNull(16)?.let { String(Character.toChars(it)) } ?: m.value
+            decodeCodePoint(m.groupValues[1].toIntOrNull(16)) ?: m.value
         }
         .replace("&nbsp;", " ")
         .replace("&quot;", "\"")
@@ -181,4 +181,14 @@ object HtmlToMarkdown {
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&amp;", "&")
+
+    private fun decodeCodePoint(code: Int?): String? {
+        if (code == null || !Character.isValidCodePoint(code)) return null
+        if (code in Character.MIN_SURROGATE.code..Character.MAX_SURROGATE.code) return null
+        return try {
+            String(Character.toChars(code))
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
 }

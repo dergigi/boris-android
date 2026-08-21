@@ -78,6 +78,19 @@ class HtmlToMarkdownTest {
     }
 
     @Test
+    fun decodeIgnoresInvalidCodePoints() {
+        assertEquals(
+            "ok &#1114112; still",
+            HtmlToMarkdown.decode("ok &#1114112; still"),
+        )
+        assertEquals(
+            "ok &#xD800; still",
+            HtmlToMarkdown.decode("ok &#xD800; still"),
+        )
+        assertEquals("ok &#1114112;", HtmlToMarkdown.convert("<p>ok &#1114112;</p>"))
+    }
+
+    @Test
     fun anchorAroundImageKeepsImage() {
         val markdown = HtmlToMarkdown.convert(
             """<a href="https://example.com"><img src="https://example.com/i.png" alt="x"></a>""",

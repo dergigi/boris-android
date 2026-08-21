@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Reader no longer crashes when an article has many large images
+
 ## [1.4.48] - 2026-08-21
 
 ### Added
