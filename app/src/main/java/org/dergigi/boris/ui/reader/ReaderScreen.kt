@@ -1368,6 +1368,29 @@ private fun ArticleBody(
         findIndex = index
         findJump++
     }
+    val noteByAuthor = stringResource(R.string.reader_note_by)
+    var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
+    LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
+        markdownBody = withContext(Dispatchers.Default) {
+            NostrMentions.rewrite(
+                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
+                    noteByAuthor.format(name)
+                },
+            )
+        }
+    }
+    LaunchedEffect(markdownBody) {
+        val body = markdownBody ?: return@LaunchedEffect
+        onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
+    }
+    fun ttsStartIndexForRenderedMarkdown(markdownOffset: Int): Int? {
+        val rendered = markdownBody
+        return if (rendered == null) {
+            TtsText.startIndexForMarkdownOffset(content, markdownOffset)
+        } else {
+            TtsText.startIndexForMarkdownOffset(content, rendered, markdownOffset)
+        }
+    }
     val highlightedComponents = remember(
         mineColor,
         friendsColor,
@@ -1381,6 +1404,7 @@ private fun ArticleBody(
         content.title,
         content.summary,
         content.body,
+        markdownBody,
         fullWidthImages,
         maxImageHeight,
         onImageClick,
@@ -1403,7 +1427,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                 )
             },
             paragraph = { model ->
@@ -1450,7 +1474,7 @@ private fun ArticleBody(
                             navigator,
                             openFromStop,
                             spokenMark,
-                            TtsText.startIndexForMarkdownOffset(content, model.node.startOffset),
+                            ttsStartIndexForRenderedMarkdown(model.node.startOffset),
                         )
                     }
                 }
@@ -1479,7 +1503,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1499,7 +1523,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1519,7 +1543,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1539,7 +1563,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1559,7 +1583,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1579,7 +1603,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
@@ -1599,7 +1623,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
@@ -1619,7 +1643,7 @@ private fun ArticleBody(
                     navigator,
                     openFromStop,
                     spokenMark,
-                    TtsText.startIndexForMarkdownOffset(content, it.node.startOffset),
+                    ttsStartIndexForRenderedMarkdown(it.node.startOffset),
                     outlineItems,
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
@@ -1644,21 +1668,6 @@ private fun ArticleBody(
     val flavour = remember { GFMFlavourDescriptor() }
     val parser = remember(flavour) { MarkdownParser(flavour) }
     val referenceLinkHandler = remember { ReferenceLinkHandlerImpl() }
-    val noteByAuthor = stringResource(R.string.reader_note_by)
-    var markdownBody by remember(content.url) { mutableStateOf<String?>(null) }
-    LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
-        markdownBody = withContext(Dispatchers.Default) {
-            NostrMentions.rewrite(
-                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
-                    noteByAuthor.format(name)
-                },
-            )
-        }
-    }
-    LaunchedEffect(markdownBody) {
-        val body = markdownBody ?: return@LaunchedEffect
-        onOutlineItems(withContext(Dispatchers.Default) { ArticleOutline.parse(body) })
-    }
     val markdownState = rememberMarkdownState(
         content = markdownBody.orEmpty(),
         flavour = flavour,
@@ -1996,6 +2005,7 @@ private fun ArticleBody(
 private class SpokenMarkState {
     var sentence by mutableStateOf<String?>(null)
     var paragraph by mutableStateOf<String?>(null)
+    var paragraphIndex by mutableStateOf<Int?>(null)
 }
 
 @Composable
@@ -2003,12 +2013,25 @@ private fun rememberHighlightMarks(
     displayed: String,
     painted: List<PaintedHighlight>,
     spoken: SpokenMarkState,
+    ttsStartIndex: Int?,
 ): List<HighlightSpan> {
     val base = remember(displayed, painted) {
         matchHighlightSpans(displayed, painted)
     }
-    val spokenSpans = remember(displayed, spoken.sentence, spoken.paragraph) {
-        matchSpokenSpans(displayed, spoken.sentence, spoken.paragraph)
+    val spokenSpans = remember(
+        displayed,
+        spoken.sentence,
+        spoken.paragraph,
+        spoken.paragraphIndex,
+        ttsStartIndex,
+    ) {
+        matchSpokenSpansForParagraph(
+            displayed = displayed,
+            sentence = spoken.sentence,
+            paragraph = spoken.paragraph,
+            displayedTtsIndex = ttsStartIndex,
+            spokenTtsIndex = spoken.paragraphIndex,
+        )
     }
     return if (spokenSpans.isEmpty()) base else base + spokenSpans
 }
@@ -2066,6 +2089,7 @@ private fun TtsSpokenSync(
     }
     spoken.sentence = spokenSentence
     spoken.paragraph = spokenParagraph
+    spoken.paragraphIndex = spokenSession?.index
     var followAlongScrolling by remember { mutableStateOf(false) }
     val followAlongPosition = spokenSession
         ?.takeIf { it.playing && !it.followAlongPaused }
@@ -2124,7 +2148,7 @@ private fun HighlightedArticleTitle(
     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val titleOwner = remember { Any() }
-    val titleSpans = rememberHighlightMarks(title, painted, spoken)
+    val titleSpans = rememberHighlightMarks(title, painted, spoken, ttsStartIndex)
     Text(
         text = title,
         style = style,
@@ -2199,7 +2223,7 @@ private fun HighlightedMarkdownNode(
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
-    val marks = rememberHighlightMarks(styledText.text, highlights, spoken)
+    val marks = rememberHighlightMarks(styledText.text, highlights, spoken, ttsStartIndex)
     val outlineId = remember(outlineItems, outlineStartOffset, styledText.text) {
         outlineStartOffset?.let { ArticleOutline.idForHeading(outlineItems, it, styledText.text) }
     }

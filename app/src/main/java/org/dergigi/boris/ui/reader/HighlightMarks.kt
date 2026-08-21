@@ -49,6 +49,18 @@ fun matchSpokenSpans(
     return matchHighlightSpans(displayed, listOf(item))
 }
 
+fun matchSpokenSpansForParagraph(
+    displayed: String,
+    sentence: String?,
+    paragraph: String?,
+    displayedTtsIndex: Int?,
+    spokenTtsIndex: Int?,
+): List<HighlightSpan> {
+    if (displayedTtsIndex == null || spokenTtsIndex == null) return emptyList()
+    if (displayedTtsIndex != spokenTtsIndex) return emptyList()
+    return matchSpokenSpans(displayed, sentence, paragraph)
+}
+
 fun matchHighlightSpans(
     displayed: String,
     highlights: List<PaintedHighlight>,

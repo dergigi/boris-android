@@ -58,6 +58,33 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun spokenFollowAlongRequiresTheActiveTtsParagraph() {
+        val spans = matchSpokenSpansForParagraph(
+            displayed = "The wrong section starts here.",
+            sentence = "The",
+            paragraph = "The right section starts here.",
+            displayedTtsIndex = 4,
+            spokenTtsIndex = 8,
+        )
+
+        assertTrue(spans.isEmpty())
+    }
+
+    @Test
+    fun spokenFollowAlongMatchesTheActiveTtsParagraph() {
+        val displayed = "The right section starts here."
+        val spans = matchSpokenSpansForParagraph(
+            displayed = displayed,
+            sentence = "The",
+            paragraph = displayed,
+            displayedTtsIndex = 8,
+            spokenTtsIndex = 8,
+        )
+
+        assertEquals(listOf(0 to 3), spans.map { it.start to it.end })
+    }
+
+    @Test
     fun stopsFromSpansKeepsOrderAndSkipsUnlaidRanges() {
         val item = PaintedHighlight(id = "h", quote = "x", mine = false)
         val spans = listOf(

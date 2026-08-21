@@ -143,10 +143,18 @@ object TtsText {
     }
 
     fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
+        val markdown = NostrMentions.rewrite(Footnotes.expand(content.body))
+        return startIndexForMarkdownOffset(content, markdown, markdownOffset)
+    }
+
+    fun startIndexForMarkdownOffset(
+        content: ReadableContent,
+        markdown: String,
+        markdownOffset: Int,
+    ): Int? {
         var index = 0
         content.title?.let { if (clean(it) != null) index++ }
         content.summary?.let { if (clean(it) != null) index++ }
-        val markdown = NostrMentions.rewrite(Footnotes.expand(content.body))
         for (block in splitMarkdownBlocksWithRanges(markdown)) {
             if (clean(block.text) == null) continue
             if (markdownOffset in block.start..block.end) return index
