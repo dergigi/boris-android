@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.Button
@@ -85,6 +86,7 @@ import org.dergigi.boris.ui.theme.SourceSerif
 @Composable
 fun AboutScreen(
     onBack: () -> Unit,
+    onOpenSupport: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { ABOUT_PAGES.size })
@@ -133,7 +135,10 @@ fun AboutScreen(
                 when (val item = ABOUT_PAGES[page]) {
                     AboutPage.Intro -> IntroPage()
                     is AboutPage.Feature -> FeaturePage(item.feature)
-                    AboutPage.Cta -> CtaPage(onStartReading = onBack)
+                    AboutPage.Cta -> CtaPage(
+                        onStartReading = onBack,
+                        onOpenSupport = onOpenSupport,
+                    )
                 }
             }
             PageDots(
@@ -267,7 +272,10 @@ private fun FreeAsInBeerParagraph() {
 }
 
 @Composable
-private fun CtaPage(onStartReading: () -> Unit) {
+private fun CtaPage(
+    onStartReading: () -> Unit,
+    onOpenSupport: () -> Unit,
+) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     AboutPageColumn {
@@ -306,6 +314,12 @@ private fun CtaPage(onStartReading: () -> Unit) {
             label = stringResource(R.string.about_cta_feature),
             icon = rememberVectorPainter(Icons.Outlined.Lightbulb),
             onClick = { openExternalUri(context, AboutLinks.FEATURE_REQUEST) },
+        )
+        Spacer(Modifier.height(12.dp))
+        CtaOutlinedButton(
+            label = stringResource(R.string.about_cta_thanks),
+            icon = rememberVectorPainter(Icons.Filled.Favorite),
+            onClick = onOpenSupport,
         )
         Spacer(Modifier.height(24.dp))
         Button(

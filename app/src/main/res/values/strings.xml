@@ -111,6 +111,7 @@
     <string name="about_cta_nostr">Connect on Nostr</string>
     <string name="about_cta_bug">Report a bug</string>
     <string name="about_cta_feature">Suggest a feature</string>
+    <string name="about_cta_thanks">Say thanks</string>
     <string name="about_cta_start">Start reading!</string>
     <string name="about_page_indicator">Page %1$d of %2$d</string>
     <string name="support_title">Support Boris</string>

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- About tutorial ends with a Say thanks button to the Support page
+
 ## [1.4.47] - 2026-08-21
 
 ### Added

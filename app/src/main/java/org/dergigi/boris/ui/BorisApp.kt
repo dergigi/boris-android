@@ -364,6 +364,11 @@ fun BorisApp(
                 composable(Routes.ABOUT) {
                     AboutScreen(
                         onBack = { navController.popBackStack() },
+                        onOpenSupport = {
+                            navController.navigate(Routes.SUPPORT) {
+                                launchSingleTop = true
+                            }
+                        },
                     )
                 }
                 composable(Routes.SUPPORT) {
