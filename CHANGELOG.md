@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Available Offline can download compressed article images for airplane-mode reading
 
+### Changed
+
+- Gallery double-tap zoom focuses on the tapped area
+
 ## [1.4.50] - 2026-08-21
 
 ### Added

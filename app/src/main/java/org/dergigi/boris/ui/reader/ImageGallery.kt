@@ -353,7 +353,8 @@ private fun ZoomableImage(
             .fillMaxSize()
             .pointerInput(url) {
                 awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val tapPosition = down.position
                     val startedAt = System.currentTimeMillis()
                     var pinching = false
                     var dragged = false
@@ -382,7 +383,20 @@ private fun ZoomableImage(
                     if (wasTap) {
                         if (startedAt - lastTapAt < 300) {
                             lastTapAt = 0L
-                            if (scale > 1.01f) applyScale(1f) else applyScale(2.5f)
+                            if (scale > 1.01f) {
+                                applyScale(1f)
+                            } else {
+                                val next = 2.5f
+                                applyScale(
+                                    next,
+                                    doubleTapZoomOffset(
+                                        tapPosition,
+                                        size.width.toFloat(),
+                                        size.height.toFloat(),
+                                        next,
+                                    ),
+                                )
+                            }
                         } else {
                             lastTapAt = startedAt
                         }
@@ -396,4 +410,14 @@ private fun ZoomableImage(
                 translationY = offset.y
             },
     )
+}
+
+internal fun doubleTapZoomOffset(
+    tap: Offset,
+    width: Float,
+    height: Float,
+    scale: Float,
+): Offset {
+    val center = Offset(width / 2f, height / 2f)
+    return (tap - center) * (1f - scale)
 }
