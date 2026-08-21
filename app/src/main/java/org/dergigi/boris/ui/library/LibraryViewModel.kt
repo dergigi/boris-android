@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkCatalog
+import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.OgMetaClient
@@ -40,6 +41,8 @@ import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResults
+import org.dergigi.boris.tts.startListening as startArticleListening
+import org.dergigi.boris.ui.MarkAsReadAction
 
 sealed interface LibraryUiState {
     data object LoggedOut : LibraryUiState
@@ -72,6 +75,13 @@ class LibraryViewModel(
     private var notes: Map<String, Nip01Event> = emptyMap()
     private var previews: Map<String, OgPreview?> = emptyMap()
     private var hiddenTags: List<List<String>>? = null
+    private var listenJob: Job? = null
+    private val markAsReadAction = MarkAsReadAction(
+        app = application,
+        scope = viewModelScope,
+        onMessage = { _message.value = it },
+        onArchived = { _, _ -> refresh() },
+    )
 
     fun refresh() {
         val session = SessionStore.load(getApplication())
@@ -160,6 +170,22 @@ class LibraryViewModel(
             return
         }
         applyPlaintext(plaintext)
+    }
+
+    fun startListening(url: String) {
+        listenJob?.cancel()
+        listenJob = viewModelScope.launch {
+            startArticleListening(getApplication(), url)?.let { _message.value = it }
+        }
+    }
+
+    fun markAsRead(item: BookmarkItem): Intent? {
+        val url = item.url ?: return null
+        return markAsReadAction.request(url, item.title, item.imageUrl)
+    }
+
+    fun onArchiveSignerResult(resultCode: Int, data: Intent?) {
+        markAsReadAction.onSignerResult(resultCode, data)
     }
 
     fun consumeMessage() {

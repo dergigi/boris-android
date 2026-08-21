@@ -2,7 +2,6 @@ package org.dergigi.boris.ui.home
 
 import android.app.Application
 import android.content.Intent
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.BookmarkCatalog
@@ -26,36 +24,21 @@ import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HighlightedArticles
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
-import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.RandomArticles
-import org.dergigi.boris.data.ReadableContent
-import org.dergigi.boris.data.ReaderRepository
-import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingTimes
-import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.TimedReadKind
 import org.dergigi.boris.data.TimedReads
-import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
-import org.dergigi.boris.nostr.Archive
-import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.tts.TtsPlayback
-import org.dergigi.boris.tts.TtsText
-import org.dergigi.boris.nostr.BunkerClient
-import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.BookmarkRefKind
-import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
-import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
-import org.dergigi.boris.nostr.RemoteSignerBridge
-import org.dergigi.boris.nostr.SignerResult
-import org.dergigi.boris.nostr.SignerResults
+import org.dergigi.boris.tts.startListening as startArticleListening
+import org.dergigi.boris.ui.MarkAsReadAction
 
 sealed interface HomeHighlightsState {
     data object Loading : HomeHighlightsState
@@ -89,7 +72,17 @@ class HomeViewModel(
 
     private var loadJob: Job? = null
     private var listenJob: Job? = null
-    private var pendingArchive: PendingArchive? = null
+    private val markAsReadAction = MarkAsReadAction(
+        app = application,
+        scope = viewModelScope,
+        onMessage = { _message.value = it },
+        onArchived = { key, _ ->
+            val current = _highlights.value
+            if (key != null && current is HomeHighlightsState.Ready) {
+                _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)
+            }
+        },
+    )
 
     fun consumeMessage() {
         _message.value = null
@@ -218,100 +211,15 @@ class HomeViewModel(
     fun startListening(url: String) {
         listenJob?.cancel()
         listenJob = viewModelScope.launch {
-            val app = getApplication<Application>()
-            val content = try {
-                withContext(Dispatchers.IO) {
-                    val repo = ReaderRepository()
-                    repo.peekCached(url) ?: repo.fetch(url)
-                }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Exception) {
-                _message.value = error.message?.takeIf { it.isNotBlank() }
-                    ?: app.getString(R.string.tts_empty_heading)
-                return@launch
-            }
-            val paragraphs = TtsText.paragraphs(content)
-            if (paragraphs.isEmpty()) {
-                _message.value = app.getString(R.string.tts_empty_heading)
-                return@launch
-            }
-            val startIndex = TtsText.listenStartIndex(
-                ReadingPositionStore.fraction(content.url),
-                paragraphs.size,
-            )
-            val author = content.authorPubkey?.trim()
-                ?.takeIf { it.length == 64 }
-                ?.let { Profile.displayName(it, null) }
-            TtsPlayback.start(app, content, startIndex, author)
+            startArticleListening(getApplication(), url)?.let { _message.value = it }
         }
     }
 
-    fun markAsRead(article: HighlightedArticle): Intent? {
-        val app = getApplication<Application>()
-        val session = SessionStore.load(app) ?: return null
-        if (pendingArchive != null) {
-            _message.value = app.getString(R.string.reader_archive_failed)
-            return null
-        }
-        val content = article.archiveContent()
-        val createdAt = System.currentTimeMillis() / 1000
-        val kind = Archive.kind(content)
-        val tags = Archive.tags(content)
-        if (kind == null || tags == null) {
-            failArchive(app.getString(R.string.reader_archive_failed))
-            return null
-        }
-        return when (session) {
-            is Session.Amber -> {
-                val unsigned = Archive.unsignedJson(content, session.pubkeyHex, createdAt)
-                if (unsigned == null) {
-                    failArchive(app.getString(R.string.reader_archive_failed))
-                    return null
-                }
-                pendingArchive = PendingArchive(
-                    url = article.url,
-                    unsigned = PendingUnsignedEvent(
-                        pubkey = session.pubkeyHex,
-                        createdAt = createdAt,
-                        kind = kind,
-                        tags = tags,
-                        content = Archive.EMOJI,
-                    ),
-                )
-                RemoteSignerBridge.buildSignEventIntent(unsigned, session.signerPackage, session.pubkeyHex)
-            }
-            is Session.Bunker -> {
-                val unsigned = Archive.unsignedJson(content, pubkeyHex = null, createdAt)
-                if (unsigned == null) {
-                    failArchive(app.getString(R.string.reader_archive_failed))
-                    return null
-                }
-                pendingArchive = PendingArchive(url = article.url)
-                viewModelScope.launch { signArchiveWithBunker(session, unsigned, article.url) }
-                null
-            }
-        }
-    }
+    fun markAsRead(article: HighlightedArticle): Intent? =
+        markAsReadAction.request(article.url, article.title, article.imageUrl)
 
     fun onSignerResult(resultCode: Int, data: Intent?) {
-        val app = getApplication<Application>()
-        val session = SessionStore.load(app) ?: return
-        val pending = pendingArchive ?: return
-        when (
-            val result = SignerResults.parseSignedEvent(
-                resultCode,
-                data,
-                session.pubkeyHex,
-                pending.unsigned,
-            )
-        ) {
-            is SignerResult.Signed -> onSignedArchive(session, result.event, pending.url)
-            SignerResult.Rejected -> failArchive(app.getString(R.string.reader_archive_rejected))
-            SignerResult.Cancelled, is SignerResult.Success -> {
-                failArchive(app.getString(R.string.reader_archive_cancelled))
-            }
-        }
+        markAsReadAction.onSignerResult(resultCode, data)
     }
 
     private fun loadCached(pubkey: String?): HomeHighlightsState.Ready? {
@@ -485,75 +393,6 @@ class HomeViewModel(
         HighlightedArticles.decorate(article, previews[article.url] ?: ArticlePreview.get(article.url))
     }
 
-    private suspend fun signArchiveWithBunker(
-        session: Session.Bunker,
-        unsignedJson: String,
-        url: String,
-    ) {
-        val app = getApplication<Application>()
-        val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
-        if (privkey == null) {
-            failArchive(app.getString(R.string.reader_archive_failed))
-            return
-        }
-        try {
-            val result = withContext(Dispatchers.IO) {
-                BunkerClient(onAuthUrl = ::openAuthUrl).signEvent(
-                    session.relays,
-                    session.remoteSignerPubkey,
-                    privkey,
-                    unsignedJson,
-                )
-            }
-            when (result) {
-                is BunkerSignResult.Signed -> onSignedArchive(session, result.event, url)
-                BunkerSignResult.Rejected -> failArchive(app.getString(R.string.reader_archive_rejected))
-                BunkerSignResult.RelayTimeout -> failArchive(app.getString(R.string.reader_archive_failed))
-            }
-        } finally {
-            privkey.fill(0)
-        }
-    }
-
-    private fun onSignedArchive(session: Session, event: Nip01Event, url: String) {
-        val app = getApplication<Application>()
-        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true) ||
-            !event.verify() ||
-            !Archive.isArchive(event)
-        ) {
-            failArchive(app.getString(R.string.reader_archive_failed))
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = EventPublisher.publish(session.pubkeyHex, event)
-            if (!result.accepted) {
-                failArchive(app.getString(R.string.reader_archive_failed))
-                return@launch
-            }
-            pendingArchive = null
-            val key = Archive.targetRef(event)?.let(ArchivedArticles::key) ?: ArchivedArticles.key(url)
-            val current = _highlights.value
-            if (key != null && current is HomeHighlightsState.Ready) {
-                _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)
-            }
-            _message.value = app.getString(R.string.reader_archived)
-        }
-    }
-
-    private fun failArchive(message: String) {
-        pendingArchive = null
-        _message.value = message
-    }
-
-    private fun openAuthUrl(url: String) {
-        val app = getApplication<Application>()
-        runCatching {
-            app.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
-    }
-
     private data class LibraryHighlights(
         val shortReads: List<HighlightedArticle> = emptyList(),
         val longReads: List<HighlightedArticle> = emptyList(),
@@ -585,11 +424,6 @@ class HomeViewModel(
                 .distinct()
     }
 
-    private data class PendingArchive(
-        val url: String,
-        val unsigned: PendingUnsignedEvent? = null,
-    )
-
     private fun LoadedRows.toReady(
         pubkey: String?,
         previews: Map<String, OgPreview?>,
@@ -613,39 +447,6 @@ class HomeViewModel(
         private const val ARTICLE_LIMIT = 21
     }
 }
-
-internal fun HighlightedArticle.archiveContent(): ReadableContent =
-    when (val target = NostrLink.parse(url)) {
-        is NostrTarget.Article -> {
-            val pointer = target.ref.pointer
-            val event = EventCache.latest(pointer.kind, pointer.pubkey, pointer.identifier)
-            ReadableContent(
-                url = target.uri,
-                title = title,
-                articleCoordinate = target.ref.coordinate,
-                eventId = event?.id,
-                authorPubkey = pointer.pubkey,
-                imageUrl = imageUrl,
-            )
-        }
-        is NostrTarget.Note -> {
-            val event = EventCache.event(target.eventId)
-            ReadableContent(
-                url = target.uri,
-                title = title,
-                eventId = target.eventId,
-                authorPubkey = event?.pubkey ?: target.author,
-                imageUrl = imageUrl,
-            )
-        }
-        is NostrTarget.Profile, null -> {
-            ReadableContent(
-                url = url,
-                title = title,
-                imageUrl = imageUrl,
-            )
-        }
-    }
 
 internal fun mergePreview(cached: OgPreview?, fetched: OgPreview?): OgPreview? {
     if (fetched == null) return cached

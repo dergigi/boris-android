@@ -1,7 +1,9 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.ui.reader.CardReadingProgress
 
 /** Shared list row for writings, bookmarks, RSS, and search article hits. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArticleRow(
     title: String,
@@ -50,13 +53,25 @@ fun ArticleRow(
     url: String? = null,
     showReadingProgress: Boolean = true,
     enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val shape = RoundedCornerShape(12.dp)
+    val clickModifier = if (onLongClick == null) {
+        Modifier.clickable(enabled = enabled, onClick = onClick)
+    } else {
+        Modifier.combinedClickable(
+            enabled = enabled,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+        )
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .then(clickModifier)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -11,7 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Added
 
-- Long-press a home article to start or continue listening
+- Long-press a home or library article to start or continue listening
 
 ## [1.4.49] - 2026-08-21
 

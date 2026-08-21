@@ -36,22 +36,14 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
-import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,7 +69,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -95,21 +86,16 @@ import kotlinx.coroutines.delay
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
-import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.HighlightedArticle
-import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
+import org.dergigi.boris.ui.ArticleActionsMenu
 import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
-import org.dergigi.boris.ui.copyArticleLink
-import org.dergigi.boris.ui.openExternalUri
-import org.dergigi.boris.ui.openOriginalArticle
 import org.dergigi.boris.ui.reader.CardReadingProgress
-import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -899,14 +885,7 @@ private fun HighlightedArticleCard(
     onListen: () -> Unit,
     onMarkAsRead: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val target = remember(article.url) { NostrLink.parse(article.url) }
-    val nativeUri = target?.uri
-    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
-    val continueListening = remember(article.url, progressVersion) {
-        ContinueReading.inProgress(ReadingPositionStore.fraction(article.url))
-    }
     val actionMenuLabel = stringResource(R.string.home_article_actions)
     var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
@@ -968,85 +947,16 @@ private fun HighlightedArticleCard(
             )
             CardReadingProgress(url = article.url)
         }
-        DropdownMenu(
+        ArticleActionsMenu(
             expanded = menuOpen,
-            onDismissRequest = { menuOpen = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_share)) },
-                leadingIcon = {
-                    Icon(Icons.Filled.Share, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    shareArticleLink(context, article.title, article.url)
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_copy_link)) },
-                leadingIcon = {
-                    Icon(Icons.Filled.ContentCopy, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    copyArticleLink(context, clipboard, article.url)
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_open_original)) },
-                leadingIcon = {
-                    Icon(Icons.Filled.OpenInBrowser, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    openOriginalArticle(context, article.url)
-                },
-            )
-            if (nativeUri != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.reader_open_native)) },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.Smartphone, contentDescription = null)
-                    },
-                    onClick = {
-                        menuOpen = false
-                        openExternalUri(context, nativeUri)
-                    },
-                )
-            }
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(
-                            if (continueListening) {
-                                R.string.home_continue_listening
-                            } else {
-                                R.string.home_start_listening
-                            },
-                        ),
-                    )
-                },
-                leadingIcon = {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    onListen()
-                },
-            )
-            if (loggedIn && !archived) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.reader_mark_as_read)) },
-                    leadingIcon = {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null)
-                    },
-                    onClick = {
-                        menuOpen = false
-                        onMarkAsRead()
-                    },
-                )
-            }
-        }
+            onDismiss = { menuOpen = false },
+            title = article.title,
+            url = article.url,
+            loggedIn = loggedIn,
+            archived = archived,
+            onListen = onListen,
+            onMarkAsRead = onMarkAsRead,
+        )
     }
 }
 

@@ -1,10 +1,10 @@
 package org.dergigi.boris.ui.library
 
+import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,27 +57,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
+import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
+import org.dergigi.boris.ui.ArticleActionsMenu
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -108,6 +107,14 @@ fun LibraryScreen(
     ) { result ->
         viewModel.onDecryptResult(result.resultCode, result.data)
     }
+    val archiveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        viewModel.onArchiveSignerResult(result.resultCode, result.data)
+    }
+    val ttsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
     val authLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -134,6 +141,17 @@ fun LibraryScreen(
         onRefresh = viewModel::refresh,
         onUnlock = { viewModel.unlockPrivate()?.let(decryptLauncher::launch) },
         onOpenArticle = onOpenArticle,
+        onListen = { item ->
+            item.url?.let { url ->
+                requestTtsNotificationPermissionOnce(context) {
+                    ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                viewModel.startListening(url)
+            }
+        },
+        onMarkAsRead = { item ->
+            viewModel.markAsRead(item)?.let(archiveLauncher::launch)
+        },
         onConnect = { authViewModel.connectIntent()?.let(authLauncher::launch) },
         onConnectBunker = { authViewModel.connectBunker(bunkerUri) },
         onOpenLibrarySettings = onOpenLibrarySettings,
@@ -155,6 +173,8 @@ fun LibraryScreenContent(
     onRefresh: () -> Unit,
     onUnlock: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onListen: (BookmarkItem) -> Unit = {},
+    onMarkAsRead: (BookmarkItem) -> Unit = {},
     onConnect: () -> Unit,
     onConnectBunker: () -> Unit,
     onOpenLibrarySettings: () -> Unit = {},
@@ -233,6 +253,8 @@ fun LibraryScreenContent(
                         onRefresh = onRefresh,
                         onUnlock = onUnlock,
                         onOpenArticle = onOpenArticle,
+                        onListen = onListen,
+                        onMarkAsRead = onMarkAsRead,
                     )
                 }
             }
@@ -250,6 +272,8 @@ private fun ReadyLibrary(
     onRefresh: () -> Unit,
     onUnlock: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onListen: (BookmarkItem) -> Unit,
+    onMarkAsRead: (BookmarkItem) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         FlowRow(
@@ -319,6 +343,9 @@ private fun ReadyLibrary(
                     )
                 }
                 else -> {
+                    val archivedKeys = remember(shelves.archive) {
+                        shelves.archive.mapNotNull { it.url?.let(ArchivedArticles::key) }.toSet()
+                    }
                     LazyColumn(
                         modifier = Modifier
                             .widthIn(max = 720.dp)
@@ -328,7 +355,15 @@ private fun ReadyLibrary(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(items, key = { it.id }) { item ->
-                            BookmarkRow(item = item, onOpenArticle = onOpenArticle)
+                            BookmarkRow(
+                                item = item,
+                                archived = item.url?.let {
+                                    ArchivedArticles.isArchived(it, archivedKeys)
+                                } == true || item.bucket == BookmarkBucket.Archive,
+                                onOpenArticle = onOpenArticle,
+                                onListen = { onListen(item) },
+                                onMarkAsRead = { onMarkAsRead(item) },
+                            )
                         }
                     }
                 }
@@ -366,18 +401,39 @@ private fun ShelfChip(
 @Composable
 private fun BookmarkRow(
     item: BookmarkItem,
+    archived: Boolean,
     onOpenArticle: (String) -> Unit,
+    onListen: () -> Unit,
+    onMarkAsRead: () -> Unit,
 ) {
     val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
-    ArticleRow(
-        title = item.title,
-        imageUrl = item.imageUrl,
-        imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
-        byline = item.host,
-        url = item.url,
-        enabled = item.url != null,
-        onClick = { item.url?.let(onOpenArticle) },
-    )
+    var menuOpen by remember { mutableStateOf(false) }
+    val url = item.url
+    Box {
+        ArticleRow(
+            title = item.title,
+            imageUrl = item.imageUrl,
+            imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
+            byline = item.host,
+            url = url,
+            enabled = url != null,
+            onClick = { url?.let(onOpenArticle) },
+            onLongClick = url?.let { { menuOpen = true } },
+            onLongClickLabel = stringResource(R.string.home_article_actions),
+        )
+        if (url != null) {
+            ArticleActionsMenu(
+                expanded = menuOpen,
+                onDismiss = { menuOpen = false },
+                title = item.title,
+                url = url,
+                loggedIn = true,
+                archived = archived,
+                onListen = onListen,
+                onMarkAsRead = onMarkAsRead,
+            )
+        }
+    }
 }
 
 @Composable
