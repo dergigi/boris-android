@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: On-device article extraction
 status: human_needed
-stopped_at: Phase 6 built; 5 device UAT items pending
-last_updated: "2026-08-20T08:09:00.000Z"
-last_activity: 2026-08-20
-last_activity_desc: Phase 6 executed and verified; waiting on device UAT
+stopped_at: Phase 4 UAT passed; Phase 6 still has 5 device UAT items pending
+last_updated: "2026-08-21T15:38:00.000Z"
+last_activity: 2026-08-21
+last_activity_desc: Phase 4 device UAT accepted as shipped through 1.4.53; TTS-01 checked
 progress:
   total_phases: 6
   completed_phases: 6
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-14)
 
 **Core value:** Reading stays first. Login is a stored identity, never a user key in Boris.
-**Current focus:** Phase 6 On-device article extraction — built; 5 device UAT items pending
+**Current focus:** Phase 6 On-device article extraction — built; 5 device UAT items pending. Phase 4 TTS UAT is closed.
 
 ## Current Position
 
 Phase: 06 of 6 (On-device article extraction)
 Plan: 3 of 3
 Status: Built — human verification needed
-Last activity: 2026-08-20 — all 3 plans executed; VERIFICATION 15/16; 5 UAT items pending
+Last activity: 2026-08-21 — Phase 4 UAT passed (daily use through 1.4.53); Phase 6 still has 5 UAT items pending
 
 Progress: [██████████] 100%
 
@@ -137,6 +137,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-20T10:09:00+02:00
-Stopped at: Phase 6 built; 5 device UAT items pending
+Last session: 2026-08-21T15:38:00+02:00
+Stopped at: Phase 4 UAT passed; Phase 6 built with 5 device UAT items pending
 Resume file: .planning/phases/06-on-device-article-extraction/06-UAT.md

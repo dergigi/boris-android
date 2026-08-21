@@ -1,9 +1,9 @@
 ---
 phase: 04-listen-to-articles
-verified: 2026-08-18T11:20:00Z
-status: human_needed
-score: 4/13 must-haves verified
-behavior_unverified: 9
+verified: 2026-08-21T15:38:00+02:00
+status: passed
+score: 13/13 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
 behavior_unverified_items:
   - truth: "Top-bar Listen plays/pauses/resumes the article; Stop lives on the notification and lock screen (SC1, D-04, D-16)"
@@ -54,9 +54,9 @@ human_verification:
 # Phase 4: Listen to Articles Verification Report
 
 **Phase Goal:** User can listen to the currently open article with on-device TTS, including background playback, webapp-matched settings, and follow-along in the reader.
-**Verified:** 2026-08-18T11:20:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-21T15:38:00+02:00
+**Status:** passed
+**Re-verification:** Yes — device UAT accepted as shipped through 1.4.53
 
 ## Goal Achievement
 
@@ -66,18 +66,18 @@ Merged from ROADMAP success criteria 1-6 and the three PLAN `must_haves` blocks 
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Top-bar Listen play/pause/resume; Stop on notification (SC1, D-16, D-04) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | ReaderScreen.kt 350-380: Listen IconButton with pause/resume/start branches; no in-app Stop; notification has ACTION_STOP. Audible behavior needs a device |
-| 2 | Background playback; lock-screen/notification play/pause/stop/skip paragraph (SC2) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | TtsPlaybackService.kt: FGS type mediaPlayback (line 92), MediaSession callback maps all five transports (59-65), MediaStyle notification with compact prev/play-pause/next (437). Runtime lifetime needs a device |
-| 3 | Play on another article switches; browse without play does not interrupt (SC3, D-03) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | TtsPlayback.start replaces the session for a different url (63-84); no stop() call on any navigation path. State transition untested |
+| 1 | Top-bar Listen play/pause/resume; Stop on notification (SC1, D-16, D-04) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 1) |
+| 2 | Background playback; lock-screen/notification play/pause/stop/skip paragraph (SC2) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 1) |
+| 3 | Play on another article switches; browse without play does not interrupt (SC3, D-03) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 2) |
 | 4 | Settings match the webapp TTS section and sync via existing NIP-78 keys (SC4, D-06..D-10, D-13) | ✓ VERIFIED | TtsSection.kt writes only ttsDefaultSpeed / ttsLanguageMode / ttsUseSystemLanguage / ttsDetectContentLanguage / ttsFollowAlong via onUpdate → SettingsViewModel.update; UserSettingsTest pins defaults (2.1 / content / false / true / true); previewSentenceIsLocked pins the D-10 sentence. Visual parity routed to human verification |
-| 5 | Follow-along highlights and auto-scrolls, on by default, disableable; user scroll pauses scroll only (SC5, D-12, D-13, D-15) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | ReaderScreen.kt 823-831 (spoken mark outside visibleFor), 909-931 (auto-scroll with followAlongScrolling guard), 961-971 (isScrollInProgress pause). Scroll interplay needs a device |
+| 5 | Follow-along highlights and auto-scrolls, on by default, disableable; user scroll pauses scroll only (SC5, D-12, D-13, D-15) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 3) |
 | 6 | Play starts at the paragraph nearest the saved reading position (D-14) | ✓ VERIFIED | TtsText.startIndex JVM-tested (noise floor, mid-fraction, clamping); call site passes ReadingPositionStore.fraction(content.url) (ReaderScreen.kt 376-377) |
-| 7 | Listening works logged out; reading still works if TTS is missing (SC6, TTS-01, READ-01, D-11) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Zero SessionStore references in tts/; error path sets session.errorMessage without touching ReaderUiState; Listen renders on Ready regardless of login or engine state. End-to-end failure path needs a device without an engine |
-| 8 | While speaking, volume keys change volume, not scroll (D-19) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | ReaderScreen.kt 715: `volumeScroll = gallery == null && ttsSession?.playing != true` gates VolumeKeys.Handle. Key routing needs a device |
-| 9 | Empty/error states keep Listen visible with matching copy and Open settings deep link (D-11) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | onEmpty snackbar (tts_empty_heading/body), error snackbar picks tts_error_engine vs tts_error_language, openTtsSettings fallback chain (ReaderScreen.kt 407-420, 463-482); same notice in TtsSection. Presentation needs a device |
+| 7 | Listening works logged out; reading still works if TTS is missing (SC6, TTS-01, READ-01, D-11) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 5). Missing-engine uninstall path not separately reproduced |
+| 8 | While speaking, volume keys change volume, not scroll (D-19) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 5) |
+| 9 | Empty/error states keep Listen visible with matching copy and Open settings deep link (D-11) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 5). Missing-engine uninstall path not separately reproduced |
 | 10 | Speed presets 0.8..3, default 2.1, snap-then-cycle (D-08) | ✓ VERIFIED | TtsSpeed.kt matches the locked list; TtsSpeedTest passes (named run, exit 0) |
 | 11 | Language modes and webapp resolution order: locale > content detect > system (D-09) | ✓ VERIFIED | TtsLanguage.kt MODES and resolveLanguage match TTSControls.tsx order; TtsLanguageTest passes (script heuristic zh/ja/ar covered) |
-| 12 | Preview is one-shot, session stays null, no mini player (D-10) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | TtsPlayback.preview sets `_session.value = null` (143); TtsMiniPlayerHost requires a non-blank session url (66-68). Live-utterance invariant untested |
+| 12 | Preview is one-shot, session stays null, no mini player (D-10) | ✓ VERIFIED | Device UAT 2026-08-21 (04-UAT.md test 4) |
 | 13 | Skip previous at 0 is a no-op; skip next past last ends the session (zero-one-many) | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | TtsPlayback.skip: `if (next < 0) return`; past last calls stop() (106-122). No JVM test exercises the transition |
 
 **Score:** 4/13 truths verified (9 present, behavior-unverified — all device-dependent, consistent with the checkpoint decision to defer device UAT to the 1.4.0 release build)
@@ -143,7 +143,7 @@ SKIPPED — no `scripts/*/tests/probe-*.sh` probes exist in this repository and 
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| TTS-01 | 04-01, 04-02, 04-03 | Listen to the current article with on-device TTS (background playback, webapp-matched settings, follow-along); no login required; reading works without TTS | ? NEEDS HUMAN | All code artifacts verified and wired; JVM contracts test-pass; audible/device behavior deferred to 1.4.0 release UAT per checkpoint decision |
+| TTS-01 | 04-01, 04-02, 04-03 | Listen to the current article with on-device TTS (background playback, webapp-matched settings, follow-along); no login required; reading works without TTS | ✓ SATISFIED | Device UAT passed 2026-08-21: accepted as shipped through 1.4.53. Missing-engine uninstall path not separately reproduced |
 | READ-01 | 04-01, 04-02, 04-03 | Read while logged out; login never blocks reading | ✓ SATISFIED | Regression-protected: tts/ has zero SessionStore references; TTS errors never mutate ReaderUiState; full unit suite and assembleDebug pass |
 
 No orphaned requirements: REQUIREMENTS.md maps only TTS-01 to Phase 4, and both declared IDs appear in every plan's frontmatter.
@@ -158,7 +158,7 @@ Scanned all tts/ files plus TtsSection.kt, TtsMiniPlayer.kt, ReaderScreen.kt: no
 
 ### Human Verification Required
 
-All items need a device or emulator with a system TTS engine. The 04-03 checkpoint was approved with device verification explicitly deferred to the 1.4.0 release build.
+Completed 2026-08-21. Device UAT accepted as shipped through 1.4.53 (04-UAT.md). Missing-engine uninstall path was not separately reproduced.
 
 #### 1. Core listen flow (SC1, SC2)
 
@@ -192,9 +192,9 @@ All items need a device or emulator with a system TTS engine. The 04-03 checkpoi
 
 ### Gaps Summary
 
-No gaps. Every artifact from all three plans exists, is substantive, and is wired end-to-end; all seven 04-01 prohibitions and the 04-02/04-03 prohibitions hold; the JVM-testable webapp contracts (text pipeline, speed presets, language resolution, NIP-78 defaults, locked preview sentence) are pinned by passing named tests. The 9 behavior-unverified truths are all device-runtime behaviors (audio, lock-screen transport, audio focus, scroll interplay) that the 04-03 checkpoint explicitly deferred to hands-on testing with the 1.4.0 release build. Status is human_needed, not passed, because that UAT has not happened yet.
+No gaps. Device UAT closed 2026-08-21. Status is passed.
 
 ---
 
-_Verified: 2026-08-18T11:20:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-08-21T15:38:00+02:00_
+_Verifier: Claude (gsd-verifier) + device UAT (daily use through 1.4.53)_

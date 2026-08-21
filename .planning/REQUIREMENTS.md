@@ -18,7 +18,7 @@
 - [x] **READ-01**: User can paste, share, or open a URL and read the article while logged out. Login UI sits on Home; it does not replace or block reading.
 - [x] **AUTH-06**: User can sign a kind 9802 highlight through the stored session (Amber NIP-55 `sign_event` or bunker NIP-46 `sign_event`). Boris never holds an `nsec`.
 - [x] **HIGH-01**: While logged in, the user can select article text, publish a NIP-84 highlight, and see their highlights for that URL painted in the reader. Logged out, the reader is unchanged.
-- [ ] **TTS-01**: User can listen to the current article with on-device TTS (background playback, webapp-matched speed/language settings, follow-along in the reader). Login is not required. Reading still works if TTS is missing.
+- [x] **TTS-01**: User can listen to the current article with on-device TTS (background playback, webapp-matched speed/language settings, follow-along in the reader). Login is not required. Reading still works if TTS is missing.
 - [x] **READ-03**: `nostr:nprofile` references in article Markdown render as profile links that open the in-app profile screen. Existing note, event, and article nostr links still work. Login is not required.
 - [x] **READ-04**: Ordinary http(s) articles load by fetching the origin page on-device and extracting readable Markdown locally. Reading does not call `r.jina.ai`. Nostr and RSS paths stay as they are. A previously cached local extract still opens offline. Login is not required.
 
