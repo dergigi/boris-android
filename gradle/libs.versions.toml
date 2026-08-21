@@ -13,6 +13,7 @@ markdown = "0.35.0"
 jsoup = "1.23.1"
 desugarJdkLibsNio = "2.1.5"
 junit = "4.13.2"
+orgJson = "20240303"
 secp256k1 = "0.22.0"
 bouncycastle = "1.85.2"
 
@@ -41,6 +42,7 @@ markdown-renderer = { group = "com.mikepenz", name = "multiplatform-markdown-ren
 markdown-renderer-m3 = { group = "com.mikepenz", name = "multiplatform-markdown-renderer-m3", version.ref = "markdown" }
 markdown-renderer-coil3 = { group = "com.mikepenz", name = "multiplatform-markdown-renderer-coil3", version.ref = "markdown" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 secp256k1-kmp = { group = "fr.acinq.secp256k1", name = "secp256k1-kmp", version.ref = "secp256k1" }
 secp256k1-jni-android = { group = "fr.acinq.secp256k1", name = "secp256k1-kmp-jni-android", version.ref = "secp256k1" }
 secp256k1-jni-jvm = { group = "fr.acinq.secp256k1", name = "secp256k1-kmp-jni-jvm", version.ref = "secp256k1" }

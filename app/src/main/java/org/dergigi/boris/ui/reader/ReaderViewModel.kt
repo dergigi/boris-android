@@ -165,7 +165,10 @@ class ReaderViewModel(
         _signIntent.value = null
     }
 
-    fun load() {
+    /** Bypasses the parsed-article cache and re-runs the full fetch + parse. */
+    fun refresh() = load(refresh = true)
+
+    fun load(refresh: Boolean = false) {
         if (url.isBlank()) {
             _state.value = ReaderUiState.Error("No URL to read.", url)
             _highlights.value = emptyList()
@@ -196,7 +199,7 @@ class ReaderViewModel(
             resetAuthor()
             publishSaveState()
             try {
-                val content = withContext(Dispatchers.IO) { repository.fetch(url) }
+                val content = withContext(Dispatchers.IO) { repository.fetch(url, refresh) }
                 _state.value = ReaderUiState.Ready(content)
                 tryExternalHighlight()
                 startHighlightFetch(content)

@@ -59,6 +59,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
@@ -331,7 +332,8 @@ fun ReaderScreen(
         settings = settings,
         rssFeedSuggestion = rssFeedSuggestion?.takeIf { it !in settings.rssFeeds },
         onBack = onBack,
-        onRetry = viewModel::load,
+        onRetry = { viewModel.load() },
+        onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
         onOpenProfile = onOpenProfile,
         onOpenReaderSettings = onOpenReaderSettings,
@@ -534,6 +536,7 @@ fun ReaderScreenContent(
     rssFeedSuggestion: String?,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit = {},
@@ -827,6 +830,16 @@ fun ReaderScreenContent(
                                         onClick = {
                                             menuOpen = false
                                             findOpen = true
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_refresh)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.Refresh, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            onRefresh()
                                         },
                                     )
                                 }
@@ -1846,7 +1859,8 @@ private fun ArticleBody(
                         )
                     }
                 }
-                if (loggedIn) {
+                // No archive controls while the body is still parsing (issue #78).
+                if (loggedIn && showArticle) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

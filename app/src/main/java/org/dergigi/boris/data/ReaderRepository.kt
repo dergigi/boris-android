@@ -15,7 +15,8 @@ import java.util.concurrent.TimeUnit
 class ReaderRepository(
     private val client: OkHttpClient = defaultClient,
 ) {
-    fun fetch(url: String): ReadableContent {
+    fun fetch(url: String, refresh: Boolean = false): ReadableContent {
+        var parsedFromWeb = false
         val content = when (val target = NostrLink.parse(url)) {
             is NostrTarget.Article -> fetchArticle(target.ref)
             is NostrTarget.Note -> fetchNote(target)
@@ -23,25 +24,36 @@ class ReaderRepository(
             null -> {
                 val targetUrl = UrlExtractor.normalize(url)
                 rssContent(url, targetUrl) ?: run {
+                    if (!refresh) {
+                        ArticleCache.load(url)?.let { return finish(url, it) }
+                    }
+                    parsedFromWeb = true
                     val origin = UrlExtractor.preferHttps(targetUrl)
                     withCover(fetchOrigin(origin))
                 }
             }
         }
         val ready = content.copy(markdown = content.markdown?.let(UrlExtractor::embedImageLinks))
-        ArticlePreview.remember(ready)
-        ReadingTime.minutes(ready.body)?.let { ReadingTimeStore.put(url, it) }
+        if (parsedFromWeb) ArticleCache.save(url, ready)
+        return finish(url, ready)
+    }
+
+    private fun finish(url: String, content: ReadableContent): ReadableContent {
+        ArticlePreview.remember(content)
+        ReadingTime.minutes(content.body)?.let { ReadingTimeStore.put(url, it) }
         OfflineStore.markDownloaded(url)
-        return ready
+        return content
     }
 
     fun peekCached(url: String): ReadableContent? {
         val content = rssContent(url)?.takeIf { it.body.isNotBlank() }
             ?: run {
                 if (NostrLink.parse(url) != null) return null
-                val origin = UrlExtractor.preferHttps(UrlExtractor.normalize(url))
-                val text = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA)) ?: return null
-                runCatching { parse(origin, text) }.getOrNull()?.takeIf { it.body.isNotBlank() }
+                ArticleCache.load(url) ?: run {
+                    val origin = UrlExtractor.preferHttps(UrlExtractor.normalize(url))
+                    val text = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA)) ?: return null
+                    runCatching { parse(origin, text) }.getOrNull()?.takeIf { it.body.isNotBlank() }
+                }
             }
             ?: return null
         ReadingTime.minutes(content.body)?.let { ReadingTimeStore.put(url, it) }

@@ -70,6 +70,7 @@ object CacheUsage {
             File(context.filesDir, "reader_http_cache"),
             File(context.filesDir, "rss_http_cache"),
             File(context.filesDir, ArticleImages.DIR_NAME),
+            File(context.filesDir, ArticleCache.DIR_NAME),
             File(context.cacheDir, "image_cache"),
         )
         return roots.sumOf(::directorySize)

@@ -107,6 +107,7 @@ object OfflineDownloader {
                 )
             }
         }
+        ArticleCache.trim(app)
     }
 
     private fun downloadedBytes(urls: List<String>): Long {

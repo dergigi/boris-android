@@ -140,5 +140,6 @@ dependencies {
     implementation(libs.markdown.renderer.coil3)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     testImplementation(libs.secp256k1.jni.jvm)
 }
