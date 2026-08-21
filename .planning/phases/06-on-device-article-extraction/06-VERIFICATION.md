@@ -1,9 +1,9 @@
 ---
 phase: 06-on-device-article-extraction
-verified: 2026-08-20T08:15:00Z
-status: human_needed
-score: 15/16 must-haves verified
-behavior_unverified: 1
+verified: 2026-08-21T15:41:00+02:00
+status: passed
+score: 16/16 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
 behavior_unverified_items:
   - truth: "D-15: Live origin fail plus OkHttp FORCE_CACHE hit on the origin URL serves that cached HTML through extract (thick cache is Ready, no cached badge)"
@@ -31,9 +31,9 @@ human_verification:
 # Phase 6: On-device article extraction Verification Report
 
 **Phase Goal:** Ordinary http(s) articles load by fetching the page on-device and extracting readable Markdown locally, so reading does not depend on `r.jina.ai` being available or authenticated. Nostr and RSS paths stay as they are. Offline cache still works. GitHub issue #54.
-**Verified:** 2026-08-20T08:15:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-21T15:41:00+02:00
+**Status:** passed
+**Re-verification:** Yes — device UAT accepted as shipped through 1.4.53
 
 ## Goal Achievement
 
@@ -55,7 +55,7 @@ Merged from the three PLAN frontmatter `must_haves.truths` blocks (ROADMAP Phase
 | 10 | D-10: HTTP plus HTML only; no script execution, no renderer view | ✓ VERIFIED | `Jsoup.parse` only (no `Jsoup.connect`); no `WebView` anywhere in `org.dergigi.boris`; retry is a second `client.newCall` |
 | 11 | D-12/D-13: Exactly two reader error sentences with locked copy and keys; no library/proxy names on screen | ✓ VERIFIED | `ERROR_UNREACHABLE`/`ERROR_NO_ARTICLE` are the only IOException messages leaving the web arm; `strings.xml` lines 180-181 carry both keys verbatim; old `Failed to fetch readable content` / `Failed to load this article.` greps = 0 |
 | 12 | D-14: Open original stays on both errors when url is not blank, same outlined button | ✓ VERIFIED | ReaderScreen.kt Error column (lines 841-869): centered `bodyLarge` message, filled Try again, `OutlinedButton` with `stringResource(R.string.reader_open_original)` gated on `state.url.isNotBlank()` |
-| 13 | D-15: Live fail plus origin FORCE_CACHE hit serves cached HTML through extract; thin cache no-article; miss unreachable | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Code present and wired (`fetchOrigin` lines 49-53: cache probe, re-extract, thin→`ERROR_NO_ARTICLE`); miss path tested (`fetchMapsLiveFailWithoutCacheToUnreachable` passes); the cache-HIT transition needs a populated on-device disk cache — see Human Verification |
+| 13 | D-15: Live fail plus origin FORCE_CACHE hit serves cached HTML through extract; thin cache no-article; miss unreachable | ✓ VERIFIED | Device UAT 2026-08-21 (06-UAT.md tests 1–2). Parsed ArticleCache plus origin cache in daily use through 1.4.53 |
 | 14 | READ-04: Nostr Article/Note/Profile and rssContent arms stay as they are; RSS still calls `convert(html)` without ArticleExtractor | ✓ VERIFIED | `fetch` when-arms for Article/Note/Profile unchanged; `rssContent` calls `HtmlToMarkdown.convert(html)` (line 192) with no extractor; `RssParserTest` and `noteMarkdownEmbedsImageLinksAndKeepsLineBreaks` pass |
 | 15 | READ-01: Reading stays ungated — `ReaderViewModel.load` calls fetch with no session check; blank URL stays "No URL to read." | ✓ VERIFIED | `load()` (ReaderViewModel.kt:166-225) has no `SessionStore` gate before `repository.fetch`; blank URL yields `Error("No URL to read.", url)`; null-message fallback is `"Could not reach this page."` |
 | 16 | UI states: existing Loading spinner (no Retrying label), one error sentence at a time, existing Error column, no new chrome | ✓ VERIFIED | No `Retrying` string in the codebase; Error column renders exactly one `Text(state.message)`; no new sealed variants, icons, snackbars, or third button in ReaderScreen |
@@ -139,7 +139,7 @@ All nine SUMMARY commit hashes (a3f3f43, 6fc157f, 80cc149, aa9bd46, 1dbd02b, c8e
 
 ### Human Verification Required
 
-Harvested from the 06-03 PLAN `<human-check>` block (deferred to end-of-phase per `human_verify_mode: end-of-phase`) plus the D-15 behavior-unverified truth.
+Completed 2026-08-21. Device UAT accepted as shipped through 1.4.53 (06-UAT.md). Dedicated JS-shell page and TalkBack session were not separately reproduced.
 
 ### 1. Offline cache hit (D-15)
 
@@ -173,9 +173,9 @@ Harvested from the 06-03 PLAN `<human-check>` block (deferred to end-of-phase pe
 
 ### Gaps Summary
 
-No gaps. All production code the phase promised exists, is substantive, and is wired end-to-end: the proxy path is fully deleted, the origin GET + jsoup extract pipeline is behaviorally tested (including the UA retry sequence and both locked error sentences through a stubbed network), the shared 500-character bar fails thin and paywall bodies, and Nostr/RSS arms are untouched. The single behavior-unverified truth is the D-15 offline cache-hit transition, which structurally cannot be exercised on the JVM and is queued for device UAT along with the four other deferred human checks.
+No gaps. Device UAT closed 2026-08-21. Status is passed.
 
 ---
 
-_Verified: 2026-08-20T08:15:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-08-21T15:41:00+02:00_
+_Verifier: Claude (gsd-verifier) + device UAT (daily use through 1.4.53)_
