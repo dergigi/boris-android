@@ -31,6 +31,7 @@ out/
 
 # Cursor GSD tooling (skills, agents, gsd-core)
 .cursor/
+.planning/research/.cache/
 
 # impeccable-ignore-start
 # Ephemeral output, runtime state, and per-dev overrides.
