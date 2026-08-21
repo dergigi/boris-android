@@ -135,6 +135,182 @@ class ReaderRepositoryParseTest {
         assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
     }
 
+    @Test
+    fun fetchFollowsHtmlForwardBeforeParsing() {
+        val requested = mutableListOf<String>()
+        val target = "https://dergigi.com/2022/04/03/inalienable-property-rights/"
+        val page = """
+            <html><head><title>Target Article</title></head>
+            <body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            requested += request.url.toString()
+            if (request.url.toString() == target) {
+                stubResponse(request, 200, page)
+            } else {
+                stubResponse(request, 200, forwardPage(meta = target, script = target, canonical = target))
+            }
+        }
+        val content = ReaderRepository(client).fetch("https://dergigi.com/speech")
+        assertEquals(target, content.url)
+        assertEquals("Target Article", content.title)
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
+        assertEquals(listOf("https://dergigi.com/speech", target), requested)
+    }
+
+    @Test
+    fun htmlForwardTargetSupportsCanonicalOnlyRedirectPages() {
+        assertEquals(
+            "https://example.com/target",
+            repository.htmlForwardTarget(
+                "https://example.com/start",
+                forwardPage(canonical = "https://example.com/target"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetSupportsJavascriptOnlyRedirectPages() {
+        assertEquals(
+            "https://example.com/target",
+            repository.htmlForwardTarget(
+                "https://example.com/start",
+                forwardPage(script = "https://example.com/target"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetResolvesRelativeMetaRefreshTargets() {
+        assertEquals(
+            "https://example.com/target",
+            repository.htmlForwardTarget(
+                "https://example.com/start",
+                forwardPage(meta = "/target"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetRejectsNonHttpTargets() {
+        assertNull(
+            repository.htmlForwardTarget(
+                "https://example.com/start",
+                forwardPage(meta = "javascript:alert(1)"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetKeepsCaseSensitivePathsDistinct() {
+        assertEquals(
+            "https://example.com/post?Ref=A",
+            repository.htmlForwardTarget(
+                "https://example.com/Post?Ref=A",
+                forwardPage(meta = "https://example.com/post?Ref=A"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetKeepsTrailingSlashPathsDistinct() {
+        assertEquals(
+            "https://example.com/post/",
+            repository.htmlForwardTarget(
+                "https://example.com/post",
+                forwardPage(meta = "https://example.com/post/"),
+            ),
+        )
+    }
+
+    @Test
+    fun htmlForwardTargetRejectsDelayedMetaRefreshes() {
+        assertNull(
+            repository.htmlForwardTarget(
+                "https://example.com/post",
+                forwardPage(meta = "https://example.com/next", delaySeconds = 300),
+            ),
+        )
+    }
+
+    @Test
+    fun fetchStopsHtmlForwardLoops() {
+        val client = stubClient { request ->
+            if (request.cacheControl.onlyIfCached) return@stubClient stubResponse(request, 504, "")
+            val target = if (request.url.encodedPath == "/one") {
+                "https://example.com/two"
+            } else {
+                "https://example.com/one"
+            }
+            stubResponse(request, 200, forwardPage(meta = target))
+        }
+        val error = fetchError(client, "https://example.com/one")
+        assertEquals("Could not reach this page.", error?.message)
+        assertEquals("Redirect loop", (error as? ReaderFetchException)?.detail)
+    }
+
+    @Test
+    fun fetchStopsAfterFiveHtmlForwards() {
+        val requested = mutableListOf<String>()
+        val client = stubClient { request ->
+            if (request.cacheControl.onlyIfCached) return@stubClient stubResponse(request, 504, "")
+            requested += request.url.encodedPath
+            val step = request.url.encodedPath.removePrefix("/").toInt()
+            stubResponse(request, 200, forwardPage(meta = "https://example.com/${step + 1}"))
+        }
+        val error = fetchError(client, "https://example.com/0")
+        assertEquals("Could not reach this page.", error?.message)
+        assertEquals("Too many redirects", (error as? ReaderFetchException)?.detail)
+        assertEquals(listOf("/0", "/1", "/2", "/3", "/4", "/5"), requested)
+    }
+
+    @Test
+    fun fetchResolvesRelativeHtmlForwardsFromFinalResponseUrl() {
+        val target = "https://example.com/redirected/article"
+        val page = """
+            <html><head><title>Redirect Target</title></head>
+            <body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            when (request.url.toString()) {
+                "https://example.com/short" -> stubResponse(
+                    request,
+                    200,
+                    forwardPage(meta = "article"),
+                    finalUrl = "https://example.com/redirected/page",
+                )
+                target -> stubResponse(request, 200, page)
+                else -> stubResponse(request, 404, "")
+            }
+        }
+        val content = ReaderRepository(client).fetch("https://example.com/short")
+        assertEquals(target, content.url)
+        assertTrue(content.markdown!!.contains("The article paragraph carries the real story."))
+    }
+
+    @Test
+    fun fetchParsesFinalResponseUrlAfterHttpRedirects() {
+        val finalUrl = "https://example.com/final/page"
+        val page = """
+            <html><head><title>Final Article</title></head>
+            <body>
+              <article>
+                <p>$longBody</p>
+                <img src="images/cover.jpg" alt="cover">
+              </article>
+            </body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            stubResponse(request, 200, page, finalUrl = finalUrl)
+        }
+        val content = ReaderRepository(client).fetch("https://example.com/short")
+        assertEquals(finalUrl, content.url)
+        assertEquals(
+            listOf("https://example.com/final/images/cover.jpg"),
+            UrlExtractor.imageUrls(content.body, content.url),
+        )
+    }
+
     private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
         ReaderRepository(client).fetch(url)
         null
@@ -147,9 +323,31 @@ class ReaderRepositoryParseTest {
             .addInterceptor { chain -> handler(chain.request()) }
             .build()
 
-    private fun stubResponse(request: Request, code: Int, body: String): Response =
+    private fun forwardPage(
+        meta: String? = null,
+        script: String? = null,
+        canonical: String? = null,
+        delaySeconds: Int = 0,
+    ): String = """
+        <!DOCTYPE html>
+        <html lang="en-US">
+          <title>Redirecting&hellip;</title>
+          ${canonical?.let { "<link rel=\"canonical\" href=\"$it\">" }.orEmpty()}
+          ${script?.let { "<script>location=\"$it\"</script>" }.orEmpty()}
+          ${meta?.let { "<meta http-equiv=\"refresh\" content=\"$delaySeconds; url=$it\">" }.orEmpty()}
+          <h1>Redirecting&hellip;</h1>
+          <a href="${meta ?: script ?: canonical.orEmpty()}">Click here if you are not redirected.</a>
+        </html>
+    """.trimIndent()
+
+    private fun stubResponse(
+        request: Request,
+        code: Int,
+        body: String,
+        finalUrl: String? = null,
+    ): Response =
         Response.Builder()
-            .request(request)
+            .request(finalUrl?.let { request.newBuilder().url(it).build() } ?: request)
             .protocol(Protocol.HTTP_1_1)
             .code(code)
             .message("stub")
