@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.4.53] - 2026-08-21
+
+### Added
+
+- Parsed web articles stay cached so reopening a page is instant
+- Refresh article in the reader menu re-fetches and re-parses the page
+
+### Fixed
+
+- Archive button stays hidden until the article body has rendered
+
 ## [1.4.52] - 2026-08-21
 
 ### Fixed
@@ -1361,7 +1372,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.52...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.4.53...HEAD
+[1.4.53]: https://github.com/dergigi/boris-android/releases/tag/v1.4.53
 [1.4.52]: https://github.com/dergigi/boris-android/releases/tag/v1.4.52
 [1.4.51]: https://github.com/dergigi/boris-android/releases/tag/v1.4.51
 [1.4.50]: https://github.com/dergigi/boris-android/releases/tag/v1.4.50
