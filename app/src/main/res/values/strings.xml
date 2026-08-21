@@ -58,6 +58,8 @@
     <string name="home_show_archived">Show archived</string>
     <string name="home_empty_archived">Everything here is already archived.</string>
     <string name="home_article_actions">Article actions</string>
+    <string name="home_start_listening">Start listening</string>
+    <string name="home_continue_listening">Continue listening</string>
     <string name="home_about">About Boris</string>
     <string name="home_first_time_title">First time?</string>
     <string name="home_first_time_body">A short walk through of what Boris is and how highlighting works.</string>

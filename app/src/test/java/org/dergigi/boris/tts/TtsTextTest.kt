@@ -219,6 +219,15 @@ class TtsTextTest {
     }
 
     @Test
+    fun listenStartIndexUsesProgressOnlyWhileInProgress() {
+        assertEquals(0, TtsText.listenStartIndex(0f, 10))
+        assertEquals(0, TtsText.listenStartIndex(0.01f, 10))
+        assertEquals(5, TtsText.listenStartIndex(0.5f, 10))
+        assertEquals(0, TtsText.listenStartIndex(0.96f, 10))
+        assertEquals(0, TtsText.listenStartIndex(1f, 10))
+    }
+
+    @Test
     fun startIndexForSelectionFindsBodyParagraph() {
         val content = ReadableContent(
             url = "https://example.com/selection",

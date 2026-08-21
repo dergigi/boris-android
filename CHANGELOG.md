@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Long-press a home article to start or continue listening
+
 ## [1.4.49] - 2026-08-21
 
 ### Fixed

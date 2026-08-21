@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.home
 
+import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
@@ -93,7 +95,10 @@ import kotlinx.coroutines.delay
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
+import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.data.ReadingPositionStore
+import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
@@ -141,6 +146,9 @@ fun HomeScreen(
     ) { result ->
         viewModel.onSignerResult(result.resultCode, result.data)
     }
+    val ttsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -270,6 +278,12 @@ fun HomeScreen(
                 onOpenLogin = onOpenLogin,
                 onRefresh = viewModel::refresh,
                 onRead = onRead,
+                onListen = { article ->
+                    requestTtsNotificationPermissionOnce(context) {
+                        ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    viewModel.startListening(article.url)
+                },
                 onMarkAsRead = { article ->
                     viewModel.markAsRead(article)?.let(launcher::launch)
                 },
@@ -343,6 +357,7 @@ fun HomeScreenContent(
     nostrverseColor: Color,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
+    onListen: (HighlightedArticle) -> Unit = {},
     onMarkAsRead: (HighlightedArticle) -> Unit = {},
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
@@ -555,6 +570,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -567,6 +583,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -579,6 +596,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -597,6 +615,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -609,6 +628,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -622,6 +642,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -635,6 +656,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -648,6 +670,7 @@ fun HomeScreenContent(
                                                 loggedIn = loggedIn,
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
+                                                onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -815,6 +838,7 @@ private fun HighlightedRow(
     loggedIn: Boolean,
     archivedKeys: Set<String>,
     onRead: (String) -> Unit,
+    onListen: (HighlightedArticle) -> Unit,
     onMarkAsRead: (HighlightedArticle) -> Unit,
     icon: ImageVector = BorisIcons.Highlighter,
 ) {
@@ -856,6 +880,7 @@ private fun HighlightedRow(
                     loggedIn = loggedIn,
                     archived = ArchivedArticles.isArchived(article.url, archivedKeys),
                     onOpen = { onRead(article.url) },
+                    onListen = { onListen(article) },
                     onMarkAsRead = { onMarkAsRead(article) },
                 )
             }
@@ -871,12 +896,17 @@ private fun HighlightedArticleCard(
     loggedIn: Boolean,
     archived: Boolean,
     onOpen: () -> Unit,
+    onListen: () -> Unit,
     onMarkAsRead: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val target = remember(article.url) { NostrLink.parse(article.url) }
     val nativeUri = target?.uri
+    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+    val continueListening = remember(article.url, progressVersion) {
+        ContinueReading.inProgress(ReadingPositionStore.fraction(article.url))
+    }
     val actionMenuLabel = stringResource(R.string.home_article_actions)
     var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
@@ -984,6 +1014,26 @@ private fun HighlightedArticleCard(
                     },
                 )
             }
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (continueListening) {
+                                R.string.home_continue_listening
+                            } else {
+                                R.string.home_start_listening
+                            },
+                        ),
+                    )
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                },
+                onClick = {
+                    menuOpen = false
+                    onListen()
+                },
+            )
             if (loggedIn && !archived) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reader_mark_as_read)) },

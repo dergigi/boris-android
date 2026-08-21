@@ -4,9 +4,7 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -187,6 +185,7 @@ import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsText
+import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.copyArticleLink
@@ -470,7 +469,7 @@ private fun TtsListenButton(
                     onEmpty()
                     return@IconButton
                 }
-                requestNotificationPermissionOnce(context) {
+                requestTtsNotificationPermissionOnce(context) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
                 TtsPlayback.start(
@@ -493,18 +492,6 @@ private fun TtsListenButton(
             tint = MaterialTheme.colorScheme.onSurface,
         )
     }
-}
-
-/** API 33+: ask for POST_NOTIFICATIONS once on first play; denial never blocks playback. */
-private fun requestNotificationPermissionOnce(context: Context, request: () -> Unit) {
-    if (Build.VERSION.SDK_INT < 33) return
-    val granted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-        PackageManager.PERMISSION_GRANTED
-    if (granted) return
-    val prefs = context.getSharedPreferences("tts", Context.MODE_PRIVATE)
-    if (prefs.getBoolean("notif_requested", false)) return
-    prefs.edit().putBoolean("notif_requested", true).apply()
-    request()
 }
 
 /** The SDK has no Settings.ACTION_TEXT_TO_SPEECH_SETTINGS constant; this is the settings action. */
@@ -1215,7 +1202,7 @@ private fun ArticleBody(
         val paragraphs = TtsText.paragraphs(content)
         if (selected.isBlank() || paragraphs.isEmpty()) return
         selection.clear()
-        requestNotificationPermissionOnce(ttsContext) {
+        requestTtsNotificationPermissionOnce(ttsContext) {
             ttsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         val authorName = content.authorPubkey?.trim()

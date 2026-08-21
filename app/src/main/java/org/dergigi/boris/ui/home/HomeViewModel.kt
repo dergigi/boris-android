@@ -31,6 +31,8 @@ import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.RandomArticles
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReaderRepository
+import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingTimes
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.TimedReadKind
@@ -38,6 +40,9 @@ import org.dergigi.boris.data.TimedReads
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.Archive
+import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.tts.TtsPlayback
+import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.BookmarkRefKind
@@ -83,6 +88,7 @@ class HomeViewModel(
     val message: StateFlow<String?> = _message.asStateFlow()
 
     private var loadJob: Job? = null
+    private var listenJob: Job? = null
     private var pendingArchive: PendingArchive? = null
 
     fun consumeMessage() {
@@ -206,6 +212,38 @@ class HomeViewModel(
             } finally {
                 _refreshing.value = false
             }
+        }
+    }
+
+    fun startListening(url: String) {
+        listenJob?.cancel()
+        listenJob = viewModelScope.launch {
+            val app = getApplication<Application>()
+            val content = try {
+                withContext(Dispatchers.IO) {
+                    val repo = ReaderRepository()
+                    repo.peekCached(url) ?: repo.fetch(url)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                _message.value = error.message?.takeIf { it.isNotBlank() }
+                    ?: app.getString(R.string.tts_empty_heading)
+                return@launch
+            }
+            val paragraphs = TtsText.paragraphs(content)
+            if (paragraphs.isEmpty()) {
+                _message.value = app.getString(R.string.tts_empty_heading)
+                return@launch
+            }
+            val startIndex = TtsText.listenStartIndex(
+                ReadingPositionStore.fraction(content.url),
+                paragraphs.size,
+            )
+            val author = content.authorPubkey?.trim()
+                ?.takeIf { it.length == 64 }
+                ?.let { Profile.displayName(it, null) }
+            TtsPlayback.start(app, content, startIndex, author)
         }
     }
 

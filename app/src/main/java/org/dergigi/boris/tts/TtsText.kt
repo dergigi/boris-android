@@ -1,6 +1,7 @@
 package org.dergigi.boris.tts
 
 import org.dergigi.boris.data.ArticleUrl
+import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.NostrMentions
@@ -23,6 +24,12 @@ object TtsText {
         if (count <= 0) return 0
         if (fraction < 0.01f) return 0
         return (fraction * count).toInt().coerceIn(0, count - 1)
+    }
+
+    /** Home / resume: mid-article progress continues; finished or unread starts at the top. */
+    fun listenStartIndex(fraction: Float, count: Int): Int {
+        if (!ContinueReading.inProgress(fraction)) return 0
+        return startIndex(fraction, count)
     }
 
     fun startIndexForSelection(
