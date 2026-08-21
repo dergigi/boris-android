@@ -68,8 +68,10 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
-import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.ArticleActionHandlers
+import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.ContentTab
+import org.dergigi.boris.ui.rememberArticleActions
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
@@ -124,6 +126,7 @@ fun YouHighlights(
         FeedLevel.Nostrverse -> hexColor(settings.highlightColorNostrverse, HighlightOther)
     }
     val displayName = shown?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)
+    val actions = rememberArticleActions()
     LaunchedEffect(npub) {
         val hex = runCatching { Nip19.npubDecode(npub) }.getOrNull() ?: return@LaunchedEffect
         viewModel.refresh(hex)
@@ -143,6 +146,7 @@ fun YouHighlights(
         onLoadMore = { viewModel.loadMoreHighlights() },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
+        actions = actions,
         deletedIds = deletedIds,
         menuFor = { item ->
             HighlightCardMenu(
@@ -174,6 +178,7 @@ fun YouHighlightsContent(
     onRefresh: (ContentTab?) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    actions: ArticleActionHandlers,
     modifier: Modifier = Modifier,
     loadingMore: Boolean = false,
     endReached: Boolean = false,
@@ -297,6 +302,7 @@ fun YouHighlightsContent(
                                 items(visible, key = { it.id }) { item ->
                                     YouWritingCard(
                                         item = item,
+                                        actions = actions,
                                         onOpenArticle = onOpenArticle,
                                     )
                                 }
@@ -309,6 +315,7 @@ fun YouHighlightsContent(
                                 emptyRes = R.string.you_public_empty,
                                 onRefresh = { onRefresh(tab) },
                                 onOpenArticle = onOpenArticle,
+                                actions = actions,
                             )
                         }
                         ContentTab.Web -> {
@@ -318,6 +325,7 @@ fun YouHighlightsContent(
                                 emptyRes = R.string.you_web_empty,
                                 onRefresh = { onRefresh(tab) },
                                 onOpenArticle = onOpenArticle,
+                                actions = actions,
                             )
                         }
                         ContentTab.Rss, ContentTab.All -> Unit
@@ -334,6 +342,7 @@ private fun LazyListScope.profileBookmarkItems(
     emptyRes: Int,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    actions: ArticleActionHandlers,
 ) {
     val visible = items.filter { it.matchesQuery(query) }
     if (visible.isEmpty()) {
@@ -349,7 +358,7 @@ private fun LazyListScope.profileBookmarkItems(
         }
     } else {
         items(visible, key = { it.id }) { item ->
-            YouBookmarkCard(item = item, onOpenArticle = onOpenArticle)
+            YouBookmarkCard(item = item, actions = actions, onOpenArticle = onOpenArticle)
         }
     }
 }
@@ -357,10 +366,12 @@ private fun LazyListScope.profileBookmarkItems(
 @Composable
 private fun YouBookmarkCard(
     item: BookmarkItem,
+    actions: ArticleActionHandlers,
     onOpenArticle: (String) -> Unit,
 ) {
     val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
-    ArticleRow(
+    val url = item.url
+    ArticleRowWithMenu(
         title = item.title,
         imageUrl = item.imageUrl,
         imageFallbackIcon = if (note) {
@@ -369,9 +380,14 @@ private fun YouBookmarkCard(
             Icons.Outlined.Bookmark
         },
         byline = item.host,
-        url = item.url,
-        enabled = item.url != null,
-        onClick = { item.url?.let(onOpenArticle) },
+        url = url,
+        loggedIn = actions.loggedIn,
+        archived = actions.archived(url),
+        onClick = { url?.let(onOpenArticle) },
+        onListen = { url?.let(actions.onListen) },
+        onMarkAsRead = {
+            if (url != null) actions.onMarkAsRead(url, item.title, item.imageUrl)
+        },
     )
 }
 
@@ -473,15 +489,20 @@ private fun LoadMoreRow(
 @Composable
 private fun YouWritingCard(
     item: YouWriting,
+    actions: ArticleActionHandlers,
     onOpenArticle: (String) -> Unit,
 ) {
-    ArticleRow(
+    ArticleRowWithMenu(
         title = item.title,
         summary = item.summary,
         imageUrl = item.imageUrl,
         publishedAt = item.publishedAt,
         url = item.url,
+        loggedIn = actions.loggedIn,
+        archived = actions.archived(item.url),
         onClick = { onOpenArticle(item.url) },
+        onListen = { actions.onListen(item.url) },
+        onMarkAsRead = { actions.onMarkAsRead(item.url, item.title, item.imageUrl) },
     )
 }
 

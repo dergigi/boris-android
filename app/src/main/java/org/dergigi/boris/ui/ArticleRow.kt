@@ -20,12 +20,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.ui.reader.CardReadingProgress
 
@@ -169,6 +175,60 @@ fun ArticleRow(
             if (showReadingProgress) {
                 CardReadingProgress(url = url)
             }
+        }
+    }
+}
+
+@Composable
+fun ArticleRowWithMenu(
+    title: String,
+    url: String?,
+    onClick: () -> Unit,
+    onListen: () -> Unit,
+    onMarkAsRead: () -> Unit,
+    loggedIn: Boolean,
+    archived: Boolean,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    imageUrl: String? = null,
+    imageFallbackIcon: ImageVector = Icons.AutoMirrored.Outlined.Article,
+    byline: String? = null,
+    bylinePicture: String? = null,
+    bylineFallbackIcon: ImageVector? = null,
+    publishedAt: Long = 0L,
+    showReadingProgress: Boolean = true,
+    enabled: Boolean = url != null,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        ArticleRow(
+            title = title,
+            onClick = onClick,
+            modifier = modifier,
+            summary = summary,
+            imageUrl = imageUrl,
+            imageFallbackIcon = imageFallbackIcon,
+            byline = byline,
+            bylinePicture = bylinePicture,
+            bylineFallbackIcon = bylineFallbackIcon,
+            publishedAt = publishedAt,
+            url = url,
+            showReadingProgress = showReadingProgress,
+            enabled = enabled,
+            onLongClick = url?.let { { menuOpen = true } },
+            onLongClickLabel = stringResource(R.string.home_article_actions),
+        )
+        if (url != null) {
+            ArticleActionsMenu(
+                expanded = menuOpen,
+                onDismiss = { menuOpen = false },
+                title = title,
+                url = url,
+                loggedIn = loggedIn,
+                archived = archived,
+                onListen = onListen,
+                onMarkAsRead = onMarkAsRead,
+            )
         }
     }
 }

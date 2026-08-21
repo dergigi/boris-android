@@ -70,8 +70,10 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
-import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.ArticleActionHandlers
+import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.ContentTab
+import org.dergigi.boris.ui.rememberArticleActions
 import org.dergigi.boris.ui.ContentTabs
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
@@ -124,6 +126,7 @@ fun FeedScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }
+    val actions = rememberArticleActions()
     var tab by rememberSaveable {
         mutableStateOf(ContentTab.fromSettings(settings.defaultFeedView))
     }
@@ -144,6 +147,7 @@ fun FeedScreen(
         onSelectTab = { tab = it },
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
+        actions = actions,
         onOpenRssSettings = onOpenFeedSettings,
         deletedIds = deletedIds,
         menuFor = { item ->
@@ -184,6 +188,7 @@ fun FeedScreenContent(
     onSelectTab: (ContentTab) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    actions: ArticleActionHandlers,
     onOpenRssSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     deletedIds: Set<String> = emptySet(),
@@ -294,6 +299,7 @@ fun FeedScreenContent(
                                     ),
                                     onEmptyAction = if (hasRssFeeds) onRefresh else onOpenRssSettings,
                                     onOpenArticle = onOpenArticle,
+                                    actions = actions,
                                 )
                             }
                         }
@@ -311,6 +317,7 @@ fun FeedScreenContent(
                             onRefresh = onRefresh,
                             onOpenArticle = onOpenArticle,
                             onOpenHighlight = onOpenHighlight,
+                            actions = actions,
                             menuFor = menuFor,
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -369,6 +376,7 @@ fun FeedScreenContent(
                                             ),
                                             onRefresh = onRefresh,
                                             onOpenArticle = onOpenArticle,
+                                            actions = actions,
                                         )
                                         else -> Unit
                                     }
@@ -424,6 +432,7 @@ private fun FeedAllPane(
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
     modifier: Modifier = Modifier,
 ) {
@@ -469,6 +478,7 @@ private fun FeedAllPane(
                         onRefresh = onRefresh,
                         onOpenArticle = onOpenArticle,
                         onOpenHighlight = onOpenHighlight,
+                        actions = actions,
                         menuFor = menuFor,
                     )
                 }
@@ -485,6 +495,7 @@ private fun FeedAllList(
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
 ) {
     if (items.isEmpty()) {
@@ -529,12 +540,14 @@ private fun FeedAllList(
                     is FeedMergedItem.Writing -> {
                         FeedWritingRow(
                             item = entry.item,
+                            actions = actions,
                             onOpenArticle = onOpenArticle,
                         )
                     }
                     is FeedMergedItem.Rss -> {
                         FeedRssRow(
                             item = entry.item,
+                            actions = actions,
                             onOpenArticle = onOpenArticle,
                         )
                     }
@@ -599,6 +612,7 @@ private fun FeedWritingList(
     emptyText: String,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    actions: ArticleActionHandlers,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -622,6 +636,7 @@ private fun FeedWritingList(
             items(items, key = { it.id }) { item ->
                 FeedWritingRow(
                     item = item,
+                    actions = actions,
                     onOpenArticle = onOpenArticle,
                 )
             }
@@ -636,6 +651,7 @@ private fun FeedRssList(
     emptyActionLabel: String,
     onEmptyAction: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    actions: ArticleActionHandlers,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -660,6 +676,7 @@ private fun FeedRssList(
             items(items, key = { it.link }) { item ->
                 FeedRssRow(
                     item = item,
+                    actions = actions,
                     onOpenArticle = onOpenArticle,
                 )
             }
@@ -696,9 +713,10 @@ private fun ScopeToggle(
 @Composable
 private fun FeedWritingRow(
     item: FeedWriting,
+    actions: ArticleActionHandlers,
     onOpenArticle: (String) -> Unit,
 ) {
-    ArticleRow(
+    ArticleRowWithMenu(
         title = item.title,
         summary = item.summary,
         imageUrl = item.imageUrl,
@@ -707,16 +725,21 @@ private fun FeedWritingRow(
         bylineFallbackIcon = Icons.Outlined.AccountCircle,
         publishedAt = item.publishedAt,
         url = item.url,
+        loggedIn = actions.loggedIn,
+        archived = actions.archived(item.url),
         onClick = { onOpenArticle(item.url) },
+        onListen = { actions.onListen(item.url) },
+        onMarkAsRead = { actions.onMarkAsRead(item.url, item.title, item.imageUrl) },
     )
 }
 
 @Composable
 private fun FeedRssRow(
     item: RssItem,
+    actions: ArticleActionHandlers,
     onOpenArticle: (String) -> Unit,
 ) {
-    ArticleRow(
+    ArticleRowWithMenu(
         title = item.title,
         summary = item.summary,
         imageUrl = item.imageUrl,
@@ -725,7 +748,11 @@ private fun FeedRssRow(
         bylineFallbackIcon = Icons.Outlined.RssFeed,
         publishedAt = item.publishedAt,
         url = item.link,
+        loggedIn = actions.loggedIn,
+        archived = actions.archived(item.link),
         onClick = { onOpenArticle(item.link) },
+        onListen = { actions.onListen(item.link) },
+        onMarkAsRead = { actions.onMarkAsRead(item.link, item.title, item.imageUrl) },
     )
 }
 

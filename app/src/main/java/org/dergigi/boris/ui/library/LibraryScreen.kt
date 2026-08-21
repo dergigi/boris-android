@@ -76,8 +76,7 @@ import org.dergigi.boris.data.BookmarkShelves
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
-import org.dergigi.boris.ui.ArticleActionsMenu
-import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.auth.AuthBar
@@ -407,33 +406,18 @@ private fun BookmarkRow(
     onMarkAsRead: () -> Unit,
 ) {
     val note = item.url?.let { NostrLink.parse(it) is NostrTarget.Note } == true
-    var menuOpen by remember { mutableStateOf(false) }
-    val url = item.url
-    Box {
-        ArticleRow(
-            title = item.title,
-            imageUrl = item.imageUrl,
-            imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
-            byline = item.host,
-            url = url,
-            enabled = url != null,
-            onClick = { url?.let(onOpenArticle) },
-            onLongClick = url?.let { { menuOpen = true } },
-            onLongClickLabel = stringResource(R.string.home_article_actions),
-        )
-        if (url != null) {
-            ArticleActionsMenu(
-                expanded = menuOpen,
-                onDismiss = { menuOpen = false },
-                title = item.title,
-                url = url,
-                loggedIn = true,
-                archived = archived,
-                onListen = onListen,
-                onMarkAsRead = onMarkAsRead,
-            )
-        }
-    }
+    ArticleRowWithMenu(
+        title = item.title,
+        imageUrl = item.imageUrl,
+        imageFallbackIcon = if (note) Icons.AutoMirrored.Outlined.StickyNote2 else Icons.Outlined.Bookmark,
+        byline = item.host,
+        url = item.url,
+        loggedIn = true,
+        archived = archived,
+        onClick = { item.url?.let(onOpenArticle) },
+        onListen = onListen,
+        onMarkAsRead = onMarkAsRead,
+    )
 }
 
 @Composable
