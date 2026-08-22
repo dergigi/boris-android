@@ -67,6 +67,18 @@ class ReadingPositionStoreTest {
     }
 
     @Test
+    fun resetClearsSavedProgressAndBeatsStaleRemote() {
+        val page = url("reset")
+        val key = ReadingPositionStore.key(page)
+        ReadingPositionStore.merge(key, 0.4f, 100)
+        assertTrue(ReadingPositionStore.reset(page))
+        assertEquals(0f, ReadingPositionStore.fraction(page), 0f)
+        assertFalse(ReadingPositionStore.reset(page))
+        assertFalse(ReadingPositionStore.merge(key, 0.8f, 100))
+        assertEquals(0f, ReadingPositionStore.fraction(page), 0f)
+    }
+
+    @Test
     fun entriesSortNewestFirst() {
         val a = ReadingPositionStore.key(url("entries-a"))
         val b = ReadingPositionStore.key(url("entries-b"))

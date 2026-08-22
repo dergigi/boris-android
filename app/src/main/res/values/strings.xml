@@ -176,6 +176,7 @@
     <string name="reader_save_rejected">Save rejected.</string>
     <string name="reader_save_failed">Could not save to library.</string>
     <string name="reader_mark_as_read">Mark as read</string>
+    <string name="reader_reset_progress">Reset reading progress</string>
     <string name="reader_archive">Move to Archive</string>
     <string name="reader_archive_close">Move to Archive &amp; Close</string>
     <string name="reader_archived">Archived</string>

@@ -60,6 +60,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
@@ -560,6 +561,10 @@ fun ReaderScreenContent(
         is ReaderUiState.Error -> state.url
         is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
     }
+    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+    val hasProgress = remember(articleUrl, progressVersion) {
+        articleUrl != null && ReadingPositionStore.fraction(articleUrl) > 0f
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val readerScope = rememberCoroutineScope()
     val articleScrollState = rememberScrollState()
@@ -840,6 +845,22 @@ fun ReaderScreenContent(
                                         onClick = {
                                             menuOpen = false
                                             onRefresh()
+                                        },
+                                    )
+                                }
+                                if (hasProgress) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.reader_reset_progress)) },
+                                        leadingIcon = {
+                                            Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            val url = articleUrl ?: return@DropdownMenuItem
+                                            menuOpen = false
+                                            ReadingPositionStore.reset(url)
+                                            readerScope.launch {
+                                                articleScrollState.animateScrollTo(0)
+                                            }
                                         },
                                     )
                                 }

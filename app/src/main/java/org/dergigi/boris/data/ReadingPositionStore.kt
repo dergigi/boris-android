@@ -73,6 +73,16 @@ object ReadingPositionStore {
     }
 
     /**
+     * Clears progress for [url] by writing 0 with a fresh timestamp so a later
+     * remote sync cannot restore an older position on this device.
+     */
+    fun reset(url: String): Boolean {
+        if (fraction(url) <= 0f) return false
+        save(url, 0f)
+        return true
+    }
+
+    /**
      * Applies a position synced from another device. Newest timestamp wins;
      * returns false when the local entry is same-aged or newer.
      */
@@ -92,6 +102,10 @@ object ReadingPositionStore {
         while (positions.size > MAX_ENTRIES) {
             positions.remove(positions.keys.first())
         }
+        persist()
+    }
+
+    private fun persist() {
         val target = file ?: return
         runCatching {
             val obj = JSONObject()

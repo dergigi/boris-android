@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,9 +39,11 @@ fun ArticleActionsMenu(
     val clipboard = LocalClipboardManager.current
     val nativeUri = remember(url) { NostrLink.parse(url)?.uri }
     val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
-    val continueListening = remember(url, progressVersion) {
-        ContinueReading.inProgress(ReadingPositionStore.fraction(url))
+    val fraction = remember(url, progressVersion) {
+        ReadingPositionStore.fraction(url)
     }
+    val continueListening = ContinueReading.inProgress(fraction)
+    val hasProgress = fraction > 0f
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
@@ -107,6 +110,18 @@ fun ArticleActionsMenu(
                 onListen()
             },
         )
+        if (hasProgress) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_reset_progress)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+                },
+                onClick = {
+                    onDismiss()
+                    ReadingPositionStore.reset(url)
+                },
+            )
+        }
         if (loggedIn && !archived) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.reader_mark_as_read)) },
