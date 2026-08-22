@@ -94,4 +94,28 @@ class ReaderSelectionStateTest {
         assertEquals(Offset.Unspecified, state.loupeCenter)
         assertEquals("hello", state.selectedText)
     }
+
+    @Test
+    fun loupeSitsAboveTheTouchPoint() {
+        val center = loupeDisplayCenter(
+            source = Offset(20f, 200f),
+            sourceWindow = Offset(20f, 400f),
+            liftPx = 80f,
+            minWindowY = 100f,
+        )
+        assertEquals(20f, center.x, 0.01f)
+        assertEquals(120f, center.y, 0.01f)
+    }
+
+    @Test
+    fun loupeStaysBelowTheTopSafeEdge() {
+        val center = loupeDisplayCenter(
+            source = Offset(20f, 30f),
+            sourceWindow = Offset(20f, 140f),
+            liftPx = 80f,
+            minWindowY = 100f,
+        )
+        assertEquals(20f, center.x, 0.01f)
+        assertEquals(-10f, center.y, 0.01f)
+    }
 }

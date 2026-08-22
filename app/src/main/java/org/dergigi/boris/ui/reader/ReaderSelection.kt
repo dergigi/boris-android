@@ -4,6 +4,8 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -169,6 +172,10 @@ fun Modifier.readerSelectable(
     val textRef = rememberUpdatedState(text)
     val onTapRef = rememberUpdatedState(onTap)
     val ttsStartIndexRef = rememberUpdatedState(ttsStartIndex)
+    val density = LocalDensity.current
+    val statusTop = WindowInsets.statusBars.getTop(density)
+    val minWindowY = statusTop + with(density) { (TOP_BAR_CLEARANCE + LOUPE_HEIGHT / 2).toPx() }
+    val liftPx = with(density) { LOUPE_LIFT.toPx() }
 
     onGloballyPositioned { coords ->
         onCoordinates(coords)
@@ -181,6 +188,20 @@ fun Modifier.readerSelectable(
             if (state.owns(owner)) {
                 Modifier.magnifier(
                     sourceCenter = { state.loupeCenter },
+                    magnifierCenter = {
+                        val source = state.loupeCenter
+                        if (source == Offset.Unspecified) {
+                            Offset.Unspecified
+                        } else {
+                            val coords = coordsRef.value
+                            val window = if (coords != null && coords.isAttached) {
+                                coords.localToWindow(source)
+                            } else {
+                                source
+                            }
+                            loupeDisplayCenter(source, window, liftPx, minWindowY)
+                        }
+                    },
                     zoom = LOUPE_ZOOM,
                     size = DpSize(LOUPE_WIDTH, LOUPE_HEIGHT),
                     cornerRadius = LOUPE_HEIGHT / 2,
@@ -370,6 +391,17 @@ private fun handleCenter(layout: TextLayoutResult, offset: Int, start: Boolean):
     return Offset(x, y)
 }
 
+internal fun loupeDisplayCenter(
+    source: Offset,
+    sourceWindow: Offset,
+    liftPx: Float,
+    minWindowY: Float,
+): Offset {
+    if (source == Offset.Unspecified) return Offset.Unspecified
+    val desiredWindowY = (sourceWindow.y - liftPx).coerceAtLeast(minWindowY)
+    return Offset(source.x, source.y - (sourceWindow.y - desiredWindowY))
+}
+
 internal fun loupeSource(layout: TextLayoutResult, offset: Int): Offset {
     val line = caretLine(layout, offset, start = offset == 0)
     val x = JustifiedLayout.visualCursor(layout, offset, line)
@@ -386,4 +418,6 @@ private fun caretLine(layout: TextLayoutResult, offset: Int, start: Boolean): In
 
 private val LOUPE_WIDTH = 140.dp
 private val LOUPE_HEIGHT = 48.dp
+private val LOUPE_LIFT = 72.dp
+private val TOP_BAR_CLEARANCE = 56.dp
 private const val LOUPE_ZOOM = 1.75f
