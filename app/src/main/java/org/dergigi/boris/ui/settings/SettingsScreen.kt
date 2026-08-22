@@ -126,6 +126,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
     initialCategory: String? = null,
@@ -201,6 +202,7 @@ fun SettingsScreen(
                         onUpdate = { next -> settingsViewModel.update { next } },
                         onOpenArticle = onOpenArticle,
                         onOpenTutorial = onOpenTutorial,
+                        onOpenFaq = onOpenFaq,
                         onOpenSupport = onOpenSupport,
                         onOpenAuthorProfile = onOpenAuthorProfile,
                     )
@@ -288,6 +290,7 @@ private fun SettingsCategoryDetail(
     onUpdate: (UserSettings) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
 ) {
@@ -332,6 +335,7 @@ private fun SettingsCategoryDetail(
                 openInBoris = settings.openLinksInReader,
                 onOpenArticle = onOpenArticle,
                 onOpenTutorial = onOpenTutorial,
+                onOpenFaq = onOpenFaq,
                 onOpenSupport = onOpenSupport,
                 onOpenAuthorProfile = onOpenAuthorProfile,
             )

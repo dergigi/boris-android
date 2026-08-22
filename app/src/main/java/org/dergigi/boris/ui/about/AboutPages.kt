@@ -17,7 +17,16 @@ internal sealed class AboutPage {
 
 object AboutLinks {
     const val WEBSITE = "https://readwithboris.com/"
+    const val FAQ = "${WEBSITE}#faq"
     const val WEBAPP = "https://read.withboris.com/"
+    const val NOSTR_PROTOCOL = "https://nostr.com/"
+    const val NIP_84 = "https://nostrbook.dev/kinds/9802"
+    const val WHY_BORIS_IDEA =
+        "https://read.withboris.com/a/naddr1qvzqqqr4gupzqmjxss3dld622uu8q25gywum9qtg4w4cv4064jmg20xsac2aam5nqqxnzd3cxqmrzv3exgmr2wfesgsmew"
+    const val WHY_BORIS_READING_APP =
+        "https://read.withboris.com/a/naddr1qqsxzttkd9ekjmmw94nx7u3dvykhvctvw4jj6etwv93xcety94mk2cszyphydppzm7m554ecwq4gsgaek2qk32atse2l4t9ks57dpms4mmhfxqcyqqq823c59stcz"
+    const val WHY_BORIS_NAME =
+        "https://relay.dergigi.com/03e174145e1f410772bb8c3e79b153ac0077fe482d7006b1f0ed67a81d475bb9.png"
     const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x"
     const val GITHUB = "https://github.com/dergigi/boris-android"
     const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"

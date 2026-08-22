@@ -47,6 +47,7 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.browser.BrowserScreen
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
+import org.dergigi.boris.ui.about.FaqScreen
 import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -77,6 +78,7 @@ object Routes {
     const val SETTINGS_CATEGORY_ARG = "category"
     const val SETTINGS = "settings?category={$SETTINGS_CATEGORY_ARG}"
     const val ABOUT = "about"
+    const val FAQ = "faq"
     const val SUPPORT = "support"
     const val NPUB_ARG = "npub"
     const val PROFILE = "profile/{$NPUB_ARG}"
@@ -351,6 +353,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenFaq = {
+                            navController.navigate(Routes.FAQ) {
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenSupport = {
                             navController.navigate(Routes.SUPPORT) {
                                 launchSingleTop = true
@@ -372,6 +379,12 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                    )
+                }
+                composable(Routes.FAQ) {
+                    FaqScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenArticle = { url -> navController.navigate(Routes.reader(url)) },
                     )
                 }
                 composable(Routes.SUPPORT) {

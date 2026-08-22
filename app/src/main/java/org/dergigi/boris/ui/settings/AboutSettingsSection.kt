@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -44,6 +45,7 @@ fun AboutSettingsSection(
     openInBoris: Boolean,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
     modifier: Modifier = Modifier,
@@ -68,6 +70,13 @@ fun AboutSettingsSection(
             icon = Icons.AutoMirrored.Outlined.MenuBook,
             tint = linkTint,
             onClick = onOpenTutorial,
+        )
+        AboutActionRow(
+            label = stringResource(R.string.settings_about_faq),
+            subtitle = stringResource(R.string.settings_about_faq_summary),
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+            tint = linkTint,
+            onClick = onOpenFaq,
         )
         AboutActionRow(
             label = stringResource(R.string.settings_about_vision),
