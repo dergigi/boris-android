@@ -1,10 +1,15 @@
 package org.dergigi.boris.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Edit
@@ -17,6 +22,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -65,7 +73,21 @@ fun ContentTab.icon(): ImageVector = when (this) {
     ContentTab.Rss -> Icons.Outlined.RssFeed
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun FilterChipRow(
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
+}
+
 @Composable
 fun ContentTabs(
     tab: ContentTab,
@@ -75,11 +97,7 @@ fun ContentTabs(
     showAll: Boolean = false,
     showBookmarks: Boolean = false,
 ) {
-    FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    FilterChipRow(modifier = modifier) {
         if (showAll) {
             ContentTabChip(
                 selected = tab == ContentTab.All,
@@ -125,6 +143,7 @@ fun ContentTabs(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ContentTabChip(
     selected: Boolean,
@@ -132,9 +151,14 @@ fun ContentTabChip(
     icon: ImageVector,
     onClick: () -> Unit,
 ) {
+    val intoView = remember { BringIntoViewRequester() }
+    LaunchedEffect(selected) {
+        if (selected) intoView.bringIntoView()
+    }
     FilterChip(
         selected = selected,
         onClick = onClick,
+        modifier = Modifier.bringIntoViewRequester(intoView),
         label = { Text(label) },
         leadingIcon = {
             Icon(

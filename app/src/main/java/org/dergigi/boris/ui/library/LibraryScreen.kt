@@ -8,8 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -36,8 +34,6 @@ import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +70,8 @@ import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.ContentTabChip
+import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.bookmarkFallbackIcon
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -267,7 +265,7 @@ fun LibraryScreenContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReadyLibrary(
     shelves: BookmarkShelves,
@@ -282,44 +280,40 @@ private fun ReadyLibrary(
     onMarkAsRead: (BookmarkItem) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        FilterChipRow(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         ) {
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.All,
                 label = stringResource(R.string.library_all),
                 icon = Icons.Outlined.Apps,
                 onClick = { onSelect(BookmarkBucket.All) },
             )
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.Private,
                 label = stringResource(R.string.library_private),
                 icon = Icons.Outlined.Lock,
                 onClick = { onSelect(BookmarkBucket.Private) },
             )
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.Public,
                 label = stringResource(R.string.library_public),
                 icon = Icons.Outlined.Public,
                 onClick = { onSelect(BookmarkBucket.Public) },
             )
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.Web,
                 label = stringResource(R.string.library_web),
                 icon = Icons.Outlined.Language,
                 onClick = { onSelect(BookmarkBucket.Web) },
             )
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.Look,
                 label = stringResource(R.string.library_look),
                 icon = Icons.Outlined.Visibility,
                 onClick = { onSelect(BookmarkBucket.Look) },
             )
-            ShelfChip(
+            ContentTabChip(
                 selected = bucket == BookmarkBucket.Archive,
                 label = stringResource(R.string.library_archive),
                 icon = BorisIcons.Books,
@@ -377,32 +371,6 @@ private fun ReadyLibrary(
             }
         }
     }
-}
-
-@Composable
-private fun ShelfChip(
-    selected: Boolean,
-    label: String,
-    onClick: () -> Unit,
-    icon: ImageVector? = null,
-) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        leadingIcon = icon?.let {
-            {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-    )
 }
 
 @Composable
