@@ -185,6 +185,8 @@
     <string name="reader_archive_failed">Could not update archive.</string>
     <string name="reader_share">Share</string>
     <string name="reader_copy_link">Copy link</string>
+    <string name="reader_copy_njump_link">Copy njump link</string>
+    <string name="reader_copy_xcancel_link">Copy xcancel link</string>
     <string name="reader_copied">Copied.</string>
     <string name="reader_open_original">Open original</string>
     <string name="reader_open_in_browser">Open in browser</string>

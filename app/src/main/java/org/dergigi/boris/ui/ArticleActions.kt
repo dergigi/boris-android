@@ -46,7 +46,11 @@ fun shareArticleLink(context: Context, title: String?, url: String) {
 }
 
 fun copyArticleLink(context: Context, clipboard: ClipboardManager, url: String) {
-    clipboard.setText(AnnotatedString(NostrLink.copyText(url)))
+    copyPlainLink(context, clipboard, NostrLink.copyText(url))
+}
+
+fun copyPlainLink(context: Context, clipboard: ClipboardManager, text: String) {
+    clipboard.setText(AnnotatedString(text))
     Toast.makeText(context, context.getString(R.string.reader_copied), Toast.LENGTH_SHORT).show()
 }
 

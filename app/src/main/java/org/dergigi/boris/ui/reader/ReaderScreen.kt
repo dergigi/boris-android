@@ -47,7 +47,6 @@ import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -191,7 +190,7 @@ import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
-import org.dergigi.boris.ui.copyArticleLink
+import org.dergigi.boris.ui.ArticleCopyMenuItems
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.browser.InAppBrowser
 import org.dergigi.boris.ui.openOriginalArticle
@@ -555,7 +554,6 @@ fun ReaderScreenContent(
     onDeleteHighlight: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val articleUrl = when (state) {
         is ReaderUiState.Ready -> state.content.url
         is ReaderUiState.Error -> state.url
@@ -626,11 +624,6 @@ fun ReaderScreenContent(
         val url = articleUrl ?: return
         val title = (state as? ReaderUiState.Ready)?.content?.title
         shareArticleLink(context, title, url)
-    }
-
-    fun copyLink() {
-        val url = articleUrl ?: return
-        copyArticleLink(context, clipboard, url)
     }
 
     var findOpen by remember { mutableStateOf(false) }
@@ -767,15 +760,9 @@ fun ReaderScreenContent(
                                         shareArticle()
                                     },
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_copy_link)) },
-                                    leadingIcon = {
-                                        Icon(Icons.Filled.ContentCopy, contentDescription = null)
-                                    },
-                                    onClick = {
-                                        menuOpen = false
-                                        copyLink()
-                                    },
+                                ArticleCopyMenuItems(
+                                    url = articleUrl,
+                                    onDismiss = { menuOpen = false },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.reader_open_in_browser)) },

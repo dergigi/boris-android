@@ -44,6 +44,13 @@ object NostrLink {
 
     fun copyText(url: String): String = parse(url)?.uri ?: url
 
+    /** njump URL for readable Nostr content; null for web pages and profiles. */
+    fun njumpCopyUrl(url: String): String? =
+        when (val target = parse(url)) {
+            is NostrTarget.Article, is NostrTarget.Note -> target.publicUrl
+            else -> null
+        }
+
     fun parse(raw: String?): NostrTarget? {
         if (raw.isNullOrBlank()) return null
         val trimmed = raw.trim()

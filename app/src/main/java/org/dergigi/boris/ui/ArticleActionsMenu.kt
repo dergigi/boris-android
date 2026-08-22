@@ -23,6 +23,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.ReadingPositionStore
+import org.dergigi.boris.data.XcancelLink
 
 @Composable
 fun ArticleActionsMenu(
@@ -36,7 +37,6 @@ fun ArticleActionsMenu(
     onMarkAsRead: () -> Unit,
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val nativeUri = remember(url) { NostrLink.parse(url)?.uri }
     val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
     val fraction = remember(url, progressVersion) {
@@ -58,16 +58,7 @@ fun ArticleActionsMenu(
                 shareArticleLink(context, title, url)
             },
         )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.reader_copy_link)) },
-            leadingIcon = {
-                Icon(Icons.Filled.ContentCopy, contentDescription = null)
-            },
-            onClick = {
-                onDismiss()
-                copyArticleLink(context, clipboard, url)
-            },
-        )
+        ArticleCopyMenuItems(url = url, onDismiss = onDismiss)
         DropdownMenuItem(
             text = { Text(stringResource(R.string.reader_open_original)) },
             leadingIcon = {
@@ -134,5 +125,50 @@ fun ArticleActionsMenu(
                 },
             )
         }
+    }
+}
+
+@Composable
+fun ArticleCopyMenuItems(
+    url: String,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val njumpUrl = remember(url) { NostrLink.njumpCopyUrl(url) }
+    val xcancelUrl = remember(url) { XcancelLink.copyUrl(url) }
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.reader_copy_link)) },
+        leadingIcon = {
+            Icon(Icons.Filled.ContentCopy, contentDescription = null)
+        },
+        onClick = {
+            onDismiss()
+            copyArticleLink(context, clipboard, url)
+        },
+    )
+    if (njumpUrl != null) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.reader_copy_njump_link)) },
+            leadingIcon = {
+                Icon(Icons.Filled.ContentCopy, contentDescription = null)
+            },
+            onClick = {
+                onDismiss()
+                copyPlainLink(context, clipboard, njumpUrl)
+            },
+        )
+    }
+    if (xcancelUrl != null) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.reader_copy_xcancel_link)) },
+            leadingIcon = {
+                Icon(Icons.Filled.ContentCopy, contentDescription = null)
+            },
+            onClick = {
+                onDismiss()
+                copyPlainLink(context, clipboard, xcancelUrl)
+            },
+        )
     }
 }

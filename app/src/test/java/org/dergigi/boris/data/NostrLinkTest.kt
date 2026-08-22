@@ -60,6 +60,18 @@ class NostrLinkTest {
     }
 
     @Test
+    fun njumpCopyUrlIsOnlyForReadableNostrContent() {
+        val note = Nip19.noteEncode(
+            "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f",
+        )
+        assertEquals("https://njump.to/$naddr", NostrLink.njumpCopyUrl("nostr:$naddr"))
+        assertEquals("https://njump.to/$note", NostrLink.njumpCopyUrl("https://njump.to/$note"))
+        assertNull(NostrLink.njumpCopyUrl("https://www.citadel21.com/the-paranoid-wallet"))
+        val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+        assertNull(NostrLink.njumpCopyUrl("https://njump.to/$npub"))
+    }
+
+    @Test
     fun copyTextUsesNostrUriOrPlainUrl() {
         val id = "d9b0ede779a36d555784d801ba87feac8e0d66a0cfd10b227a3aa57ca5b4ba9f"
         val note = Nip19.noteEncode(id)
