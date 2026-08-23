@@ -26,6 +26,8 @@ internal fun readerLinkAction(
     }
     val article = UrlExtractor.articleUrl(uri, currentUrl)
     if (article != null && article == currentUrl) return ReaderLinkAction.Ignore
+    val target = article ?: uri
+    if (UrlExtractor.isImageUrl(target)) return ReaderLinkAction.OpenInReader(target)
     if (openInReader && article != null) return ReaderLinkAction.OpenInReader(article)
     return ReaderLinkAction.OpenExternal(article ?: uri)
 }

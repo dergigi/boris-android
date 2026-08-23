@@ -1,5 +1,6 @@
 package org.dergigi.boris.data
 
+import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip19
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,6 +39,51 @@ class NostrLinkTest {
         assertEquals(id, fromEvent.eventId)
         assertEquals(listOf("wss://nos.lol"), fromEvent.relays)
         assertEquals("https://njump.to/$nevent", fromEvent.publicUrl)
+    }
+
+    @Test
+    fun parsesHighlightAndCommentNevents() {
+        val id = "78a214159e5b82028302c9d4212548a14592ca4ec290f1f6a796bdb9bb5dafa5"
+        val comment = Nip19.neventEncode(
+            org.dergigi.boris.nostr.NeventPointer(
+                eventId = id,
+                relays = listOf("wss://relay.dergigi.com/"),
+                author = "6e468422dfb74a5738702a8823b9b28168abab8655faacb6853cd0ee15deee93",
+                kind = Nip01Event.KIND_COMMENT,
+            ),
+        )
+        val fromComment = NostrLink.parse("nostr:$comment") as NostrTarget.Note
+        assertEquals(id, fromComment.eventId)
+        assertEquals(Nip01Event.KIND_COMMENT, fromComment.kind)
+        assertEquals(listOf("wss://relay.dergigi.com/"), fromComment.relays)
+
+        val highlight = Nip19.neventEncode(
+            org.dergigi.boris.nostr.NeventPointer(id, kind = Nip01Event.KIND_HIGHLIGHT),
+        )
+        val fromHighlight = NostrLink.parse("nostr:$highlight") as NostrTarget.Note
+        assertEquals(Nip01Event.KIND_HIGHLIGHT, fromHighlight.kind)
+        assertEquals("nostr:$highlight", UrlExtractor.extract("nostr:$highlight"))
+
+        val issue99 =
+            "nostr:nevent1qqs83gs5zk09hqszsvpvn4ppy4y2z3vjef8v9y8376ned0dehdw6lfgprpmhxue69uhhyetvv9ujuer9wfnkjemf9e3k7mf0qgsxu35yyt0mwjjh8pcz4zprhxegz69t4wr9t74vk6zne58wzh0waycrqsqqqpzhs9hrq9"
+        val fromIssue = NostrLink.parse(issue99) as NostrTarget.Note
+        assertEquals(
+            "78a214159e5b82028302c9d4212548a14592ca4ec290f1f6a796bdb9bb5dafa5",
+            fromIssue.eventId,
+        )
+        assertEquals(Nip01Event.KIND_COMMENT, fromIssue.kind)
+        assertEquals(true, fromIssue.relays.any { it.contains("relay.dergigi.com") })
+        assertEquals(fromIssue.uri, UrlExtractor.extract(issue99))
+    }
+
+    @Test
+    fun ignoresUnsupportedNeventKinds() {
+        val id = "78a214159e5b82028302c9d4212548a14592ca4ec290f1f6a796bdb9bb5dafa5"
+        val reaction = Nip19.neventEncode(
+            org.dergigi.boris.nostr.NeventPointer(id, kind = Nip01Event.KIND_REACTION),
+        )
+        assertNull(NostrLink.parse("nostr:$reaction"))
+        assertNull(UrlExtractor.extract("nostr:$reaction"))
     }
 
     @Test

@@ -137,6 +137,20 @@ class UrlExtractorTest {
         assertEquals(true, UrlExtractor.isImageUrl("https://image.nostr.build/abc.gif"))
         assertEquals(false, UrlExtractor.isImageUrl("https://example.com/article"))
         assertEquals(false, UrlExtractor.isImageUrl("https://example.com/file.pdf"))
+        assertEquals(
+            true,
+            UrlExtractor.isImageUrl(
+                "https://relay.dergigi.com/03e174145e1f410772bb8c3e79b153ac0077fe482d7006b1f0ed67a81d475bb9.png",
+            ),
+        )
+    }
+
+    @Test
+    fun detectsImageContentTypes() {
+        assertEquals(true, UrlExtractor.isImageContentType("image/png"))
+        assertEquals(true, UrlExtractor.isImageContentType("image/jpeg; charset=binary"))
+        assertEquals(false, UrlExtractor.isImageContentType("text/html"))
+        assertEquals(false, UrlExtractor.isImageContentType(null))
     }
 
     @Test

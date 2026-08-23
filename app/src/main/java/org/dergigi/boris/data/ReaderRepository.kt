@@ -64,13 +64,18 @@ class ReaderRepository(
     // empty/thin extract. D-15: a live fail falls back to the origin cache.
     private fun fetchOrigin(origin: String): ReadableContent {
         val first = originAttempt(origin, HttpUserAgents.BORIS_UA)
-        val second = when (first) {
+        when (first) {
             is OriginResult.Article -> return first.content
+            is OriginResult.Image -> throw ReaderImageException(first.url)
+            else -> Unit
+        }
+        val second = when (first) {
             is OriginResult.Blocked, is OriginResult.NoArticle ->
                 originAttempt(origin, HttpUserAgents.BROWSER_UA)
-            is OriginResult.Unreachable -> first
+            else -> first
         }
         if (second is OriginResult.Article) return second.content
+        if (second is OriginResult.Image) throw ReaderImageException(second.url)
         if (second is OriginResult.NoArticle) {
             throw ReaderFetchException(ERROR_NO_ARTICLE, second.detail)
         }
@@ -91,9 +96,16 @@ class ReaderRepository(
             when {
                 response.code == 401 || response.code == 403 -> OriginResult.Blocked(response.code)
                 !response.isSuccessful -> OriginResult.Unreachable("HTTP ${response.code}")
-                !looksLikeHtml(response) -> OriginResult.NoArticle(
-                    "Not HTML (${response.header("Content-Type") ?: "unknown"})",
-                )
+                !looksLikeHtml(response) -> {
+                    val contentType = response.header("Content-Type")
+                    if (UrlExtractor.isImageContentType(contentType)) {
+                        OriginResult.Image(UrlExtractor.preferHttps(response.request.url.toString()))
+                    } else {
+                        OriginResult.NoArticle(
+                            "Not HTML (${contentType ?: "unknown"})",
+                        )
+                    }
+                }
                 else -> {
                     val text = readCapped(response)
                     val responseUrl = response.request.url.toString()
@@ -211,6 +223,7 @@ class ReaderRepository(
 
     private sealed interface OriginResult {
         data class Article(val content: ReadableContent) : OriginResult
+        data class Image(val url: String) : OriginResult
         data class Blocked(val code: Int) : OriginResult
         data class NoArticle(val detail: String? = null) : OriginResult
         data class Unreachable(val detail: String) : OriginResult
@@ -222,7 +235,7 @@ class ReaderRepository(
                 is OriginResult.Unreachable -> result.detail
                 is OriginResult.Blocked -> "HTTP ${result.code}"
                 is OriginResult.NoArticle -> result.detail
-                is OriginResult.Article -> null
+                is OriginResult.Image, is OriginResult.Article -> null
             }
         }
 
@@ -285,7 +298,10 @@ class ReaderRepository(
                 sourceZapTags = zapTags(event),
             )
         }
-        if (event.kind != Nip01Event.KIND_TEXT_NOTE) {
+        if (event.kind != Nip01Event.KIND_TEXT_NOTE &&
+            event.kind != Nip01Event.KIND_COMMENT &&
+            event.kind != Nip01Event.KIND_HIGHLIGHT
+        ) {
             throw IOException("This nostr event is not a note or article")
         }
         val title = event.content.lineSequence()
@@ -482,3 +498,7 @@ internal class ReaderFetchException(
     val detail: String? = null,
     cause: Throwable? = null,
 ) : IOException(message, cause)
+
+internal class ReaderImageException(
+    val imageUrl: String,
+) : IOException("image:${imageUrl}")

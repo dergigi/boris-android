@@ -80,6 +80,11 @@ object UrlExtractor {
         }
     }
 
+    fun isImageContentType(header: String?): Boolean {
+        val type = header?.substringBefore(';')?.trim()?.lowercase() ?: return false
+        return type.startsWith("image/")
+    }
+
     fun isImageUrl(url: String): Boolean {
         val trimmed = url.trim()
         val uri = try {

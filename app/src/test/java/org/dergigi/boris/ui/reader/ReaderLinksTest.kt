@@ -103,6 +103,20 @@ class ReaderLinksTest {
     }
 
     @Test
+    fun imageLinksOpenInTheReaderEvenWhenExternalIsPreferred() {
+        val png =
+            "https://relay.dergigi.com/03e174145e1f410772bb8c3e79b153ac0077fe482d7006b1f0ed67a81d475bb9.png"
+        assertEquals(
+            ReaderLinkAction.OpenInReader(png),
+            readerLinkAction(png, "", openInReader = false),
+        )
+        assertEquals(
+            ReaderLinkAction.OpenInReader(png),
+            readerLinkAction(png, "https://example.com", openInReader = true),
+        )
+    }
+
+    @Test
     fun naddrStillOpensInReaderWhenEnabled() {
         val naddr =
             "naddr1qqwhwmmjw35xcetnwvkk6mmwv4uj6arfd4jkcetnwvkkzun595pzq634npfz8rwfq2hdr8am76s9t7dt7gwpe2y3t5wyufl4phe09yxeqvzqqqr4gu7cgak5"

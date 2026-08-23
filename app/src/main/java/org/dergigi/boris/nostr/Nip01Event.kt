@@ -64,6 +64,7 @@ data class Nip01Event(
         const val KIND_RPC = 24133
         const val KIND_AUTH = 22242
         const val KIND_ZAP_RECEIPT = 9735
+        const val KIND_COMMENT = 1111
         const val KIND_HIGHLIGHT = 9802
         const val KIND_READING_PROGRESS = 39802
         const val KIND_BOOKMARKS = 10003

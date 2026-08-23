@@ -51,6 +51,12 @@ object NostrLink {
             else -> null
         }
 
+    fun readableEventKind(kind: Int): Boolean =
+        kind == Nip01Event.KIND_TEXT_NOTE ||
+            kind == Nip01Event.KIND_LONG_FORM ||
+            kind == Nip01Event.KIND_HIGHLIGHT ||
+            kind == Nip01Event.KIND_COMMENT
+
     fun parse(raw: String?): NostrTarget? {
         if (raw.isNullOrBlank()) return null
         val trimmed = raw.trim()
@@ -77,10 +83,7 @@ object NostrLink {
                 encoded.startsWith("nevent1") -> {
                     val pointer = Nip19.neventDecode(encoded)
                     val kind = pointer.kind
-                    if (kind != null &&
-                        kind != Nip01Event.KIND_TEXT_NOTE &&
-                        kind != Nip01Event.KIND_LONG_FORM
-                    ) {
+                    if (kind != null && !readableEventKind(kind)) {
                         return null
                     }
                     NostrTarget.Note(

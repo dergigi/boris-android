@@ -252,6 +252,15 @@ fun ReaderScreen(
     val settingsSignIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val imageOnly = state as? ReaderUiState.ImageOnly
+    if (imageOnly != null) {
+        ImageGallery(
+            state = gallery ?: ImageGalleryState(listOf(imageOnly.url), 0),
+            onDismiss = onBack,
+            onPageChange = viewModel::setGalleryIndex,
+        )
+        return
+    }
     val context = LocalContext.current
     var closeAfterArchive by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
@@ -558,6 +567,7 @@ fun ReaderScreenContent(
         is ReaderUiState.Ready -> state.content.url
         is ReaderUiState.Error -> state.url
         is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
+        is ReaderUiState.ImageOnly -> state.url
     }
     val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
     val hasProgress = remember(articleUrl, progressVersion) {
@@ -1020,6 +1030,7 @@ fun ReaderScreenContent(
                     }
                 }
             }
+            is ReaderUiState.ImageOnly -> Unit
             is ReaderUiState.Ready -> {
                 ArticleBody(
                     content = state.content,

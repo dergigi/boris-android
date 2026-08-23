@@ -23,7 +23,9 @@ import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReaderFetchException
+import org.dergigi.boris.data.ReaderImageException
 import org.dergigi.boris.data.ResolvedEventRef
+import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.RssRepository
@@ -180,6 +182,7 @@ class ReaderViewModel(
             publishSaveState()
             return
         }
+        val imageUrl = UrlExtractor.preferHttps(url).takeIf { UrlExtractor.isImageUrl(it) }
         loadJob?.cancel()
         highlightJob?.cancel()
         membershipJob?.cancel()
@@ -188,6 +191,18 @@ class ReaderViewModel(
         rssFeedJob?.cancel()
         eventRefJob?.cancel()
         _eventRefs.value = emptyMap()
+        if (imageUrl != null) {
+            _state.value = ReaderUiState.ImageOnly(imageUrl)
+            openGallery(listOf(imageUrl), 0)
+            _highlights.value = emptyList()
+            _highlightCount.value = 0
+            _highlightsLoaded.value = true
+            _inLibrary.value = false
+            resetArchive()
+            resetAuthor()
+            publishSaveState()
+            return
+        }
         loadJob = viewModelScope.launch {
             _state.value = readerLoadingState(url)
             _highlights.value = emptyList()
@@ -210,6 +225,19 @@ class ReaderViewModel(
                 startEventRefFetch(content)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: ReaderImageException) {
+                highlightJob?.cancel()
+                membershipJob?.cancel()
+                archiveJob?.cancel()
+                authorJob?.cancel()
+                rssFeedJob?.cancel()
+                eventRefJob?.cancel()
+                _highlights.value = emptyList()
+                _highlightCount.value = 0
+                _highlightsLoaded.value = true
+                _state.value = ReaderUiState.ImageOnly(e.imageUrl)
+                openGallery(listOf(e.imageUrl), 0)
+                publishSaveState()
             } catch (e: Exception) {
                 highlightJob?.cancel()
                 membershipJob?.cancel()
@@ -1158,6 +1186,7 @@ sealed interface ReaderUiState {
         val imageUrl: String? = null,
     ) : ReaderUiState
     data class Ready(val content: ReadableContent) : ReaderUiState
+    data class ImageOnly(val url: String) : ReaderUiState
     data class Error(
         val message: String,
         val url: String,
