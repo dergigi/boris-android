@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- All filter on the You profile page
+
 ## [1.5.4] - 2026-08-23
 
 ### Added

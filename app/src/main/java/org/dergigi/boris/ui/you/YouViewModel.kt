@@ -77,6 +77,44 @@ internal fun BookmarkItem.matchesQuery(query: String): Boolean {
         url.orEmpty().contains(q, ignoreCase = true)
 }
 
+internal sealed class YouMergedItem {
+    abstract val sortAt: Long
+    abstract val key: String
+
+    data class Highlight(val item: YouHighlight) : YouMergedItem() {
+        override val sortAt: Long get() = item.createdAt
+        override val key: String get() = "h:${item.id}"
+    }
+
+    data class Writing(val item: YouWriting) : YouMergedItem() {
+        override val sortAt: Long get() = item.publishedAt
+        override val key: String get() = "w:${item.id}"
+    }
+
+    data class Bookmark(val item: BookmarkItem) : YouMergedItem() {
+        override val sortAt: Long get() = item.createdAt
+        override val key: String get() = "b:${item.id}"
+    }
+}
+
+internal fun mergeYouItems(
+    highlights: List<YouHighlight>,
+    writings: List<YouWriting>,
+    publicBookmarks: List<BookmarkItem>,
+    webBookmarks: List<BookmarkItem>,
+    deletedIds: Set<String> = emptySet(),
+    query: String = "",
+): List<YouMergedItem> = buildList {
+    highlights.filter { it.id !in deletedIds && it.matchesQuery(query) }
+        .forEach { add(YouMergedItem.Highlight(it)) }
+    writings.filter { it.matchesQuery(query) }
+        .forEach { add(YouMergedItem.Writing(it)) }
+    publicBookmarks.filter { it.matchesQuery(query) }
+        .forEach { add(YouMergedItem.Bookmark(it)) }
+    webBookmarks.filter { it.matchesQuery(query) }
+        .forEach { add(YouMergedItem.Bookmark(it)) }
+}.sortedByDescending { it.sortAt }
+
 sealed interface YouUiState {
     data object Loading : YouUiState
     data class Ready(
@@ -139,7 +177,7 @@ class YouViewModel(
         val keepItems = samePerson && _state.value is YouUiState.Ready
         loadJob?.cancel()
         moreJob?.cancel()
-        if (tab == null || tab == ContentTab.Highlights) {
+        if (tab == null || tab == ContentTab.All || tab == ContentTab.Highlights) {
             _endReached.value = false
         }
         loadJob = viewModelScope.launch {
@@ -173,10 +211,11 @@ class YouViewModel(
                         addAll(list.read)
                         addAll(HintedRelays.forPubkey(key))
                     }.distinct()
-                    val wantHighlights = tab == null || tab == ContentTab.Highlights
-                    val wantWritings = tab == null || tab == ContentTab.Writings
-                    val wantPublic = tab == null || tab == ContentTab.Public
-                    val wantWeb = tab == null || tab == ContentTab.Web
+                    val all = tab == null || tab == ContentTab.All
+                    val wantHighlights = all || tab == ContentTab.Highlights
+                    val wantWritings = all || tab == ContentTab.Writings
+                    val wantPublic = all || tab == ContentTab.Public
+                    val wantWeb = all || tab == ContentTab.Web
                     val shown = if (keepItems) _state.value as? YouUiState.Ready else null
                     coroutineScope {
                         val highlights = async {

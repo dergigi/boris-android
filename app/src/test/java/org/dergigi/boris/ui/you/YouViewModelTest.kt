@@ -71,6 +71,88 @@ class YouViewModelTest {
     }
 
     @Test
+    fun allMergesKindsNewestFirst() {
+        val highlight = YouHighlight(
+            id = "h1",
+            quote = "quote",
+            url = "https://example.com/a",
+            host = "example.com",
+            createdAt = 30,
+        )
+        val writing = YouWriting(
+            id = "w1",
+            title = "Essay",
+            summary = null,
+            imageUrl = null,
+            url = "nostr:naddr1qq",
+            publishedAt = 50,
+        )
+        val public = org.dergigi.boris.data.BookmarkItem(
+            id = "p1",
+            title = "Public",
+            url = "https://example.com/p",
+            host = "example.com",
+            imageUrl = null,
+            createdAt = 40,
+            bucket = org.dergigi.boris.data.BookmarkBucket.Public,
+        )
+        val web = org.dergigi.boris.data.BookmarkItem(
+            id = "w-b1",
+            title = "Web",
+            url = "https://example.com/w",
+            host = "example.com",
+            imageUrl = null,
+            createdAt = 10,
+            bucket = org.dergigi.boris.data.BookmarkBucket.Web,
+        )
+        val merged = mergeYouItems(
+            highlights = listOf(highlight),
+            writings = listOf(writing),
+            publicBookmarks = listOf(public),
+            webBookmarks = listOf(web),
+        )
+        assertEquals(
+            listOf("w:w1", "b:p1", "h:h1", "b:w-b1"),
+            merged.map { it.key },
+        )
+    }
+
+    @Test
+    fun allDropsDeletedHighlightsAndHonorsSearch() {
+        val keep = YouHighlight(
+            id = "keep",
+            quote = "bitcoin brief",
+            url = null,
+            host = null,
+            createdAt = 2,
+        )
+        val gone = YouHighlight(
+            id = "gone",
+            quote = "bitcoin brief",
+            url = null,
+            host = null,
+            createdAt = 3,
+        )
+        val writing = YouWriting(
+            id = "w1",
+            title = "Other topic",
+            summary = null,
+            imageUrl = null,
+            url = "nostr:naddr1qq",
+            publishedAt = 4,
+        )
+        val merged = mergeYouItems(
+            highlights = listOf(keep, gone),
+            writings = listOf(writing),
+            publicBookmarks = emptyList(),
+            webBookmarks = emptyList(),
+            deletedIds = setOf("gone"),
+            query = "bitcoin",
+        )
+        assertEquals(listOf("h:keep"), merged.map { it.key })
+    }
+
+    @Test
     fun writingFromSkipsEventsWithoutADtag() {
         val event = article(d = null, title = "Nope")
         assertNull(YouViewModel.writingFrom(event))

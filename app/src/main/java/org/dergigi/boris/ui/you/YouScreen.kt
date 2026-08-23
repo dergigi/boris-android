@@ -183,7 +183,7 @@ fun YouHighlightsContent(
     deletedIds: Set<String> = emptySet(),
     menuFor: (YouHighlight) -> HighlightCardMenu? = { null },
 ) {
-    var tab by rememberSaveable { mutableStateOf(ContentTab.Highlights) }
+    var tab by rememberSaveable { mutableStateOf(ContentTab.All) }
     var query by rememberSaveable { mutableStateOf("") }
     PullToRefreshBox(
         isRefreshing = refreshing,
@@ -208,7 +208,12 @@ fun YouHighlightsContent(
                 )
             }
             item(key = "tabs") {
-                ContentTabs(tab = tab, onSelect = { tab = it }, showBookmarks = true)
+                ContentTabs(
+                    tab = tab,
+                    onSelect = { tab = it },
+                    showAll = true,
+                    showBookmarks = true,
+                )
             }
             if (state is YouUiState.Ready) {
                 item(key = "search") {
@@ -241,6 +246,77 @@ fun YouHighlightsContent(
                 }
                 is YouUiState.Ready -> {
                     when (tab) {
+                        ContentTab.All -> {
+                            val merged = mergeYouItems(
+                                highlights = state.highlights,
+                                writings = state.writings,
+                                publicBookmarks = state.publicBookmarks,
+                                webBookmarks = state.webBookmarks,
+                                deletedIds = deletedIds,
+                                query = query,
+                            )
+                            if (merged.isEmpty()) {
+                                item(key = "empty-all") {
+                                    val hasAny = state.highlights.any { it.id !in deletedIds } ||
+                                        state.writings.isNotEmpty() ||
+                                        state.publicBookmarks.isNotEmpty() ||
+                                        state.webBookmarks.isNotEmpty()
+                                    if (!hasAny) {
+                                        StatusMessage(
+                                            text = stringResource(R.string.you_all_empty),
+                                            onRetry = { onRefresh(tab) },
+                                        )
+                                    } else {
+                                        NoSearchMatches()
+                                    }
+                                }
+                            } else {
+                                items(merged, key = { it.key }) { entry ->
+                                    when (entry) {
+                                        is YouMergedItem.Highlight -> {
+                                            val item = entry.item
+                                            HighlightCard(
+                                                quote = item.quote,
+                                                context = item.context,
+                                                color = highlightColor,
+                                                createdAt = item.createdAt,
+                                                authorName = displayName,
+                                                host = item.host,
+                                                url = item.url,
+                                                authorPicture = pictureUrl,
+                                                onClick = item.url?.let { url ->
+                                                    { onOpenHighlight(url, item.id, item.quote) }
+                                                },
+                                                menu = menuFor(item),
+                                            )
+                                        }
+                                        is YouMergedItem.Writing -> {
+                                            YouWritingCard(
+                                                item = entry.item,
+                                                actions = actions,
+                                                onOpenArticle = onOpenArticle,
+                                            )
+                                        }
+                                        is YouMergedItem.Bookmark -> {
+                                            YouBookmarkCard(
+                                                item = entry.item,
+                                                actions = actions,
+                                                onOpenArticle = onOpenArticle,
+                                                onOpenHighlight = onOpenHighlight,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            if (!endReached && state.highlights.isNotEmpty()) {
+                                item(key = "load-more") {
+                                    LoadMoreRow(
+                                        loading = loadingMore,
+                                        onLoadMore = onLoadMore,
+                                    )
+                                }
+                            }
+                        }
                         ContentTab.Highlights -> {
                             val visible = state.highlights
                                 .filter { it.id !in deletedIds && it.matchesQuery(query) }
@@ -327,7 +403,7 @@ fun YouHighlightsContent(
                                 actions = actions,
                             )
                         }
-                        ContentTab.Rss, ContentTab.All -> Unit
+                        ContentTab.Rss -> Unit
                     }
                 }
             }
