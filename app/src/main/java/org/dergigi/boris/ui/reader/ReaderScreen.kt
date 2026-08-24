@@ -1054,7 +1054,7 @@ fun ReaderScreenContent(
                     onOpenProfile = onOpenProfile,
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
-                    modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
+                    modifier = pinnedPad,
                 )
             }
             is ReaderUiState.Ready -> {
@@ -1140,11 +1140,12 @@ private fun OpenedHighlightPane(
         if (mine) HighlightMine else HighlightOther,
     )
     val authorName = Profile.displayName(highlight.authorPubkey, author)
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 24.dp),
-        contentAlignment = Alignment.TopCenter,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         HighlightCard(
             quote = highlight.quote,

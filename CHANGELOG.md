@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Opened highlight cards sit below the reader top bar instead of under it
+
 ## [1.5.6] - 2026-08-24
 
 ### Added
