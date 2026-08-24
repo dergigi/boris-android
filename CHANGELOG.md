@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Show/hide archived toggle on the Home toolbar
+
+### Changed
+
+- Home overflow menu is Help, About, and Settings
+
 ### Fixed
 
 - Opened highlight cards sit below the reader top bar instead of under it

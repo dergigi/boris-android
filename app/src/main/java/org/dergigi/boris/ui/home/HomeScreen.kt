@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
@@ -47,6 +48,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -114,6 +116,7 @@ fun HomeScreen(
     onOpenProfile: (String) -> Unit = {},
     onOpenLogin: () -> Unit = {},
     onOpenHomeSettings: () -> Unit = {},
+    onOpenAboutSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
@@ -173,44 +176,46 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onOpenAbout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                            contentDescription = stringResource(R.string.home_about),
-                        )
-                    }
-                    TopBarMoreMenu(
-                        items = buildList {
-                            if (loggedIn) {
-                                add(
-                                    TopBarMenuItem(
-                                        label = stringResource(
-                                            if (settings.hideArchivedOnHome) {
-                                                R.string.home_show_archived
-                                            } else {
-                                                R.string.home_hide_archived
-                                            },
-                                        ),
-                                        icon = BorisIcons.Books,
-                                        onClick = {
-                                            SettingsSync.apply(
-                                                settings.withBoolean(
-                                                    "hideArchivedOnHome",
-                                                    !settings.hideArchivedOnHome,
-                                                ),
-                                            )
-                                        },
-                                    ),
+                    if (loggedIn) {
+                        val hidingArchived = settings.hideArchivedOnHome
+                        IconToggleButton(
+                            checked = !hidingArchived,
+                            onCheckedChange = { showArchived ->
+                                SettingsSync.apply(
+                                    settings.withBoolean("hideArchivedOnHome", !showArchived),
                                 )
-                            }
-                            add(
-                                TopBarMenuItem(
-                                    label = stringResource(R.string.home_settings),
-                                    icon = Icons.Outlined.Settings,
-                                    onClick = onOpenHomeSettings,
+                            },
+                        ) {
+                            Icon(
+                                imageVector = BorisIcons.Books,
+                                contentDescription = stringResource(
+                                    if (hidingArchived) {
+                                        R.string.home_show_archived
+                                    } else {
+                                        R.string.home_hide_archived
+                                    },
                                 ),
                             )
-                        },
+                        }
+                    }
+                    TopBarMoreMenu(
+                        items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.home_help),
+                                icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                                onClick = onOpenAbout,
+                            ),
+                            TopBarMenuItem(
+                                label = stringResource(R.string.settings_about),
+                                icon = Icons.Outlined.Info,
+                                onClick = onOpenAboutSettings,
+                            ),
+                            TopBarMenuItem(
+                                label = stringResource(R.string.home_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onOpenHomeSettings,
+                            ),
+                        ),
                     )
                 },
                 windowInsets = WindowInsets(0),

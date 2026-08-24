@@ -260,6 +260,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenAboutSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.About)) {
+                                launchSingleTop = true
+                            }
+                        },
                         viewModel = homeViewModel,
                         authViewModel = authViewModel,
                     )
