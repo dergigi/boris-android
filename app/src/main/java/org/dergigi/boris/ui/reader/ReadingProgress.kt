@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ReadingPositionStore
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 object ReadingProgress {
@@ -52,6 +55,32 @@ object ReadingProgress {
     fun restoreOffset(fraction: Float, scrollMax: Int): Int? {
         if (scrollMax <= 0 || fraction < MIN_RESTORE_FRACTION) return null
         return (fraction.coerceIn(0f, 1f) * scrollMax).roundToInt()
+    }
+}
+
+/**
+ * Classifies settled scroll positions as reading vs exploratory jumps (issue #86).
+ * Reading advances the saved position; a jump keeps it so the reader can offer a
+ * way back. While drifted, slow local movement means the user started reading at
+ * the new spot, so it becomes the saved position.
+ */
+object ReadingDrift {
+    /** Settling farther than this many viewports from the saved position is a jump. */
+    private const val JUMP_VIEWPORTS = 3f
+
+    /** While drifted, moving less than this since the last settle counts as reading. */
+    private const val ADOPT_VIEWPORTS = 1f
+
+    fun shouldSave(
+        settledOffset: Int,
+        savedOffset: Int,
+        previousSettledOffset: Int?,
+        viewportHeight: Int,
+    ): Boolean {
+        if (viewportHeight <= 0) return true
+        if (abs(settledOffset - savedOffset) <= viewportHeight * JUMP_VIEWPORTS) return true
+        val previous = previousSettledOffset ?: return false
+        return abs(settledOffset - previous) <= viewportHeight * ADOPT_VIEWPORTS
     }
 }
 
@@ -96,10 +125,16 @@ fun CardReadingProgress(
     }
 }
 
+/**
+ * Bottom-of-reader progress bar. [percent] fills the bar; [scrollPercent], when
+ * set, marks the current (exploratory) scroll position as a small dot while the
+ * fill keeps showing the saved reading position (issue #86).
+ */
 @Composable
 fun ReadingProgressBar(
     percent: Int,
     modifier: Modifier = Modifier,
+    scrollPercent: Int? = null,
 ) {
     val clamped = percent.coerceIn(0, 100)
     val complete = ReadingProgress.isComplete(clamped)
@@ -125,16 +160,38 @@ fun ReadingProgressBar(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(2.dp)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                .height(8.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(clamped / 100f)
-                    .background(barColor),
-            )
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(clamped / 100f)
+                        .background(barColor),
+                )
+            }
+            if (scrollPercent != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(scrollPercent.coerceIn(0, 100) / 100f)
+                        .height(8.dp),
+                    contentAlignment = Alignment.CenterEnd,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                    )
+                }
+            }
         }
         Text(
             text = if (complete) {

@@ -81,6 +81,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -1434,13 +1435,31 @@ private fun ArticleBody(
         }
         positionRestored = true
     }
+    // Issue #86: while the user explores far away from the saved reading
+    // position, keep that position and offer a jump back instead of
+    // overwriting it with the transient scroll location.
+    var driftFraction by remember(content.url) { mutableStateOf<Float?>(null) }
+    var lastSettled by remember(content.url) { mutableStateOf<Int?>(null) }
     LaunchedEffect(content.url) {
         snapshotFlow { scrollState.value }.collectLatest { value ->
             if (!positionRestored) return@collectLatest
             val max = scrollState.maxValue
             if (max <= 0) return@collectLatest
             delay(400)
-            ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
+            val saved = ReadingPositionStore.fraction(content.url)
+            val reading = ReadingDrift.shouldSave(
+                settledOffset = value,
+                savedOffset = (saved * max).roundToInt(),
+                previousSettledOffset = lastSettled,
+                viewportHeight = viewportHeight,
+            )
+            if (reading) {
+                ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
+                driftFraction = null
+            } else {
+                driftFraction = saved
+            }
+            lastSettled = value
         }
     }
     TtsSpokenSync(
@@ -1978,6 +1997,21 @@ private fun ArticleBody(
                 }
             }
         }
+        driftFraction?.let { fraction ->
+            JumpBackPill(
+                percent = (fraction * 100f).roundToInt(),
+                onClick = {
+                    scope.launch {
+                        val max = scrollState.maxValue
+                        if (max > 0) scrollState.animateScrollTo((fraction * max).roundToInt())
+                        driftFraction = null
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomChromePadding + 16.dp),
+            )
+        }
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -1989,7 +2023,7 @@ private fun ArticleBody(
                 onOpenArticle = onOpenArticle,
                 showCurrentArticle = true,
             )
-            ArticleScrollProgress(scrollState)
+            ArticleScrollProgress(scrollState, driftFraction)
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2397,10 +2431,50 @@ private fun HighlightedMarkdownNode(
 }
 
 @Composable
-private fun ArticleScrollProgress(scrollState: ScrollState) {
-    ReadingProgressBar(
-        percent = ReadingProgress.percent(scrollState.value, scrollState.maxValue),
-    )
+private fun ArticleScrollProgress(scrollState: ScrollState, driftFraction: Float?) {
+    val scrollPercent = ReadingProgress.percent(scrollState.value, scrollState.maxValue)
+    if (driftFraction != null) {
+        // Drifted: the fill keeps the saved reading position, the dot marks
+        // where the viewport currently is.
+        ReadingProgressBar(
+            percent = (driftFraction * 100f).roundToInt(),
+            scrollPercent = scrollPercent,
+        )
+    } else {
+        ReadingProgressBar(percent = scrollPercent)
+    }
+}
+
+@Composable
+private fun JumpBackPill(
+    percent: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        shadowElevation = 2.dp,
+        modifier = modifier,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.History,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = stringResource(R.string.reader_jump_back, percent),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+    }
 }
 
 @Composable
