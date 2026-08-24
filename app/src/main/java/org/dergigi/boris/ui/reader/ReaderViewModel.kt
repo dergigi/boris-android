@@ -22,7 +22,9 @@ import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.OpenedHighlight
 import org.dergigi.boris.data.ReaderFetchException
+import org.dergigi.boris.data.ReaderHighlightException
 import org.dergigi.boris.data.ReaderImageException
 import org.dergigi.boris.data.ResolvedEventRef
 import org.dergigi.boris.data.UrlExtractor
@@ -237,6 +239,18 @@ class ReaderViewModel(
                 _highlightsLoaded.value = true
                 _state.value = ReaderUiState.ImageOnly(e.imageUrl)
                 openGallery(listOf(e.imageUrl), 0)
+                publishSaveState()
+            } catch (e: ReaderHighlightException) {
+                highlightJob?.cancel()
+                membershipJob?.cancel()
+                archiveJob?.cancel()
+                rssFeedJob?.cancel()
+                eventRefJob?.cancel()
+                _highlights.value = emptyList()
+                _highlightCount.value = 0
+                _highlightsLoaded.value = true
+                _state.value = ReaderUiState.Highlight(e.highlight, url)
+                startAuthorFetch(e.highlight.authorPubkey)
                 publishSaveState()
             } catch (e: Exception) {
                 highlightJob?.cancel()
@@ -635,8 +649,12 @@ class ReaderViewModel(
     }
 
     private fun startAuthorFetch(content: ReadableContent) {
+        startAuthorFetch(content.authorPubkey)
+    }
+
+    private fun startAuthorFetch(authorPubkey: String?) {
         authorJob?.cancel()
-        val pubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
+        val pubkey = authorPubkey?.trim()?.takeIf { it.length == 64 }
         if (pubkey == null) {
             resetAuthor()
             return
@@ -1186,6 +1204,10 @@ sealed interface ReaderUiState {
         val imageUrl: String? = null,
     ) : ReaderUiState
     data class Ready(val content: ReadableContent) : ReaderUiState
+    data class Highlight(
+        val highlight: OpenedHighlight,
+        val eventUrl: String,
+    ) : ReaderUiState
     data class ImageOnly(val url: String) : ReaderUiState
     data class Error(
         val message: String,

@@ -178,6 +178,7 @@ import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingTime
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
+import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
@@ -188,6 +189,7 @@ import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
+import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.ArticleCopyMenuItems
@@ -198,6 +200,7 @@ import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.settings.SettingsViewModel
+import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -227,6 +230,9 @@ fun ReaderScreen(
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     onOpenBrowser: (String) -> Unit,
     viewModel: ReaderViewModel = viewModel(),
     menuViewModel: HighlightMenuViewModel = viewModel(),
@@ -344,6 +350,7 @@ fun ReaderScreen(
         onRetry = { viewModel.load() },
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
+        onOpenHighlight = onOpenHighlight,
         onOpenProfile = onOpenProfile,
         onOpenReaderSettings = onOpenReaderSettings,
         onOpenHighlightSettings = onOpenHighlightSettings,
@@ -547,6 +554,9 @@ fun ReaderScreenContent(
     onRetry: () -> Unit,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
+        onOpenArticle(url)
+    },
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit = {},
     onOpenHighlightSettings: () -> Unit = {},
@@ -565,6 +575,7 @@ fun ReaderScreenContent(
     val context = LocalContext.current
     val articleUrl = when (state) {
         is ReaderUiState.Ready -> state.content.url
+        is ReaderUiState.Highlight -> state.eventUrl
         is ReaderUiState.Error -> state.url
         is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
         is ReaderUiState.ImageOnly -> state.url
@@ -685,6 +696,9 @@ fun ReaderScreenContent(
                 title = {
                     val title = (state as? ReaderUiState.Ready)?.content?.title
                         ?: (state as? ReaderUiState.Loading)?.title
+                        ?: (state as? ReaderUiState.Highlight)?.let {
+                            stringResource(R.string.you_tab_highlights)
+                        }
                     val scrollTopLabel = stringResource(R.string.reader_scroll_to_top)
                     Text(
                         text = title.orEmpty(),
@@ -1031,6 +1045,18 @@ fun ReaderScreenContent(
                 }
             }
             is ReaderUiState.ImageOnly -> Unit
+            is ReaderUiState.Highlight -> {
+                OpenedHighlightPane(
+                    state = state,
+                    author = author,
+                    settings = settings,
+                    onOpenHighlight = onOpenHighlight,
+                    onOpenProfile = onOpenProfile,
+                    canDeleteHighlight = canDeleteHighlight,
+                    onDeleteHighlight = onDeleteHighlight,
+                    modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
+                )
+            }
             is ReaderUiState.Ready -> {
                 ArticleBody(
                     content = state.content,
@@ -1091,6 +1117,62 @@ fun ReaderScreenContent(
             onPageChange = onGalleryPage,
         )
     }
+    }
+}
+
+@Composable
+private fun OpenedHighlightPane(
+    state: ReaderUiState.Highlight,
+    author: Profile?,
+    settings: UserSettings,
+    onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    onOpenProfile: (String) -> Unit,
+    canDeleteHighlight: (String?) -> Boolean,
+    onDeleteHighlight: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val highlight = state.highlight
+    val context = LocalContext.current
+    val sessionHex = remember { SessionStore.load(context)?.pubkeyHex }
+    val mine = highlight.authorPubkey.equals(sessionHex, ignoreCase = true)
+    val color = hexColor(
+        if (mine) settings.highlightColorMine else settings.highlightColorNostrverse,
+        if (mine) HighlightMine else HighlightOther,
+    )
+    val authorName = Profile.displayName(highlight.authorPubkey, author)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp, vertical = 24.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        HighlightCard(
+            quote = highlight.quote,
+            context = highlight.context,
+            color = color,
+            createdAt = highlight.createdAt,
+            authorName = authorName,
+            host = highlight.host,
+            url = highlight.articleUrl,
+            authorPicture = author?.picture,
+            onClick = {
+                onOpenHighlight(highlight.articleUrl, highlight.id, highlight.quote)
+            },
+            menu = HighlightCardMenu(
+                highlightId = highlight.id,
+                authorHex = highlight.authorPubkey,
+                onGoToQuote = {
+                    onOpenHighlight(highlight.articleUrl, highlight.id, highlight.quote)
+                },
+                onViewProfile = { onOpenProfile(highlight.authorPubkey) },
+                onDelete = if (canDeleteHighlight(highlight.authorPubkey)) {
+                    { onDeleteHighlight(highlight.id) }
+                } else {
+                    null
+                },
+            ),
+            modifier = Modifier.widthIn(max = 720.dp),
+        )
     }
 }
 

@@ -447,6 +447,9 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenHighlight = { url, id, quote ->
+                            navController.navigate(Routes.reader(url, id, quote))
+                        },
                         onOpenBrowser = { url ->
                             navController.navigate(Routes.browser(url)) {
                                 launchSingleTop = true

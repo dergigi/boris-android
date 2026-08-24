@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Opening a highlight event shows the highlight card, then the article at the quote
+
 ### Fixed
 
 - Newsletter articles built from email layout tables render as prose instead of broken tables

@@ -7,6 +7,7 @@ import okhttp3.Request
 import okhttp3.Response
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
+import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.RelayQuery
 import java.io.File
 import java.io.IOException
@@ -298,9 +299,12 @@ class ReaderRepository(
                 sourceZapTags = zapTags(event),
             )
         }
+        if (event.kind == Nip01Event.KIND_HIGHLIGHT) {
+            throw openedHighlightFrom(event)?.let(::ReaderHighlightException)
+                ?: IOException(ERROR_NO_ARTICLE)
+        }
         if (event.kind != Nip01Event.KIND_TEXT_NOTE &&
-            event.kind != Nip01Event.KIND_COMMENT &&
-            event.kind != Nip01Event.KIND_HIGHLIGHT
+            event.kind != Nip01Event.KIND_COMMENT
         ) {
             throw IOException("This nostr event is not a note or article")
         }
@@ -502,3 +506,33 @@ internal class ReaderFetchException(
 internal class ReaderImageException(
     val imageUrl: String,
 ) : IOException("image:${imageUrl}")
+
+data class OpenedHighlight(
+    val id: String,
+    val quote: String,
+    val context: String?,
+    val articleUrl: String,
+    val authorPubkey: String,
+    val createdAt: Long,
+    val host: String?,
+)
+
+internal class ReaderHighlightException(
+    val highlight: OpenedHighlight,
+) : IOException("highlight:${highlight.id}")
+
+internal fun openedHighlightFrom(event: Nip01Event): OpenedHighlight? {
+    if (event.kind != Nip01Event.KIND_HIGHLIGHT) return null
+    val quote = event.content.trim()
+    if (quote.isBlank()) return null
+    val articleUrl = Nip84.articleUrl(event) ?: return null
+    return OpenedHighlight(
+        id = event.id,
+        quote = quote,
+        context = event.tagValue("context"),
+        articleUrl = articleUrl,
+        authorPubkey = event.pubkey,
+        createdAt = event.createdAt,
+        host = ArticleUrl.host(articleUrl),
+    )
+}
