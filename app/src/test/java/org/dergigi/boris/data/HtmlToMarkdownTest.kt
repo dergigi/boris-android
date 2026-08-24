@@ -121,6 +121,47 @@ class HtmlToMarkdownTest {
     }
 
     @Test
+    fun unwrapsNewsletterLayoutTablesToProse() {
+        // Ghost email markup: nested tables with headings and paragraphs in
+        // cells (issue #97, TFTC Bitcoin Brief).
+        val markdown = HtmlToMarkdown.convert(
+            """<table class="bb-wrap"><tr><td class="bb-pad">""" +
+                "<table><tr><td>" +
+                "<h2>LEAD STORY</h2>" +
+                "<p>Treasury announced it will double the buybacks.</p>" +
+                "<p>I think that read is lazy.</p>" +
+                "</td></tr></table>" +
+                "</td></tr></table>",
+        )
+        assertTrue(markdown.contains("## LEAD STORY"))
+        assertTrue(markdown.contains("Treasury announced it will double the buybacks."))
+        assertTrue(markdown.contains("I think that read is lazy."))
+        assertFalse(markdown.lines().any { it.startsWith("|") })
+    }
+
+    @Test
+    fun keepsDataTableInsideLayoutTable() {
+        val markdown = HtmlToMarkdown.convert(
+            "<table><tr><td>" +
+                "<p>As of August 21, 2026</p>" +
+                "<table><tr><td>bitcoin price</td><td>~$77,061</td></tr>" +
+                "<tr><td>Block height</td><td>963,443</td></tr></table>" +
+                "</td></tr></table>",
+        )
+        assertTrue(markdown.contains("As of August 21, 2026"))
+        assertTrue(markdown.contains("| bitcoin price | ~$77,061 |"))
+        assertTrue(markdown.contains("| Block height | 963,443 |"))
+    }
+
+    @Test
+    fun singleColumnTableBecomesProse() {
+        val markdown = HtmlToMarkdown.convert(
+            "<table><tr><td>Looking for a wallet or node?</td></tr></table>",
+        )
+        assertEquals("Looking for a wallet or node?", markdown)
+    }
+
+    @Test
     fun numbersOrderedListItems() {
         val markdown = HtmlToMarkdown.convert(
             "<ol><li>first</li><li>second</li></ol><ul><li>bullet</li></ul>",

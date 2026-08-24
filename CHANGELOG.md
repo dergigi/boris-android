@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Newsletter articles built from email layout tables render as prose instead of broken tables
+
 ## [1.5.5] - 2026-08-24
 
 ### Added

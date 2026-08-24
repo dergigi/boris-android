@@ -30,6 +30,32 @@ object HtmlToMarkdown {
             .replace(Regex("(?is)<head.*?</head>"), "")
             .replace(Regex("(?s)<!--.*?-->"), "")
 
+        // Ghost and other email-style newsletters nest article prose inside
+        // layout <table>s. Converting those to GFM smashes headings and
+        // paragraphs into single cells (issue #97). Unwrap tables whose cells
+        // hold block content, innermost first; real data tables are renamed so
+        // an outer wrapper still reads as layout, then restored for the GFM
+        // rule below.
+        var rounds = 0
+        while (rounds++ < 32) {
+            var sawTable = false
+            s = innermostTable.replace(s) { m ->
+                sawTable = true
+                val inner = m.groupValues[1]
+                if (isLayoutTable(inner)) {
+                    "\n\n" + inner.replace(tableChrome, "\n\n") + "\n\n"
+                } else {
+                    // Rename all structure tags so an enclosing layout
+                    // table's unwrap cannot strip this table's rows.
+                    m.value.replace(tableTag) { t ->
+                        "<${t.groupValues[1]}data${t.groupValues[2]}"
+                    }
+                }
+            }
+            if (!sawTable) break
+        }
+        s = s.replace(dataTableTag) { t -> "<${t.groupValues[1]}${t.groupValues[2]}" }
+
         // Footnote refs before the anchor rule so <sup><a href="#id"> does not
         // become a plain link. Only ids with a matching <li id> get a pair.
         val footnoteIds = linkedMapOf<String, Int>()
@@ -162,6 +188,33 @@ object HtmlToMarkdown {
             .find(tag)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
 
     private fun stripTags(s: String): String = s.replace(Regex("<[^>]+>"), "")
+
+    /** A table without nested <table>s, so nesting resolves innermost first. */
+    private val innermostTable =
+        Regex("(?is)<table[^>]*>((?:(?!<table[\\s>]).)*?)</table>")
+
+    private val tableChrome =
+        Regex("(?is)</?(?:thead|tbody|tfoot|tr|caption|t[hd])[^>]*>")
+
+    private val tableTag =
+        Regex("(?i)<(/?)(table|thead|tbody|tfoot|caption|tr|t[hd])\\b")
+
+    private val dataTableTag =
+        Regex("(?i)<(/?)data(table|thead|tbody|tfoot|caption|tr|t[hd])\\b")
+
+    private val blockInsideTable =
+        Regex("(?is)<(?:p|h[1-6]|ul|ol|blockquote|figure|datatable)\\b")
+
+    private val tableRow = Regex("(?is)<tr[^>]*>(.*?)</tr>")
+
+    private val tableCellOpen = Regex("(?is)<t[hd][\\s>]")
+
+    private fun isLayoutTable(inner: String): Boolean {
+        if (blockInsideTable.containsMatchIn(inner)) return true
+        val maxCells = tableRow.findAll(inner)
+            .maxOfOrNull { row -> tableCellOpen.findAll(row.groupValues[1]).count() } ?: 0
+        return maxCells < 2
+    }
 
     private val onlyMarkdownImage = Regex("""^!\[[^\]]*]\([^)]+\)$""")
 
