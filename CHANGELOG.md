@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-08-24
+
 ### Added
 
 - All filter on the You profile page
@@ -1427,7 +1429,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.4...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.5...HEAD
+[1.5.5]: https://github.com/dergigi/boris-android/releases/tag/v1.5.5
 [1.5.4]: https://github.com/dergigi/boris-android/releases/tag/v1.5.4
 [1.5.3]: https://github.com/dergigi/boris-android/releases/tag/v1.5.3
 [1.5.2]: https://github.com/dergigi/boris-android/releases/tag/v1.5.2
