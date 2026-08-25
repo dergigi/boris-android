@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.TopBarMoreMenu
+import org.dergigi.boris.ui.TopBarRefreshIndicator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +34,7 @@ fun ProfileScreen(
     viewModel: YouViewModel = viewModel(),
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val title = Profile.displayName(
         runCatching { Nip19.npubDecode(npub) }.getOrDefault(""),
         profile,
@@ -54,6 +56,7 @@ fun ProfileScreen(
                     }
                 },
                 actions = {
+                    TopBarRefreshIndicator(refreshing = refreshing)
                     TopBarMoreMenu(items = profileLinkMenuItems(npub))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
