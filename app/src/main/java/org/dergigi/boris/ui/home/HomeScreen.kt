@@ -280,6 +280,7 @@ fun HomeScreen(
                     }
                     viewModel.startListening(article.url)
                 },
+                onRefreshRandomArticles = viewModel::refreshRandomArticles,
                 onMarkAsRead = { article ->
                     viewModel.markAsRead(article)?.let(launcher::launch)
                 },
@@ -356,6 +357,7 @@ fun HomeScreenContent(
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     onListen: (HighlightedArticle) -> Unit = {},
+    onRefreshRandomArticles: () -> Unit = {},
     onMarkAsRead: (HighlightedArticle) -> Unit = {},
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
@@ -611,6 +613,7 @@ fun HomeScreenContent(
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
                                                 onListen = onListen,
+                                                onHeaderClick = onRefreshRandomArticles,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -952,13 +955,23 @@ private fun HighlightedRow(
     onListen: (HighlightedArticle) -> Unit,
     onMarkAsRead: (HighlightedArticle) -> Unit,
     icon: ImageVector = BorisIcons.Highlighter,
+    onHeaderClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        val headerModifier = if (onHeaderClick == null) {
+            Modifier.padding(horizontal = 20.dp)
+        } else {
+            Modifier
+                .padding(horizontal = 12.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onHeaderClick)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        }
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = headerModifier,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

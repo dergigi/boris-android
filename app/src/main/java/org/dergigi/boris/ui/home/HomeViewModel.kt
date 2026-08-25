@@ -215,6 +215,23 @@ class HomeViewModel(
         }
     }
 
+    fun refreshRandomArticles() {
+        val current = _highlights.value as? HomeHighlightsState.Ready ?: return
+        val pubkey = SessionStore.load(getApplication())?.pubkeyHex ?: return
+        val randomArticles = RandomArticles.articles(
+            cachedLibraryItems(pubkey),
+            current.archivedKeys,
+            ARTICLE_LIMIT,
+        )
+        if (randomArticles.isEmpty()) return
+        val hydrated = HighlightedArticles.hydrate(randomArticles)
+        val previews = hydrated
+            .map { it.url }
+            .distinct()
+            .associateWith { ArticlePreview.get(it) }
+        _highlights.value = current.copy(randomArticles = applyPreviews(hydrated, previews))
+    }
+
     fun markAsRead(article: HighlightedArticle): Intent? =
         markAsReadAction.request(article.url, article.title, article.imageUrl)
 
