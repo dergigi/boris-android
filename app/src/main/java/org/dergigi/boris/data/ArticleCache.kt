@@ -86,27 +86,14 @@ object ArticleCache {
             .putOpt("authorPubkey", content.authorPubkey)
             .putOpt("imageUrl", content.imageUrl)
             .putOpt("summary", content.summary)
-            .put(
-                "sourceZapTags",
-                JSONArray().apply {
-                    content.sourceZapTags.forEach { tag ->
-                        put(JSONArray().apply { tag.forEach(::put) })
-                    }
-                },
-            )
+            .put("sourceZapTags", tagsToJson(content.sourceZapTags))
+            .put("tags", tagsToJson(content.tags))
             .put("savedAt", System.currentTimeMillis())
             .toString()
 
     internal fun decode(json: String): ReadableContent {
         val obj = JSONObject(json)
         fun text(name: String): String? = if (obj.isNull(name)) null else obj.getString(name)
-        val zapTags = buildList {
-            val rows = obj.optJSONArray("sourceZapTags") ?: return@buildList
-            for (i in 0 until rows.length()) {
-                val row = rows.getJSONArray(i)
-                add(buildList { for (j in 0 until row.length()) add(row.getString(j)) })
-            }
-        }
         return ReadableContent(
             url = obj.getString("url"),
             title = text("title"),
@@ -118,8 +105,24 @@ object ArticleCache {
             authorPubkey = text("authorPubkey"),
             imageUrl = text("imageUrl"),
             summary = text("summary"),
-            sourceZapTags = zapTags,
+            sourceZapTags = tagsFromJson(obj.optJSONArray("sourceZapTags")),
+            tags = tagsFromJson(obj.optJSONArray("tags")),
         )
+    }
+
+    private fun tagsToJson(tags: List<List<String>>): JSONArray =
+        JSONArray().apply {
+            tags.forEach { tag ->
+                put(JSONArray().apply { tag.forEach(::put) })
+            }
+        }
+
+    private fun tagsFromJson(rows: JSONArray?): List<List<String>> = buildList {
+        if (rows == null) return@buildList
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONArray(i)
+            add(buildList { for (j in 0 until row.length()) add(row.getString(j)) })
+        }
     }
 
     private fun fileFor(url: String): File? {

@@ -39,16 +39,19 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,6 +69,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -89,6 +93,11 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
+import org.dergigi.boris.data.HomeFilters
+import org.dergigi.boris.data.ReadingPositionStore
+import org.dergigi.boris.data.SensitiveContent
+import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleActionsMenu
 import org.dergigi.boris.data.HomeOnboardingStore
@@ -176,28 +185,7 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    if (loggedIn) {
-                        val hidingArchived = settings.hideArchivedOnHome
-                        IconToggleButton(
-                            checked = !hidingArchived,
-                            onCheckedChange = { showArchived ->
-                                SettingsSync.apply(
-                                    settings.withBoolean("hideArchivedOnHome", !showArchived),
-                                )
-                            },
-                        ) {
-                            Icon(
-                                imageVector = BorisIcons.Books,
-                                contentDescription = stringResource(
-                                    if (hidingArchived) {
-                                        R.string.home_show_archived
-                                    } else {
-                                        R.string.home_hide_archived
-                                    },
-                                ),
-                            )
-                        }
-                    }
+                    HomeFilterMenu(settings = settings)
                     TopBarMoreMenu(
                         items = listOf(
                             TopBarMenuItem(
@@ -252,6 +240,8 @@ fun HomeScreen(
                 refreshing = refreshing,
                 loggedIn = loggedIn,
                 hideArchived = settings.hideArchivedOnHome,
+                hideCompleted = settings.hideCompletedOnHome,
+                hideNsfw = settings.hideNsfwOnHome,
                 sectionOrder = HomeSections.order(settings.homeSectionOrder),
                 mineColor = hexColor(settings.highlightColorMine, HighlightMine),
                 friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
@@ -343,6 +333,8 @@ fun HomeScreenContent(
     refreshing: Boolean,
     loggedIn: Boolean,
     hideArchived: Boolean,
+    hideCompleted: Boolean = false,
+    hideNsfw: Boolean = false,
     mineColor: Color,
     friendsColor: Color,
     nostrverseColor: Color,
@@ -451,46 +443,79 @@ fun HomeScreenContent(
                 }
             }
             is HomeHighlightsState.Ready -> {
-                val yours = ArchivedArticles.visible(
-                    highlights.yours,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val friends = ArchivedArticles.visible(
-                    highlights.friends,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val others = ArchivedArticles.visible(
-                    highlights.others,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val continueReading = ArchivedArticles.visible(
-                    highlights.continueReading,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val mostHighlighted = ArchivedArticles.visible(
-                    highlights.mostHighlighted,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val shortReads = ArchivedArticles.visible(
-                    highlights.shortReads,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val longReads = ArchivedArticles.visible(
-                    highlights.longReads,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
-                val randomArticles = ArchivedArticles.visible(
-                    highlights.randomArticles,
-                    highlights.archivedKeys,
-                    hideArchived,
-                )
+                val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+                val yours = remember(
+                    highlights.yours, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.yours, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val friends = remember(
+                    highlights.friends, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.friends, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val others = remember(
+                    highlights.others, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.others, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val continueReading = remember(
+                    highlights.continueReading, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.continueReading, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val mostHighlighted = remember(
+                    highlights.mostHighlighted, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.mostHighlighted, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val shortReads = remember(
+                    highlights.shortReads, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.shortReads, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val longReads = remember(
+                    highlights.longReads, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.longReads, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
+                val randomArticles = remember(
+                    highlights.randomArticles, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.randomArticles, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = onRefresh,
@@ -504,8 +529,10 @@ fun HomeScreenContent(
                         Box(modifier = Modifier.fillMaxSize()) {
                             StatusMessage(
                                 text = stringResource(
-                                    if (hideArchived && highlights.archivedKeys.isNotEmpty()) {
-                                        R.string.home_empty_archived
+                                    if (hideCompleted || hideNsfw ||
+                                        (hideArchived && highlights.archivedKeys.isNotEmpty())
+                                    ) {
+                                        R.string.home_empty_filters
                                     } else {
                                         R.string.feed_empty
                                     },
@@ -539,8 +566,10 @@ fun HomeScreenContent(
                                 ) {
                                     StatusMessage(
                                         text = stringResource(
-                                            if (hideArchived && highlights.archivedKeys.isNotEmpty()) {
-                                                R.string.home_empty_archived
+                                            if (hideCompleted || hideNsfw ||
+                                                (hideArchived && highlights.archivedKeys.isNotEmpty())
+                                            ) {
+                                                R.string.home_empty_filters
                                             } else {
                                                 R.string.feed_empty
                                             },
@@ -905,6 +934,9 @@ private fun HighlightedArticleCard(
                 ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            val warning = remember(article.url, article.title) {
+                SensitiveContent.classify(article)
+            }
             Box(
                 modifier = Modifier
                     .size(CardImageSize)
@@ -929,7 +961,17 @@ private fun HighlightedArticleCard(
                         model = article.imageUrl,
                         contentDescription = article.title,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(if (warning != null) Modifier.blur(10.dp) else Modifier),
+                    )
+                }
+                if (warning != null) {
+                    NsfwBadge(
+                        warning = warning,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp),
                     )
                 }
             }
@@ -985,6 +1027,63 @@ private fun StatusMessage(
             Text(stringResource(R.string.feed_retry))
         }
     }
+}
+
+@Composable
+private fun HomeFilterMenu(settings: UserSettings) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(
+                imageVector = Icons.Outlined.FilterList,
+                contentDescription = stringResource(R.string.home_filters),
+            )
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+        ) {
+            FilterToggle(
+                label = stringResource(R.string.home_hide_archived),
+                checked = settings.hideArchivedOnHome,
+                onCheckedChange = {
+                    SettingsSync.apply(settings.withBoolean("hideArchivedOnHome", it))
+                },
+            )
+            FilterToggle(
+                label = stringResource(R.string.home_hide_completed),
+                checked = settings.hideCompletedOnHome,
+                onCheckedChange = {
+                    SettingsSync.apply(settings.withBoolean("hideCompletedOnHome", it))
+                },
+            )
+            FilterToggle(
+                label = stringResource(R.string.home_hide_nsfw),
+                checked = settings.hideNsfwOnHome,
+                onCheckedChange = {
+                    SettingsSync.apply(settings.withBoolean("hideNsfwOnHome", it))
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterToggle(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        leadingIcon = {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = null,
+            )
+        },
+        onClick = { onCheckedChange(!checked) },
+    )
 }
 
 private val CardWidth = 140.dp

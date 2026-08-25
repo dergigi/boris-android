@@ -36,6 +36,21 @@ fun HomeSettingsSection(
             checked = settings.hideArchivedOnHome,
             onCheckedChange = { onUpdate(settings.withBoolean("hideArchivedOnHome", it)) },
         )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_hide_completed),
+            checked = settings.hideCompletedOnHome,
+            onCheckedChange = { onUpdate(settings.withBoolean("hideCompletedOnHome", it)) },
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_hide_nsfw),
+            checked = settings.hideNsfwOnHome,
+            onCheckedChange = { onUpdate(settings.withBoolean("hideNsfwOnHome", it)) },
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_nsfw_warn),
+            checked = settings.nsfwWarnInReader,
+            onCheckedChange = { onUpdate(settings.withBoolean("nsfwWarnInReader", it)) },
+        )
         Text(
             text = stringResource(R.string.settings_home_sections),
             style = MaterialTheme.typography.titleSmall,

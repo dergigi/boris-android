@@ -56,7 +56,18 @@
     <string name="home_clipboard_dismiss">Dismiss</string>
     <string name="home_hide_archived">Hide archived</string>
     <string name="home_show_archived">Show archived</string>
+    <string name="home_hide_completed">Hide completed</string>
+    <string name="home_hide_nsfw">Hide NSFW</string>
+    <string name="home_filters">Filters</string>
     <string name="home_empty_archived">Everything here is already archived.</string>
+    <string name="home_empty_filters">Nothing matches these filters.</string>
+    <string name="nsfw_badge">NSFW</string>
+    <string name="nsfw_badge_maybe">Might be NSFW</string>
+    <string name="nsfw_reader_title">Sensitive content</string>
+    <string name="nsfw_reader_body">This article is marked as sensitive. Show it anyway?</string>
+    <string name="nsfw_reader_body_maybe">This article might be NSFW. Show it anyway?</string>
+    <string name="nsfw_reader_reason">Reason: %1$s</string>
+    <string name="nsfw_reader_show">Show article</string>
     <string name="home_article_actions">Article actions</string>
     <string name="home_start_listening">Start listening</string>
     <string name="home_continue_listening">Continue listening</string>
@@ -284,6 +295,9 @@
     <string name="feed_settings">Feed settings</string>
     <string name="library_settings">Library settings</string>
     <string name="settings_hide_archived">Hide archived articles</string>
+    <string name="settings_hide_completed">Hide completed articles</string>
+    <string name="settings_hide_nsfw">Hide NSFW articles</string>
+    <string name="settings_nsfw_warn">Warn before opening NSFW articles</string>
     <string name="settings_home_sections">Sections</string>
     <string name="settings_home_sections_intro">Order of sections on the Home screen. Empty sections are hidden.</string>
     <string name="settings_section_move_up">Move up</string>
@@ -351,7 +365,7 @@
     <string name="settings_tts_summary">Speed, voice, preview, follow-along</string>
     <string name="settings_media_summary">Full-width images</string>
     <string name="settings_highlights_summary">Style, colors, visibility</string>
-    <string name="settings_home_summary">Sections, archived articles</string>
+    <string name="settings_home_summary">Sections, filters</string>
     <string name="settings_feed_summary">Default view, scope, RSS feeds</string>
     <string name="settings_scroll_summary">Top bar, volume button scrolling</string>
     <string name="settings_airplane_summary">Downloads, storage, local relays</string>

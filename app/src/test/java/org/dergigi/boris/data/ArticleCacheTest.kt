@@ -37,6 +37,7 @@ class ArticleCacheTest {
             imageUrl = "https://example.com/cover.jpg",
             summary = "A summary.",
             sourceZapTags = listOf(listOf("zap", "pubkey", "relay", "1")),
+            tags = listOf(listOf("content-warning", "nudity"), listOf("t", "nsfw")),
         )
         assertEquals(content, ArticleCache.decode(ArticleCache.encode(content)))
     }

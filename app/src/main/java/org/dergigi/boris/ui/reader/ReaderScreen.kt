@@ -179,6 +179,7 @@ import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.ReadingTime
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
+import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
@@ -1059,6 +1060,17 @@ fun ReaderScreenContent(
                 )
             }
             is ReaderUiState.Ready -> {
+                val warning = remember(state.content.url, state.content.title, state.content.tags) {
+                    SensitiveContent.classify(state.content)
+                }
+                var revealed by remember(state.content.url) { mutableStateOf(false) }
+                if (warning != null && settings.nsfwWarnInReader && !revealed) {
+                    SensitiveContentGate(
+                        warning = warning,
+                        onShow = { revealed = true },
+                        modifier = if (hideBar) pinnedPad else Modifier.padding(innerPadding),
+                    )
+                } else {
                 ArticleBody(
                     content = state.content,
                     highlights = highlights,
@@ -1099,6 +1111,7 @@ fun ReaderScreenContent(
                     },
                     modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
                 )
+                }
             }
         }
     }
@@ -2494,6 +2507,52 @@ private fun JumpBackPill(
                 text = stringResource(R.string.reader_jump_back, percent),
                 style = MaterialTheme.typography.labelMedium,
             )
+        }
+    }
+}
+
+@Composable
+private fun SensitiveContentGate(
+    warning: SensitiveContent.Warning,
+    onShow: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.nsfw_reader_title),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(
+                if (warning.confirmed) R.string.nsfw_reader_body else R.string.nsfw_reader_body_maybe,
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        warning.reason?.let { reason ->
+            Text(
+                text = stringResource(R.string.nsfw_reader_reason, reason),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        Button(
+            onClick = onShow,
+            modifier = Modifier.padding(top = 24.dp),
+        ) {
+            Text(stringResource(R.string.nsfw_reader_show))
         }
     }
 }

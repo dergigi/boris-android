@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -46,6 +47,7 @@ import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.RelativeTime
+import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.reader.CardReadingProgress
 
 fun bookmarkFallbackIcon(item: BookmarkItem): ImageVector = when {
@@ -96,6 +98,9 @@ fun ArticleRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val warning = remember(url, title, summary) {
+            SensitiveContent.classify(url, title, summary)
+        }
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -115,7 +120,17 @@ fun ArticleRow(
                     model = imageUrl,
                     contentDescription = title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(if (warning != null) Modifier.blur(8.dp) else Modifier),
+                )
+            }
+            if (warning != null) {
+                NsfwBadge(
+                    warning = warning,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp),
                 )
             }
         }

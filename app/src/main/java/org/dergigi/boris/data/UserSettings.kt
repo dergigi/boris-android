@@ -46,7 +46,10 @@ class UserSettings internal constructor(
     val fullWidthImages: Boolean get() = bool("fullWidthImages", true)
     val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
-    val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", false)
+    val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", true)
+    val hideCompletedOnHome: Boolean get() = bool("hideCompletedOnHome", false)
+    val hideNsfwOnHome: Boolean get() = bool("hideNsfwOnHome", false)
+    val nsfwWarnInReader: Boolean get() = bool("nsfwWarnInReader", true)
     val homeSectionOrder: List<String> get() = stringList("homeSectionOrder")
     val defaultLibraryView: BookmarkBucket
         get() = when (string("defaultLibraryView", "All")) {

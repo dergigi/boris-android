@@ -274,6 +274,7 @@ class ReaderRepository(
             imageUrl = image,
             summary = Nip23.summary(event),
             sourceZapTags = zapTags(event),
+            tags = event.tags,
         )
     }
 
@@ -297,6 +298,7 @@ class ReaderRepository(
                 imageUrl = image,
                 summary = Nip23.summary(event),
                 sourceZapTags = zapTags(event),
+                tags = event.tags,
             )
         }
         if (event.kind == Nip01Event.KIND_HIGHLIGHT) {
@@ -326,6 +328,7 @@ class ReaderRepository(
             eventId = event.id,
             authorPubkey = event.pubkey,
             sourceZapTags = zapTags(event),
+            tags = event.tags,
         )
     }
 
