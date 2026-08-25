@@ -966,14 +966,6 @@ private fun HighlightedArticleCard(
                             .then(if (warning != null) Modifier.blur(10.dp) else Modifier),
                     )
                 }
-                if (warning != null) {
-                    NsfwBadge(
-                        warning = warning,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp),
-                    )
-                }
             }
             Text(
                 text = article.title,
@@ -992,6 +984,9 @@ private fun HighlightedArticleCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (warning != null) {
+                NsfwBadge(warning)
+            }
             CardReadingProgress(url = article.url)
         }
         ArticleActionsMenu(

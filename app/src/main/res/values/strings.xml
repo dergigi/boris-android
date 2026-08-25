@@ -62,7 +62,7 @@
     <string name="home_empty_archived">Everything here is already archived.</string>
     <string name="home_empty_filters">Nothing matches these filters.</string>
     <string name="nsfw_badge">NSFW</string>
-    <string name="nsfw_badge_maybe">Might be NSFW</string>
+    <string name="nsfw_badge_maybe">NSFW?</string>
     <string name="nsfw_reader_title">Sensitive content</string>
     <string name="nsfw_reader_body">This article is marked as sensitive. Show it anyway?</string>
     <string name="nsfw_reader_body_maybe">This article might be NSFW. Show it anyway?</string>

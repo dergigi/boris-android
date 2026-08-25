@@ -46,6 +46,8 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
+import org.dergigi.boris.data.ReadingTime
+import org.dergigi.boris.data.ReadingTimeStore
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.reader.CardReadingProgress
@@ -125,14 +127,6 @@ fun ArticleRow(
                         .then(if (warning != null) Modifier.blur(8.dp) else Modifier),
                 )
             }
-            if (warning != null) {
-                NsfwBadge(
-                    warning = warning,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(4.dp),
-                )
-            }
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -198,6 +192,26 @@ fun ArticleRow(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+            }
+            val minutes = remember(url) { url?.let { ReadingTimeStore.get(it) } }
+            if (minutes != null || warning != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (minutes != null) {
+                        Text(
+                            text = ReadingTime.label(minutes),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = FontFamily.SansSerif,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (warning != null) {
+                        NsfwBadge(warning)
                     }
                 }
             }

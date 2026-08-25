@@ -188,6 +188,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsText
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
@@ -1933,6 +1934,9 @@ private fun ArticleBody(
                     onAuthorClick = authorPubkey?.let { hex -> { onOpenProfile(hex) } },
                     domain = domain,
                     readingTime = readingTime,
+                    nsfwWarning = remember(content.url, content.title, content.tags) {
+                        SensitiveContent.classify(content)
+                    },
                     highlightsLabel = highlightsLabel,
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
                     published = published,
@@ -2732,6 +2736,7 @@ private fun ArticleMetaRow(
     onAuthorClick: (() -> Unit)?,
     domain: String?,
     readingTime: String?,
+    nsfwWarning: SensitiveContent.Warning? = null,
     highlightsLabel: String?,
     highlightsColor: Color,
     published: String?,
@@ -2744,6 +2749,7 @@ private fun ArticleMetaRow(
         authorName == null &&
         domain == null &&
         readingTime == null &&
+        nsfwWarning == null &&
         highlightsLabel == null &&
         rssFeedUrl == null &&
         published == null
@@ -2777,6 +2783,9 @@ private fun ArticleMetaRow(
         }
         if (readingTime != null) {
             MetaChip(text = readingTime, icon = Icons.Outlined.Schedule)
+        }
+        if (nsfwWarning != null) {
+            NsfwBadge(nsfwWarning)
         }
         if (highlightsLabel != null) {
             MetaChip(
