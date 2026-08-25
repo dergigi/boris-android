@@ -9,6 +9,19 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.9] - 2026-08-25
+
+### Added
+
+- Home filter menu for hiding archived, completed, and NSFW articles
+- NSFW badges, blurred covers, and a reader warning before opening sensitive articles (NIP-36 first, then keywords)
+- Selection action to set reading progress at the selected text
+
+### Changed
+
+- Saved reading position stays put through jumps and short dwells; it advances only from sustained reading, TTS, or an explicit set
+- Hide archived is on by default
+
 ## [1.5.8] - 2026-08-24
 
 ### Added
@@ -1459,7 +1472,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.8...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.9...HEAD
+[1.5.9]: https://github.com/dergigi/boris-android/releases/tag/v1.5.9
 [1.5.8]: https://github.com/dergigi/boris-android/releases/tag/v1.5.8
 [1.5.7]: https://github.com/dergigi/boris-android/releases/tag/v1.5.7
 [1.5.6]: https://github.com/dergigi/boris-android/releases/tag/v1.5.6
