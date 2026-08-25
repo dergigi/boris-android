@@ -162,6 +162,8 @@ fun BorisApp(
 
     var highlightPromptQuote by rememberSaveable { mutableStateOf<String?>(null) }
     var highlightLoginPromptKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingSearchQuery by rememberSaveable { mutableStateOf("") }
+    var pendingSearchQueryVersion by rememberSaveable { mutableStateOf(0) }
 
     fun goToTab(tab: MainTab) {
         navController.navigate(tab.route) {
@@ -255,6 +257,11 @@ fun BorisApp(
                             }
                         },
                         onOpenLogin = { goToTab(MainTab.You) },
+                        onSearch = { query ->
+                            pendingSearchQuery = query
+                            pendingSearchQueryVersion += 1
+                            goToTab(MainTab.Search)
+                        },
                         onOpenHomeSettings = {
                             navController.navigate(Routes.settings(SettingsCategory.Home)) {
                                 launchSingleTop = true
@@ -312,6 +319,8 @@ fun BorisApp(
                                 navController.navigate(Routes.profile(npub))
                             }
                         },
+                        initialQuery = pendingSearchQuery,
+                        initialQueryVersion = pendingSearchQueryVersion,
                     )
                 }
                 composable(Routes.YOU) {

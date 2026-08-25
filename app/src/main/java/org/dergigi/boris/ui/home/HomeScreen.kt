@@ -11,6 +11,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
@@ -41,6 +45,7 @@ import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
@@ -65,6 +70,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -72,14 +78,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -124,6 +135,7 @@ fun HomeScreen(
     onOpenSupport: () -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onSearch: (String) -> Unit = {},
     onOpenHomeSettings: () -> Unit = {},
     onOpenAboutSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -257,6 +269,7 @@ fun HomeScreen(
                     loginPromptDismissed = true
                 },
                 onOpenLogin = onOpenLogin,
+                onSearch = onSearch,
                 onRefresh = viewModel::refresh,
                 onRead = onRead,
                 onListen = { article ->
@@ -350,6 +363,7 @@ fun HomeScreenContent(
     showLoginPrompt: Boolean = false,
     onDismissLoginPrompt: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onSearch: (String) -> Unit = {},
 ) {
     val hasPrompts = showFirstTime || showLoginPrompt
     Box(
@@ -366,6 +380,7 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
+                    HomeSearchBar(onSearch = onSearch)
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
@@ -392,6 +407,7 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
+                    HomeSearchBar(onSearch = onSearch)
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
@@ -421,6 +437,7 @@ fun HomeScreenContent(
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
+                    HomeSearchBar(onSearch = onSearch)
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
@@ -549,6 +566,7 @@ fun HomeScreenContent(
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {
+                            HomeSearchBar(onSearch = onSearch)
                             HomePromptSections(
                                 showFirstTime = showFirstTime,
                                 onDismissFirstTime = onDismissFirstTime,
@@ -703,6 +721,77 @@ fun HomeScreenContent(
             }
         }
     }
+}
+
+@Composable
+private fun HomeSearchBar(
+    onSearch: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val focus = LocalFocusManager.current
+    val shape = RoundedCornerShape(12.dp)
+    val contentDescription = stringResource(R.string.search_title)
+
+    fun submit() {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return
+        focus.clearFocus()
+        onSearch(trimmed)
+    }
+
+    BasicTextField(
+        value = query,
+        onValueChange = { query = it },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .semantics { this.contentDescription = contentDescription },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = FontFamily.SansSerif,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { submit() }),
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .clip(shape)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.home_search_placeholder),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = FontFamily.SansSerif,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        },
+    )
 }
 
 @Composable
