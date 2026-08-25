@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ReadingPositionStore
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 object ReadingProgress {
@@ -58,31 +57,6 @@ object ReadingProgress {
     }
 }
 
-/**
- * Classifies settled scroll positions as reading vs exploratory jumps (issue #86).
- * Reading advances the saved position; a jump keeps it so the reader can offer a
- * way back. While drifted, slow local movement means the user started reading at
- * the new spot, so it becomes the saved position.
- */
-object ReadingDrift {
-    /** Settling farther than this many viewports from the saved position is a jump. */
-    private const val JUMP_VIEWPORTS = 3f
-
-    /** While drifted, moving less than this since the last settle counts as reading. */
-    private const val ADOPT_VIEWPORTS = 1f
-
-    fun shouldSave(
-        settledOffset: Int,
-        savedOffset: Int,
-        previousSettledOffset: Int?,
-        viewportHeight: Int,
-    ): Boolean {
-        if (viewportHeight <= 0) return true
-        if (abs(settledOffset - savedOffset) <= viewportHeight * JUMP_VIEWPORTS) return true
-        val previous = previousSettledOffset ?: return false
-        return abs(settledOffset - previous) <= viewportHeight * ADOPT_VIEWPORTS
-    }
-}
 
 private val CompleteGreen = Color(0xFF22C55E)
 

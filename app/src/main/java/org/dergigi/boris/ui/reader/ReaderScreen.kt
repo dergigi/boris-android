@@ -1436,10 +1436,10 @@ private fun ArticleBody(
         positionRestored = true
     }
     // Issue #86: while the user explores far away from the saved reading
-    // position, keep that position and offer a jump back instead of
-    // overwriting it with the transient scroll location.
-    var driftFraction by remember(content.url) { mutableStateOf<Float?>(null) }
-    var lastSettled by remember(content.url) { mutableStateOf<Int?>(null) }
+    // position, keep that position frozen and offer a jump back. The tracker
+    // only adopts the new spot after sustained reading-like movement there.
+    val readingTracker = remember(content.url) { ReadingTracker() }
+    var drifting by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
         snapshotFlow { scrollState.value }.collectLatest { value ->
             if (!positionRestored) return@collectLatest
@@ -1447,20 +1447,25 @@ private fun ArticleBody(
             if (max <= 0) return@collectLatest
             delay(400)
             val saved = ReadingPositionStore.fraction(content.url)
-            val reading = ReadingDrift.shouldSave(
-                settledOffset = value,
+            val reading = readingTracker.onSettle(
+                offset = value,
                 savedOffset = (saved * max).roundToInt(),
-                previousSettledOffset = lastSettled,
                 viewportHeight = viewportHeight,
+                nowMs = System.currentTimeMillis(),
             )
             if (reading) {
                 ReadingPositionStore.save(content.url, ReadingProgress.fraction(value, max))
-                driftFraction = null
-            } else {
-                driftFraction = saved
             }
-            lastSettled = value
+            drifting = readingTracker.drifting
         }
+    }
+    // While drifted, the saved position can still advance (TTS listening), so
+    // read it live from the store instead of a settle-time snapshot.
+    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+    val driftFraction = if (drifting) {
+        remember(content.url, progressVersion) { ReadingPositionStore.fraction(content.url) }
+    } else {
+        null
     }
     TtsSpokenSync(
         url = content.url,
@@ -2001,10 +2006,11 @@ private fun ArticleBody(
             JumpBackPill(
                 percent = (fraction * 100f).roundToInt(),
                 onClick = {
+                    readingTracker.onPositionSet()
+                    drifting = false
                     scope.launch {
                         val max = scrollState.maxValue
                         if (max > 0) scrollState.animateScrollTo((fraction * max).roundToInt())
-                        driftFraction = null
                     }
                 },
                 modifier = Modifier
@@ -2043,6 +2049,21 @@ private fun ArticleBody(
                 onHighlight(quote)
             },
             onTtsFromHere = ::startTtsFromSelection,
+            onSetProgress = {
+                val max = scrollState.maxValue
+                val viewport = scrollViewport
+                if (max > 0) {
+                    // Selection rect is in window coordinates; map its top into
+                    // the scroll viewport to get the content offset.
+                    val localY = viewport?.takeIf { it.isAttached }
+                        ?.windowToLocal(selection.toolbarRect.topLeft)?.y ?: 0f
+                    val offset = (scrollState.value + localY).roundToInt().coerceIn(0, max)
+                    ReadingPositionStore.save(content.url, ReadingProgress.fraction(offset, max))
+                    readingTracker.onPositionSet()
+                    drifting = false
+                }
+                selection.clear()
+            },
             onSelectAll = {
                 val owner = selection.owner ?: return@HighlightTextToolbar
                 selection.selectAll(owner, selection.text, selection.ttsStartIndex)

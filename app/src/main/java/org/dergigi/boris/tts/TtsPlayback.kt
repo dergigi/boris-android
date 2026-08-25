@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SettingsSync
 
 data class TtsSession(
@@ -257,6 +258,13 @@ object TtsPlayback {
     internal fun onParagraphFinished(index: Int) {
         val current = _session.value ?: return
         if (!current.playing || index != current.index) return
+        // Listening counts as reading (issue #86): every paragraph spoken to
+        // the end advances the saved reading position. Skips do not save until
+        // the next paragraph is actually heard through.
+        val count = current.paragraphs.size
+        if (count > 0) {
+            ReadingPositionStore.save(current.url, (index + 1).toFloat() / count)
+        }
         if (index >= current.paragraphs.lastIndex) {
             stop()
             return

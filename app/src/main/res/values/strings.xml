@@ -447,6 +447,7 @@
     <string name="reader_progress">%1$d%%</string>
     <string name="reader_progress_done">✓</string>
     <string name="reader_jump_back">Back to %1$d%%</string>
+    <string name="reader_set_progress">Set progress here</string>
     <string name="tts_listen_to_article">Listen to article</string>
     <string name="tts_from_here">TTS from here</string>
     <string name="tts_pause_playback">Pause playback</string>

@@ -35,6 +35,7 @@ fun HighlightTextToolbar(
     onCopy: () -> Unit,
     onHighlight: () -> Unit,
     onTtsFromHere: () -> Unit,
+    onSetProgress: () -> Unit,
     onSelectAll: () -> Unit,
 ) {
     if (!selection.toolbarReady) return
@@ -75,6 +76,10 @@ fun HighlightTextToolbar(
                 ToolbarAction(
                     label = stringResource(R.string.tts_from_here),
                     onClick = onTtsFromHere,
+                )
+                ToolbarAction(
+                    label = stringResource(R.string.reader_set_progress),
+                    onClick = onSetProgress,
                 )
                 ToolbarAction(
                     label = stringResource(android.R.string.selectAll),
