@@ -547,20 +547,31 @@ fun HomeScreenContent(
                         shortReads.isEmpty() && longReads.isEmpty() &&
                         randomArticles.isEmpty()
                     if (empty && !hasPrompts) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            StatusMessage(
-                                text = stringResource(
-                                    if (hideCompleted || hideNsfw ||
-                                        (hideArchived && highlights.archivedKeys.isNotEmpty())
-                                    ) {
-                                        R.string.home_empty_filters
-                                    } else {
-                                        R.string.feed_empty
-                                    },
-                                ),
-                                onRetry = onRefresh,
-                                modifier = Modifier.align(Alignment.Center),
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 20.dp, bottom = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(28.dp),
+                        ) {
+                            HomeSearchBar(onSearch = onSearch)
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                StatusMessage(
+                                    text = stringResource(
+                                        if (hideCompleted || hideNsfw ||
+                                            (hideArchived && highlights.archivedKeys.isNotEmpty())
+                                        ) {
+                                            R.string.home_empty_filters
+                                        } else {
+                                            R.string.feed_empty
+                                        },
+                                    ),
+                                    onRetry = onRefresh,
+                                )
+                            }
                         }
                     } else {
                         Column(
@@ -613,7 +624,6 @@ fun HomeScreenContent(
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
                                                 onListen = onListen,
-                                                onHeaderClick = onRefreshRandomArticles,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
@@ -714,6 +724,7 @@ fun HomeScreenContent(
                                                 archivedKeys = highlights.archivedKeys,
                                                 onRead = onRead,
                                                 onListen = onListen,
+                                                onHeaderClick = onRefreshRandomArticles,
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
