@@ -9,6 +9,18 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.10] - 2026-08-26
+
+### Added
+
+- Search field on Home that opens the Search tab
+- Compact refresh spinner in the top bars of Home, Feeds, Library, You, and profiles
+- Tap the Random Unreads heading to reshuffle that row without a full Home refresh
+
+### Changed
+
+- NSFW labels are compact `NSFW` / `NSFW?` pills next to reading time
+
 ## [1.5.9] - 2026-08-25
 
 ### Added
@@ -1472,7 +1484,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.9...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.10...HEAD
+[1.5.10]: https://github.com/dergigi/boris-android/releases/tag/v1.5.10
 [1.5.9]: https://github.com/dergigi/boris-android/releases/tag/v1.5.9
 [1.5.8]: https://github.com/dergigi/boris-android/releases/tag/v1.5.8
 [1.5.7]: https://github.com/dergigi/boris-android/releases/tag/v1.5.7
