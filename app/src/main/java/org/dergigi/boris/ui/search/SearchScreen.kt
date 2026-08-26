@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -70,6 +71,8 @@ fun SearchScreen(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
+    initialQuery: String? = null,
+    initialQueryVersion: Int = 0,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = viewModel(),
 ) {
@@ -78,6 +81,12 @@ fun SearchScreen(
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshRelation()
+    }
+    LaunchedEffect(initialQueryVersion, initialQuery) {
+        initialQuery
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(viewModel::onQueryChange)
     }
     val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
     val friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends)
