@@ -75,6 +75,7 @@ import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.bookmarkFallbackIcon
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
+import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -192,6 +193,7 @@ fun LibraryScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.library_title)) },
                 actions = {
+                    TopBarRefreshIndicator(refreshing = refreshing)
                     IconButton(onClick = { showInfo = true }) {
                         Icon(
                             imageVector = Icons.Outlined.Info,

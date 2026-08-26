@@ -80,6 +80,7 @@ import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
+import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
@@ -209,6 +210,7 @@ fun FeedScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.feed_title)) },
                 actions = {
+                    TopBarRefreshIndicator(refreshing = refreshing)
                     ScopeToggle(
                         icon = Icons.Outlined.Hub,
                         on = scope.nostrverse,

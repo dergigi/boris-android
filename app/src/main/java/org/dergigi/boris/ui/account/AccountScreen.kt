@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
+import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.auth.AuthBar
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
@@ -52,6 +53,7 @@ import org.dergigi.boris.ui.auth.NstartFooter
 import org.dergigi.boris.ui.support.SupportHeart
 import org.dergigi.boris.ui.you.YouHighlights
 import org.dergigi.boris.ui.you.YouLoggedOut
+import org.dergigi.boris.ui.you.YouViewModel
 import org.dergigi.boris.ui.you.profileLinkMenuItems
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,6 +70,7 @@ fun AccountScreen(
     onIncomingBunkerConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel(),
+    youViewModel: YouViewModel = viewModel(),
 ) {
     var bunkerUri by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(incomingBunker) {
@@ -79,6 +82,7 @@ fun AccountScreen(
     val authState by viewModel.state.collectAsStateWithLifecycle()
     val authMessage by viewModel.message.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val refreshing by youViewModel.refreshing.collectAsStateWithLifecycle()
     val authLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -126,6 +130,7 @@ fun AccountScreen(
                     )
                 },
                 actions = {
+                    TopBarRefreshIndicator(refreshing = loggedIn && refreshing)
                     IconButton(onClick = onOpenSettings) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
@@ -161,6 +166,7 @@ fun AccountScreen(
                     onOpenArticle = onOpenArticle,
                     onOpenHighlight = onOpenHighlight,
                     modifier = Modifier.padding(innerPadding),
+                    viewModel = youViewModel,
                 )
             }
             else -> {

@@ -104,6 +104,7 @@ import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.CardReadingProgress
@@ -185,6 +186,7 @@ fun HomeScreen(
                     )
                 },
                 actions = {
+                    TopBarRefreshIndicator(refreshing = refreshing)
                     HomeFilterMenu(settings = settings)
                     TopBarMoreMenu(
                         items = listOf(
