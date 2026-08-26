@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader swipe gestures: swipe left opens Highlights, swipe right opens Contents
+
 ## [1.5.10] - 2026-08-26
 
 ### Added

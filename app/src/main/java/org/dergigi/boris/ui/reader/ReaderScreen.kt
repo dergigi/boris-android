@@ -1846,10 +1846,36 @@ private fun ArticleBody(
     }.collectAsStateWithLifecycle(false)
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     SelectionBackHandler(selection)
+    val swipeThresholdPx = with(density) { 72.dp.toPx() }
+    fun closeFindPane() {
+        findQuery = ""
+        findIndex = 0
+        onFindOpenChange(false)
+    }
+    fun openHighlightsPane() {
+        onOutlineOpenChange(false)
+        if (findOpen) closeFindPane()
+        paneOpen = true
+    }
+    fun openContentsPane() {
+        if (outlineItems.isEmpty()) return
+        paneOpen = false
+        if (findOpen) closeFindPane()
+        onOutlineOpenChange(true)
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
+            .readerSwipeGestures(
+                enabled = showArticle && !selection.hasSelection,
+                thresholdPx = swipeThresholdPx,
+            ) { target ->
+                when (target) {
+                    ReaderSwipeTarget.Contents -> openContentsPane()
+                    ReaderSwipeTarget.Highlights -> openHighlightsPane()
+                }
+            }
             .onGloballyPositioned { scrollViewport = it },
     ) {
         Column(
@@ -1944,8 +1970,7 @@ private fun ArticleBody(
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
                     onRssClick = rssFeedSuggestion?.let { feed -> { onAddRssFeed(feed) } },
                     onHighlightsClick = {
-                        onFindOpenChange(false)
-                        paneOpen = true
+                        openHighlightsPane()
                     },
                 )
                 CompositionLocalProvider(LocalUriHandler provides uriHandler) {
@@ -2150,9 +2175,7 @@ private fun ArticleBody(
                 findJump++
             },
             onDismiss = {
-                findQuery = ""
-                findIndex = 0
-                onFindOpenChange(false)
+                closeFindPane()
             },
             onPrevious = { stepFind(-1) },
             onNext = { stepFind(1) },
