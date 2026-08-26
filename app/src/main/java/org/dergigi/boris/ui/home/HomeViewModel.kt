@@ -26,8 +26,10 @@ import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
+import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.RandomArticles
 import org.dergigi.boris.data.ReadingTimes
+import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.TimedReadKind
 import org.dergigi.boris.data.TimedReads
 import org.dergigi.boris.data.SessionStore
@@ -212,6 +214,36 @@ class HomeViewModel(
         listenJob?.cancel()
         listenJob = viewModelScope.launch {
             startArticleListening(getApplication(), url)?.let { _message.value = it }
+        }
+    }
+
+    fun refreshRandomArticles() {
+        viewModelScope.launch {
+            val current = _highlights.value as? HomeHighlightsState.Ready ?: return@launch
+            val pubkey = SessionStore.load(getApplication())?.pubkeyHex ?: return@launch
+            val settings = SettingsSync.settings.value
+            val next = withContext(Dispatchers.IO) {
+                val pool = HomeFilters.visible(
+                    RandomArticles.articles(
+                        cachedLibraryItems(pubkey),
+                        current.archivedKeys,
+                        ARTICLE_LIMIT * 4,
+                    ),
+                    current.archivedKeys,
+                    hideArchived = settings.hideArchivedOnHome,
+                    hideCompleted = settings.hideCompletedOnHome,
+                    hideNsfw = settings.hideNsfwOnHome,
+                ).take(ARTICLE_LIMIT)
+                if (pool.isEmpty()) return@withContext emptyList()
+                val hydrated = HighlightedArticles.hydrate(pool)
+                val previews = hydrated
+                    .map { it.url }
+                    .distinct()
+                    .associateWith { ArticlePreview.get(it) }
+                applyPreviews(hydrated, previews)
+            }
+            val latest = _highlights.value as? HomeHighlightsState.Ready ?: return@launch
+            _highlights.value = latest.copy(randomArticles = next)
         }
     }
 
