@@ -34,7 +34,7 @@ object NostrArticle {
         val kind = parts[0].toIntOrNull() ?: return null
         if (kind != KIND) return null
         val pubkey = parts[1].lowercase()
-        if (pubkey.length != 64) return null
+        if (!pubkeyRegex.matches(pubkey)) return null
         val identifier = parts[2]
         if (identifier.isEmpty()) return null
         val pointer = NaddrPointer(identifier, pubkey, kind, relays)
@@ -45,4 +45,5 @@ object NostrArticle {
         """(?:nostr:)?(naddr1[023456789acdefghjklmnpqrstuvwxyz]+)""",
         RegexOption.IGNORE_CASE,
     )
+    private val pubkeyRegex = Regex("[0-9a-f]{64}")
 }
