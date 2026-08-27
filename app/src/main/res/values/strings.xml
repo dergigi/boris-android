@@ -343,6 +343,7 @@
     <string name="settings_cancelled">Settings save cancelled.</string>
     <string name="settings_not_published">Settings were not published.</string>
     <string name="settings_reset_defaults">Reset to defaults</string>
+    <string name="settings_already_defaults">Already at defaults</string>
     <string name="settings_reset_all_title">Reset all settings?</string>
     <string name="settings_reset_all_body">This restores Boris settings to defaults. Your account, library, highlights, reading progress, and cached articles stay untouched.</string>
     <string name="settings_reset_section_title">Reset %1$s settings?</string>

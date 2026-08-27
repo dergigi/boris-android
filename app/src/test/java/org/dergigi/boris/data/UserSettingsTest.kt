@@ -101,6 +101,20 @@ class UserSettingsTest {
     }
 
     @Test
+    fun hasNonDefaultValuesComparesTypedDefaults() {
+        val keys = setOf("fontSize", "showHighlights", "hideArchivedOnHome")
+        assertFalse(UserSettings.defaults().hasNonDefaultValues(keys))
+        assertFalse(
+            UserSettings.parse("""{"fontSize":21,"showHighlights":true}""")
+                .hasNonDefaultValues(keys),
+        )
+
+        val updated = UserSettings.defaults().withBoolean("hideArchivedOnHome", false)
+        assertTrue(updated.hasNonDefaultValues(keys))
+        assertFalse(updated.resetKeys(keys).hasNonDefaultValues(keys))
+    }
+
+    @Test
     fun missingBooleanDefaultsOn() {
         val settings = UserSettings.parse("""{"readingFont":"lora"}""")
         assertTrue(settings.showHighlights)

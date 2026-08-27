@@ -162,7 +162,13 @@ private val SettingsCategory.resetKeys: Set<String>
             "homeSectionOrder",
         )
         SettingsCategory.Library -> setOf("defaultLibraryView")
-        SettingsCategory.Feed -> setOf("defaultFeedView", "rssFeeds")
+        SettingsCategory.Feed -> setOf(
+            "defaultFeedView",
+            "defaultExploreScopeNostrverse",
+            "defaultExploreScopeFriends",
+            "defaultExploreScopeMine",
+            "rssFeeds",
+        )
         SettingsCategory.Scroll -> setOf(
             "hideTopBarOnScroll",
             "syncReadingPosition",
@@ -178,6 +184,8 @@ private val SettingsCategory.resetKeys: Set<String>
                 OfflineShelf.entries.map { it.settingsKey }
         SettingsCategory.About -> emptySet()
     }
+
+private val allResettableKeys = SettingsCategory.entries.flatMap { it.resetKeys }.toSet()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -247,7 +255,9 @@ fun SettingsScreen(
                     onClick = {
                         pendingReset = null
                         settingsViewModel.update { current ->
-                            if (resetAll) UserSettings.defaults() else current.resetKeys(resetCategory?.resetKeys.orEmpty())
+                            current.resetKeys(
+                                if (resetAll) allResettableKeys else resetCategory?.resetKeys.orEmpty(),
+                            )
                         }
                     },
                 ) {
@@ -276,14 +286,23 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    val canReset = category?.resetKeys?.isNotEmpty() ?: true
-                    if (category == null || canReset) {
+                    val resetKeys = category?.resetKeys ?: allResettableKeys
+                    val hasResettableSettings = category == null || resetKeys.isNotEmpty()
+                    val canReset = settings.hasNonDefaultValues(resetKeys)
+                    if (hasResettableSettings) {
                         IconButton(
+                            enabled = canReset,
                             onClick = { pendingReset = category?.name ?: RESET_ALL },
                         ) {
                             Icon(
                                 Icons.Outlined.RestartAlt,
-                                contentDescription = stringResource(R.string.settings_reset_defaults),
+                                contentDescription = stringResource(
+                                    if (canReset) {
+                                        R.string.settings_reset_defaults
+                                    } else {
+                                        R.string.settings_already_defaults
+                                    },
+                                ),
                             )
                         }
                     }
