@@ -167,6 +167,7 @@ import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrEventRef
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.NostrLink
@@ -2230,10 +2231,19 @@ private fun ArticleBody(
 }
 
 internal fun showNostrAuthorFooterCard(content: ReadableContent): Boolean {
-    val coordinate = content.articleCoordinate?.trim().orEmpty()
-    val authorPubkey = content.authorPubkey?.trim().orEmpty()
-    return coordinate.startsWith("${Nip01Event.KIND_LONG_FORM}:") && authorPubkey.length == 64
+    val authorPubkey = content.authorPubkey
+        ?.trim()
+        ?.lowercase()
+        ?.takeIf { nostrPubkeyRegex.matches(it) }
+        ?: return false
+    val article = content.articleCoordinate
+        ?.trim()
+        ?.let { NostrArticle.fromCoordinate(it) }
+        ?: return false
+    return article.pointer.pubkey.lowercase() == authorPubkey
 }
+
+private val nostrPubkeyRegex = Regex("[0-9a-f]{64}")
 
 @Stable
 private class SpokenMarkState {

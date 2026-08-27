@@ -4,6 +4,7 @@ import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.ReadableContent
+import org.dergigi.boris.nostr.Profile
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -81,12 +82,30 @@ class ReaderPreviewTest {
     @Test
     fun authorFooterOnlyShowsForNostrLongFormArticles() {
         val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        val coordinate = "30023:$pubkey:essay"
         assertTrue(
             showNostrAuthorFooterCard(
                 ReadableContent(
                     url = "nostr:naddr1qq",
-                    articleCoordinate = "30023:$pubkey:essay",
+                    articleCoordinate = coordinate,
                     authorPubkey = pubkey,
+                ),
+            ),
+        )
+        assertTrue(
+            !showNostrAuthorFooterCard(
+                ReadableContent(
+                    url = "nostr:naddr1qq",
+                    articleCoordinate = coordinate,
+                ),
+            ),
+        )
+        assertTrue(
+            !showNostrAuthorFooterCard(
+                ReadableContent(
+                    url = "nostr:naddr1qq",
+                    articleCoordinate = coordinate,
+                    authorPubkey = "f".repeat(64),
                 ),
             ),
         )
@@ -99,5 +118,6 @@ class ReaderPreviewTest {
                 ),
             ),
         )
+        assertEquals(Profile.shortNpub(pubkey), Profile.displayName(pubkey, null))
     }
 }
