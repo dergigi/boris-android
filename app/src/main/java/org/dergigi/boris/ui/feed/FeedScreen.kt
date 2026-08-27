@@ -229,7 +229,6 @@ fun FeedScreenContent(
                 title = { Text(stringResource(R.string.feed_title)) },
                 actions = {
                     TopBarRefreshIndicator(refreshing = refreshing)
-                    ContentFilterMenu(settings = settings)
                     ScopeToggle(
                         icon = Icons.Outlined.Hub,
                         on = scope.nostrverse,
@@ -258,6 +257,7 @@ fun FeedScreenContent(
                         ),
                         onClick = { onToggle(FeedLevel.Mine) },
                     )
+                    ContentFilterMenu(settings = settings)
                     TopBarMoreMenu(
                         items = listOf(
                             TopBarMenuItem(
