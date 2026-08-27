@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
@@ -65,7 +64,6 @@ fun OutlinePane(
                 tonalElevation = 2.dp,
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.background,
-                shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(top = topPadding)
