@@ -14,6 +14,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Library and Feeds info live in the overflow menu
 - Filter stays immediately left of the overflow menu
 
+### Fixed
+
+- Pull-to-refresh shows only in the top bar
+
 ## [1.5.13] - 2026-08-27
 
 ### Fixed

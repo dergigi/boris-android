@@ -59,7 +59,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,6 +103,7 @@ import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.NsfwBadge
+import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleActionsMenu
 import org.dergigi.boris.ui.ContentFilterMenu
@@ -533,7 +533,7 @@ fun HomeScreenContent(
                         hideArchived, hideCompleted, hideNsfw,
                     )
                 }
-                PullToRefreshBox(
+                PullToRefresh(
                     isRefreshing = refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),

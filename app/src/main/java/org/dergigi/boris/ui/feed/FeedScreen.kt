@@ -40,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +72,7 @@ import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.ArticleActionHandlers
+import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTab
@@ -304,7 +304,7 @@ fun FeedScreenContent(
                                 modifier = Modifier.align(Alignment.Center),
                             )
                         } else {
-                            PullToRefreshBox(
+                            PullToRefresh(
                                 isRefreshing = refreshing,
                                 onRefresh = onRefresh,
                                 modifier = Modifier.fillMaxSize(),
@@ -370,7 +370,7 @@ fun FeedScreenContent(
                                 )
                             }
                             is FeedUiState.Ready -> {
-                                PullToRefreshBox(
+                                PullToRefresh(
                                     isRefreshing = refreshing,
                                     onRefresh = onRefresh,
                                     modifier = Modifier.fillMaxSize(),
@@ -465,7 +465,6 @@ private sealed class FeedMergedItem {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FeedAllPane(
     state: FeedUiState,
@@ -541,7 +540,7 @@ private fun FeedAllPane(
                 )
             }
             else -> {
-                PullToRefreshBox(
+                PullToRefresh(
                     isRefreshing = refreshing || (rssLoading && rssItems.isEmpty()),
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),

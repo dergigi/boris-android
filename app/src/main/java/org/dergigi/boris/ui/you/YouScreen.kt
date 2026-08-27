@@ -28,12 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,6 +62,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
+import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.bookmarkFallbackIcon
@@ -163,7 +162,6 @@ fun YouHighlights(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YouHighlightsContent(
     state: YouUiState,
@@ -185,7 +183,7 @@ fun YouHighlightsContent(
 ) {
     var tab by rememberSaveable { mutableStateOf(ContentTab.All) }
     var query by rememberSaveable { mutableStateOf("") }
-    PullToRefreshBox(
+    PullToRefresh(
         isRefreshing = refreshing,
         onRefresh = { onRefresh(tab) },
         modifier = modifier

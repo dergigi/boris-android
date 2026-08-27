@@ -41,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +71,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
@@ -332,7 +332,7 @@ private fun ReadyLibrary(
                 onClick = { onSelect(BookmarkBucket.Archive) },
             )
         }
-        PullToRefreshBox(
+        PullToRefresh(
             isRefreshing = refreshing,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
