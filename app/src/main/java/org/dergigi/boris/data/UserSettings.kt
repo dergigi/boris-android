@@ -103,6 +103,19 @@ class UserSettings internal constructor(
     fun withStringList(key: String, values: List<String>): UserSettings =
         overlay(key, JsonValue.Raw(JsonMap.stringifyStrings(values)))
 
+    fun resetKeys(keys: Set<String>): UserSettings {
+        if (keys.isEmpty()) return this
+        val next = LinkedHashMap(values)
+        keys.forEach(next::remove)
+        return UserSettings(next)
+    }
+
+    fun hasNonDefaultValues(keys: Set<String>): Boolean {
+        if (keys.isEmpty()) return false
+        val defaults = defaults()
+        return keys.any { valueForResetComparison(it) != defaults.valueForResetComparison(it) }
+    }
+
     fun toJson(): String = JsonMap.stringify(values)
 
     fun visibleMine(): Boolean = showHighlights && defaultHighlightVisibilityMine
@@ -146,6 +159,55 @@ class UserSettings internal constructor(
     private fun double(key: String, default: Double): Double {
         val raw = (values[key] as? JsonValue.Num)?.raw ?: return default
         return raw.toDoubleOrNull() ?: default
+    }
+
+    private fun valueForResetComparison(key: String): Any? = when (key) {
+        "archiveClosesReader" -> archiveClosesReader
+        "autoMarkAsReadOnCompletion" -> autoMarkAsReadOnCompletion
+        "autoScrollToReadingPosition" -> autoScrollToReadingPosition
+        "darkColorTheme" -> darkColorTheme
+        "defaultExploreScopeFriends" -> defaultExploreScopeFriends
+        "defaultExploreScopeMine" -> defaultExploreScopeMine
+        "defaultExploreScopeNostrverse" -> defaultExploreScopeNostrverse
+        "defaultFeedView" -> defaultFeedView
+        "defaultHighlightVisibilityFriends" -> defaultHighlightVisibilityFriends
+        "defaultHighlightVisibilityMine" -> defaultHighlightVisibilityMine
+        "defaultHighlightVisibilityNostrverse" -> defaultHighlightVisibilityNostrverse
+        "defaultLibraryView" -> defaultLibraryView
+        "fontSize" -> fontSize
+        "fullWidthImages" -> fullWidthImages
+        "hideArchivedOnHome" -> hideArchivedOnHome
+        "hideCompletedOnHome" -> hideCompletedOnHome
+        "hideNsfwOnHome" -> hideNsfwOnHome
+        "hideTopBarOnScroll" -> hideTopBarOnScroll
+        "highlightColorFriends" -> highlightColorFriends
+        "highlightColorMine" -> highlightColorMine
+        "highlightColorNostrverse" -> highlightColorNostrverse
+        "highlightStyle" -> highlightStyle
+        "homeSectionOrder" -> homeSectionOrder
+        "lightColorTheme" -> lightColorTheme
+        "openLinksInReader" -> openLinksInReader
+        "paragraphAlignment" -> paragraphAlignment
+        "readingFont" -> readingFont
+        "rssFeeds" -> rssFeeds
+        "showHighlights" -> showHighlights
+        "syncReadingPosition" -> syncReadingPosition
+        "theme" -> theme
+        "ttsDefaultSpeed" -> ttsDefaultSpeed
+        "ttsDetectContentLanguage" -> ttsDetectContentLanguage
+        "ttsFollowAlong" -> ttsFollowAlong
+        "ttsLanguageMode" -> ttsLanguageMode
+        "ttsUseSystemLanguage" -> ttsUseSystemLanguage
+        "useLocalRelayAsCache" -> useLocalRelayAsCache
+        "volumeButtonScroll" -> volumeButtonScroll
+        "volumeButtonScrollPercent" -> volumeButtonScrollPercent
+        "zapSplitAuthorWeight" -> zapSplitAuthorWeight
+        "zapSplitBorisWeight" -> zapSplitBorisWeight
+        "zapSplitHighlighterWeight" -> zapSplitHighlighterWeight
+        "zapSplitsEnabled" -> zapSplitsEnabled
+        ArticleImages.SETTINGS_KEY -> offlineDownloadEnabled(key)
+        in OfflineShelf.entries.map { it.settingsKey } -> offlineDownloadEnabled(key)
+        else -> values[key]
     }
 
     companion object {

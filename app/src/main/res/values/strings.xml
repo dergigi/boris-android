@@ -342,6 +342,14 @@
     <string name="settings_rejected">Settings were not signed.</string>
     <string name="settings_cancelled">Settings save cancelled.</string>
     <string name="settings_not_published">Settings were not published.</string>
+    <string name="settings_reset_defaults">Reset to defaults</string>
+    <string name="settings_already_defaults">Already at defaults</string>
+    <string name="settings_reset_all_title">Reset all settings?</string>
+    <string name="settings_reset_all_body">This restores Boris settings to defaults. Your account, library, highlights, reading progress, and cached articles stay untouched.</string>
+    <string name="settings_reset_section_title">Reset %1$s settings?</string>
+    <string name="settings_reset_section_body">This restores this settings section to Boris defaults.</string>
+    <string name="settings_reset_confirm">Reset</string>
+    <string name="settings_reset_cancel">Cancel</string>
     <string name="settings_title">Settings</string>
     <string name="reader_settings">Reader settings</string>
     <string name="reader_open_native">Open in native app</string>
