@@ -1,0 +1,111 @@
+package org.dergigi.boris.nostr
+
+import org.dergigi.boris.data.ReadableContent
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class ArticleReactionsTest {
+    private val author = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+    private val reader = "11".repeat(32)
+    private val eventId = "aa".repeat(32)
+    private val coordinate = "30023:$author:my-article"
+
+    @Test
+    fun vocabularyStartsCurated() {
+        assertEquals(ArticleReaction.Slop, ArticleReaction.fromContent("🤖"))
+        assertEquals(ArticleReaction.Love, ArticleReaction.fromContent("❤️"))
+        assertEquals(ArticleReaction.Good, ArticleReaction.fromContent("👍"))
+        assertNull(ArticleReaction.fromContent("🔥"))
+    }
+
+    @Test
+    fun nostrArticleUsesKind7AddressTags() {
+        val content = article()
+
+        assertEquals(Nip01Event.KIND_REACTION, ArticleReactions.kind(content))
+        assertEquals(
+            listOf(
+                listOf("a", coordinate),
+                listOf("p", author),
+                listOf("k", "30023"),
+                listOf("e", eventId),
+            ),
+            ArticleReactions.tags(content),
+        )
+    }
+
+    @Test
+    fun webArticleIsOutOfScopeForFirstPass() {
+        val content = ReadableContent(url = "https://example.com/post")
+
+        assertNull(ArticleReactions.kind(content))
+        assertNull(ArticleReactions.tags(content))
+        assertNull(ArticleReactions.unsignedJson(ArticleReaction.Good, content, reader, createdAt = 123))
+    }
+
+    @Test
+    fun unsignedJsonUsesSelectedReaction() {
+        val raw = ArticleReactions.unsignedJson(
+            reaction = ArticleReaction.Love,
+            content = article(),
+            pubkeyHex = reader,
+            createdAt = 123,
+        )
+        val json = JSONObject(raw!!)
+
+        assertEquals(Nip01Event.KIND_REACTION, json.getInt("kind"))
+        assertEquals("❤️", json.getString("content"))
+        assertEquals(reader, json.getString("pubkey"))
+        assertEquals(123, json.getLong("created_at"))
+        assertEquals("a", json.getJSONArray("tags").getJSONArray(0).getString(0))
+        assertEquals(coordinate, json.getJSONArray("tags").getJSONArray(0).getString(1))
+    }
+
+    @Test
+    fun currentReactionUsesLatestMatchingUserReaction() {
+        val old = reaction(content = "👍", createdAt = 10)
+        val latest = reaction(content = "❤️", createdAt = 20)
+        val otherUser = reaction(content = "🤖", createdAt = 30, pubkey = "22".repeat(32))
+
+        assertEquals(
+            ArticleReaction.Love,
+            ArticleReactions.currentReaction(listOf(old, latest, otherUser), article(), reader),
+        )
+    }
+
+    @Test
+    fun currentReactionIgnoresArchiveAndOtherTargets() {
+        val archive = reaction(content = Archive.EMOJI, createdAt = 20)
+        val other = reaction(
+            content = "👍",
+            createdAt = 30,
+            tags = listOf(listOf("a", "30023:$author:other")),
+        )
+
+        assertNull(ArticleReactions.currentReaction(listOf(archive, other), article(), reader))
+    }
+
+    private fun article(): ReadableContent = ReadableContent(
+        url = "nostr:naddr1qq",
+        articleCoordinate = coordinate,
+        eventId = eventId,
+        authorPubkey = author,
+    )
+
+    private fun reaction(
+        content: String,
+        createdAt: Long,
+        pubkey: String = reader,
+        tags: List<List<String>> = listOf(listOf("a", coordinate), listOf("e", eventId)),
+    ): Nip01Event = Nip01Event(
+        id = "00".repeat(32),
+        pubkey = pubkey,
+        createdAt = createdAt,
+        kind = Nip01Event.KIND_REACTION,
+        tags = tags,
+        content = content,
+        sig = "ff".repeat(64),
+    )
+}
