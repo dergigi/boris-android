@@ -42,6 +42,10 @@
     <string name="search_kind_article">Article</string>
     <string name="search_kind_bookmark">Bookmark</string>
     <string name="search_kind_person">Person</string>
+    <string name="search_filter_highlights">Highlights</string>
+    <string name="search_filter_writings">Writings</string>
+    <string name="search_filter_bookmarks">Bookmarks</string>
+    <string name="search_filter_profiles">Profiles</string>
     <string name="refreshing">Refreshing</string>
     <string name="nav_you">You</string>
     <string name="home_continue_reading">Continue reading</string>

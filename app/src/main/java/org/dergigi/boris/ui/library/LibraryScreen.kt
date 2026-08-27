@@ -68,8 +68,12 @@ import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.data.HomeFilters
+import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.bookmarkFallbackIcon
@@ -99,6 +103,7 @@ fun LibraryScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val authMessage by authViewModel.message.collectAsStateWithLifecycle()
+    val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var bunkerUri by rememberSaveable { mutableStateOf("") }
     val decryptLauncher = rememberLauncherForActivityResult(
@@ -134,6 +139,7 @@ fun LibraryScreen(
         bucket = bucket,
         authState = authState,
         authMessage = authMessage,
+        settings = settings,
         bunkerUri = bunkerUri,
         onBunkerUriChange = { bunkerUri = it },
         onSelect = viewModel::select,
@@ -167,6 +173,7 @@ fun LibraryScreenContent(
     bucket: BookmarkBucket,
     authState: AuthUiState,
     authMessage: String?,
+    settings: UserSettings,
     bunkerUri: String,
     onBunkerUriChange: (String) -> Unit,
     onSelect: (BookmarkBucket) -> Unit,
@@ -194,6 +201,9 @@ fun LibraryScreenContent(
                 title = { Text(stringResource(R.string.library_title)) },
                 actions = {
                     TopBarRefreshIndicator(refreshing = refreshing)
+                    if (state is LibraryUiState.Ready) {
+                        ContentFilterMenu(settings = settings)
+                    }
                     IconButton(onClick = { showInfo = true }) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
@@ -260,6 +270,7 @@ fun LibraryScreenContent(
                         onOpenHighlight = onOpenHighlight,
                         onListen = onListen,
                         onMarkAsRead = onMarkAsRead,
+                        settings = settings,
                     )
                 }
             }
@@ -280,6 +291,7 @@ private fun ReadyLibrary(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onListen: (BookmarkItem) -> Unit,
     onMarkAsRead: (BookmarkItem) -> Unit,
+    settings: UserSettings,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         FilterChipRow(
@@ -327,7 +339,27 @@ private fun ReadyLibrary(
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
-            val items = shelves.items(bucket)
+            val archivedKeys = remember(shelves.archive) {
+                shelves.archive.mapNotNull { it.url?.let(ArchivedArticles::key) }.toSet()
+            }
+            val unfilteredItems = shelves.items(bucket)
+            val items = remember(unfilteredItems, archivedKeys, bucket, settings) {
+                if (bucket == BookmarkBucket.Archive) {
+                    unfilteredItems
+                } else {
+                    unfilteredItems.filter { item ->
+                        HomeFilters.visible(
+                            url = item.url,
+                            title = item.title,
+                            summary = item.summary,
+                            archivedKeys = archivedKeys,
+                            hideArchived = settings.hideArchivedOnHome,
+                            hideCompleted = settings.hideCompletedOnHome,
+                            hideNsfw = settings.hideNsfwOnHome,
+                        )
+                    }
+                }
+            }
             when {
                 bucket == BookmarkBucket.Private && shelves.privateLocked -> {
                     StatusMessage(
@@ -345,9 +377,6 @@ private fun ReadyLibrary(
                     )
                 }
                 else -> {
-                    val archivedKeys = remember(shelves.archive) {
-                        shelves.archive.mapNotNull { it.url?.let(ArchivedArticles::key) }.toSet()
-                    }
                     LazyColumn(
                         modifier = Modifier
                             .widthIn(max = 720.dp)

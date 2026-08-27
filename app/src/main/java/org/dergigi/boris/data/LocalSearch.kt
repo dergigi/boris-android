@@ -9,7 +9,7 @@ import org.dergigi.boris.nostr.Profile
 
 /** Local-only search over EventCache. Relay NIP-50 search is backlog. */
 object LocalSearch {
-    private const val MAX_RESULTS = 40
+    const val DEFAULT_LIMIT = 40
 
     sealed class Hit {
         abstract val id: String
@@ -66,7 +66,7 @@ object LocalSearch {
 
     fun query(
         raw: String,
-        limit: Int = MAX_RESULTS,
+        limit: Int = DEFAULT_LIMIT,
         sessionHex: String? = null,
         friendPubkeys: Set<String> = emptySet(),
     ): List<Hit> {

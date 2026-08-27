@@ -50,6 +50,7 @@ class SearchViewModel(
                             .orEmpty()
                         LocalSearch.query(
                             raw = trimmed,
+                            limit = Int.MAX_VALUE,
                             sessionHex = sessionHex,
                             friendPubkeys = friends,
                         )

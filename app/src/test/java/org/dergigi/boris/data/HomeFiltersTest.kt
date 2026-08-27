@@ -55,4 +55,20 @@ class HomeFiltersTest {
             ),
         )
     }
+
+    @Test
+    fun sharedVisibilityHidesNsfwFromPlainItems() {
+        assertEquals(
+            false,
+            HomeFilters.visible(
+                url = "https://example.com/photo",
+                title = "NSFW notes",
+                summary = null,
+                archivedKeys = emptySet(),
+                hideArchived = false,
+                hideCompleted = false,
+                hideNsfw = true,
+            ),
+        )
+    }
 }

@@ -36,7 +36,7 @@ class UserSettingsTest {
         assertTrue(settings.useLocalRelayAsCache)
         assertTrue(settings.hideArchivedOnHome)
         assertFalse(settings.hideCompletedOnHome)
-        assertFalse(settings.hideNsfwOnHome)
+        assertTrue(settings.hideNsfwOnHome)
         assertTrue(settings.nsfwWarnInReader)
         assertEquals(2.1, settings.ttsDefaultSpeed, 0.0)
         assertEquals("content", settings.ttsLanguageMode)
