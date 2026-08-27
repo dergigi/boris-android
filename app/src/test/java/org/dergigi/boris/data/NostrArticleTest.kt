@@ -47,4 +47,9 @@ class NostrArticleTest {
         assertEquals("my-article", article.pointer.identifier)
         assertEquals(coordinate, article.coordinate)
     }
+
+    @Test
+    fun fromCoordinateRejectsNonHexPubkey() {
+        assertNull(NostrArticle.fromCoordinate("30023:${"z".repeat(64)}:my-article"))
+    }
 }
