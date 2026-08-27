@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Removed
+
+- Reader swipe gestures for Contents and Highlights
+
 ## [1.5.12] - 2026-08-27
 
 ### Added

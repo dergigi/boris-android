@@ -1848,7 +1848,6 @@ private fun ArticleBody(
     }.collectAsStateWithLifecycle(false)
     val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
     SelectionBackHandler(selection)
-    val swipeThresholdPx = with(density) { 72.dp.toPx() }
     fun closeFindPane() {
         findQuery = ""
         findIndex = 0
@@ -1859,25 +1858,10 @@ private fun ArticleBody(
         if (findOpen) closeFindPane()
         paneOpen = true
     }
-    fun openContentsPane() {
-        if (outlineItems.isEmpty()) return
-        paneOpen = false
-        if (findOpen) closeFindPane()
-        onOutlineOpenChange(true)
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .readerSwipeGestures(
-                enabled = showArticle && !selection.hasSelection,
-                thresholdPx = swipeThresholdPx,
-            ) { target ->
-                when (target) {
-                    ReaderSwipeTarget.Contents -> openContentsPane()
-                    ReaderSwipeTarget.Highlights -> openHighlightsPane()
-                }
-            }
             .onGloballyPositioned { scrollViewport = it },
     ) {
         Column(
