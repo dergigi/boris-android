@@ -32,14 +32,17 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RssFeed
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.VolumeUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArticleImages
+import org.dergigi.boris.data.OfflineShelf
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.theme.BorisIcons
 
@@ -120,6 +125,60 @@ private val CATEGORY_GROUPS = listOf(
     listOf(SettingsCategory.About),
 )
 
+private const val RESET_ALL = "all"
+
+private val SettingsCategory.resetKeys: Set<String>
+    get() = when (this) {
+        SettingsCategory.Appearance -> setOf("theme", "darkColorTheme", "lightColorTheme")
+        SettingsCategory.Reading -> setOf("readingFont", "fontSize", "paragraphAlignment")
+        SettingsCategory.Tts -> setOf(
+            "ttsDefaultSpeed",
+            "ttsLanguageMode",
+            "ttsUseSystemLanguage",
+            "ttsDetectContentLanguage",
+            "ttsFollowAlong",
+        )
+        SettingsCategory.Media -> setOf("fullWidthImages", "openLinksInReader")
+        SettingsCategory.Highlights -> setOf(
+            "showHighlights",
+            "highlightStyle",
+            "highlightColorMine",
+            "highlightColorFriends",
+            "highlightColorNostrverse",
+            "defaultHighlightVisibilityNostrverse",
+            "defaultHighlightVisibilityFriends",
+            "defaultHighlightVisibilityMine",
+        )
+        SettingsCategory.ZapSplits -> setOf(
+            "zapSplitsEnabled",
+            "zapSplitHighlighterWeight",
+            "zapSplitBorisWeight",
+            "zapSplitAuthorWeight",
+        )
+        SettingsCategory.Home -> setOf(
+            "hideArchivedOnHome",
+            "hideCompletedOnHome",
+            "hideNsfwOnHome",
+            "homeSectionOrder",
+        )
+        SettingsCategory.Library -> setOf("defaultLibraryView")
+        SettingsCategory.Feed -> setOf("defaultFeedView", "rssFeeds")
+        SettingsCategory.Scroll -> setOf(
+            "hideTopBarOnScroll",
+            "syncReadingPosition",
+            "autoScrollToReadingPosition",
+            "autoMarkAsReadOnCompletion",
+            "archiveClosesReader",
+            "volumeButtonScroll",
+            "volumeButtonScrollPercent",
+        )
+        SettingsCategory.Relays -> emptySet()
+        SettingsCategory.Airplane ->
+            setOf("useLocalRelayAsCache", ArticleImages.SETTINGS_KEY) +
+                OfflineShelf.entries.map { it.settingsKey }
+        SettingsCategory.About -> emptySet()
+    }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -142,6 +201,7 @@ fun SettingsScreen(
         settingsViewModel.onSignerResult(result.resultCode, result.data)
     }
     var openCategory by rememberSaveable { mutableStateOf(initialCategory) }
+    var pendingReset by rememberSaveable { mutableStateOf<String?>(null) }
     val category = openCategory?.let { name -> SettingsCategory.entries.firstOrNull { it.name == name } }
 
     LaunchedEffect(signIntent) {
@@ -156,6 +216,52 @@ fun SettingsScreen(
     }
     BackHandler(enabled = category != null) { openCategory = null }
 
+    pendingReset?.let { target ->
+        val resetCategory = SettingsCategory.entries.firstOrNull { it.name == target }
+        val resetAll = target == RESET_ALL
+        AlertDialog(
+            onDismissRequest = { pendingReset = null },
+            title = {
+                Text(
+                    if (resetAll) {
+                        stringResource(R.string.settings_reset_all_title)
+                    } else {
+                        stringResource(
+                            R.string.settings_reset_section_title,
+                            stringResource(resetCategory?.titleRes ?: R.string.settings_title),
+                        )
+                    },
+                )
+            },
+            text = {
+                Text(
+                    if (resetAll) {
+                        stringResource(R.string.settings_reset_all_body)
+                    } else {
+                        stringResource(R.string.settings_reset_section_body)
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingReset = null
+                        settingsViewModel.update { current ->
+                            if (resetAll) UserSettings.defaults() else current.resetKeys(resetCategory?.resetKeys.orEmpty())
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.settings_reset_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingReset = null }) {
+                    Text(stringResource(R.string.settings_reset_cancel))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -167,6 +273,19 @@ fun SettingsScreen(
                         onClick = { if (category != null) openCategory = null else onBack() },
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
+                    }
+                },
+                actions = {
+                    val canReset = category?.resetKeys != emptySet()
+                    if (category == null || canReset) {
+                        IconButton(
+                            onClick = { pendingReset = category?.name ?: RESET_ALL },
+                        ) {
+                            Icon(
+                                Icons.Outlined.RestartAlt,
+                                contentDescription = stringResource(R.string.settings_reset_defaults),
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

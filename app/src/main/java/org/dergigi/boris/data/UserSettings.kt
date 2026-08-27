@@ -103,6 +103,13 @@ class UserSettings internal constructor(
     fun withStringList(key: String, values: List<String>): UserSettings =
         overlay(key, JsonValue.Raw(JsonMap.stringifyStrings(values)))
 
+    fun resetKeys(keys: Set<String>): UserSettings {
+        if (keys.isEmpty()) return this
+        val next = LinkedHashMap(values)
+        keys.forEach(next::remove)
+        return UserSettings(next)
+    }
+
     fun toJson(): String = JsonMap.stringify(values)
 
     fun visibleMine(): Boolean = showHighlights && defaultHighlightVisibilityMine
