@@ -77,4 +77,27 @@ class ReaderPreviewTest {
         assertEquals("https://cdn.example.com/cover.jpg", fromCoordinate.imageUrl)
         assertTrue(fromCoordinate.url == coordinate)
     }
+
+    @Test
+    fun authorFooterOnlyShowsForNostrLongFormArticles() {
+        val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
+        assertTrue(
+            showNostrAuthorFooterCard(
+                ReadableContent(
+                    url = "nostr:naddr1qq",
+                    articleCoordinate = "30023:$pubkey:essay",
+                    authorPubkey = pubkey,
+                ),
+            ),
+        )
+        assertTrue(
+            !showNostrAuthorFooterCard(
+                ReadableContent(
+                    url = "https://example.com/post",
+                    title = "Web article",
+                    authorPubkey = pubkey,
+                ),
+            ),
+        )
+    }
 }

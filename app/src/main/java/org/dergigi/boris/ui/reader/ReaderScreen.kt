@@ -188,6 +188,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsText
@@ -2027,6 +2028,16 @@ private fun ArticleBody(
                         )
                     }
                 }
+                val showAuthorFooter = showArticle && showNostrAuthorFooterCard(content)
+                if (showAuthorFooter && authorPubkey != null) {
+                    AuthorCard(
+                        displayName = Profile.displayName(authorPubkey, author),
+                        about = author?.about,
+                        pictureUrl = author?.picture,
+                        onClick = { onOpenProfile(authorPubkey) },
+                        modifier = Modifier.padding(top = 32.dp),
+                    )
+                }
                 // No archive controls while the body is still parsing (issue #78).
                 if (loggedIn && showArticle) {
                     Box(
@@ -2216,6 +2227,12 @@ private fun ArticleBody(
             },
         )
     }
+}
+
+internal fun showNostrAuthorFooterCard(content: ReadableContent): Boolean {
+    val coordinate = content.articleCoordinate?.trim().orEmpty()
+    val authorPubkey = content.authorPubkey?.trim().orEmpty()
+    return coordinate.startsWith("${Nip01Event.KIND_LONG_FORM}:") && authorPubkey.length == 64
 }
 
 @Stable
