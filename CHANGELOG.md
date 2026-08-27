@@ -9,6 +9,18 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.12] - 2026-08-27
+
+### Added
+
+- Author profile card at the end of Nostr-native articles
+- Reset-to-defaults in Settings, globally and per section
+- Shared content filters on Library, Feeds, and Search, plus Search result-type chips
+
+### Changed
+
+- NSFW content is hidden by default
+
 ## [1.5.11] - 2026-08-26
 
 ### Added
@@ -1490,7 +1502,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.11...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.12...HEAD
+[1.5.12]: https://github.com/dergigi/boris-android/releases/tag/v1.5.12
 [1.5.11]: https://github.com/dergigi/boris-android/releases/tag/v1.5.11
 [1.5.10]: https://github.com/dergigi/boris-android/releases/tag/v1.5.10
 [1.5.9]: https://github.com/dergigi/boris-android/releases/tag/v1.5.9
