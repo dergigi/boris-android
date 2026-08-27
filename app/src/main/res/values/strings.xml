@@ -230,8 +230,8 @@
     <string name="highlight_menu_share_article">Share article</string>
     <string name="highlight_menu_go_to_quote">Go to quote</string>
     <string name="highlight_menu_view_profile">View profile</string>
-    <string name="highlight_menu_ignore_article">Ignore this article</string>
-    <string name="highlight_menu_ignore_author">Ignore highlights from this user</string>
+    <string name="highlight_menu_ignore_article">Hide this article</string>
+    <string name="highlight_menu_ignore_author">Hide highlights from this user</string>
     <plurals name="feed_highlights_collapsed_article">
         <item quantity="one">%1$d highlight from %2$s</item>
         <item quantity="other">%1$d highlights from %2$s</item>

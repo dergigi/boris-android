@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Feed highlight menu says Hide instead of Ignore
+
 ## [1.5.14] - 2026-08-27
 
 ### Added
