@@ -9,7 +9,7 @@ import org.junit.Test
 class ArticleReactionsTest {
     private val author = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
     private val reader = "11".repeat(32)
-    private val eventId = "aa".repeat(32)
+    private val articleEventId = "aa".repeat(32)
     private val coordinate = "30023:$author:my-article"
 
     @Test
@@ -30,9 +30,34 @@ class ArticleReactionsTest {
                 listOf("a", coordinate),
                 listOf("p", author),
                 listOf("k", "30023"),
-                listOf("e", eventId),
+                listOf("e", articleEventId),
             ),
             ArticleReactions.tags(content),
+        )
+    }
+
+    @Test
+    fun nostrArticleUsesCoordinateAuthorForTags() {
+        val otherAuthor = "22".repeat(32)
+        val tags = ArticleReactions.tags(article(authorPubkey = otherAuthor))
+
+        assertEquals(
+            listOf("p", author),
+            tags?.firstOrNull { it.firstOrNull() == "p" },
+        )
+    }
+
+    @Test
+    fun invalidEventIdIsNotTagged() {
+        val tags = ArticleReactions.tags(article(eventId = "z".repeat(64)))
+
+        assertEquals(
+            listOf(
+                listOf("a", coordinate),
+                listOf("p", author),
+                listOf("k", "30023"),
+            ),
+            tags,
         )
     }
 
@@ -87,18 +112,50 @@ class ArticleReactionsTest {
         assertNull(ArticleReactions.currentReaction(listOf(archive, other), article(), reader))
     }
 
-    private fun article(): ReadableContent = ReadableContent(
+    @Test
+    fun currentReactionRequiresMatchingArticleAddress() {
+        val matchingEventId = reaction(
+            content = "👍",
+            createdAt = 30,
+            tags = listOf(
+                listOf("a", "30023:$author:other"),
+                listOf("e", articleEventId),
+            ),
+        )
+
+        assertNull(ArticleReactions.currentReaction(listOf(matchingEventId), article(), reader))
+    }
+
+    @Test
+    fun currentReactionIgnoresWebArticleEventIds() {
+        val content = ReadableContent(
+            url = "https://example.com/post",
+            eventId = articleEventId,
+        )
+        val eventIdOnly = reaction(
+            content = "👍",
+            createdAt = 30,
+            tags = listOf(listOf("e", articleEventId)),
+        )
+
+        assertNull(ArticleReactions.currentReaction(listOf(eventIdOnly), content, reader))
+    }
+
+    private fun article(
+        eventId: String = articleEventId,
+        authorPubkey: String? = author,
+    ): ReadableContent = ReadableContent(
         url = "nostr:naddr1qq",
         articleCoordinate = coordinate,
         eventId = eventId,
-        authorPubkey = author,
+        authorPubkey = authorPubkey,
     )
 
     private fun reaction(
         content: String,
         createdAt: Long,
         pubkey: String = reader,
-        tags: List<List<String>> = listOf(listOf("a", coordinate), listOf("e", eventId)),
+        tags: List<List<String>> = listOf(listOf("a", coordinate), listOf("e", articleEventId)),
     ): Nip01Event = Nip01Event(
         id = "00".repeat(32),
         pubkey = pubkey,
