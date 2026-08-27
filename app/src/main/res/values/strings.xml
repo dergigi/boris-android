@@ -367,6 +367,8 @@
     <string name="settings_reset_confirm">Reset</string>
     <string name="settings_reset_cancel">Cancel</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_search_placeholder">Search settings</string>
+    <string name="settings_search_empty">No matching settings.</string>
     <string name="reader_settings">Reader settings</string>
     <string name="reader_open_native">Open in native app</string>
     <string name="reader_add_rss">+ RSS</string>
