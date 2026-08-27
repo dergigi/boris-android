@@ -276,7 +276,7 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    val canReset = category?.resetKeys != emptySet()
+                    val canReset = category?.resetKeys?.isNotEmpty() ?: true
                     if (category == null || canReset) {
                         IconButton(
                             onClick = { pendingReset = category?.name ?: RESET_ALL },
