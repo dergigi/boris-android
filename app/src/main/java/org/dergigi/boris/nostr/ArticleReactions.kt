@@ -67,7 +67,7 @@ object ArticleReactions {
             .filter { event ->
                 userPubkeyHex == null || event.pubkey.equals(userPubkeyHex, ignoreCase = true)
             }
-            .filter { isReactionTo(event, content) }
+            .filter { isReactionTo(it, content) }
             .maxByOrNull { it.createdAt }
             ?.content
             ?.let(ArticleReaction::fromContent)
