@@ -67,11 +67,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.rememberArticleActions
 import org.dergigi.boris.ui.ContentTabs
@@ -140,6 +143,7 @@ fun FeedScreen(
         rssItems = rssItems,
         rssLoading = rssLoading,
         hasRssFeeds = settings.rssFeeds.isNotEmpty(),
+        settings = settings,
         nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
         friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
         mineColor = hexColor(settings.highlightColorMine, HighlightMine),
@@ -181,6 +185,7 @@ fun FeedScreenContent(
     rssItems: List<RssItem>,
     rssLoading: Boolean,
     hasRssFeeds: Boolean,
+    settings: UserSettings,
     nostrverseColor: Color,
     friendsColor: Color,
     mineColor: Color,
@@ -204,6 +209,19 @@ fun FeedScreenContent(
             onDismiss = { showInfo = false },
         )
     }
+    val filteredRssItems = remember(rssItems, actions.archivedKeys, settings) {
+        rssItems.filter { item ->
+            HomeFilters.visible(
+                url = item.link,
+                title = item.title,
+                summary = item.summary,
+                archivedKeys = actions.archivedKeys,
+                hideArchived = settings.hideArchivedOnHome,
+                hideCompleted = settings.hideCompletedOnHome,
+                hideNsfw = settings.hideNsfwOnHome,
+            )
+        }
+    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -211,6 +229,7 @@ fun FeedScreenContent(
                 title = { Text(stringResource(R.string.feed_title)) },
                 actions = {
                     TopBarRefreshIndicator(refreshing = refreshing)
+                    ContentFilterMenu(settings = settings)
                     ScopeToggle(
                         icon = Icons.Outlined.Hub,
                         on = scope.nostrverse,
@@ -292,7 +311,7 @@ fun FeedScreenContent(
                                 modifier = Modifier.fillMaxSize(),
                             ) {
                                 FeedRssList(
-                                    items = rssItems,
+                                    items = filteredRssItems,
                                     emptyText = stringResource(
                                         if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
                                     ),
@@ -310,7 +329,7 @@ fun FeedScreenContent(
                         FeedAllPane(
                             state = state,
                             refreshing = refreshing,
-                            rssItems = rssItems,
+                            rssItems = filteredRssItems,
                             rssLoading = rssLoading,
                             deletedIds = deletedIds,
                             nostrverseColor = nostrverseColor,
@@ -321,6 +340,7 @@ fun FeedScreenContent(
                             onOpenHighlight = onOpenHighlight,
                             actions = actions,
                             menuFor = menuFor,
+                            settings = settings,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -354,7 +374,19 @@ fun FeedScreenContent(
                                 ) {
                                     when (tab) {
                                         ContentTab.Highlights -> FeedHighlightList(
-                                            items = state.highlights.filter { it.id !in deletedIds },
+                                            items = state.highlights
+                                                .filter { it.id !in deletedIds }
+                                                .filter { item ->
+                                                    HomeFilters.visible(
+                                                        url = item.url,
+                                                        title = item.quote,
+                                                        summary = item.context,
+                                                        archivedKeys = actions.archivedKeys,
+                                                        hideArchived = settings.hideArchivedOnHome,
+                                                        hideCompleted = settings.hideCompletedOnHome,
+                                                        hideNsfw = settings.hideNsfwOnHome,
+                                                    )
+                                                },
                                             emptyText = emptyMessage(
                                                 tab,
                                                 filtered = state.hasHighlights,
@@ -371,7 +403,17 @@ fun FeedScreenContent(
                                             menuFor = menuFor,
                                         )
                                         ContentTab.Writings -> FeedWritingList(
-                                            items = state.writings,
+                                            items = state.writings.filter { item ->
+                                                HomeFilters.visible(
+                                                    url = item.url,
+                                                    title = item.title,
+                                                    summary = item.summary,
+                                                    archivedKeys = actions.archivedKeys,
+                                                    hideArchived = settings.hideArchivedOnHome,
+                                                    hideCompleted = settings.hideCompletedOnHome,
+                                                    hideNsfw = settings.hideNsfwOnHome,
+                                                )
+                                            },
                                             emptyText = emptyMessage(
                                                 tab,
                                                 filtered = state.hasWritings,
@@ -436,16 +478,50 @@ private fun FeedAllPane(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
+    settings: UserSettings,
     modifier: Modifier = Modifier,
 ) {
     val highlights = (state as? FeedUiState.Ready)?.highlights.orEmpty()
         .filter { it.id !in deletedIds }
+        .filter { item ->
+            HomeFilters.visible(
+                url = item.url,
+                title = item.quote,
+                summary = item.context,
+                archivedKeys = actions.archivedKeys,
+                hideArchived = settings.hideArchivedOnHome,
+                hideCompleted = settings.hideCompletedOnHome,
+                hideNsfw = settings.hideNsfwOnHome,
+            )
+        }
     val writings = (state as? FeedUiState.Ready)?.writings.orEmpty()
-    val merged = remember(highlights, writings, rssItems) {
+        .filter { item ->
+            HomeFilters.visible(
+                url = item.url,
+                title = item.title,
+                summary = item.summary,
+                archivedKeys = actions.archivedKeys,
+                hideArchived = settings.hideArchivedOnHome,
+                hideCompleted = settings.hideCompletedOnHome,
+                hideNsfw = settings.hideNsfwOnHome,
+            )
+        }
+    val filteredRss = rssItems.filter { item ->
+        HomeFilters.visible(
+            url = item.link,
+            title = item.title,
+            summary = item.summary,
+            archivedKeys = actions.archivedKeys,
+            hideArchived = settings.hideArchivedOnHome,
+            hideCompleted = settings.hideCompletedOnHome,
+            hideNsfw = settings.hideNsfwOnHome,
+        )
+    }
+    val merged = remember(highlights, writings, filteredRss) {
         buildList {
             highlights.forEach { add(FeedMergedItem.Highlight(it)) }
             writings.forEach { add(FeedMergedItem.Writing(it)) }
-            rssItems.forEach { add(FeedMergedItem.Rss(it)) }
+            filteredRss.forEach { add(FeedMergedItem.Rss(it)) }
         }.sortedByDescending { it.sortAt }
     }
     val waiting = state is FeedUiState.Loading && rssLoading && merged.isEmpty()

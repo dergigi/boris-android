@@ -15,11 +15,31 @@ object HomeFilters {
         hideNsfw: Boolean,
     ): List<HighlightedArticle> {
         return articles.filter { article ->
-            if (hideArchived && ArchivedArticles.isArchived(article.url, archivedKeys)) return@filter false
-            if (hideCompleted && isComplete(article.url)) return@filter false
-            if (hideNsfw && SensitiveContent.classify(article) != null) return@filter false
-            true
+            visible(
+                url = article.url,
+                title = article.title,
+                summary = null,
+                archivedKeys = archivedKeys,
+                hideArchived = hideArchived,
+                hideCompleted = hideCompleted,
+                hideNsfw = hideNsfw,
+            )
         }
+    }
+
+    fun visible(
+        url: String?,
+        title: String?,
+        summary: String?,
+        archivedKeys: Set<String>,
+        hideArchived: Boolean,
+        hideCompleted: Boolean,
+        hideNsfw: Boolean,
+    ): Boolean {
+        if (hideArchived && url?.let { ArchivedArticles.isArchived(it, archivedKeys) } == true) return false
+        if (hideCompleted && url?.let(::isComplete) == true) return false
+        if (hideNsfw && SensitiveContent.classify(url, title, summary) != null) return false
+        return true
     }
 
     fun isComplete(url: String): Boolean =

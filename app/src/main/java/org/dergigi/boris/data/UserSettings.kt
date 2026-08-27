@@ -48,7 +48,7 @@ class UserSettings internal constructor(
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", true)
     val hideCompletedOnHome: Boolean get() = bool("hideCompletedOnHome", false)
-    val hideNsfwOnHome: Boolean get() = bool("hideNsfwOnHome", false)
+    val hideNsfwOnHome: Boolean get() = bool("hideNsfwOnHome", true)
     val nsfwWarnInReader: Boolean get() = bool("nsfwWarnInReader", true)
     val homeSectionOrder: List<String> get() = stringList("homeSectionOrder")
     val defaultLibraryView: BookmarkBucket
@@ -181,6 +181,7 @@ private const val DEFAULT_JSON = """{
   "zapSplitBorisWeight":2.1,
   "zapSplitAuthorWeight":50,
   "useLocalRelayAsCache":true,
+  "hideNsfwOnHome":true,
   "rebroadcastToAllRelays":false,
   "paragraphAlignment":"justify",
   "fullWidthImages":true,

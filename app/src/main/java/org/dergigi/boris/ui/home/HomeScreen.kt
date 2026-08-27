@@ -43,17 +43,13 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -107,10 +103,10 @@ import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SensitiveContent
-import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleActionsMenu
+import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.data.HomeOnboardingStore
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.NostrTarget
@@ -199,7 +195,7 @@ fun HomeScreen(
                 },
                 actions = {
                     TopBarRefreshIndicator(refreshing = refreshing)
-                    HomeFilterMenu(settings = settings)
+                    ContentFilterMenu(settings = settings)
                     TopBarMoreMenu(
                         items = listOf(
                             TopBarMenuItem(
@@ -1137,63 +1133,6 @@ private fun StatusMessage(
             Text(stringResource(R.string.feed_retry))
         }
     }
-}
-
-@Composable
-private fun HomeFilterMenu(settings: UserSettings) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(
-                imageVector = Icons.Outlined.FilterList,
-                contentDescription = stringResource(R.string.home_filters),
-            )
-        }
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false },
-        ) {
-            FilterToggle(
-                label = stringResource(R.string.home_hide_archived),
-                checked = settings.hideArchivedOnHome,
-                onCheckedChange = {
-                    SettingsSync.apply(settings.withBoolean("hideArchivedOnHome", it))
-                },
-            )
-            FilterToggle(
-                label = stringResource(R.string.home_hide_completed),
-                checked = settings.hideCompletedOnHome,
-                onCheckedChange = {
-                    SettingsSync.apply(settings.withBoolean("hideCompletedOnHome", it))
-                },
-            )
-            FilterToggle(
-                label = stringResource(R.string.home_hide_nsfw),
-                checked = settings.hideNsfwOnHome,
-                onCheckedChange = {
-                    SettingsSync.apply(settings.withBoolean("hideNsfwOnHome", it))
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterToggle(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    DropdownMenuItem(
-        text = { Text(label) },
-        leadingIcon = {
-            Checkbox(
-                checked = checked,
-                onCheckedChange = null,
-            )
-        },
-        onClick = { onCheckedChange(!checked) },
-    )
 }
 
 private val CardWidth = 140.dp
