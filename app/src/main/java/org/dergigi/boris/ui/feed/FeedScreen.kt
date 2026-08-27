@@ -310,11 +310,15 @@ fun FeedScreenContent(
                                 onRefresh = onRefresh,
                                 modifier = Modifier.fillMaxSize(),
                             ) {
+                                val emptyText = when {
+                                    rssItems.isNotEmpty() && filteredRssItems.isEmpty() ->
+                                        R.string.feed_empty_filtered
+                                    hasRssFeeds -> R.string.feed_rss_empty
+                                    else -> R.string.feed_rss_none_configured
+                                }
                                 FeedRssList(
                                     items = filteredRssItems,
-                                    emptyText = stringResource(
-                                        if (hasRssFeeds) R.string.feed_rss_empty else R.string.feed_rss_none_configured,
-                                    ),
+                                    emptyText = stringResource(emptyText),
                                     emptyActionLabel = stringResource(
                                         if (hasRssFeeds) R.string.feed_retry else R.string.feed_rss_open_settings,
                                     ),

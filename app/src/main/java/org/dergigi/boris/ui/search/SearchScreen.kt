@@ -211,6 +211,7 @@ fun SearchScreenContent(
                             archivedKeys = archivedKeys,
                         )
                     }
+                    .take(LocalSearch.DEFAULT_LIMIT)
             }
             when {
                 query.trim().length < 2 -> Unit
