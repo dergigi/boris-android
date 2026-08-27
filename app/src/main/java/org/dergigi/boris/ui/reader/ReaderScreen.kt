@@ -167,6 +167,7 @@ import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
 import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrEventRef
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.NostrLink
@@ -188,6 +189,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.ArticleRow
+import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.tts.TtsPlayback
 import org.dergigi.boris.tts.TtsText
@@ -2027,6 +2029,16 @@ private fun ArticleBody(
                         )
                     }
                 }
+                val showAuthorFooter = showArticle && showNostrAuthorFooterCard(content)
+                if (showAuthorFooter && authorPubkey != null) {
+                    AuthorCard(
+                        displayName = Profile.displayName(authorPubkey, author),
+                        about = author?.about,
+                        pictureUrl = author?.picture,
+                        onClick = { onOpenProfile(authorPubkey) },
+                        modifier = Modifier.padding(top = 32.dp),
+                    )
+                }
                 // No archive controls while the body is still parsing (issue #78).
                 if (loggedIn && showArticle) {
                     Box(
@@ -2217,6 +2229,21 @@ private fun ArticleBody(
         )
     }
 }
+
+internal fun showNostrAuthorFooterCard(content: ReadableContent): Boolean {
+    val authorPubkey = content.authorPubkey
+        ?.trim()
+        ?.lowercase()
+        ?.takeIf { nostrPubkeyRegex.matches(it) }
+        ?: return false
+    val article = content.articleCoordinate
+        ?.trim()
+        ?.let { NostrArticle.fromCoordinate(it) }
+        ?: return false
+    return article.pointer.pubkey.lowercase() == authorPubkey
+}
+
+private val nostrPubkeyRegex = Regex("[0-9a-f]{64}")
 
 @Stable
 private class SpokenMarkState {
