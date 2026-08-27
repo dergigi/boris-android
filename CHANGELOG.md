@@ -11,7 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Changed
 
-- Library info lives in the overflow menu
+- Library and Feeds info live in the overflow menu
 
 ## [1.5.13] - 2026-08-27
 

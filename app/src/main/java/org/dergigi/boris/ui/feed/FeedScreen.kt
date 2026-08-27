@@ -258,14 +258,13 @@ fun FeedScreenContent(
                         ),
                         onClick = { onToggle(FeedLevel.Mine) },
                     )
-                    IconButton(onClick = { showInfo = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = stringResource(R.string.feed_info),
-                        )
-                    }
                     TopBarMoreMenu(
                         items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.feed_info),
+                                icon = Icons.Outlined.Info,
+                                onClick = { showInfo = true },
+                            ),
                             TopBarMenuItem(
                                 label = stringResource(R.string.feed_settings),
                                 icon = Icons.Outlined.Settings,
