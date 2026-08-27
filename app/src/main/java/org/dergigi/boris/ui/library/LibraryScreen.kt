@@ -35,7 +35,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -204,14 +203,13 @@ fun LibraryScreenContent(
                     if (state is LibraryUiState.Ready) {
                         ContentFilterMenu(settings = settings)
                     }
-                    IconButton(onClick = { showInfo = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = stringResource(R.string.library_info),
-                        )
-                    }
                     TopBarMoreMenu(
                         items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.library_info),
+                                icon = Icons.Outlined.Info,
+                                onClick = { showInfo = true },
+                            ),
                             TopBarMenuItem(
                                 label = stringResource(R.string.library_settings),
                                 icon = Icons.Outlined.Settings,
