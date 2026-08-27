@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,6 +45,8 @@ data class HighlightCardMenu(
     val authorHex: String?,
     val onGoToQuote: (() -> Unit)? = null,
     val onViewProfile: (() -> Unit)? = null,
+    val onIgnoreArticle: (() -> Unit)? = null,
+    val onIgnoreAuthor: (() -> Unit)? = null,
     val onDelete: (() -> Unit)? = null,
 )
 
@@ -124,6 +127,18 @@ fun HighlightCardMenuButton(
             }
             menu?.onViewProfile?.let { action ->
                 MenuItem(R.string.highlight_menu_view_profile, Icons.Outlined.Person) {
+                    open = false
+                    action()
+                }
+            }
+            menu?.onIgnoreArticle?.let { action ->
+                MenuItem(R.string.highlight_menu_ignore_article, Icons.Outlined.VisibilityOff) {
+                    open = false
+                    action()
+                }
+            }
+            menu?.onIgnoreAuthor?.let { action ->
+                MenuItem(R.string.highlight_menu_ignore_author, Icons.Outlined.VisibilityOff) {
                     open = false
                     action()
                 }

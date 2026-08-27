@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.UnfoldMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import org.dergigi.boris.R
+import org.dergigi.boris.data.CollapsedHighlights
 import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.RelativeTime
 import org.dergigi.boris.data.RssItem
@@ -163,6 +167,12 @@ fun FeedScreen(
                     { onOpenHighlight(url, item.id, item.quote) }
                 },
                 onViewProfile = { onOpenProfile(item.authorHex) },
+                onIgnoreArticle = FeedHighlightCollapse.articleKey(item)?.let { key ->
+                    { CollapsedHighlights.ignoreArticle(context, key) }
+                },
+                onIgnoreAuthor = {
+                    CollapsedHighlights.ignoreAuthor(context, item.authorHex)
+                },
                 onDelete = if (menuViewModel.canDelete(item.authorHex)) {
                     { menuViewModel.delete(item.id) }
                 } else {
@@ -200,6 +210,16 @@ fun FeedScreenContent(
     deletedIds: Set<String> = emptySet(),
     menuFor: (FeedItem) -> HighlightCardMenu? = { null },
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { CollapsedHighlights.ensure(context) }
+    val collapsedArticles by CollapsedHighlights.articles.collectAsStateWithLifecycle()
+    val collapsedAuthors by CollapsedHighlights.authors.collectAsStateWithLifecycle()
+    fun expandCollapsed(row: FeedHighlightRow.Collapsed) {
+        when (row.reason) {
+            HighlightCollapseReason.Article -> CollapsedHighlights.showArticle(context, row.targetKey)
+            HighlightCollapseReason.Author -> CollapsedHighlights.showAuthor(context, row.targetKey)
+        }
+    }
     var showInfo by remember { mutableStateOf(false) }
     if (showInfo) {
         FeedInfoDialog(
@@ -344,6 +364,9 @@ fun FeedScreenContent(
                             actions = actions,
                             menuFor = menuFor,
                             settings = settings,
+                            collapsedArticles = collapsedArticles,
+                            collapsedAuthors = collapsedAuthors,
+                            onExpand = ::expandCollapsed,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -390,6 +413,8 @@ fun FeedScreenContent(
                                                         hideNsfw = settings.hideNsfwOnHome,
                                                     )
                                                 },
+                                            collapsedArticles = collapsedArticles,
+                                            collapsedAuthors = collapsedAuthors,
                                             emptyText = emptyMessage(
                                                 tab,
                                                 filtered = state.hasHighlights,
@@ -403,6 +428,7 @@ fun FeedScreenContent(
                                             },
                                             onRefresh = onRefresh,
                                             onOpenHighlight = onOpenHighlight,
+                                            onExpand = ::expandCollapsed,
                                             menuFor = menuFor,
                                         )
                                         ContentTab.Writings -> FeedWritingList(
@@ -463,6 +489,11 @@ private sealed class FeedMergedItem {
         override val sortAt: Long get() = item.publishedAt
         override val key: String get() = "r:${item.link}"
     }
+
+    data class CollapsedHighlight(val row: FeedHighlightRow.Collapsed) : FeedMergedItem() {
+        override val sortAt: Long get() = row.sortAt
+        override val key: String get() = row.key
+    }
 }
 
 @Composable
@@ -481,6 +512,9 @@ private fun FeedAllPane(
     actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
     settings: UserSettings,
+    collapsedArticles: Set<String>,
+    collapsedAuthors: Set<String>,
+    onExpand: (FeedHighlightRow.Collapsed) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val highlights = (state as? FeedUiState.Ready)?.highlights.orEmpty()
@@ -519,9 +553,17 @@ private fun FeedAllPane(
             hideNsfw = settings.hideNsfwOnHome,
         )
     }
-    val merged = remember(highlights, writings, filteredRss) {
+    val highlightRows = remember(highlights, collapsedArticles, collapsedAuthors) {
+        FeedHighlightCollapse.rows(highlights, collapsedArticles, collapsedAuthors)
+    }
+    val merged = remember(highlightRows, writings, filteredRss) {
         buildList {
-            highlights.forEach { add(FeedMergedItem.Highlight(it)) }
+            highlightRows.forEach { row ->
+                when (row) {
+                    is FeedHighlightRow.Open -> add(FeedMergedItem.Highlight(row.item))
+                    is FeedHighlightRow.Collapsed -> add(FeedMergedItem.CollapsedHighlight(row))
+                }
+            }
             writings.forEach { add(FeedMergedItem.Writing(it)) }
             filteredRss.forEach { add(FeedMergedItem.Rss(it)) }
         }.sortedByDescending { it.sortAt }
@@ -560,6 +602,7 @@ private fun FeedAllPane(
                         onOpenHighlight = onOpenHighlight,
                         actions = actions,
                         menuFor = menuFor,
+                        onExpand = onExpand,
                     )
                 }
             }
@@ -577,6 +620,7 @@ private fun FeedAllList(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
+    onExpand: (FeedHighlightRow.Collapsed) -> Unit,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -624,6 +668,12 @@ private fun FeedAllList(
                             onOpenArticle = onOpenArticle,
                         )
                     }
+                    is FeedMergedItem.CollapsedHighlight -> {
+                        CollapsedHighlightRow(
+                            row = entry.row,
+                            onExpand = { onExpand(entry.row) },
+                        )
+                    }
                     is FeedMergedItem.Rss -> {
                         FeedRssRow(
                             item = entry.item,
@@ -640,12 +690,18 @@ private fun FeedAllList(
 @Composable
 private fun FeedHighlightList(
     items: List<FeedItem>,
+    collapsedArticles: Set<String>,
+    collapsedAuthors: Set<String>,
     emptyText: String,
     levelColor: (FeedLevel) -> Color,
     onRefresh: () -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
+    onExpand: (FeedHighlightRow.Collapsed) -> Unit,
     menuFor: (FeedItem) -> HighlightCardMenu? = { null },
 ) {
+    val rows = remember(items, collapsedArticles, collapsedAuthors) {
+        FeedHighlightCollapse.rows(items, collapsedArticles, collapsedAuthors)
+    }
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
             StatusMessage(
@@ -665,22 +721,33 @@ private fun FeedHighlightList(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(items, key = { it.id }) { item ->
-                HighlightCard(
-                    quote = item.quote,
-                    context = item.context,
-                    color = levelColor(item.level),
-                    createdAt = item.createdAt,
-                    authorName = item.authorName,
-                    host = item.host,
-                    url = item.url,
-                    authorPicture = item.authorPicture,
-                    maxQuoteLines = 8,
-                    onClick = item.url?.let { url ->
-                        { onOpenHighlight(url, item.id, item.quote) }
-                    },
-                    menu = menuFor(item),
-                )
+            items(rows, key = { it.key }) { row ->
+                when (row) {
+                    is FeedHighlightRow.Open -> {
+                        val item = row.item
+                        HighlightCard(
+                            quote = item.quote,
+                            context = item.context,
+                            color = levelColor(item.level),
+                            createdAt = item.createdAt,
+                            authorName = item.authorName,
+                            host = item.host,
+                            url = item.url,
+                            authorPicture = item.authorPicture,
+                            maxQuoteLines = 8,
+                            onClick = item.url?.let { url ->
+                                { onOpenHighlight(url, item.id, item.quote) }
+                            },
+                            menu = menuFor(item),
+                        )
+                    }
+                    is FeedHighlightRow.Collapsed -> {
+                        CollapsedHighlightRow(
+                            row = row,
+                            onExpand = { onExpand(row) },
+                        )
+                    }
+                }
             }
         }
     }
@@ -787,6 +854,68 @@ private fun ScopeToggle(
             contentDescription = contentDescription,
             tint = tint.copy(alpha = alpha),
         )
+    }
+}
+
+@Composable
+private fun CollapsedHighlightRow(
+    row: FeedHighlightRow.Collapsed,
+    onExpand: () -> Unit,
+) {
+    val label = when (row.reason) {
+        HighlightCollapseReason.Article -> {
+            val source = row.source ?: stringResource(R.string.feed_highlights_this_article)
+            pluralStringResource(
+                R.plurals.feed_highlights_collapsed_article,
+                row.count,
+                row.count,
+                source,
+            )
+        }
+        HighlightCollapseReason.Author -> pluralStringResource(
+            R.plurals.feed_highlights_collapsed_author,
+            row.count,
+            row.count,
+            row.authorName.orEmpty(),
+        )
+    }
+    val shape = RoundedCornerShape(8.dp)
+    val muted = MaterialTheme.colorScheme.outlineVariant
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, muted.copy(alpha = 0.7f), shape)
+            .background(muted.copy(alpha = 0.18f))
+            .clickable(onClick = onExpand)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.feed_highlights_expand),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Icon(
+                imageVector = Icons.Outlined.UnfoldMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
+            )
+        }
     }
 }
 

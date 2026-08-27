@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Ignore an article or person from a feed highlight card to collapse those highlights into a muted row
+
 ### Changed
 
 - Library and Feeds info live in the overflow menu
