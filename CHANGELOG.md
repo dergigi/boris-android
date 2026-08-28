@@ -9,6 +9,21 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.16] - 2026-08-28
+
+### Added
+
+- Time window picker on Most highlighted: last 24 hours, 7 days, or 30 days
+- Share icon on highlight cards, including Share article for regular web articles
+
+### Changed
+
+- Hide article and hide user live behind the crossed-out eye next to the quote mark
+
+### Fixed
+
+- Short highlights paint only the selected occurrence, not every matching word
+
 ## [1.5.15] - 2026-08-28
 
 ### Added
@@ -1537,7 +1552,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.15...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.16...HEAD
+[1.5.16]: https://github.com/dergigi/boris-android/releases/tag/v1.5.16
 [1.5.15]: https://github.com/dergigi/boris-android/releases/tag/v1.5.15
 [1.5.14]: https://github.com/dergigi/boris-android/releases/tag/v1.5.14
 [1.5.13]: https://github.com/dergigi/boris-android/releases/tag/v1.5.13
