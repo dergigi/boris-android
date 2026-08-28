@@ -13,6 +13,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - Jump-back control stays hidden at the start and end of an article
 - Highlight, find, and outline panes sit flush when the top bar is hidden
+- Most highlighted ranks by unique people, not one account's highlight count
 
 ## [1.5.16] - 2026-08-28
 

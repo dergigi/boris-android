@@ -37,7 +37,7 @@ object HighlightedArticles {
         return out
     }
 
-    /** Articles ranked by highlight count since [since]; needs at least two to rank. */
+    /** Articles ranked by unique highlighters since [since]; needs at least two people. */
     fun mostHighlighted(
         events: List<Nip01Event>,
         limit: Int,
@@ -55,13 +55,14 @@ object HighlightedArticles {
             counts.getOrPut(url) { mutableListOf() }.add(event)
         }
         return counts.entries
-            .filter { it.value.size >= 2 }
+            .map { (url, hits) -> Triple(url, hits, uniqueHighlighters(hits)) }
+            .filter { it.third >= 2 }
             .sortedWith(
-                compareByDescending<Map.Entry<String, List<Nip01Event>>> { it.value.size }
-                    .thenByDescending { entry -> entry.value.maxOf { it.createdAt } },
+                compareByDescending<Triple<String, List<Nip01Event>, Int>> { it.third }
+                    .thenByDescending { it.second.maxOf { event -> event.createdAt } },
             )
             .take(limit)
-            .mapNotNull { (url, hits) ->
+            .mapNotNull { (url, hits, _) ->
                 val target = NostrLink.parse(url)
                 val host = when (target) {
                     is NostrTarget.Article -> authorHost(target.ref.pointer.pubkey)
@@ -72,6 +73,9 @@ object HighlightedArticles {
                 decorate(HighlightedArticle(url, host, host, null, hits.maxOf { it.createdAt }))
             }
     }
+
+    private fun uniqueHighlighters(hits: List<Nip01Event>): Int =
+        hits.mapTo(HashSet(hits.size)) { it.pubkey.lowercase() }.size
 
     /** Fetches missing article/note events and author profiles, then re-decorates. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {

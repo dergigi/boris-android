@@ -165,15 +165,19 @@ class HighlightedArticlesTest {
     }
 
     @Test
-    fun mostHighlightedRanksByCountAndNeedsAtLeastTwo() {
+    fun mostHighlightedRanksByUniquePeopleNotHighlightCount() {
         val now = 1_700_000_000L
         val events = listOf(
-            highlight("https://example.com/popular", createdAt = now - 10),
-            highlight("https://example.com/popular", createdAt = now - 9),
-            highlight("https://example.com/popular", createdAt = now - 8),
-            highlight("https://example.com/runner-up", createdAt = now - 7),
-            highlight("https://example.com/runner-up", createdAt = now - 6),
-            highlight("https://example.com/lonely", createdAt = now - 5),
+            highlight("https://example.com/popular", createdAt = now - 10, pubkey = person("aa")),
+            highlight("https://example.com/popular", createdAt = now - 9, pubkey = person("bb")),
+            highlight("https://example.com/popular", createdAt = now - 8, pubkey = person("cc")),
+            highlight("https://example.com/runner-up", createdAt = now - 7, pubkey = person("aa")),
+            highlight("https://example.com/runner-up", createdAt = now - 6, pubkey = person("bb")),
+            highlight("https://example.com/lonely", createdAt = now - 5, pubkey = person("aa")),
+            highlight("https://example.com/one-guy", createdAt = now - 4, pubkey = person("dd")),
+            highlight("https://example.com/one-guy", createdAt = now - 3, pubkey = person("dd")),
+            highlight("https://example.com/one-guy", createdAt = now - 2, pubkey = person("dd")),
+            highlight("https://example.com/one-guy", createdAt = now - 1, pubkey = person("dd")),
         )
         val articles = HighlightedArticles.mostHighlighted(events, limit = 12, since = now - 7 * 24 * 60 * 60)
         assertEquals(
@@ -190,11 +194,11 @@ class HighlightedArticlesTest {
         val now = 1_700_000_000L
         val week = 7L * 24 * 60 * 60
         val events = listOf(
-            highlight("https://example.com/old", createdAt = now - week - 1),
-            highlight("https://example.com/old", createdAt = now - week - 2),
-            highlight("https://example.com/old", createdAt = now - week - 3),
-            highlight("https://example.com/fresh", createdAt = now - 10),
-            highlight("https://example.com/fresh", createdAt = now - 9),
+            highlight("https://example.com/old", createdAt = now - week - 1, pubkey = person("aa")),
+            highlight("https://example.com/old", createdAt = now - week - 2, pubkey = person("bb")),
+            highlight("https://example.com/old", createdAt = now - week - 3, pubkey = person("cc")),
+            highlight("https://example.com/fresh", createdAt = now - 10, pubkey = person("aa")),
+            highlight("https://example.com/fresh", createdAt = now - 9, pubkey = person("bb")),
         )
         val articles = HighlightedArticles.mostHighlighted(events, limit = 12, since = now - week)
         assertEquals(listOf("https://example.com/fresh"), articles.map { it.url })
@@ -204,10 +208,10 @@ class HighlightedArticlesTest {
     fun mostHighlightedHonorsDayAndMonthWindows() {
         val now = 1_700_000_000L
         val events = listOf(
-            highlight("https://example.com/today", createdAt = now - 3_600),
-            highlight("https://example.com/today", createdAt = now - 7_200),
-            highlight("https://example.com/month", createdAt = now - 10 * 24 * 60 * 60),
-            highlight("https://example.com/month", createdAt = now - 11 * 24 * 60 * 60),
+            highlight("https://example.com/today", createdAt = now - 3_600, pubkey = person("aa")),
+            highlight("https://example.com/today", createdAt = now - 7_200, pubkey = person("bb")),
+            highlight("https://example.com/month", createdAt = now - 10 * 24 * 60 * 60, pubkey = person("aa")),
+            highlight("https://example.com/month", createdAt = now - 11 * 24 * 60 * 60, pubkey = person("bb")),
         )
         assertEquals(
             listOf("https://example.com/today"),
@@ -238,13 +242,16 @@ class HighlightedArticlesTest {
         assertEquals(emptyList<String>(), articles.map { it.url })
     }
 
+    private fun person(byte: String): String = byte.repeat(32)
+
     private fun highlight(
         url: String,
         createdAt: Long,
+        pubkey: String = person("aa"),
         tags: List<List<String>> = listOf(listOf("r", url)),
     ): Nip01Event = Nip01Event(
-        id = createdAt.toString().padStart(64, '0'),
-        pubkey = "aa".repeat(32),
+        id = (createdAt.toString() + pubkey.take(8)).padStart(64, '0').takeLast(64),
+        pubkey = pubkey,
         createdAt = createdAt,
         kind = KIND_HIGHLIGHT,
         tags = tags,
