@@ -49,7 +49,14 @@
     <string name="refreshing">Refreshing</string>
     <string name="nav_you">You</string>
     <string name="home_continue_reading">Continue reading</string>
-    <string name="home_most_highlighted">Most highlighted this week</string>
+    <string name="home_most_highlighted">Most highlighted</string>
+    <string name="home_most_highlighted_24h">24h</string>
+    <string name="home_most_highlighted_7d">7d</string>
+    <string name="home_most_highlighted_30d">30d</string>
+    <string name="home_most_highlighted_24h_full">Last 24 hours</string>
+    <string name="home_most_highlighted_7d_full">Last 7 days</string>
+    <string name="home_most_highlighted_30d_full">Last 30 days</string>
+    <string name="home_most_highlighted_empty">Nothing stands out in this window yet.</string>
     <string name="home_random_articles">Random unreads</string>
     <string name="home_short_reads">Short reads</string>
     <string name="home_long_reads">Long reads</string>

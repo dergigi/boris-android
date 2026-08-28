@@ -38,6 +38,7 @@ class UserSettingsTest {
         assertFalse(settings.hideCompletedOnHome)
         assertTrue(settings.hideNsfwOnHome)
         assertTrue(settings.nsfwWarnInReader)
+        assertEquals(MostHighlightedWindow.Week, settings.mostHighlightedWindow)
         assertEquals(2.1, settings.ttsDefaultSpeed, 0.0)
         assertEquals("content", settings.ttsLanguageMode)
         assertFalse(settings.ttsUseSystemLanguage)
@@ -45,6 +46,28 @@ class UserSettingsTest {
         assertTrue(settings.ttsFollowAlong)
         assertFalse(settings.firstTimeDismissed)
         assertTrue(settings.offlineDownloadEnabled("offlineDownloadImages"))
+    }
+
+    @Test
+    fun mostHighlightedWindowReadsAndFallsBack() {
+        assertEquals(
+            MostHighlightedWindow.Day,
+            UserSettings.parse("""{"mostHighlightedWindow":"24h"}""").mostHighlightedWindow,
+        )
+        assertEquals(
+            MostHighlightedWindow.Month,
+            UserSettings.parse("""{"mostHighlightedWindow":"30d"}""").mostHighlightedWindow,
+        )
+        assertEquals(
+            MostHighlightedWindow.Week,
+            UserSettings.parse("""{"mostHighlightedWindow":"nope"}""").mostHighlightedWindow,
+        )
+        val updated = UserSettings.defaults().withString("mostHighlightedWindow", "24h")
+        assertEquals(MostHighlightedWindow.Day, updated.mostHighlightedWindow)
+        assertEquals(
+            MostHighlightedWindow.Day,
+            UserSettings.parse(updated.toJson()).mostHighlightedWindow,
+        )
     }
 
     @Test

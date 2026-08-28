@@ -201,6 +201,33 @@ class HighlightedArticlesTest {
     }
 
     @Test
+    fun mostHighlightedHonorsDayAndMonthWindows() {
+        val now = 1_700_000_000L
+        val events = listOf(
+            highlight("https://example.com/today", createdAt = now - 3_600),
+            highlight("https://example.com/today", createdAt = now - 7_200),
+            highlight("https://example.com/month", createdAt = now - 10 * 24 * 60 * 60),
+            highlight("https://example.com/month", createdAt = now - 11 * 24 * 60 * 60),
+        )
+        assertEquals(
+            listOf("https://example.com/today"),
+            HighlightedArticles.mostHighlighted(
+                events,
+                limit = 12,
+                since = MostHighlightedWindow.Day.since(now),
+            ).map { it.url },
+        )
+        assertEquals(
+            listOf("https://example.com/today", "https://example.com/month"),
+            HighlightedArticles.mostHighlighted(
+                events,
+                limit = 12,
+                since = MostHighlightedWindow.Month.since(now),
+            ).map { it.url },
+        )
+    }
+
+    @Test
     fun mostHighlightedDedupesEventIds() {
         val duplicate = highlight("https://example.com/one", createdAt = 1_700_000_000L)
         val articles = HighlightedArticles.mostHighlighted(

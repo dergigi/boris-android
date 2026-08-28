@@ -37,11 +37,11 @@ object HighlightedArticles {
         return out
     }
 
-    /** Articles ranked by highlight count in the last week; needs at least two to rank. */
+    /** Articles ranked by highlight count since [since]; needs at least two to rank. */
     fun mostHighlighted(
         events: List<Nip01Event>,
         limit: Int,
-        since: Long = System.currentTimeMillis() / 1000 - WEEK_SECONDS,
+        since: Long = MostHighlightedWindow.DEFAULT.since(),
     ): List<HighlightedArticle> {
         val counts = LinkedHashMap<String, MutableList<Nip01Event>>()
         val seen = HashSet<String>()
@@ -72,8 +72,6 @@ object HighlightedArticles {
                 decorate(HighlightedArticle(url, host, host, null, hits.maxOf { it.createdAt }))
             }
     }
-
-    private const val WEEK_SECONDS = 7L * 24 * 60 * 60
 
     /** Fetches missing article/note events and author profiles, then re-decorates. */
     fun hydrate(items: List<HighlightedArticle>): List<HighlightedArticle> {

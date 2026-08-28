@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
@@ -50,6 +52,8 @@ import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,6 +104,7 @@ import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ClipboardLink
 import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.HomeFilters
+import org.dergigi.boris.data.MostHighlightedWindow
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.NsfwBadge
@@ -115,6 +120,7 @@ import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.CardReadingProgress
+import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
@@ -138,6 +144,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
@@ -277,6 +284,13 @@ fun HomeScreen(
                     viewModel.startListening(article.url)
                 },
                 onRefreshRandomArticles = viewModel::refreshRandomArticles,
+                mostWindow = settings.mostHighlightedWindow,
+                onSelectMostWindow = { window ->
+                    settingsViewModel.update {
+                        it.withString("mostHighlightedWindow", window.id)
+                    }
+                    viewModel.refreshMostHighlighted()
+                },
                 onMarkAsRead = { article ->
                     viewModel.markAsRead(article)?.let(launcher::launch)
                 },
@@ -354,6 +368,8 @@ fun HomeScreenContent(
     onRead: (String) -> Unit,
     onListen: (HighlightedArticle) -> Unit = {},
     onRefreshRandomArticles: () -> Unit = {},
+    mostWindow: MostHighlightedWindow = MostHighlightedWindow.DEFAULT,
+    onSelectMostWindow: (MostHighlightedWindow) -> Unit = {},
     onMarkAsRead: (HighlightedArticle) -> Unit = {},
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
@@ -540,6 +556,7 @@ fun HomeScreenContent(
                 ) {
                     val empty = yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
                         continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+                        !highlights.hasMostPool &&
                         shortReads.isEmpty() && longReads.isEmpty() &&
                         randomArticles.isEmpty()
                     if (empty && !hasPrompts) {
@@ -668,7 +685,7 @@ fun HomeScreenContent(
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
-                                        HomeSections.MOST -> if (mostHighlighted.isNotEmpty()) {
+                                        HomeSections.MOST -> if (mostHighlighted.isNotEmpty() || highlights.hasMostPool) {
                                             HighlightedRow(
                                                 title = stringResource(R.string.home_most_highlighted),
                                                 items = mostHighlighted,
@@ -679,6 +696,13 @@ fun HomeScreenContent(
                                                 onRead = onRead,
                                                 onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
+                                                emptyText = stringResource(R.string.home_most_highlighted_empty),
+                                                headerTrailing = {
+                                                    MostHighlightedWindowMenu(
+                                                        selected = mostWindow,
+                                                        onSelect = onSelectMostWindow,
+                                                    )
+                                                },
                                             )
                                         }
                                         HomeSections.SHORT -> if (shortReads.isNotEmpty()) {
@@ -963,15 +987,20 @@ private fun HighlightedRow(
     onMarkAsRead: (HighlightedArticle) -> Unit,
     icon: ImageVector = BorisIcons.Highlighter,
     onHeaderClick: (() -> Unit)? = null,
+    emptyText: String? = null,
+    headerTrailing: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         val headerModifier = if (onHeaderClick == null) {
-            Modifier.padding(horizontal = 20.dp)
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
         } else {
             Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onHeaderClick)
@@ -995,29 +1024,109 @@ private fun HighlightedRow(
                     fontWeight = FontWeight.SemiBold,
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
             )
+            headerTrailing?.invoke()
         }
-        LazyRow(
+        if (items.isEmpty() && emptyText != null) {
+            Text(
+                text = emptyText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+        } else {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(232.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(items, key = { "$rowKey:${it.url}" }) { article ->
+                    HighlightedArticleCard(
+                        article = article,
+                        fallbackTint = tint,
+                        loggedIn = loggedIn,
+                        archived = ArchivedArticles.isArchived(article.url, archivedKeys),
+                        onOpen = { onRead(article.url) },
+                        onListen = { onListen(article) },
+                        onMarkAsRead = { onMarkAsRead(article) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MostHighlightedWindowMenu(
+    selected: MostHighlightedWindow,
+    onSelect: (MostHighlightedWindow) -> Unit,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    var menuOpen by remember { mutableStateOf(false) }
+    val description = selected.fullLabel()
+    Box(
+        modifier = Modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            .clickable { menuOpen = true }
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = selected.shortLabel(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(232.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .clip(shape)
+                .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+        )
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
         ) {
-            items(items, key = { "$rowKey:${it.url}" }) { article ->
-                HighlightedArticleCard(
-                    article = article,
-                    fallbackTint = tint,
-                    loggedIn = loggedIn,
-                    archived = ArchivedArticles.isArchived(article.url, archivedKeys),
-                    onOpen = { onRead(article.url) },
-                    onListen = { onListen(article) },
-                    onMarkAsRead = { onMarkAsRead(article) },
+            MostHighlightedWindow.entries.forEach { window ->
+                DropdownMenuItem(
+                    text = { Text(window.fullLabel()) },
+                    trailingIcon = if (window == selected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        menuOpen = false
+                        onSelect(window)
+                    },
                 )
             }
         }
     }
 }
+
+@Composable
+private fun MostHighlightedWindow.shortLabel(): String = stringResource(
+    when (this) {
+        MostHighlightedWindow.Day -> R.string.home_most_highlighted_24h
+        MostHighlightedWindow.Week -> R.string.home_most_highlighted_7d
+        MostHighlightedWindow.Month -> R.string.home_most_highlighted_30d
+    },
+)
+
+@Composable
+private fun MostHighlightedWindow.fullLabel(): String = stringResource(
+    when (this) {
+        MostHighlightedWindow.Day -> R.string.home_most_highlighted_24h_full
+        MostHighlightedWindow.Week -> R.string.home_most_highlighted_7d_full
+        MostHighlightedWindow.Month -> R.string.home_most_highlighted_30d_full
+    },
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

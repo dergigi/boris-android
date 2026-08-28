@@ -164,14 +164,15 @@ object RelayQuery {
         limit: Int = 80,
         pubkeyHex: String? = null,
         authors: Collection<String> = emptyList(),
+        since: Long? = null,
     ): List<Nip01Event> {
         val urls = relayUrls(readRelays)
         val keys = authorKeys(pubkeyHex, authors)
         if (urls.isNotEmpty()) {
             val filters = if (keys.isEmpty()) {
-                listOf(highlightFilter(limit, emptyList()))
+                listOf(highlightFilter(limit, emptyList(), since))
             } else {
-                keys.chunked(AUTHOR_CHUNK).map { chunk -> highlightFilter(limit, chunk) }
+                keys.chunked(AUTHOR_CHUNK).map { chunk -> highlightFilter(limit, chunk, since) }
             }
             val allowed = keys.toSet()
             val remote = query(urls, filters)
@@ -914,8 +915,15 @@ object RelayQuery {
         return active.ifEmpty { urls }
     }
 
-    private fun highlightFilter(limit: Int, authors: List<String>): JSONObject =
-        kindFilter(Nip01Event.KIND_HIGHLIGHT, limit, authors)
+    private fun highlightFilter(
+        limit: Int,
+        authors: List<String>,
+        since: Long? = null,
+    ): JSONObject {
+        val filter = kindFilter(Nip01Event.KIND_HIGHLIGHT, limit, authors)
+        if (since != null) filter.put("since", since)
+        return filter
+    }
 
     private fun writingFilter(limit: Int, authors: List<String>): JSONObject =
         kindFilter(Nip01Event.KIND_LONG_FORM, limit, authors)

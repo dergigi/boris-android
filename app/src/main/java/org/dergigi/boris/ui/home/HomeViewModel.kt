@@ -27,6 +27,7 @@ import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.HomeFilters
+import org.dergigi.boris.data.MostHighlightedWindow
 import org.dergigi.boris.data.RandomArticles
 import org.dergigi.boris.data.ReadingTimes
 import org.dergigi.boris.data.SettingsSync
@@ -54,6 +55,7 @@ sealed interface HomeHighlightsState {
         val archivedKeys: Set<String> = emptySet(),
         val continueReading: List<HighlightedArticle> = emptyList(),
         val mostHighlighted: List<HighlightedArticle> = emptyList(),
+        val hasMostPool: Boolean = false,
         val shortReads: List<HighlightedArticle> = emptyList(),
         val longReads: List<HighlightedArticle> = emptyList(),
         val randomArticles: List<HighlightedArticle> = emptyList(),
@@ -128,6 +130,7 @@ class HomeViewModel(
                         }
                         val friendsDeferred = async { loadFriends(relays, friendKeys) }
                         val othersDeferred = async { loadOthers(pubkey, friendKeys) }
+                        val mostDeferred = async { fetchMostHighlighted() }
                         val archiveDeferred = async {
                             if (pubkey == null) {
                                 emptySet()
@@ -139,12 +142,9 @@ class HomeViewModel(
                         val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
                         val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
                         val rawContinue = HighlightedArticles.hydrate(ContinueReading.articles(ARTICLE_LIMIT))
-                        val rawMost = HighlightedArticles.hydrate(
-                            HighlightedArticles.mostHighlighted(
-                                EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
-                                ARTICLE_LIMIT,
-                            ),
-                        )
+                        mostDeferred.await()
+                        val rawMost = HighlightedArticles.hydrate(mostHighlightedRows())
+                        val hasMostPool = hasMostPool()
                         archiveDeferred.await()
                         val feedUrls = (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
                             .map { it.url }
@@ -181,6 +181,7 @@ class HomeViewModel(
                             keys,
                             rawContinue,
                             rawMost,
+                            hasMostPool,
                             rawShort,
                             rawLong,
                             rawRandom,
@@ -214,6 +215,41 @@ class HomeViewModel(
         listenJob?.cancel()
         listenJob = viewModelScope.launch {
             startArticleListening(getApplication(), url)?.let { _message.value = it }
+        }
+    }
+
+    fun refreshMostHighlighted() {
+        viewModelScope.launch {
+            val current = _highlights.value as? HomeHighlightsState.Ready
+            val instant = withContext(Dispatchers.IO) {
+                val ranked = HighlightedArticles.hydrate(mostHighlightedRows())
+                val previews = ranked
+                    .map { it.url }
+                    .distinct()
+                    .associateWith { ArticlePreview.get(it) }
+                applyPreviews(ranked, previews) to hasMostPool()
+            }
+            val afterCache = _highlights.value as? HomeHighlightsState.Ready ?: current
+            if (afterCache != null) {
+                _highlights.value = afterCache.copy(
+                    mostHighlighted = instant.first,
+                    hasMostPool = instant.second,
+                )
+            }
+            val next = withContext(Dispatchers.IO) {
+                fetchMostHighlighted()
+                val ranked = HighlightedArticles.hydrate(mostHighlightedRows())
+                val previews = ranked
+                    .map { it.url }
+                    .distinct()
+                    .associateWith { ArticlePreview.get(it) }
+                applyPreviews(ranked, previews) to hasMostPool()
+            }
+            val latest = _highlights.value as? HomeHighlightsState.Ready ?: return@launch
+            _highlights.value = latest.copy(
+                mostHighlighted = next.first,
+                hasMostPool = next.second,
+            )
         }
     }
 
@@ -282,10 +318,8 @@ class HomeViewModel(
             ARTICLE_LIMIT,
         )
         val continueReading = ContinueReading.articles(ARTICLE_LIMIT)
-        val mostHighlighted = HighlightedArticles.mostHighlighted(
-            EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
-            ARTICLE_LIMIT,
-        )
+        val mostHighlighted = mostHighlightedRows()
+        val hasMostPool = hasMostPool()
         val archivedKeys = if (pubkey == null) {
             emptySet()
         } else {
@@ -300,7 +334,7 @@ class HomeViewModel(
         val longReads = libraryRows.longReads
         val randomArticles = libraryRows.randomArticles
         if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-            continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+            continueReading.isEmpty() && mostHighlighted.isEmpty() && !hasMostPool &&
             shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
         ) {
             return null
@@ -320,9 +354,38 @@ class HomeViewModel(
             archivedKeys = archivedKeys,
             continueReading = applyPreviews(continueReading, previews),
             mostHighlighted = applyPreviews(mostHighlighted, previews),
+            hasMostPool = hasMostPool,
             shortReads = applyPreviews(shortReads, previews),
             longReads = applyPreviews(longReads, previews),
             randomArticles = applyPreviews(randomArticles, previews),
+        )
+    }
+
+    private fun currentWindow(): MostHighlightedWindow =
+        SettingsSync.settings.value.mostHighlightedWindow
+
+    private fun mostHighlightedRows(
+        window: MostHighlightedWindow = currentWindow(),
+    ): List<HighlightedArticle> =
+        HighlightedArticles.mostHighlighted(
+            EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
+            ARTICLE_LIMIT,
+            since = window.since(),
+        )
+
+    private fun hasMostPool(): Boolean {
+        val since = MostHighlightedWindow.Month.since()
+        return EventCache.byKind(Nip01Event.KIND_HIGHLIGHT).any { event ->
+            event.content.isNotBlank() && event.createdAt >= since
+        }
+    }
+
+    private fun fetchMostHighlighted() {
+        val window = currentWindow()
+        RelayQuery.fetchRecentHighlights(
+            RelayQuery.globalReadRelays(),
+            limit = window.fetchLimit,
+            since = window.since(),
         )
     }
 
@@ -438,13 +501,14 @@ class HomeViewModel(
         val archivedKeys: Set<String>,
         val continueReading: List<HighlightedArticle>,
         val mostHighlighted: List<HighlightedArticle>,
+        val hasMostPool: Boolean,
         val shortReads: List<HighlightedArticle>,
         val longReads: List<HighlightedArticle>,
         val randomArticles: List<HighlightedArticle>,
     ) {
         fun isEmpty(): Boolean =
             yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
-                continueReading.isEmpty() && mostHighlighted.isEmpty() &&
+                continueReading.isEmpty() && mostHighlighted.isEmpty() && !hasMostPool &&
                 shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
 
         fun urls(): List<String> =
@@ -467,6 +531,7 @@ class HomeViewModel(
         archivedKeys = archivedKeys,
         continueReading = applyPreviews(continueReading, previews),
         mostHighlighted = applyPreviews(mostHighlighted, previews),
+        hasMostPool = hasMostPool,
         shortReads = applyPreviews(shortReads, previews),
         longReads = applyPreviews(longReads, previews),
         randomArticles = applyPreviews(randomArticles, previews),
