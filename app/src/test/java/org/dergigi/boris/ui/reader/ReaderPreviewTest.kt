@@ -80,7 +80,7 @@ class ReaderPreviewTest {
     }
 
     @Test
-    fun authorFooterOnlyShowsForNostrLongFormArticles() {
+    fun authorFooterShowsForLongFormAndNip21WebArticles() {
         val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
         val coordinate = "30023:$pubkey:essay"
         assertTrue(
@@ -110,7 +110,7 @@ class ReaderPreviewTest {
             ),
         )
         assertTrue(
-            !showNostrAuthorFooterCard(
+            showNostrAuthorFooterCard(
                 ReadableContent(
                     url = "https://example.com/post",
                     title = "Web article",

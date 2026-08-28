@@ -364,8 +364,7 @@ class ReaderViewModel(
     }
 
     private fun zapSplitTags(content: ReadableContent, highlighterPubkey: String): List<List<String>> {
-        // Web content has no author pubkey, so the author share is skipped there
-        // and the split covers only the highlighter and Boris.
+        // Web pages without a NIP-21 author skip the author share.
         val settings = SettingsSync.settings.value
         if (!settings.zapSplitsEnabled) return emptyList()
         return ZapSplits.tags(

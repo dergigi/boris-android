@@ -2226,8 +2226,10 @@ internal fun showNostrAuthorFooterCard(content: ReadableContent): Boolean {
     val article = content.articleCoordinate
         ?.trim()
         ?.let { NostrArticle.fromCoordinate(it) }
-        ?: return false
-    return article.pointer.pubkey.lowercase() == authorPubkey
+    if (article != null) {
+        return article.pointer.pubkey.lowercase() == authorPubkey
+    }
+    return content.url.startsWith("http")
 }
 
 private val nostrPubkeyRegex = Regex("[0-9a-f]{64}")

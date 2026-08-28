@@ -108,6 +108,21 @@ class Nip84Test {
     }
 
     @Test
+    fun tagsForWebArticleKeepUrlWhenAlternateNaddrIsPresent() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article"
+        val tags = Nip84.tags(
+            url = "https://dergigi.com/post",
+            context = null,
+            coordinate = coordinate,
+            authorPubkey = "cd".repeat(32),
+        )
+        assertEquals(listOf("a", coordinate), tags[0])
+        assertEquals(listOf("p", "cd".repeat(32)), tags[1])
+        assertEquals(listOf("r", "https://dergigi.com/post"), tags[2])
+    }
+
+    @Test
     fun tagsForNotesUseEventPointer() {
         val eventId = "ab".repeat(32)
         val author = "cd".repeat(32)

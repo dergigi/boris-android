@@ -42,7 +42,10 @@ object Nip84 {
         } else if (!eventId.isNullOrBlank()) {
             add(listOf("e", eventId))
             if (!authorPubkey.isNullOrBlank()) add(listOf("p", authorPubkey))
-        } else {
+        }
+        if (url.startsWith("http")) {
+            add(listOf("r", url))
+        } else if (coordinate.isNullOrBlank() && eventId.isNullOrBlank()) {
             add(listOf("r", url))
         }
         if (!context.isNullOrBlank()) add(listOf("context", context))

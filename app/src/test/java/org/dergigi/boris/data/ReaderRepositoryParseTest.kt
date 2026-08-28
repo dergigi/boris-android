@@ -96,6 +96,32 @@ class ReaderRepositoryParseTest {
     }
 
     @Test
+    fun parseReadsNip21AuthorAndAlternate() {
+        val npub = "npub1dergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsh9xzpc"
+        val naddr =
+            "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
+        val raw = """
+            <html><head>
+            <title>Page Title</title>
+            <link rel="author" href="nostr:$npub" />
+            <link rel="alternate" href="nostr:$naddr" />
+            </head><body><article><p>$longBody</p></article></body></html>
+        """.trimIndent()
+        val content = repository.parse("https://dergigi.com/post", raw)
+        val hex = org.dergigi.boris.nostr.Nip19.npubDecode(npub)
+        assertEquals(hex, content.authorPubkey)
+        assertEquals(NostrArticle.parse(naddr)!!.coordinate, content.articleCoordinate)
+    }
+
+    @Test
+    fun parseIgnoresPagesWithoutNip21Tags() {
+        val raw = "<html><head><title>Page Title</title></head><body><article><p>$longBody</p></article></body></html>"
+        val content = repository.parse("https://example.com", raw)
+        assertNull(content.authorPubkey)
+        assertNull(content.articleCoordinate)
+    }
+
+    @Test
     fun noteMarkdownEmbedsImageLinksAndKeepsLineBreaks() {
         val out = repository.noteMarkdown("hello\nhttps://cdn.example.com/shot.jpg")
         assertEquals("hello  \n![](https://cdn.example.com/shot.jpg)", out)

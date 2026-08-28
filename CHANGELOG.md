@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Web articles with NIP-21 `nostr:` author tags join zap splits and show the author
+
 ## [1.5.17] - 2026-08-28
 
 ### Fixed

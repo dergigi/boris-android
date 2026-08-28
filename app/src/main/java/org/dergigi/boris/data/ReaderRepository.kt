@@ -383,6 +383,7 @@ class ReaderRepository(
             .let(UrlExtractor::upgradeImageHttpUrls)
             .takeIf { it.length >= MIN_ARTICLE_MARKDOWN_CHARS }
         val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
+        val nostrLinks = Nip21Html.parse(text)
         return ReadableContent(
             url = targetUrl,
             title = preview.title ?: title?.let(HtmlToMarkdown::decode),
@@ -390,6 +391,8 @@ class ReaderRepository(
                 markdown?.let { ArticleCover.stripLeadingImage(it, image) }
             } ?: markdown,
             publishedAt = PublishedTime.fromHtml(text),
+            articleCoordinate = nostrLinks.articleCoordinate,
+            authorPubkey = nostrLinks.authorPubkey,
             imageUrl = cover,
             summary = preview.description,
         )
