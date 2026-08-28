@@ -47,4 +47,17 @@ class ReadingProgressTest {
         assertFalse(ReadingProgress.isStarted(0))
         assertFalse(ReadingProgress.isStarted(11))
     }
+
+    @Test
+    fun jumpBackMatchesBlueProgressBand() {
+        assertFalse(ReadingProgress.showsJumpBack(0f))
+        assertFalse(ReadingProgress.showsJumpBack(0.009f))
+        assertFalse(ReadingProgress.showsJumpBack(0.05f))
+        assertFalse(ReadingProgress.showsJumpBack(0.10f))
+        assertTrue(ReadingProgress.showsJumpBack(0.11f))
+        assertTrue(ReadingProgress.showsJumpBack(0.50f))
+        assertTrue(ReadingProgress.showsJumpBack(0.94f))
+        assertFalse(ReadingProgress.showsJumpBack(0.95f))
+        assertFalse(ReadingProgress.showsJumpBack(1f))
+    }
 }

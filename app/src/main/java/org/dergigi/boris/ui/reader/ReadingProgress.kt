@@ -45,6 +45,13 @@ object ReadingProgress {
 
     fun isStarted(percent: Int): Boolean = percent in 1..10
 
+    /** Mid-read (blue) band: past the start, not yet complete. */
+    fun isInProgress(percent: Int): Boolean =
+        percent > 10 && percent < COMPLETE_PERCENT
+
+    fun showsJumpBack(fraction: Float): Boolean =
+        isInProgress((fraction * 100f).roundToInt().coerceIn(0, 100))
+
     fun fraction(scrollValue: Int, scrollMax: Int): Float {
         if (scrollMax <= 0) return 0f
         return (scrollValue.toFloat() / scrollMax).coerceIn(0f, 1f)
