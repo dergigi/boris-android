@@ -9,9 +9,13 @@ object HighlightShare {
     }
 
     fun articleUrl(articleUrl: String, quote: String): String? {
-        val target = NostrLink.parse(articleUrl) ?: return null
-        if (target is NostrTarget.Profile) return null
-        return TextFragment.apply(target.publicUrl, MarkdownInline.plain(quote))
+        val target = NostrLink.parse(articleUrl)
+        if (target != null) {
+            if (target is NostrTarget.Profile) return null
+            return TextFragment.apply(target.publicUrl, MarkdownInline.plain(quote))
+        }
+        if (!isHttp(articleUrl)) return null
+        return articleUrl
     }
 
     private fun isHttp(url: String): Boolean {

@@ -30,8 +30,11 @@ class HighlightShareTest {
     }
 
     @Test
-    fun webHasNoSeparateArticleShare() {
-        assertEquals(null, HighlightShare.articleUrl("https://example.com/essay", "a chosen line"))
+    fun webArticleShareIsCleanUrl() {
+        assertEquals(
+            "https://example.com/essay",
+            HighlightShare.articleUrl("https://example.com/essay", "a chosen line"),
+        )
     }
 
     @Test

@@ -227,6 +227,7 @@
     <string name="feed_empty_filtered">Nothing matches these filters.</string>
     <string name="highlight_menu">Highlight options</string>
     <string name="highlight_hide_menu">Hide highlights</string>
+    <string name="highlight_share_menu">Share</string>
     <string name="highlight_menu_share_quote">Share quote</string>
     <string name="highlight_menu_share_article">Share article</string>
     <string name="highlight_menu_go_to_quote">Go to quote</string>

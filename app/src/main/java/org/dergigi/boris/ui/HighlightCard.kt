@@ -238,11 +238,17 @@ fun HighlightCard(
                 modifier = Modifier.weight(1f, fill = false),
             )
             if (menu != null || !url.isNullOrBlank()) {
-                HighlightCardMenuButton(
-                    menu = menu,
-                    shareUrl = url,
-                    shareQuote = quote,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (!url.isNullOrBlank()) {
+                        HighlightShareMenuButton(
+                            shareUrl = url,
+                            shareQuote = quote,
+                        )
+                    }
+                    if (menu != null) {
+                        HighlightCardMenuButton(menu = menu)
+                    }
+                }
             }
         }
     }

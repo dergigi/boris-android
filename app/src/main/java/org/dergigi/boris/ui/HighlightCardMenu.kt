@@ -60,22 +60,10 @@ private const val NJUMP_BASE = "https://njump.to"
 fun HighlightCardMenuButton(
     menu: HighlightCardMenu? = null,
     modifier: Modifier = Modifier,
-    shareUrl: String? = null,
-    shareQuote: String = "",
 ) {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val shareQuoteLabel = stringResource(R.string.highlight_menu_share_quote)
-    val shareArticleLabel = stringResource(R.string.highlight_menu_share_article)
-    val shareLabel = stringResource(R.string.action_share)
-    val source = shareUrl?.takeIf { it.isNotBlank() }
-    val shareQuoteTarget = remember(source, shareQuote) {
-        source?.let { HighlightShare.url(it, shareQuote) }
-    }
-    val shareArticleTarget = remember(source, shareQuote) {
-        source?.let { HighlightShare.articleUrl(it, shareQuote) }
-    }
     val nevent = remember(menu?.highlightId, menu?.authorHex) {
         val id = menu?.highlightId ?: return@remember null
         runCatching {
@@ -105,24 +93,6 @@ fun HighlightCardMenuButton(
             expanded = open,
             onDismissRequest = { open = false },
         ) {
-            shareQuoteTarget?.let { target ->
-                val quoteLabel = if (shareArticleTarget != null) {
-                    R.string.highlight_menu_share_quote
-                } else {
-                    R.string.action_share
-                }
-                val quoteChooser = if (shareArticleTarget != null) shareQuoteLabel else shareLabel
-                MenuItem(quoteLabel, Icons.Outlined.Share) {
-                    open = false
-                    sharePlainText(context, target, quoteChooser)
-                }
-            }
-            shareArticleTarget?.let { target ->
-                MenuItem(R.string.highlight_menu_share_article, Icons.AutoMirrored.Outlined.Article) {
-                    open = false
-                    sharePlainText(context, target, shareArticleLabel)
-                }
-            }
             menu?.onGoToQuote?.let { action ->
                 MenuItem(R.string.highlight_menu_go_to_quote, Icons.Outlined.FormatQuote) {
                     open = false
@@ -177,6 +147,55 @@ fun HighlightCardMenuButton(
                 }
             },
         )
+    }
+}
+
+@Composable
+fun HighlightShareMenuButton(
+    shareUrl: String,
+    shareQuote: String,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    var open by remember { mutableStateOf(false) }
+    val shareQuoteLabel = stringResource(R.string.highlight_menu_share_quote)
+    val shareArticleLabel = stringResource(R.string.highlight_menu_share_article)
+    val shareQuoteTarget = remember(shareUrl, shareQuote) {
+        HighlightShare.url(shareUrl, shareQuote)
+    }
+    val shareArticleTarget = remember(shareUrl, shareQuote) {
+        HighlightShare.articleUrl(shareUrl, shareQuote)
+    }
+    if (shareQuoteTarget.isBlank() && shareArticleTarget.isNullOrBlank()) return
+    Box(modifier = modifier) {
+        IconButton(
+            onClick = { open = true },
+            modifier = Modifier.size(28.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Share,
+                contentDescription = stringResource(R.string.highlight_share_menu),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+        ) {
+            if (shareQuoteTarget.isNotBlank()) {
+                MenuItem(R.string.highlight_menu_share_quote, Icons.Outlined.Share) {
+                    open = false
+                    sharePlainText(context, shareQuoteTarget, shareQuoteLabel)
+                }
+            }
+            shareArticleTarget?.takeIf { it.isNotBlank() }?.let { target ->
+                MenuItem(R.string.highlight_menu_share_article, Icons.AutoMirrored.Outlined.Article) {
+                    open = false
+                    sharePlainText(context, target, shareArticleLabel)
+                }
+            }
+        }
     }
 }
 
