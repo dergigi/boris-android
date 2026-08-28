@@ -363,8 +363,8 @@ fun ReaderScreen(
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
-        onHighlight = { quote ->
-            viewModel.highlight(quote)?.let(launcher::launch)
+        onHighlight = { quote, ownerText, ownerOffset ->
+            viewModel.highlight(quote, ownerText, ownerOffset)?.let(launcher::launch)
         },
         onSave = { privateBookmark ->
             viewModel.saveToLibrary(privateBookmark)?.let(launcher::launch)
@@ -569,7 +569,7 @@ fun ReaderScreenContent(
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
-    onHighlight: (String) -> Unit,
+    onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onAddRssFeed: (String) -> Unit,
@@ -1212,7 +1212,7 @@ private fun ArticleBody(
     onAddRssFeed: (String) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
-    onHighlight: (String) -> Unit,
+    onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
@@ -2083,8 +2083,10 @@ private fun ArticleBody(
             },
             onHighlight = {
                 val quote = selection.selectedText
+                val ownerText = selection.text
+                val ownerOffset = selection.range.min
                 selection.clear()
-                onHighlight(quote)
+                onHighlight(quote, ownerText, ownerOffset)
             },
             onTtsFromHere = ::startTtsFromSelection,
             onSetProgress = {

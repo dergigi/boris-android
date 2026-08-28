@@ -67,17 +67,63 @@ fun matchHighlightSpans(
 ): List<HighlightSpan> {
     if (displayed.isEmpty() || highlights.isEmpty()) return emptyList()
     return highlights.flatMap { item ->
-        val spokenSpans = spokenContextSpans(displayed, item)
-        if (item.spoken && !item.context.isNullOrBlank()) {
-            spokenSpans
-        } else {
-            QuoteMatch.occurrences(
-                displayed,
-                highlightMark(item.quote, item.context),
-                ignoreCase = item.ignoreCase,
-            ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
+        when {
+            item.spoken && !item.context.isNullOrBlank() -> spokenContextSpans(displayed, item)
+            item.find || item.outline -> quoteOccurrences(displayed, item)
+            else -> anchoredQuoteSpans(displayed, item)
         }
     }
+}
+
+/** Paint every occurrence of the quote. Used for find, outlines, and highlights without context. */
+private fun quoteOccurrences(displayed: String, item: PaintedHighlight): List<HighlightSpan> =
+    QuoteMatch.occurrences(
+        displayed,
+        highlightMark(item.quote, item.context),
+        ignoreCase = item.ignoreCase,
+    ).map { range -> HighlightSpan(item, range.first, range.last + 1) }
+
+/**
+ * When a highlight has context, paint only the occurrence that sits in that
+ * window. Missing or unmatched context falls back to every occurrence.
+ */
+private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
+    val context = item.context?.takeIf { it.isNotBlank() } ?: return quoteOccurrences(displayed, item)
+    val mark = highlightMark(item.quote, context)
+    if (mark.isBlank()) return emptyList()
+    val ignoreCase = item.ignoreCase
+    val quoteInContext = preferredQuoteRange(context, mark, ignoreCase) ?: return quoteOccurrences(displayed, item)
+    val contextHits = QuoteMatch.occurrences(displayed, context, ignoreCase = ignoreCase)
+    if (contextHits.isNotEmpty()) {
+        val hit = contextHits.first()
+        return listOf(
+            HighlightSpan(
+                item = item,
+                start = hit.first + quoteInContext.first,
+                end = hit.first + quoteInContext.last + 1,
+            ),
+        )
+    }
+    val displayedInContext = QuoteMatch.occurrences(context, displayed, ignoreCase = ignoreCase)
+        .firstOrNull()
+    if (displayedInContext != null) {
+        val start = quoteInContext.first - displayedInContext.first
+        val end = quoteInContext.last + 1 - displayedInContext.first
+        if (start >= 0 && end <= displayed.length && end > start) {
+            return listOf(HighlightSpan(item, start, end))
+        }
+        return emptyList()
+    }
+    return quoteOccurrences(displayed, item)
+}
+
+/** Prefer the quote nearest the middle of [context] when it appears more than once. */
+internal fun preferredQuoteRange(context: String, mark: String, ignoreCase: Boolean): IntRange? {
+    val ranges = QuoteMatch.occurrences(context, mark, ignoreCase = ignoreCase)
+    if (ranges.isEmpty()) return null
+    if (ranges.size == 1) return ranges[0]
+    val mid = context.length / 2
+    return ranges.minBy { kotlin.math.abs((it.first + it.last) / 2 - mid) }
 }
 
 private fun spokenContextSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {

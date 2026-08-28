@@ -138,8 +138,10 @@ class Nip84Test {
     }
 
     @Test
-    fun extractContextReturnsNullForSingleSentence() {
-        assertNull(Nip84.extractContext("only one", "This is only one sentence."))
+    fun extractContextFallsBackToAWindowForSingleSentence() {
+        val body = "This is only one sentence."
+        val context = Nip84.extractContext("only one", body)
+        assertTrue(context != null && context.contains("only one"))
     }
 
     @Test
@@ -148,6 +150,28 @@ class Nip84Test {
         assertEquals(
             "First sentence. Selected quote here. Third sentence.",
             Nip84.extractContext("Selected quote here", body),
+        )
+    }
+
+    @Test
+    fun extractContextPrefersTheSelectedOccurrence() {
+        val body = "Alpha uses the word. Beta uses the word. Gamma uses the word."
+        val first = body.indexOf("the word")
+        val second = body.indexOf("the word", first + 1)
+        val firstContext = Nip84.extractContext("the word", body, first)
+        val secondContext = Nip84.extractContext("the word", body, second)
+        assertTrue(secondContext != null && secondContext.contains("Beta"))
+        assertTrue(firstContext != secondContext)
+    }
+
+    @Test
+    fun locateSelectionUsesOwnerOffset() {
+        val body = "The cat sat. The cat ran."
+        val owner = "The cat sat. The cat ran."
+        val second = owner.lastIndexOf("cat")
+        assertEquals(
+            second,
+            Nip84.locateSelection(body, "cat", ownerText = owner, ownerOffset = second),
         )
     }
 }

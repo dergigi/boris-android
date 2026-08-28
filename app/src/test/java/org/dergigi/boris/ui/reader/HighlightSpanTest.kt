@@ -6,11 +6,38 @@ import org.junit.Test
 
 class HighlightSpanTest {
     @Test
-    fun matchesEveryOccurrencePerHighlight() {
+    fun matchesEveryOccurrenceWhenContextIsMissing() {
         val mine = PaintedHighlight(id = "a", quote = "the", mine = true)
         val spans = matchHighlightSpans("the cat the hat", listOf(mine))
         assertEquals(listOf(0 to 3, 8 to 11), spans.map { it.start to it.end })
         assertTrue(spans.all { it.item === mine })
+    }
+
+    @Test
+    fun contextPinsARepeatedQuoteToOneOccurrence() {
+        val displayed = "The cat sat. The cat ran. The cat slept."
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "cat",
+            mine = true,
+            context = "The cat sat. The cat ran. The cat slept.",
+        )
+        val spans = matchHighlightSpans(displayed, listOf(mine))
+        assertEquals(1, spans.size)
+        val marked = displayed.substring(spans[0].start, spans[0].end)
+        assertEquals("cat", marked)
+        assertEquals(displayed.indexOf("cat", displayed.indexOf("ran") - 8), spans[0].start)
+    }
+
+    @Test
+    fun contextSkipsABlockThatIsNotTheSelectedWindow() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "cat",
+            mine = true,
+            context = "The cat sat. The cat ran.",
+        )
+        assertTrue(matchHighlightSpans("Other paragraph. The dog ran.", listOf(mine)).isEmpty())
     }
 
     @Test

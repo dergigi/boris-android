@@ -72,18 +72,65 @@ object Nip84 {
         return obj.toString()
     }
 
-    fun extractContext(selectedText: String, articleContent: String): String? {
+    fun extractContext(
+        selectedText: String,
+        articleContent: String,
+        selectedStart: Int? = null,
+    ): String? {
         if (selectedText.isEmpty() || articleContent.isEmpty()) return null
-        val selectedIndex = articleContent.indexOf(selectedText)
-        if (selectedIndex < 0) return null
+        val start = locateSelection(articleContent, selectedText, selectedStart) ?: return null
+        val sentences = sentenceWindow(articleContent, start, selectedText)
+        if (sentences != null && quoteCount(sentences, selectedText) == 1) return sentences
+        return uniqueWindow(articleContent, start, selectedText.length) ?: sentences
+    }
 
+    /** Start index of [selectedText] in [articleContent], preferring [selectedStart]. */
+    fun locateSelection(
+        articleContent: String,
+        selectedText: String,
+        selectedStart: Int? = null,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+    ): Int? {
+        if (selectedStart != null &&
+            selectedStart >= 0 &&
+            selectedStart + selectedText.length <= articleContent.length &&
+            articleContent.regionMatches(selectedStart, selectedText, 0, selectedText.length)
+        ) {
+            return selectedStart
+        }
+        if (ownerText.isNotBlank()) {
+            val owners = QuoteMatch.occurrences(articleContent, ownerText)
+            for (hit in owners) {
+                val at = hit.first + ownerOffset
+                if (at >= 0 &&
+                    at + selectedText.length <= articleContent.length &&
+                    articleContent.regionMatches(at, selectedText, 0, selectedText.length)
+                ) {
+                    return at
+                }
+            }
+            if (owners.size == 1 && ownerOffset >= 0) {
+                return (owners[0].first + ownerOffset)
+                    .coerceIn(0, (articleContent.length - selectedText.length).coerceAtLeast(0))
+            }
+        }
+        val hits = QuoteMatch.occurrences(articleContent, selectedText)
+        if (hits.isEmpty()) return null
+        if (selectedStart == null) return hits[0].first
+        return hits.minBy { kotlin.math.abs(it.first - selectedStart) }.first
+    }
+
+    private fun sentenceWindow(articleContent: String, selectedIndex: Int, selectedText: String): String? {
         val paragraphs = articleContent.split(Regex("\n\n+"))
         var currentPos = 0
         var containingParagraph: String? = null
+        var paragraphStart = 0
         for (paragraph in paragraphs) {
             val paragraphEnd = currentPos + paragraph.length
             if (selectedIndex >= currentPos && selectedIndex < paragraphEnd) {
                 containingParagraph = paragraph
+                paragraphStart = currentPos
                 break
             }
             currentPos = paragraphEnd + 2
@@ -103,7 +150,13 @@ object Nip84 {
             }
         }
 
-        val selectedSentenceIndex = reconstructed.indexOfFirst { it.contains(selectedText) }
+        val localStart = selectedIndex - paragraphStart
+        var cursor = 0
+        val selectedSentenceIndex = reconstructed.indexOfFirst { sentence ->
+            val at = paragraph.indexOf(sentence, cursor).takeIf { it >= 0 } ?: cursor
+            cursor = at + sentence.length
+            localStart >= at && localStart < at + sentence.length
+        }.takeIf { it >= 0 } ?: reconstructed.indexOfFirst { it.contains(selectedText) }
         if (selectedSentenceIndex < 0) return null
 
         val contextParts = mutableListOf<String>()
@@ -116,6 +169,29 @@ object Nip84 {
         }
         return if (contextParts.size > 1) contextParts.joinToString(" ") else null
     }
+
+    private fun uniqueWindow(articleContent: String, start: Int, quoteLength: Int): String? {
+        if (quoteLength <= 0) return null
+        var radius = 40
+        while (radius <= 200) {
+            val window = clipWindow(articleContent, start, quoteLength, radius)
+            if (window != null && QuoteMatch.occurrences(articleContent, window).size == 1) {
+                return window
+            }
+            radius += 40
+        }
+        return clipWindow(articleContent, start, quoteLength, 80)
+    }
+
+    private fun clipWindow(articleContent: String, start: Int, quoteLength: Int, radius: Int): String? {
+        val from = (start - radius).coerceAtLeast(0)
+        val to = (start + quoteLength + radius).coerceAtMost(articleContent.length)
+        if (to <= from) return null
+        return articleContent.substring(from, to).trim().takeIf { it.isNotEmpty() }
+    }
+
+    private fun quoteCount(haystack: String, quote: String): Int =
+        QuoteMatch.occurrences(haystack, quote).size
 
     private fun splitKeepingDelimiters(input: String, delimiter: Regex): List<String> {
         val out = mutableListOf<String>()

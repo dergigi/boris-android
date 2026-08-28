@@ -284,7 +284,7 @@ class ReaderViewModel(
         highlight(quote)?.let { _signIntent.value = it }
     }
 
-    fun highlight(quote: String): Intent? {
+    fun highlight(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? {
         val trimmed = quote.trim()
         val app = getApplication<Application>()
         if (trimmed.isBlank()) {
@@ -296,7 +296,13 @@ class ReaderViewModel(
             return null
         }
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
-        val context = Nip84.extractContext(trimmed, content.body)
+        val selectedStart = Nip84.locateSelection(
+            articleContent = content.body,
+            selectedText = trimmed,
+            ownerText = ownerText,
+            ownerOffset = ownerOffset,
+        )
+        val context = Nip84.extractContext(trimmed, content.body, selectedStart)
         val zapSplits = zapSplitTags(content, session.pubkeyHex)
         when (session) {
             is Session.Amber -> {
