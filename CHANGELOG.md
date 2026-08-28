@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.17] - 2026-08-28
+
 ### Fixed
 
 - Jump-back control stays hidden at the start and end of an article
@@ -1558,7 +1560,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.16...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.17...HEAD
+[1.5.17]: https://github.com/dergigi/boris-android/releases/tag/v1.5.17
 [1.5.16]: https://github.com/dergigi/boris-android/releases/tag/v1.5.16
 [1.5.15]: https://github.com/dergigi/boris-android/releases/tag/v1.5.15
 [1.5.14]: https://github.com/dergigi/boris-android/releases/tag/v1.5.14
