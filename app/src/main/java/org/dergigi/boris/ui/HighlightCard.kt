@@ -191,12 +191,20 @@ fun HighlightCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.FormatQuote,
-                contentDescription = null,
-                tint = chrome,
-                modifier = Modifier.size(18.dp),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.FormatQuote,
+                    contentDescription = null,
+                    tint = chrome,
+                    modifier = Modifier.size(18.dp),
+                )
+                if (menu != null && menu.hasHideActions) {
+                    HighlightHideMenuButton(menu = menu, tint = chrome)
+                }
+            }
             if (createdAt > 0L) {
                 Text(
                     text = RelativeTime.label(createdAt),

@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -49,6 +50,9 @@ data class HighlightCardMenu(
     val onIgnoreAuthor: (() -> Unit)? = null,
     val onDelete: (() -> Unit)? = null,
 )
+
+val HighlightCardMenu.hasHideActions: Boolean
+    get() = onIgnoreArticle != null || onIgnoreAuthor != null
 
 private const val NJUMP_BASE = "https://njump.to"
 
@@ -131,18 +135,6 @@ fun HighlightCardMenuButton(
                     action()
                 }
             }
-            menu?.onIgnoreArticle?.let { action ->
-                MenuItem(R.string.highlight_menu_ignore_article, Icons.Outlined.VisibilityOff) {
-                    open = false
-                    action()
-                }
-            }
-            menu?.onIgnoreAuthor?.let { action ->
-                MenuItem(R.string.highlight_menu_ignore_author, Icons.Outlined.VisibilityOff) {
-                    open = false
-                    action()
-                }
-            }
             if (nevent != null) {
                 MenuItem(R.string.highlight_menu_open_njump, Icons.AutoMirrored.Outlined.OpenInNew) {
                     open = false
@@ -185,6 +177,45 @@ fun HighlightCardMenuButton(
                 }
             },
         )
+    }
+}
+
+@Composable
+fun HighlightHideMenuButton(
+    menu: HighlightCardMenu,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        IconButton(
+            onClick = { open = true },
+            modifier = Modifier.size(28.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.VisibilityOff,
+                contentDescription = stringResource(R.string.highlight_hide_menu),
+                tint = tint,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+        ) {
+            menu.onIgnoreArticle?.let { action ->
+                MenuItem(R.string.highlight_menu_ignore_article, Icons.Outlined.VisibilityOff) {
+                    open = false
+                    action()
+                }
+            }
+            menu.onIgnoreAuthor?.let { action ->
+                MenuItem(R.string.highlight_menu_ignore_author, Icons.Outlined.VisibilityOff) {
+                    open = false
+                    action()
+                }
+            }
+        }
     }
 }
 

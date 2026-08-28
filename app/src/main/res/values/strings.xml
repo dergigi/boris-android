@@ -226,11 +226,12 @@
     <string name="feed_writings_empty">No writings yet.</string>
     <string name="feed_empty_filtered">Nothing matches these filters.</string>
     <string name="highlight_menu">Highlight options</string>
+    <string name="highlight_hide_menu">Hide highlights</string>
     <string name="highlight_menu_share_quote">Share quote</string>
     <string name="highlight_menu_share_article">Share article</string>
     <string name="highlight_menu_go_to_quote">Go to quote</string>
     <string name="highlight_menu_view_profile">View profile</string>
-    <string name="highlight_menu_ignore_article">Hide this article</string>
+    <string name="highlight_menu_ignore_article">Hide highlights from this article</string>
     <string name="highlight_menu_ignore_author">Hide highlights from this user</string>
     <plurals name="feed_highlights_collapsed_article">
         <item quantity="one">%1$d highlight from %2$s</item>
