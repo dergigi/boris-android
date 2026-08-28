@@ -65,6 +65,10 @@ object HighlightJump {
     fun chromePadding(topScrollInsetPx: Int, extraPx: Float): Float =
         topScrollInsetPx + extraPx
 
+    /** Visible overlay top-bar height while hide-on-scroll is sliding it away. */
+    fun visibleOverlayPx(overlayBarPx: Int, barOffsetPx: Float): Int =
+        (overlayBarPx + barOffsetPx).roundToInt().coerceAtLeast(0)
+
     /**
      * Reading order: first occurrence in [texts] (title, then body) on top.
      * Quotes that never match the article stay at the bottom.

@@ -1109,7 +1109,7 @@ fun ReaderScreenContent(
                         if (!hideBar) {
                             0
                         } else {
-                            (overlayBarPx + barOffsetPx.floatValue).roundToInt().coerceAtLeast(0)
+                            HighlightJump.visibleOverlayPx(overlayBarPx, barOffsetPx.floatValue)
                         }
                     },
                     modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
@@ -1321,6 +1321,7 @@ private fun ArticleBody(
     val headingFamily = typography.headlineLarge.copy(fontFamily = family)
     val clipboard = LocalClipboardManager.current
     val density = LocalDensity.current
+    val paneTopPadding = with(density) { jumpChromePx().toDp() }
     val selection = remember { ReaderSelectionState() }
     val scope = rememberCoroutineScope()
     var titleTtsIndex by remember(content.url) { mutableStateOf<Int?>(null) }
@@ -1478,11 +1479,11 @@ private fun ArticleBody(
     // While drifted, the saved position can still advance (TTS listening), so
     // read it live from the store instead of a settle-time snapshot.
     val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
-    val driftFraction = if (drifting) {
-        remember(content.url, progressVersion) { ReadingPositionStore.fraction(content.url) }
-    } else {
-        null
+    val savedFraction = remember(content.url, progressVersion) {
+        ReadingPositionStore.fraction(content.url)
     }
+    val driftFraction = savedFraction.takeIf { drifting }
+    val jumpBackFraction = driftFraction?.takeIf { ReadingProgress.showsJumpBack(it) }
     TtsSpokenSync(
         url = content.url,
         spoken = spokenMark,
@@ -2040,7 +2041,7 @@ private fun ArticleBody(
                 }
             }
         }
-        driftFraction?.let { fraction ->
+        jumpBackFraction?.let { fraction ->
             JumpBackPill(
                 percent = (fraction * 100f).roundToInt(),
                 onClick = {
@@ -2136,7 +2137,7 @@ private fun ArticleBody(
                 content.title?.takeIf { it.isNotBlank() },
                 content.body,
             ),
-            topPadding = with(density) { topScrollInsetPx.toDp() },
+            topPadding = paneTopPadding,
             menuFor = { item ->
                 HighlightCardMenu(
                     highlightId = item.id,
@@ -2166,7 +2167,7 @@ private fun ArticleBody(
             hits = findHits,
             activeIndex = findIndex,
             matchCount = findHits.size,
-            topPadding = with(density) { topScrollInsetPx.toDp() },
+            topPadding = paneTopPadding,
             onQueryChange = { next ->
                 findQuery = next
                 findIndex = 0
@@ -2205,7 +2206,7 @@ private fun ArticleBody(
             open = outlineOpen,
             items = outlineItems,
             activeId = activeOutlineId,
-            topPadding = with(density) { topScrollInsetPx.toDp() },
+            topPadding = paneTopPadding,
             onDismiss = { onOutlineOpenChange(false) },
             onSelect = { item ->
                 pendingJumpId = item.id
