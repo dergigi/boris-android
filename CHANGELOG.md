@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.18] - 2026-08-28
+
 ### Added
 
 - Web articles with NIP-21 `nostr:` author tags join zap splits and show the author
@@ -1564,7 +1566,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.17...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.18...HEAD
+[1.5.18]: https://github.com/dergigi/boris-android/releases/tag/v1.5.18
 [1.5.17]: https://github.com/dergigi/boris-android/releases/tag/v1.5.17
 [1.5.16]: https://github.com/dergigi/boris-android/releases/tag/v1.5.16
 [1.5.15]: https://github.com/dergigi/boris-android/releases/tag/v1.5.15
