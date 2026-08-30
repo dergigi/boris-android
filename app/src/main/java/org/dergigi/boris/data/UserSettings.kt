@@ -201,6 +201,9 @@ class UserSettings internal constructor(
         "homeSectionOrder" -> homeSectionOrder
         "mostHighlightedWindow" -> mostHighlightedWindow.id
         "lightColorTheme" -> lightColorTheme
+        "linkColorDark" -> linkColorDark
+        "linkColorLight" -> linkColorLight
+        "nsfwWarnInReader" -> nsfwWarnInReader
         "openLinksInReader" -> openLinksInReader
         "paragraphAlignment" -> paragraphAlignment
         "readingFont" -> readingFont

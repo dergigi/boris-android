@@ -84,6 +84,7 @@ import org.dergigi.boris.data.DisplayType
 import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.OfflineShelf
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.feed.FeedScopeStore
 import org.dergigi.boris.ui.theme.BorisIcons
 
 enum class SettingsCategory(
@@ -148,7 +149,13 @@ private const val RESET_ALL = "all"
 private val SettingsCategory.resetKeys: Set<String>
     get() = when (this) {
         SettingsCategory.Appearance -> setOf("theme", "darkColorTheme", "lightColorTheme")
-        SettingsCategory.Reading -> setOf("readingFont", "fontSize", "paragraphAlignment")
+        SettingsCategory.Reading -> setOf(
+            "readingFont",
+            "fontSize",
+            "paragraphAlignment",
+            "linkColorDark",
+            "linkColorLight",
+        )
         SettingsCategory.Tts -> setOf(
             "ttsDefaultSpeed",
             "ttsLanguageMode",
@@ -179,6 +186,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "hideArchivedOnHome",
             "hideCompletedOnHome",
             "hideNsfwOnHome",
+            "nsfwWarnInReader",
             "homeSectionOrder",
         )
         SettingsCategory.Library -> setOf("defaultLibraryView", "defaultPrivateBookmark")
@@ -207,6 +215,21 @@ private val SettingsCategory.resetKeys: Set<String>
     }
 
 private val allResettableKeys = SettingsCategory.entries.flatMap { it.resetKeys }.toSet()
+
+private fun SettingsCategory?.resetKeysOrAll(): Set<String> =
+    this?.resetKeys ?: allResettableKeys
+
+private fun SettingsCategory?.showsReset(): Boolean =
+    this == null || resetKeys.isNotEmpty()
+
+private fun SettingsCategory?.isDirty(
+    settings: UserSettings,
+    displayType: DisplayType,
+): Boolean {
+    val displayDirty = displayType != DisplayType.Color &&
+        (this == null || this == SettingsCategory.Appearance)
+    return settings.hasNonDefaultValues(resetKeysOrAll()) || displayDirty
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -278,11 +301,14 @@ fun SettingsScreen(
                         pendingReset = null
                         settingsViewModel.update { current ->
                             current.resetKeys(
-                                if (resetAll) allResettableKeys else resetCategory?.resetKeys.orEmpty(),
+                                if (resetAll) allResettableKeys else resetCategory.resetKeysOrAll(),
                             )
                         }
                         if (resetAll || resetCategory == SettingsCategory.Appearance) {
                             DisplayTypeStore.reset()
+                        }
+                        if (resetAll || resetCategory == SettingsCategory.Feed) {
+                            FeedScopeStore.clear(context)
                         }
                     },
                 ) {
@@ -311,12 +337,8 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    val resetKeys = category?.resetKeys ?: allResettableKeys
-                    val hasResettableSettings = category == null || resetKeys.isNotEmpty()
-                    val displayDirty = displayType != DisplayType.Color &&
-                        (category == null || category == SettingsCategory.Appearance)
-                    val canReset = settings.hasNonDefaultValues(resetKeys) || displayDirty
-                    if (hasResettableSettings) {
+                    val canReset = category.isDirty(settings, displayType)
+                    if (category.showsReset()) {
                         IconButton(
                             enabled = canReset,
                             onClick = { pendingReset = category?.name ?: RESET_ALL },
@@ -364,6 +386,8 @@ fun SettingsScreen(
                     SettingsCategoryDetail(
                         category = category,
                         settings = settings,
+                        canReset = category.isDirty(settings, displayType),
+                        onReset = { pendingReset = category.name },
                         onUpdate = { next -> settingsViewModel.update { next } },
                         onOpenArticle = onOpenArticle,
                         onOpenTutorial = onOpenTutorial,
@@ -545,6 +569,8 @@ private fun SettingsCategoryRow(
 private fun SettingsCategoryDetail(
     category: SettingsCategory,
     settings: UserSettings,
+    canReset: Boolean,
+    onReset: () -> Unit,
     onUpdate: (UserSettings) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
@@ -597,6 +623,15 @@ private fun SettingsCategoryDetail(
                 onOpenSupport = onOpenSupport,
                 onOpenAuthorProfile = onOpenAuthorProfile,
             )
+        }
+        if (category.showsReset()) {
+            TextButton(
+                onClick = onReset,
+                enabled = canReset,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.settings_reset_defaults))
+            }
         }
     }
 }

@@ -127,6 +127,34 @@ class UserSettingsTest {
     }
 
     @Test
+    fun readingResetRestoresLinkColors() {
+        val keys = setOf("linkColorDark", "linkColorLight", "readingFont")
+        val updated = UserSettings.defaults()
+            .withString("linkColorLight", "#111111")
+            .withString("linkColorDark", "#eeeeee")
+            .withString("readingFont", "inter")
+        assertTrue(updated.hasNonDefaultValues(keys))
+        val reset = updated.resetKeys(keys)
+        assertEquals("#3b82f6", reset.linkColorLight)
+        assertEquals("#38bdf8", reset.linkColorDark)
+        assertEquals("source-serif-4", reset.readingFont)
+        assertFalse(reset.hasNonDefaultValues(keys))
+    }
+
+    @Test
+    fun homeResetRestoresNsfwWarn() {
+        val keys = setOf("nsfwWarnInReader", "hideNsfwOnHome")
+        val updated = UserSettings.defaults()
+            .withBoolean("nsfwWarnInReader", false)
+            .withBoolean("hideNsfwOnHome", false)
+        assertTrue(updated.hasNonDefaultValues(keys))
+        val reset = updated.resetKeys(keys)
+        assertTrue(reset.nsfwWarnInReader)
+        assertTrue(reset.hideNsfwOnHome)
+        assertFalse(reset.hasNonDefaultValues(keys))
+    }
+
+    @Test
     fun hasNonDefaultValuesComparesTypedDefaults() {
         val keys = setOf("fontSize", "showHighlights", "hideArchivedOnHome")
         assertFalse(UserSettings.defaults().hasNonDefaultValues(keys))
