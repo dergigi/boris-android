@@ -65,6 +65,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -376,7 +377,8 @@ private fun SettingsCategoryList(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val resources = LocalContext.current.resources
-    val filtered = remember(query, resources.configuration) {
+    val configuration = LocalConfiguration.current
+    val filtered = remember(query, configuration) {
         SettingsSearch.filterGroups(CATEGORY_GROUPS, query) { category ->
             SettingsSearch.termRes(category).map { resources.getString(it) }
         }
