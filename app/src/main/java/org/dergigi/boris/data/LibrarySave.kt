@@ -33,6 +33,12 @@ object LibrarySave {
             content.articleCoordinate.isNullOrBlank() &&
             content.eventId.isNullOrBlank()
 
+    fun kind(content: ReadableContent, privateBookmark: Boolean): LibrarySaveKind = when {
+        isWeb(content) -> LibrarySaveKind.Web
+        privateBookmark -> LibrarySaveKind.PrivateList
+        else -> LibrarySaveKind.PublicList
+    }
+
     fun hiddenTag(content: ReadableContent): List<String>? {
         content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() }?.let { return listOf("a", it) }
         content.eventId?.trim()?.takeIf { it.isNotEmpty() }?.let { return listOf("e", it.lowercase()) }
@@ -79,4 +85,10 @@ object LibrarySave {
         if (listEvent != null) addAll(Nip51.publicRefs(listEvent))
         if (hiddenTags != null) addAll(Nip51.parseTags(hiddenTags))
     }
+}
+
+enum class LibrarySaveKind {
+    Web,
+    PrivateList,
+    PublicList,
 }

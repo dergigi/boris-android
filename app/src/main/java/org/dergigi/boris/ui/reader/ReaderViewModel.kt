@@ -20,6 +20,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.LibrarySaveKind
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.OpenedHighlight
@@ -401,10 +402,10 @@ class ReaderViewModel(
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         saving = true
         publishSaveState()
-        return when {
-            LibrarySave.isWeb(content) && !privateBookmark -> requestWebBookmark(session, content)
-            privateBookmark -> requestPrivateBookmark(session, content)
-            else -> requestPublicBookmark(session, content)
+        return when (LibrarySave.kind(content, privateBookmark)) {
+            LibrarySaveKind.Web -> requestWebBookmark(session, content)
+            LibrarySaveKind.PrivateList -> requestPrivateBookmark(session, content)
+            LibrarySaveKind.PublicList -> requestPublicBookmark(session, content)
         }
     }
 

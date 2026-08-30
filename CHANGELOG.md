@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Share Save always stores web URLs as a web bookmark
+
 ## [1.5.20] - 2026-08-30
 
 ### Added

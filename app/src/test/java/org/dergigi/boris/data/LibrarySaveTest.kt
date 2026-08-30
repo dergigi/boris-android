@@ -19,6 +19,8 @@ class LibrarySaveTest {
         assertEquals("https://example.com/later", content?.url)
         assertEquals("Later", content?.title)
         assertTrue(LibrarySave.isWeb(content!!))
+        assertEquals(LibrarySaveKind.Web, LibrarySave.kind(content, privateBookmark = true))
+        assertEquals(LibrarySaveKind.Web, LibrarySave.kind(content, privateBookmark = false))
         assertEquals(listOf("r", "https://example.com/later"), LibrarySave.hiddenTag(content))
     }
 
@@ -27,6 +29,8 @@ class LibrarySaveTest {
         val note = org.dergigi.boris.nostr.Nip19.noteEncode(eventId)
         val content = LibrarySave.contentFromShare("nostr:$note")
         assertFalse(LibrarySave.isWeb(content!!))
+        assertEquals(LibrarySaveKind.PrivateList, LibrarySave.kind(content, privateBookmark = true))
+        assertEquals(LibrarySaveKind.PublicList, LibrarySave.kind(content, privateBookmark = false))
         assertEquals(listOf("e", eventId), LibrarySave.hiddenTag(content))
     }
 
@@ -36,6 +40,7 @@ class LibrarySaveTest {
             "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
         val content = LibrarySave.contentFromShare("https://njump.to/$naddr")
         assertFalse(LibrarySave.isWeb(content!!))
+        assertEquals(LibrarySaveKind.PrivateList, LibrarySave.kind(content, privateBookmark = true))
         assertEquals("a", LibrarySave.hiddenTag(content)?.first())
     }
 

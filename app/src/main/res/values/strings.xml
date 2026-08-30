@@ -325,7 +325,7 @@
     <string name="settings_library_default_view">Default view</string>
     <string name="settings_library_default_view_note">Opens this tab when you go to Your Library.</string>
     <string name="settings_library_default_save">Default save</string>
-    <string name="settings_library_default_save_note">Used when you Save from the share sheet, and as the first choice in the reader. Web pages saved as public stay on the Web shelf.</string>
+    <string name="settings_library_default_save_note">Used for Nostr articles and notes. Web pages always save as a web bookmark.</string>
     <string name="action_more">More</string>
     <string name="action_copy_link">Copy Link</string>
     <string name="action_share">Share</string>
