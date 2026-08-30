@@ -336,6 +336,7 @@ class TtsPlaybackService : Service(), TtsPlayback.Engine {
                     TtsPlayback.onParagraphFinished(pos.paragraphIndex)
                     return@post
                 }
+                TtsPlayback.onQueuedParagraphFinished(pos.paragraphIndex)
                 enqueueParagraph(pos.paragraphIndex + 2, flush = false)
             }
         }

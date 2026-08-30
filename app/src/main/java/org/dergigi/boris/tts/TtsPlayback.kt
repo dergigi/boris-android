@@ -261,10 +261,7 @@ object TtsPlayback {
         // Listening counts as reading (issue #86): every paragraph spoken to
         // the end advances the saved reading position. Skips do not save until
         // the next paragraph is actually heard through.
-        val count = current.paragraphs.size
-        if (count > 0) {
-            ReadingPositionStore.save(current.url, (index + 1).toFloat() / count)
-        }
+        saveListenedPosition(current, index)
         if (index >= current.paragraphs.lastIndex) {
             stop()
             return
@@ -276,6 +273,23 @@ object TtsPlayback {
             spokenText = null,
         )
         engine?.play()
+    }
+
+    internal fun onQueuedParagraphFinished(index: Int) {
+        val current = _session.value ?: return
+        if (!current.playing) return
+        if (index !in current.paragraphs.indices) return
+        if (index > current.index) return
+        saveListenedPosition(current, index)
+    }
+
+    private fun saveListenedPosition(session: TtsSession, index: Int) {
+        val count = session.paragraphs.size
+        if (count <= 0) return
+        val fraction = (index + 1).toFloat() / count
+        if (fraction > ReadingPositionStore.fraction(session.url)) {
+            ReadingPositionStore.save(session.url, fraction)
+        }
     }
 
     internal fun onPreviewFinished() {
