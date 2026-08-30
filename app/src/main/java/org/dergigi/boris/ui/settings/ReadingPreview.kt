@@ -31,10 +31,7 @@ import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.reader.paintHighlight
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @Composable
 fun ReadingPreview(
@@ -46,16 +43,14 @@ fun ReadingPreview(
     val bodySize = settings.fontSize.sp
     val bodyLine = (settings.fontSize * 36f / 21f).sp
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
-    val underline = !settings.markerStyle
+    val look = rememberDisplayLook(settings)
+    val underline = look.underline
     val show = settings.showHighlights
-    val linkColor = hexColor(
-        if (darkTheme) settings.linkColorDark else settings.linkColorLight,
-        MaterialTheme.colorScheme.secondary,
-    )
-    val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
-    val friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends)
-    val foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf)
-    val nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther)
+    val linkColor = look.link
+    val mineColor = look.mine
+    val friendsColor = look.friends
+    val foafColor = look.foaf
+    val nostrverseColor = look.nostrverse
     Column(
         modifier = modifier
             .fillMaxWidth()

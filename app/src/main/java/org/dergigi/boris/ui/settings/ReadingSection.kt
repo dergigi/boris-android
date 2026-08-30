@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.UserSettings
 
 @Composable
@@ -44,6 +46,7 @@ fun ReadingSection(
     onUpdate: (UserSettings) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
     val linkColors = if (darkTheme) ReadingFonts.LINK_COLORS_DARK else ReadingFonts.LINK_COLORS_LIGHT
     val linkColor = if (darkTheme) settings.linkColorDark else settings.linkColorLight
     Column(
@@ -83,7 +86,7 @@ fun ReadingSection(
                 )
             }
         }
-        SettingRow(stringResource(R.string.settings_link_color)) {
+        if (!displayType.eink) SettingRow(stringResource(R.string.settings_link_color)) {
             ColorSwatches(
                 colors = linkColors,
                 selected = linkColor,

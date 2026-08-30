@@ -80,6 +80,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleImages
+import org.dergigi.boris.data.DisplayType
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.OfflineShelf
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.theme.BorisIcons
@@ -229,6 +231,7 @@ fun SettingsScreen(
     }
     var openCategory by rememberSaveable { mutableStateOf(initialCategory) }
     var pendingReset by rememberSaveable { mutableStateOf<String?>(null) }
+    val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
     val category = openCategory?.let { name -> SettingsCategory.entries.firstOrNull { it.name == name } }
 
     LaunchedEffect(signIntent) {
@@ -278,6 +281,9 @@ fun SettingsScreen(
                                 if (resetAll) allResettableKeys else resetCategory?.resetKeys.orEmpty(),
                             )
                         }
+                        if (resetAll || resetCategory == SettingsCategory.Appearance) {
+                            DisplayTypeStore.reset()
+                        }
                     },
                 ) {
                     Text(stringResource(R.string.settings_reset_confirm))
@@ -307,7 +313,9 @@ fun SettingsScreen(
                 actions = {
                     val resetKeys = category?.resetKeys ?: allResettableKeys
                     val hasResettableSettings = category == null || resetKeys.isNotEmpty()
-                    val canReset = settings.hasNonDefaultValues(resetKeys)
+                    val displayDirty = displayType != DisplayType.Color &&
+                        (category == null || category == SettingsCategory.Appearance)
+                    val canReset = settings.hasNonDefaultValues(resetKeys) || displayDirty
                     if (hasResettableSettings) {
                         IconButton(
                             enabled = canReset,

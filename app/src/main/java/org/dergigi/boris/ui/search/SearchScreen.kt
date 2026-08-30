@@ -72,12 +72,8 @@ import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.rememberArticleActions
-import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.BorisIcons
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 enum class SearchResultType {
     All,
@@ -111,10 +107,11 @@ fun SearchScreen(
             ?.takeIf { it.isNotEmpty() }
             ?.let(viewModel::onQueryChange)
     }
-    val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
-    val friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends)
-    val foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf)
-    val nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther)
+    val look = rememberDisplayLook(settings)
+    val mineColor = look.mine
+    val friendsColor = look.friends
+    val foafColor = look.foaf
+    val nostrverseColor = look.nostrverse
     SearchScreenContent(
         query = query,
         results = state.results,

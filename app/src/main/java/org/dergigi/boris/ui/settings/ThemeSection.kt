@@ -8,12 +8,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
+import org.dergigi.boris.data.DisplayType
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.theme.Black
 import org.dergigi.boris.ui.theme.Charcoal
@@ -35,12 +42,35 @@ fun ThemeSection(
     modifier: Modifier = Modifier,
 ) {
     val appearance = settings.theme
+    val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
+    val eink = displayType.eink
     val showDark = appearance != "light"
     val showLight = appearance != "dark"
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        SettingRow(stringResource(R.string.settings_display_type)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = !eink,
+                    onClick = { DisplayTypeStore.set(DisplayType.Color) },
+                    label = { Text(stringResource(R.string.settings_display_color)) },
+                )
+                FilterChip(
+                    selected = eink,
+                    onClick = { DisplayTypeStore.set(DisplayType.Eink) },
+                    label = { Text(stringResource(R.string.settings_display_eink)) },
+                )
+            }
+        }
+        if (eink) {
+            Text(
+                text = stringResource(R.string.settings_display_eink_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         SettingRow(stringResource(R.string.settings_theme)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconToggle(
@@ -63,7 +93,7 @@ fun ThemeSection(
                 )
             }
         }
-        if (showDark) {
+        if (showDark && !eink) {
             SettingRow(stringResource(R.string.settings_dark_theme)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     darkSwatches().forEach { swatch ->
@@ -77,7 +107,7 @@ fun ThemeSection(
                 }
             }
         }
-        if (showLight) {
+        if (showLight && !eink) {
             SettingRow(stringResource(R.string.settings_light_theme)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     lightSwatches().forEach { swatch ->

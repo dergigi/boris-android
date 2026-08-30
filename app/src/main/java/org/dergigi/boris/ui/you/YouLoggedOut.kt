@@ -30,8 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.ui.reader.HighlightMarks
-import org.dergigi.boris.ui.settings.hexColor
-import org.dergigi.boris.ui.theme.HighlightMine
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 import org.dergigi.boris.ui.theme.SourceSerif
 
 @Composable
@@ -69,9 +68,9 @@ fun YouLoggedOut(
 @Composable
 private fun HighlightSample(sample: String) {
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val look = rememberDisplayLook(settings)
     val dark = settings.isDark(isSystemInDarkTheme())
-    val fill = hexColor(settings.highlightColorMine, HighlightMine)
-        .copy(alpha = if (dark) 0.32f else 0.42f)
+    val fill = if (look.eink) look.mine else look.mine.copy(alpha = if (dark) 0.32f else 0.42f)
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val padX = 6.dp
     val padY = 2.dp

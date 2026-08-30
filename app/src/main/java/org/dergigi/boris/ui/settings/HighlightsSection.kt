@@ -12,7 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FormatUnderlined
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,13 +23,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.dergigi.boris.R
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.theme.BorisIcons
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @Composable
 fun HighlightsSection(
@@ -35,6 +36,8 @@ fun HighlightsSection(
     onUpdate: (UserSettings) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
+    val look = rememberDisplayLook(settings)
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -44,55 +47,64 @@ fun HighlightsSection(
             checked = settings.showHighlights,
             onCheckedChange = { onUpdate(settings.withBoolean("showHighlights", it)) },
         )
-        SettingRow(stringResource(R.string.settings_highlight_style)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconToggle(
-                    icon = BorisIcons.Highlighter,
-                    selected = settings.markerStyle,
-                    contentDescription = stringResource(R.string.settings_style_marker),
-                    onClick = { onUpdate(settings.withString("highlightStyle", "marker")) },
-                )
-                IconToggle(
-                    icon = Icons.Outlined.FormatUnderlined,
-                    selected = !settings.markerStyle,
-                    contentDescription = stringResource(R.string.settings_style_underline),
-                    onClick = { onUpdate(settings.withString("highlightStyle", "underline")) },
+        if (displayType.eink) {
+            Text(
+                text = stringResource(R.string.settings_highlights_eink_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (!displayType.eink) {
+            SettingRow(stringResource(R.string.settings_highlight_style)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconToggle(
+                        icon = BorisIcons.Highlighter,
+                        selected = settings.markerStyle,
+                        contentDescription = stringResource(R.string.settings_style_marker),
+                        onClick = { onUpdate(settings.withString("highlightStyle", "marker")) },
+                    )
+                    IconToggle(
+                        icon = Icons.Outlined.FormatUnderlined,
+                        selected = !settings.markerStyle,
+                        contentDescription = stringResource(R.string.settings_style_underline),
+                        onClick = { onUpdate(settings.withString("highlightStyle", "underline")) },
+                    )
+                }
+            }
+            SettingRow(stringResource(R.string.settings_color_mine)) {
+                ColorSwatches(
+                    colors = ReadingFonts.HIGHLIGHT_COLORS,
+                    selected = settings.highlightColorMine,
+                    onSelect = { onUpdate(settings.withString("highlightColorMine", it)) },
                 )
             }
-        }
-        SettingRow(stringResource(R.string.settings_color_mine)) {
-            ColorSwatches(
-                colors = ReadingFonts.HIGHLIGHT_COLORS,
-                selected = settings.highlightColorMine,
-                onSelect = { onUpdate(settings.withString("highlightColorMine", it)) },
-            )
-        }
-        SettingRow(stringResource(R.string.settings_color_friends)) {
-            ColorSwatches(
-                colors = ReadingFonts.HIGHLIGHT_COLORS,
-                selected = settings.highlightColorFriends,
-                onSelect = { onUpdate(settings.withString("highlightColorFriends", it)) },
-            )
-        }
-        SettingRow(stringResource(R.string.settings_color_foaf)) {
-            ColorSwatches(
-                colors = ReadingFonts.HIGHLIGHT_COLORS,
-                selected = settings.highlightColorFoaf,
-                onSelect = { onUpdate(settings.withString("highlightColorFoaf", it)) },
-            )
-        }
-        SettingRow(stringResource(R.string.settings_color_nostrverse)) {
-            ColorSwatches(
-                colors = ReadingFonts.HIGHLIGHT_COLORS,
-                selected = settings.highlightColorNostrverse,
-                onSelect = { onUpdate(settings.withString("highlightColorNostrverse", it)) },
-            )
+            SettingRow(stringResource(R.string.settings_color_friends)) {
+                ColorSwatches(
+                    colors = ReadingFonts.HIGHLIGHT_COLORS,
+                    selected = settings.highlightColorFriends,
+                    onSelect = { onUpdate(settings.withString("highlightColorFriends", it)) },
+                )
+            }
+            SettingRow(stringResource(R.string.settings_color_foaf)) {
+                ColorSwatches(
+                    colors = ReadingFonts.HIGHLIGHT_COLORS,
+                    selected = settings.highlightColorFoaf,
+                    onSelect = { onUpdate(settings.withString("highlightColorFoaf", it)) },
+                )
+            }
+            SettingRow(stringResource(R.string.settings_color_nostrverse)) {
+                ColorSwatches(
+                    colors = ReadingFonts.HIGHLIGHT_COLORS,
+                    selected = settings.highlightColorNostrverse,
+                    onSelect = { onUpdate(settings.withString("highlightColorNostrverse", it)) },
+                )
+            }
         }
         SettingRow(stringResource(R.string.settings_highlight_visibility)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VisibilityToggle(
                     on = settings.defaultHighlightVisibilityNostrverse,
-                    tint = hexColor(settings.highlightColorNostrverse, HighlightOther),
+                    tint = look.nostrverse,
                     contentDescription = stringResource(R.string.settings_visibility_nostrverse),
                     onClick = {
                         onUpdate(
@@ -105,7 +117,7 @@ fun HighlightsSection(
                 )
                 VisibilityToggle(
                     on = settings.defaultHighlightVisibilityFoaf,
-                    tint = hexColor(settings.highlightColorFoaf, HighlightFoaf),
+                    tint = look.foaf,
                     contentDescription = stringResource(R.string.settings_visibility_foaf),
                     onClick = {
                         onUpdate(
@@ -118,7 +130,7 @@ fun HighlightsSection(
                 )
                 VisibilityToggle(
                     on = settings.defaultHighlightVisibilityFriends,
-                    tint = hexColor(settings.highlightColorFriends, HighlightFriends),
+                    tint = look.friends,
                     contentDescription = stringResource(R.string.settings_visibility_friends),
                     onClick = {
                         onUpdate(
@@ -131,7 +143,7 @@ fun HighlightsSection(
                 )
                 VisibilityToggle(
                     on = settings.defaultHighlightVisibilityMine,
-                    tint = hexColor(settings.highlightColorMine, HighlightMine),
+                    tint = look.mine,
                     contentDescription = stringResource(R.string.settings_visibility_mine),
                     onClick = {
                         onUpdate(

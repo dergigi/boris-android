@@ -28,6 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.dergigi.boris.data.ArticleCache
 import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.CacheLimit
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.OfflineDownloader
 import org.dergigi.boris.data.OfflineStore
 import org.dergigi.boris.data.OgPreviewCache
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
         RelayHealth.init(File(filesDir, "relay_health.json"))
         HintedRelays.init(File(filesDir, "hinted_relays.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))
+        DisplayTypeStore.init(File(filesDir, "display_type"))
         ReadingPositionSync.refreshAsync(applicationContext)
         ReaderRepository.init(File(filesDir, "reader_http_cache"), CacheLimit.bytes(this))
         RssRepository.init(File(filesDir, "rss_http_cache"))

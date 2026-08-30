@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.dergigi.boris.data.DisplayType
+import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
 
@@ -20,9 +22,10 @@ fun BorisTheme(
     content: @Composable () -> Unit,
 ) {
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
     val systemDark = isSystemInDarkTheme()
     val darkTheme = settings.isDark(systemDark)
-    val colors = borisColorScheme(settings, darkTheme)
+    val colors = borisColorScheme(settings, darkTheme, displayType)
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -38,8 +41,47 @@ fun BorisTheme(
     )
 }
 
-fun borisColorScheme(settings: UserSettings, darkTheme: Boolean): ColorScheme {
+fun borisColorScheme(
+    settings: UserSettings,
+    darkTheme: Boolean,
+    displayType: DisplayType = DisplayType.Color,
+): ColorScheme {
+    if (displayType.eink) return einkScheme(darkTheme)
     return if (darkTheme) darkScheme(settings.darkColorTheme) else lightScheme(settings.lightColorTheme)
+}
+
+private fun einkScheme(darkTheme: Boolean): ColorScheme {
+    return if (darkTheme) {
+        darkColorScheme(
+            primary = Color.White,
+            onPrimary = Color.Black,
+            secondary = Color.White,
+            onSecondary = Color.Black,
+            background = Black,
+            onBackground = Color.White,
+            surface = Black,
+            onSurface = Color.White,
+            surfaceVariant = BlackElevated,
+            onSurfaceVariant = EinkMutedDark,
+            outline = EinkLineDark,
+            outlineVariant = EinkLineDark,
+        )
+    } else {
+        lightColorScheme(
+            primary = Color.Black,
+            onPrimary = Color.White,
+            secondary = Color.Black,
+            onSecondary = Color.White,
+            background = Paper,
+            onBackground = Color.Black,
+            surface = Paper,
+            onSurface = Color.Black,
+            surfaceVariant = Gray100,
+            onSurfaceVariant = EinkMuted,
+            outline = EinkLine,
+            outlineVariant = EinkLine,
+        )
+    }
 }
 
 private fun darkScheme(variant: String): ColorScheme {

@@ -89,11 +89,7 @@ import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.TopBarRefreshIndicator
-import org.dergigi.boris.ui.settings.hexColor
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @Composable
 fun FeedScreen(
@@ -140,6 +136,7 @@ fun FeedScreen(
     var tab by rememberSaveable {
         mutableStateOf(ContentTab.fromSettings(settings.defaultFeedView))
     }
+    val look = rememberDisplayLook(settings)
     FeedScreenContent(
         state = state,
         refreshing = refreshing,
@@ -150,10 +147,10 @@ fun FeedScreen(
         rssLoading = rssLoading,
         hasRssFeeds = settings.rssFeeds.isNotEmpty(),
         settings = settings,
-        nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
-        foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf),
-        friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
-        mineColor = hexColor(settings.highlightColorMine, HighlightMine),
+        nostrverseColor = look.nostrverse,
+        foafColor = look.foaf,
+        friendsColor = look.friends,
+        mineColor = look.mine,
         onRefresh = viewModel::refresh,
         onToggle = viewModel::toggle,
         onSelectTab = { tab = it },

@@ -33,10 +33,7 @@ import org.dergigi.boris.ui.feed.FeedScopeStore
 import org.dergigi.boris.ui.feed.withExploreScope
 import org.dergigi.boris.ui.icon
 import org.dergigi.boris.ui.label
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,6 +43,7 @@ fun FeedSettingsSection(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val look = rememberDisplayLook(settings)
     val scope = FeedScope.fromSettings(settings)
     val defaultView = ContentTab.fromSettings(settings.defaultFeedView)
     fun toggle(level: FeedLevel) {
@@ -93,28 +91,28 @@ fun FeedSettingsSection(
                 ScopeIcon(
                     icon = Icons.Outlined.Hub,
                     on = scope.nostrverse,
-                    tint = hexColor(settings.highlightColorNostrverse, HighlightOther),
+                    tint = look.nostrverse,
                     contentDescription = stringResource(R.string.feed_scope_nostrverse),
                     onClick = { toggle(FeedLevel.Nostrverse) },
                 )
                 ScopeIcon(
                     icon = Icons.Outlined.Groups,
                     on = scope.foaf,
-                    tint = hexColor(settings.highlightColorFoaf, HighlightFoaf),
+                    tint = look.foaf,
                     contentDescription = stringResource(R.string.feed_scope_foaf),
                     onClick = { toggle(FeedLevel.Foaf) },
                 )
                 ScopeIcon(
                     icon = Icons.Outlined.Group,
                     on = scope.friends,
-                    tint = hexColor(settings.highlightColorFriends, HighlightFriends),
+                    tint = look.friends,
                     contentDescription = stringResource(R.string.feed_scope_friends),
                     onClick = { toggle(FeedLevel.Friends) },
                 )
                 ScopeIcon(
                     icon = Icons.Outlined.Person,
                     on = scope.mine,
-                    tint = hexColor(settings.highlightColorMine, HighlightMine),
+                    tint = look.mine,
                     contentDescription = stringResource(R.string.feed_scope_mine),
                     onClick = { toggle(FeedLevel.Mine) },
                 )

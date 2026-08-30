@@ -13,7 +13,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -165,7 +164,6 @@ import com.mikepenz.markdown.model.rememberMarkdownState
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
-import org.dergigi.boris.data.HexColor
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrEventRef
@@ -205,12 +203,8 @@ import org.dergigi.boris.ui.shareArticleLink
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.settings.SettingsViewModel
-import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.BorisIcons
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 import coil3.compose.AsyncImage
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.IElementType
@@ -1156,10 +1150,8 @@ private fun OpenedHighlightPane(
     val context = LocalContext.current
     val sessionHex = remember { SessionStore.load(context)?.pubkeyHex }
     val mine = highlight.authorPubkey.equals(sessionHex, ignoreCase = true)
-    val color = hexColor(
-        if (mine) settings.highlightColorMine else settings.highlightColorNostrverse,
-        if (mine) HighlightMine else HighlightOther,
-    )
+    val look = rememberDisplayLook(settings)
+    val color = if (mine) look.mine else look.nostrverse
     val authorName = Profile.displayName(highlight.authorPubkey, author)
     Column(
         modifier = modifier
@@ -1306,16 +1298,13 @@ private fun ArticleBody(
     val bodySize = settings.fontSize.sp
     val bodyLine = (settings.fontSize * 36f / 21f).sp
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
-    val mineColor = readingColor(settings.highlightColorMine, HighlightMine)
-    val friendsColor = readingColor(settings.highlightColorFriends, HighlightFriends)
-    val foafColor = readingColor(settings.highlightColorFoaf, HighlightFoaf)
-    val otherColor = readingColor(settings.highlightColorNostrverse, HighlightOther)
-    val underline = !settings.markerStyle
-    val dark = settings.isDark(isSystemInDarkTheme())
-    val linkColor = readingColor(
-        if (dark) settings.linkColorDark else settings.linkColorLight,
-        colors.secondary,
-    )
+    val look = rememberDisplayLook(settings)
+    val mineColor = look.mine
+    val friendsColor = look.friends
+    val foafColor = look.foaf
+    val otherColor = look.nostrverse
+    val underline = look.underline
+    val linkColor = look.link
     val body = typography.bodyLarge.copy(
         fontFamily = family,
         fontSize = bodySize,
@@ -2668,11 +2657,6 @@ private fun isArchiveFailureMessage(context: Context, message: String): Boolean 
     message == context.getString(R.string.reader_archive_cancelled) ||
         message == context.getString(R.string.reader_archive_rejected) ||
         message == context.getString(R.string.reader_archive_failed)
-
-private fun readingColor(hex: String, fallback: Color): Color {
-    val argb = HexColor.argb(hex) ?: return fallback
-    return Color(argb)
-}
 
 internal fun readingTimeLabel(text: String): String? = ReadingTime.labelFor(text)
 

@@ -121,15 +121,11 @@ import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.CardReadingProgress
 import org.dergigi.boris.ui.settings.SettingsViewModel
-import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.support.SupportHeart
 import org.dergigi.boris.ui.theme.BorisIcons
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -253,6 +249,7 @@ fun HomeScreen(
                     },
                 )
             }
+            val look = rememberDisplayLook(settings)
             HomeScreenContent(
                 highlights = highlights,
                 refreshing = refreshing,
@@ -261,10 +258,10 @@ fun HomeScreen(
                 hideCompleted = settings.hideCompletedOnHome,
                 hideNsfw = settings.hideNsfwOnHome,
                 sectionOrder = HomeSections.order(settings.homeSectionOrder),
-                mineColor = hexColor(settings.highlightColorMine, HighlightMine),
-                friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
-                foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf),
-                nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
+                mineColor = look.mine,
+                friendsColor = look.friends,
+                foafColor = look.foaf,
+                nostrverseColor = look.nostrverse,
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {
                     HomeOnboardingStore.dismissFirstTimeEverywhere(context)

@@ -24,6 +24,9 @@ object SettingsSearch {
     private val EXTRA_TERMS: Map<SettingsCategory, List<Int>> = mapOf(
         SettingsCategory.Appearance to listOf(
             R.string.settings_theme,
+            R.string.settings_display_type,
+            R.string.settings_display_color,
+            R.string.settings_display_eink,
             R.string.settings_dark_theme,
             R.string.settings_light_theme,
             R.string.settings_theme_light,
@@ -57,6 +60,7 @@ object SettingsSearch {
             R.string.settings_full_width_images,
         ),
         SettingsCategory.Highlights to listOf(
+            R.string.settings_display_eink,
             R.string.settings_show_highlights,
             R.string.settings_highlight_style,
             R.string.settings_style_marker,

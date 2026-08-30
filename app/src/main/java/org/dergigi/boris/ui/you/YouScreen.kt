@@ -73,11 +73,7 @@ import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.feed.FeedLevel
-import org.dergigi.boris.ui.settings.hexColor
-import org.dergigi.boris.ui.theme.HighlightFoaf
-import org.dergigi.boris.ui.theme.HighlightFriends
-import org.dergigi.boris.ui.theme.HighlightMine
-import org.dergigi.boris.ui.theme.HighlightOther
+import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @Composable
 fun YouHighlights(
@@ -117,11 +113,12 @@ fun YouHighlights(
     }
     val authorHex = remember(npub) { runCatching { Nip19.npubDecode(npub) }.getOrNull() }
     val shown = profile ?: fetchedProfile
+    val look = rememberDisplayLook(settings)
     val highlightColor = when (relation) {
-        FeedLevel.Mine -> hexColor(settings.highlightColorMine, HighlightMine)
-        FeedLevel.Friends -> hexColor(settings.highlightColorFriends, HighlightFriends)
-        FeedLevel.Foaf -> hexColor(settings.highlightColorFoaf, HighlightFoaf)
-        FeedLevel.Nostrverse -> hexColor(settings.highlightColorNostrverse, HighlightOther)
+        FeedLevel.Mine -> look.mine
+        FeedLevel.Friends -> look.friends
+        FeedLevel.Foaf -> look.foaf
+        FeedLevel.Nostrverse -> look.nostrverse
     }
     val displayName = shown?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)
     val actions = rememberArticleActions()
