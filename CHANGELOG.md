@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Share sheet offers Read (open now) and Save (web or private Nostr bookmark)
+
 ### Changed
 
 - About Boris button says Say hi on nostr so it is not mistaken for login

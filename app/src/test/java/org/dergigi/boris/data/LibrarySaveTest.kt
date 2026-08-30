@@ -14,6 +14,41 @@ class LibrarySaveTest {
     private val eventId = "aa".repeat(32)
 
     @Test
+    fun shareWebUrlBecomesAWebBookmark() {
+        val content = LibrarySave.contentFromShare("https://example.com/later", "Later")
+        assertEquals("https://example.com/later", content?.url)
+        assertEquals("Later", content?.title)
+        assertTrue(LibrarySave.isWeb(content!!))
+        assertNull(LibrarySave.hiddenTag(content))
+    }
+
+    @Test
+    fun shareNoteBecomesAPrivateBookmarkTag() {
+        val note = org.dergigi.boris.nostr.Nip19.noteEncode(eventId)
+        val content = LibrarySave.contentFromShare("nostr:$note")
+        assertFalse(LibrarySave.isWeb(content!!))
+        assertEquals(listOf("e", eventId), LibrarySave.hiddenTag(content))
+    }
+
+    @Test
+    fun shareArticleBecomesAPrivateBookmarkTag() {
+        val naddr =
+            "naddr1qvzqqqr4gupzqwlsccluhy6xxsr6l9a9uhhxf75g85g8a709tprjcn4e42h053vaqq9x67fdv9e8g6trd3jsrnn0q2"
+        val content = LibrarySave.contentFromShare("https://njump.to/$naddr")
+        assertFalse(LibrarySave.isWeb(content!!))
+        assertEquals("a", LibrarySave.hiddenTag(content)?.first())
+    }
+
+    @Test
+    fun shareProfileIsNotABookmark() {
+        assertNull(
+            LibrarySave.contentFromShare(
+                "npub1dergggklka99wwrs92yz8wdjs952h2ux2ha2ed598ngwu9w7a6fsh9xzpc",
+            ),
+        )
+    }
+
+    @Test
     fun webUrlsAreNotNostrNative() {
         val content = ReadableContent(url = "https://example.com/post")
         assertTrue(LibrarySave.isWeb(content))

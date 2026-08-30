@@ -184,6 +184,10 @@
     <string name="auth_nstart_host">nstart.me</string>
     <string name="reader_note_by">Note by %1$s</string>
     <string name="highlight_action">Highlight</string>
+    <string name="share_read">Read</string>
+    <string name="share_save">Save</string>
+    <string name="share_save_sign_in">Connect a signer to save to Boris.</string>
+    <string name="share_save_failed">Could not save this.</string>
     <string name="highlight_with_boris">Highlight with Boris</string>
     <string name="highlight_url_title">Article URL</string>
     <string name="highlight_url_hint">https://…</string>

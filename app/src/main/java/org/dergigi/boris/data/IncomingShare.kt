@@ -5,7 +5,17 @@ data class IncomingShare(
     val highlightQuote: String? = null,
 )
 
+data class IncomingSave(
+    val url: String,
+    val title: String? = null,
+)
+
 object IncomingShares {
+    fun isSaveShare(componentClassName: String?): Boolean {
+        val name = componentClassName?.substringAfterLast('.').orEmpty()
+        return name == "ShareSaveAlias"
+    }
+
     fun fromProcessText(text: String?, originatingUrl: String? = null): IncomingShare {
         val quote = text?.trim().orEmpty()
         if (quote.isEmpty()) return IncomingShare()

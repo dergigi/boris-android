@@ -7,6 +7,27 @@ import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.NipB0
 
 object LibrarySave {
+    fun contentFromShare(url: String, title: String? = null): ReadableContent? {
+        val extracted = UrlExtractor.extract(url) ?: return null
+        val label = title?.trim()?.takeIf { it.isNotEmpty() && it != extracted }
+        return when (val target = NostrLink.parse(extracted)) {
+            is NostrTarget.Article -> ReadableContent(
+                url = target.uri,
+                title = label,
+                articleCoordinate = target.ref.coordinate,
+                authorPubkey = target.ref.pointer.pubkey,
+            )
+            is NostrTarget.Note -> ReadableContent(
+                url = target.uri,
+                title = label,
+                eventId = target.eventId,
+                authorPubkey = target.author,
+            )
+            is NostrTarget.Profile -> null
+            null -> ReadableContent(url = extracted, title = label)
+        }
+    }
+
     fun isWeb(content: ReadableContent): Boolean =
         NostrLink.parse(content.url) == null &&
             content.articleCoordinate.isNullOrBlank() &&

@@ -36,6 +36,7 @@ import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.ReadingPositionSync
 import org.dergigi.boris.data.ReadingTimeStore
 import org.dergigi.boris.data.RssRepository
+import org.dergigi.boris.data.IncomingSave
 import org.dergigi.boris.data.IncomingShare
 import org.dergigi.boris.data.IncomingShares
 import org.dergigi.boris.data.UrlExtractor
@@ -57,6 +58,7 @@ class MainActivity : ComponentActivity() {
     private var incomingUrl by mutableStateOf<String?>(null)
     private var incomingBunker by mutableStateOf<String?>(null)
     private var incomingHighlight by mutableStateOf<IncomingShare?>(null)
+    private var incomingSave by mutableStateOf<IncomingSave?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -95,7 +97,8 @@ class MainActivity : ComponentActivity() {
                 withContext(Dispatchers.IO) { EventCache.awaitReady() }
                 val deepLink = !incomingUrl.isNullOrBlank() ||
                     !incomingBunker.isNullOrBlank() ||
-                    incomingHighlight != null
+                    incomingHighlight != null ||
+                    incomingSave != null
                 val hasLocal = withContext(Dispatchers.IO) { EventCache.hasHighlights() }
                 if (hasLocal || deepLink) {
                     composeDrawn = true
@@ -120,9 +123,11 @@ class MainActivity : ComponentActivity() {
                             incomingUrl = incomingUrl,
                             incomingBunker = incomingBunker,
                             incomingHighlight = incomingHighlight,
+                            incomingSave = incomingSave,
                             onIncomingUrlConsumed = { markIncomingIntentConsumed() },
                             onIncomingBunkerConsumed = { markIncomingIntentConsumed() },
                             onIncomingHighlightConsumed = { markIncomingIntentConsumed() },
+                            onIncomingSaveConsumed = { markIncomingIntentConsumed() },
                             homeViewModel = homeViewModel,
                         )
                     }
@@ -174,8 +179,24 @@ class MainActivity : ComponentActivity() {
             incomingUrl = null
             incomingBunker = null
             incomingHighlight = null
+            incomingSave = null
             return
         }
+        if (IncomingShares.isSaveShare(intent.component?.className) &&
+            intent.action == Intent.ACTION_SEND
+        ) {
+            incomingBunker = null
+            incomingHighlight = null
+            incomingUrl = null
+            incomingSave = IncomingSave(
+                url = urlFrom(intent).orEmpty(),
+                title = intent.getStringExtra(Intent.EXTRA_SUBJECT)?.trim()?.takeIf { title ->
+                    title.isNotEmpty()
+                },
+            )
+            return
+        }
+        incomingSave = null
         if (intent.action == Intent.ACTION_PROCESS_TEXT) {
             incomingBunker = null
             val share = IncomingShares.fromProcessText(
@@ -254,6 +275,7 @@ class MainActivity : ComponentActivity() {
         incomingUrl = null
         incomingBunker = null
         incomingHighlight = null
+        incomingSave = null
     }
 
     private fun bunkerFrom(intent: Intent): String? {

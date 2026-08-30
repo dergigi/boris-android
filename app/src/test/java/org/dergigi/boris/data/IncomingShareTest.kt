@@ -1,7 +1,9 @@
 package org.dergigi.boris.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class IncomingShareTest {
@@ -58,5 +60,13 @@ class IncomingShareTest {
         val share = IncomingShares.fromProcessText("   ")
         assertNull(share.url)
         assertNull(share.highlightQuote)
+    }
+
+    @Test
+    fun saveShareMatchesOnlyTheSaveAlias() {
+        assertTrue(IncomingShares.isSaveShare("org.dergigi.boris.ShareSaveAlias"))
+        assertFalse(IncomingShares.isSaveShare("org.dergigi.boris.ShareReadAlias"))
+        assertFalse(IncomingShares.isSaveShare("org.dergigi.boris.MainActivity"))
+        assertFalse(IncomingShares.isSaveShare(null))
     }
 }

@@ -1,6 +1,8 @@
 package org.dergigi.boris.ui
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.IncomingSave
 import org.dergigi.boris.data.IncomingShare
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.ui.reader.PendingHighlight
@@ -119,14 +122,22 @@ fun BorisApp(
     incomingUrl: String? = null,
     incomingBunker: String? = null,
     incomingHighlight: IncomingShare? = null,
+    incomingSave: IncomingSave? = null,
     onIncomingUrlConsumed: () -> Unit = {},
     onIncomingBunkerConsumed: () -> Unit = {},
     onIncomingHighlightConsumed: () -> Unit = {},
+    onIncomingSaveConsumed: () -> Unit = {},
     authViewModel: AuthViewModel = viewModel(),
     homeViewModel: HomeViewModel = viewModel(),
+    shareSaveViewModel: ShareSaveViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
+    val shareSaveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        shareSaveViewModel.onSignerResult(result.resultCode, result.data)
+    }
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val pictureUrl by authViewModel.pictureUrl.collectAsStateWithLifecycle()
     val backStack by navController.currentBackStackEntryAsState()
@@ -162,6 +173,7 @@ fun BorisApp(
 
     var highlightPromptQuote by rememberSaveable { mutableStateOf<String?>(null) }
     var highlightLoginPromptKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var saveLoginPromptKey by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingSearchQuery by rememberSaveable { mutableStateOf("") }
     var pendingSearchQueryVersion by rememberSaveable { mutableStateOf(0) }
 
@@ -180,6 +192,34 @@ fun BorisApp(
             openUrl(incomingUrl, singleTop = true)
             onIncomingUrlConsumed()
         }
+    }
+    val shareSaveMessage by shareSaveViewModel.message.collectAsStateWithLifecycle()
+    val shareSaveSignIntent by shareSaveViewModel.signIntent.collectAsStateWithLifecycle()
+    LaunchedEffect(shareSaveMessage) {
+        val text = shareSaveMessage ?: return@LaunchedEffect
+        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        shareSaveViewModel.consumeMessage()
+    }
+    LaunchedEffect(shareSaveSignIntent) {
+        val intent = shareSaveSignIntent ?: return@LaunchedEffect
+        shareSaveViewModel.consumeSignIntent()
+        shareSaveLauncher.launch(intent)
+    }
+    LaunchedEffect(incomingSave, authState) {
+        val save = incomingSave ?: return@LaunchedEffect
+        val loginKey = save.url + "\n" + save.title.orEmpty()
+        if (authState !is AuthUiState.LoggedIn) {
+            if (saveLoginPromptKey != loginKey) {
+                Toast.makeText(context, R.string.share_save_sign_in, Toast.LENGTH_SHORT).show()
+                goToTab(MainTab.You)
+                saveLoginPromptKey = loginKey
+            }
+            return@LaunchedEffect
+        }
+        saveLoginPromptKey = null
+        onIncomingSaveConsumed()
+        shareSaveViewModel.save(save.url, save.title)?.let(shareSaveLauncher::launch)
+        goToTab(MainTab.Library)
     }
     LaunchedEffect(incomingBunker) {
         if (!incomingBunker.isNullOrBlank()) {
