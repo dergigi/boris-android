@@ -16,7 +16,7 @@ class AboutPagesTest {
     @Test
     fun ctaLinksPointAtGigiAndTheRepo() {
         assertEquals(
-            "npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x",
+            "npub19802see0gnk3vjlus0dnmfdagusqrtmsxpl5yfmkwn9uvnfnqylqduhr0x",
             AboutLinks.NPUB,
         )
         assertEquals("https://njump.to/${AboutLinks.NPUB}", AboutLinks.nostrUrl)

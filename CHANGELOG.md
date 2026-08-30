@@ -13,6 +13,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 - About Boris button says Say hi on nostr so it is not mistaken for login
 
+### Fixed
+
+- About Boris njump link opens the Boris profile
+
 ## [1.5.18] - 2026-08-28
 
 ### Added

@@ -27,7 +27,7 @@ object AboutLinks {
         "https://read.withboris.com/a/naddr1qqsxzttkd9ekjmmw94nx7u3dvykhvctvw4jj6etwv93xcety94mk2cszyphydppzm7m554ecwq4gsgaek2qk32atse2l4t9ks57dpms4mmhfxqcyqqq823c59stcz"
     const val WHY_BORIS_NAME =
         "https://relay.dergigi.com/03e174145e1f410772bb8c3e79b153ac0077fe482d7006b1f0ed67a81d475bb9.png"
-    const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqtmsxpl5yfmkwn9uvnfnqylqduhr0x"
+    const val NPUB = "npub19802see0gnk3vjlus0dnmfdagusqrtmsxpl5yfmkwn9uvnfnqylqduhr0x"
     const val GITHUB = "https://github.com/dergigi/boris-android"
     const val BUG_REPORT = "$GITHUB/issues/new?template=bug_report.yml"
     const val FEATURE_REQUEST = "$GITHUB/issues/new?template=feature_request.yml"
