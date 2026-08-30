@@ -92,6 +92,9 @@ object SettingsSearch {
         SettingsCategory.Library to listOf(
             R.string.settings_library_default_view,
             R.string.settings_library_default_view_note,
+            R.string.settings_library_default_save,
+            R.string.settings_library_default_save_note,
+            R.string.library_private,
             R.string.library_public,
             R.string.library_web,
             R.string.library_look,

@@ -240,6 +240,15 @@ class UserSettingsTest {
     }
 
     @Test
+    fun defaultPrivateBookmarkReadsAndRoundTrips() {
+        assertTrue(UserSettings.defaults().defaultPrivateBookmark)
+        assertFalse(UserSettings.parse("""{"defaultPrivateBookmark":false}""").defaultPrivateBookmark)
+        val updated = UserSettings.defaults().withBoolean("defaultPrivateBookmark", false)
+        assertFalse(updated.defaultPrivateBookmark)
+        assertFalse(UserSettings.parse(updated.toJson()).defaultPrivateBookmark)
+    }
+
+    @Test
     fun volumeButtonScrollReadsAndClamps() {
         val off = UserSettings.parse("""{"volumeButtonScroll":false,"volumeButtonScrollPercent":50}""")
         assertFalse(off.volumeButtonScroll)

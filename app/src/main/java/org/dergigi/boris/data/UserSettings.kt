@@ -62,6 +62,7 @@ class UserSettings internal constructor(
             "Archive" -> BookmarkBucket.Archive
             else -> BookmarkBucket.All
         }
+    val defaultPrivateBookmark: Boolean get() = bool("defaultPrivateBookmark", true)
     val defaultFeedView: String get() = string("defaultFeedView", "All")
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
     val syncReadingPosition: Boolean get() = bool("syncReadingPosition", true)
@@ -176,6 +177,7 @@ class UserSettings internal constructor(
         "defaultHighlightVisibilityMine" -> defaultHighlightVisibilityMine
         "defaultHighlightVisibilityNostrverse" -> defaultHighlightVisibilityNostrverse
         "defaultLibraryView" -> defaultLibraryView
+        "defaultPrivateBookmark" -> defaultPrivateBookmark
         "fontSize" -> fontSize
         "fullWidthImages" -> fullWidthImages
         "hideArchivedOnHome" -> hideArchivedOnHome

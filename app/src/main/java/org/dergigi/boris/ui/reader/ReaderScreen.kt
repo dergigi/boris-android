@@ -421,8 +421,10 @@ private fun SaveLibraryButton(
         }
         return
     }
+    val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val preferPrivate = settings.defaultPrivateBookmark
     if (!choosePrivacy) {
-        IconButton(onClick = { onSave(true) }) {
+        IconButton(onClick = { onSave(preferPrivate) }) {
             Icon(icon, contentDescription = description)
         }
         return
@@ -436,26 +438,27 @@ private fun SaveLibraryButton(
             expanded = menuOpen,
             onDismissRequest = { menuOpen = false },
         ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_save_private)) },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Lock, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    onSave(true)
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_save_public)) },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Public, contentDescription = null)
-                },
-                onClick = {
-                    menuOpen = false
-                    onSave(false)
-                },
-            )
+            val privateFirst = preferPrivate
+            val items = if (privateFirst) {
+                listOf(true to R.string.reader_save_private, false to R.string.reader_save_public)
+            } else {
+                listOf(false to R.string.reader_save_public, true to R.string.reader_save_private)
+            }
+            items.forEach { (privateBookmark, label) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(label)) },
+                    leadingIcon = {
+                        Icon(
+                            if (privateBookmark) Icons.Outlined.Lock else Icons.Outlined.Public,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        menuOpen = false
+                        onSave(privateBookmark)
+                    },
+                )
+            }
         }
     }
 }

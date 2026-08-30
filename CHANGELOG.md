@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Library setting for defaulting Save to a private or public bookmark
+
 ## [1.5.19] - 2026-08-30
 
 ### Added

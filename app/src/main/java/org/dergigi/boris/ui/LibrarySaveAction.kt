@@ -40,7 +40,7 @@ class LibrarySaveAction(
     private var pendingUnsigned: PendingUnsignedEvent? = null
     private var busy = false
 
-    fun request(content: ReadableContent): Intent? {
+    fun request(content: ReadableContent, privateBookmark: Boolean = true): Intent? {
         val session = SessionStore.load(app)
         if (session == null) {
             onMessage(app.getString(R.string.share_save_sign_in))
@@ -49,8 +49,9 @@ class LibrarySaveAction(
         if (busy) return null
         busy = true
         return when {
-            LibrarySave.isWeb(content) -> requestWebBookmark(session, content)
-            else -> requestPrivateBookmark(session, content)
+            LibrarySave.isWeb(content) && !privateBookmark -> requestWebBookmark(session, content)
+            privateBookmark -> requestPrivateBookmark(session, content)
+            else -> requestPublicBookmark(session, content)
         }
     }
 
@@ -122,6 +123,54 @@ class LibrarySaveAction(
                 null
             }
         }
+    }
+
+    private fun requestPublicBookmark(session: Session, content: ReadableContent): Intent? {
+        val newTag = LibrarySave.hiddenTag(content)
+        if (newTag == null) {
+            fail(app.getString(R.string.reader_save_failed))
+            return null
+        }
+        return when (session) {
+            is Session.Amber -> {
+                scope.launch {
+                    val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+                    beginPublicAmber(session, list, newTag)
+                }
+                null
+            }
+            is Session.Bunker -> {
+                scope.launch { savePublicWithBunker(session, newTag) }
+                null
+            }
+        }
+    }
+
+    private fun beginPublicAmber(
+        session: Session.Amber,
+        list: Nip01Event?,
+        newTag: List<String>,
+    ) {
+        val tags = list?.tags.orEmpty()
+        if (Nip51.containsTag(tags, newTag)) {
+            alreadySaved()
+            return
+        }
+        requestBookmarkListSign(session, tags + listOf(newTag), list?.content.orEmpty())
+    }
+
+    private suspend fun savePublicWithBunker(session: Session.Bunker, newTag: List<String>) {
+        val list = withContext(Dispatchers.IO) { fetchBookmarkList(session.pubkeyHex) }
+        val tags = list?.tags.orEmpty()
+        if (Nip51.containsTag(tags, newTag)) {
+            alreadySaved()
+            return
+        }
+        val createdAt = System.currentTimeMillis() / 1000
+        signWithBunker(
+            session,
+            Nip51.unsignedJson(tags + listOf(newTag), list?.content.orEmpty(), pubkeyHex = null, createdAt),
+        )
     }
 
     private fun requestPrivateBookmark(session: Session, content: ReadableContent): Intent? {

@@ -401,7 +401,7 @@ class ReaderViewModel(
         saving = true
         publishSaveState()
         return when {
-            LibrarySave.isWeb(content) -> requestWebBookmark(session, content)
+            LibrarySave.isWeb(content) && !privateBookmark -> requestWebBookmark(session, content)
             privateBookmark -> requestPrivateBookmark(session, content)
             else -> requestPublicBookmark(session, content)
         }

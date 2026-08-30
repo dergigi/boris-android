@@ -19,7 +19,7 @@ class LibrarySaveTest {
         assertEquals("https://example.com/later", content?.url)
         assertEquals("Later", content?.title)
         assertTrue(LibrarySave.isWeb(content!!))
-        assertNull(LibrarySave.hiddenTag(content))
+        assertEquals(listOf("r", "https://example.com/later"), LibrarySave.hiddenTag(content))
     }
 
     @Test
@@ -52,7 +52,7 @@ class LibrarySaveTest {
     fun webUrlsAreNotNostrNative() {
         val content = ReadableContent(url = "https://example.com/post")
         assertTrue(LibrarySave.isWeb(content))
-        assertNull(LibrarySave.hiddenTag(content))
+        assertEquals(listOf("r", "https://example.com/post"), LibrarySave.hiddenTag(content))
     }
 
     @Test

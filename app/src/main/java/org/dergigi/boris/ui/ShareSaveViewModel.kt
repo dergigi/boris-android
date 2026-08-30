@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.dergigi.boris.R
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.data.SettingsSync
 
 class ShareSaveViewModel(
     application: Application,
@@ -35,7 +36,7 @@ class ShareSaveViewModel(
             _message.value = getApplication<Application>().getString(R.string.share_save_failed)
             return null
         }
-        return action.request(content)
+        return action.request(content, SettingsSync.settings.value.defaultPrivateBookmark)
     }
 
     fun onSignerResult(resultCode: Int, data: Intent?) {

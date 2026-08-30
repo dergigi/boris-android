@@ -36,6 +36,10 @@ object LibrarySave {
     fun hiddenTag(content: ReadableContent): List<String>? {
         content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() }?.let { return listOf("a", it) }
         content.eventId?.trim()?.takeIf { it.isNotEmpty() }?.let { return listOf("e", it.lowercase()) }
+        if (isWeb(content)) {
+            val url = content.url.trim().takeIf { it.isNotEmpty() } ?: return null
+            return listOf("r", url)
+        }
         return null
     }
 

@@ -63,6 +63,33 @@ fun LibrarySettingsSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Text(
+            text = stringResource(R.string.settings_library_default_save),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ShelfChip(
+                label = stringResource(R.string.library_private),
+                icon = Icons.Outlined.Lock,
+                selected = settings.defaultPrivateBookmark,
+                onClick = { onUpdate(settings.withBoolean("defaultPrivateBookmark", true)) },
+            )
+            ShelfChip(
+                label = stringResource(R.string.library_public),
+                icon = Icons.Outlined.Public,
+                selected = !settings.defaultPrivateBookmark,
+                onClick = { onUpdate(settings.withBoolean("defaultPrivateBookmark", false)) },
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_library_default_save_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

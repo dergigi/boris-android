@@ -176,7 +176,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "hideNsfwOnHome",
             "homeSectionOrder",
         )
-        SettingsCategory.Library -> setOf("defaultLibraryView")
+        SettingsCategory.Library -> setOf("defaultLibraryView", "defaultPrivateBookmark")
         SettingsCategory.Feed -> setOf(
             "defaultFeedView",
             "defaultExploreScopeNostrverse",
