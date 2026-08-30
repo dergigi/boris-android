@@ -17,6 +17,9 @@ class HomeHighlightsTest {
         assertFalse(isNetworkHighlight(friend.uppercase(), me, friends))
         assertTrue(isNetworkHighlight(other, me, friends))
         assertTrue(isNetworkHighlight(friend, null, emptySet()))
+        val hop = "ee".repeat(32)
+        assertFalse(isNetworkHighlight(hop, me, friends, setOf(hop)))
+        assertTrue(isNetworkHighlight(other, me, friends, setOf(hop)))
     }
 
     @Test

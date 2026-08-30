@@ -207,6 +207,7 @@ import org.dergigi.boris.ui.settings.ReadingFonts
 import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.settings.hexColor
 import org.dergigi.boris.ui.theme.BorisIcons
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -1307,6 +1308,7 @@ private fun ArticleBody(
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
     val mineColor = readingColor(settings.highlightColorMine, HighlightMine)
     val friendsColor = readingColor(settings.highlightColorFriends, HighlightFriends)
+    val foafColor = readingColor(settings.highlightColorFoaf, HighlightFoaf)
     val otherColor = readingColor(settings.highlightColorNostrverse, HighlightOther)
     val underline = !settings.markerStyle
     val dark = settings.isDark(isSystemInDarkTheme())
@@ -1558,6 +1560,7 @@ private fun ArticleBody(
     val highlightedComponents = remember(
         mineColor,
         friendsColor,
+        foafColor,
         otherColor,
         underline,
         selection,
@@ -1586,6 +1589,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1633,6 +1637,7 @@ private fun ArticleBody(
                             paintedHolder.value,
                             mineColor,
                             friendsColor,
+                            foafColor,
                             otherColor,
                             underline,
                             selection,
@@ -1662,6 +1667,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1682,6 +1688,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1702,6 +1709,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1722,6 +1730,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1742,6 +1751,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1762,6 +1772,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1782,6 +1793,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1802,6 +1814,7 @@ private fun ArticleBody(
                     paintedHolder.value,
                     mineColor,
                     friendsColor,
+                    foafColor,
                     otherColor,
                     underline,
                     selection,
@@ -1913,6 +1926,7 @@ private fun ArticleBody(
                     color = colors.onBackground,
                     mineColor = mineColor,
                     friendsColor = friendsColor,
+                    foafColor = foafColor,
                     otherColor = otherColor,
                     underline = underline,
                     selection = selection,
@@ -1954,7 +1968,7 @@ private fun ArticleBody(
                         SensitiveContent.classify(content)
                     },
                     highlightsLabel = highlightsLabel,
-                    highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, otherColor),
+                    highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, foafColor, otherColor),
                     published = published,
                     rssFeedUrl = rssFeedSuggestion,
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
@@ -2121,6 +2135,7 @@ private fun ArticleBody(
             settings = settings,
             mineColor = mineColor,
             friendsColor = friendsColor,
+            foafColor = foafColor,
             otherColor = otherColor,
             onDismiss = { paneOpen = false },
             onSelect = { item ->
@@ -2374,6 +2389,7 @@ private fun HighlightedArticleTitle(
     color: Color,
     mineColor: Color,
     friendsColor: Color,
+    foafColor: Color,
     otherColor: Color,
     underline: Boolean,
     selection: ReaderSelectionState,
@@ -2399,6 +2415,7 @@ private fun HighlightedArticleTitle(
                 friendsColor,
                 otherColor,
                 underline,
+                foafColor = foafColor,
             )
             .highlightAnchors(
                 owner = titleOwner,
@@ -2432,6 +2449,7 @@ private fun HighlightedMarkdownNode(
     highlights: List<PaintedHighlight>,
     mineColor: Color,
     friendsColor: Color,
+    foafColor: Color,
     otherColor: Color,
     underline: Boolean,
     selection: ReaderSelectionState,
@@ -2483,6 +2501,7 @@ private fun HighlightedMarkdownNode(
                 friendsColor,
                 otherColor,
                 underline,
+                foafColor = foafColor,
             )
             .highlightAnchors(
                 owner = owner,
@@ -2666,10 +2685,12 @@ internal fun highlightPillColor(
     highlights: List<PaintedHighlight>,
     mine: Color,
     friends: Color,
+    foaf: Color,
     other: Color,
 ): Color = when {
     highlights.any { it.mine } -> mine
     highlights.any { it.friend } -> friends
+    highlights.any { it.foaf } -> foaf
     else -> other
 }
 

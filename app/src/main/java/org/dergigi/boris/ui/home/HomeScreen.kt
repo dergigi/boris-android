@@ -126,6 +126,7 @@ import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.support.SupportHeart
 import org.dergigi.boris.ui.theme.BorisIcons
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -262,6 +263,7 @@ fun HomeScreen(
                 sectionOrder = HomeSections.order(settings.homeSectionOrder),
                 mineColor = hexColor(settings.highlightColorMine, HighlightMine),
                 friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
+                foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf),
                 nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {
@@ -363,6 +365,7 @@ fun HomeScreenContent(
     hideNsfw: Boolean = false,
     mineColor: Color,
     friendsColor: Color,
+    foafColor: Color,
     nostrverseColor: Color,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
@@ -495,6 +498,15 @@ fun HomeScreenContent(
                         hideArchived, hideCompleted, hideNsfw,
                     )
                 }
+                val foaf = remember(
+                    highlights.foaf, highlights.archivedKeys,
+                    hideArchived, hideCompleted, hideNsfw, progressVersion,
+                ) {
+                    HomeFilters.visible(
+                        highlights.foaf, highlights.archivedKeys,
+                        hideArchived, hideCompleted, hideNsfw,
+                    )
+                }
                 val others = remember(
                     highlights.others, highlights.archivedKeys,
                     hideArchived, hideCompleted, hideNsfw, progressVersion,
@@ -554,7 +566,7 @@ fun HomeScreenContent(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    val empty = yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+                    val empty = yours.isEmpty() && friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
                         continueReading.isEmpty() && mostHighlighted.isEmpty() &&
                         !highlights.hasMostPool &&
                         shortReads.isEmpty() && longReads.isEmpty() &&
@@ -666,10 +678,23 @@ fun HomeScreenContent(
                                                 onMarkAsRead = onMarkAsRead,
                                             )
                                         }
+                                        HomeSections.FOAF -> if (foaf.isNotEmpty()) {
+                                            HighlightedRow(
+                                                title = stringResource(R.string.home_recently_highlighted_by_foaf),
+                                                items = foaf,
+                                                rowKey = "foaf",
+                                                tint = foafColor,
+                                                loggedIn = loggedIn,
+                                                archivedKeys = highlights.archivedKeys,
+                                                onRead = onRead,
+                                                onListen = onListen,
+                                                onMarkAsRead = onMarkAsRead,
+                                            )
+                                        }
                                         HomeSections.OTHERS -> if (others.isNotEmpty()) {
                                             HighlightedRow(
                                                 title = stringResource(
-                                                    if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty()) {
+                                                    if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty() || foaf.isNotEmpty()) {
                                                         R.string.home_recently_highlighted_by_others
                                                     } else {
                                                         R.string.home_recently_highlighted

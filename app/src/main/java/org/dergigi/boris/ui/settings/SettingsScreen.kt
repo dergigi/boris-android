@@ -159,8 +159,10 @@ private val SettingsCategory.resetKeys: Set<String>
             "highlightStyle",
             "highlightColorMine",
             "highlightColorFriends",
+            "highlightColorFoaf",
             "highlightColorNostrverse",
             "defaultHighlightVisibilityNostrverse",
+            "defaultHighlightVisibilityFoaf",
             "defaultHighlightVisibilityFriends",
             "defaultHighlightVisibilityMine",
         )
@@ -180,6 +182,7 @@ private val SettingsCategory.resetKeys: Set<String>
         SettingsCategory.Feed -> setOf(
             "defaultFeedView",
             "defaultExploreScopeNostrverse",
+            "defaultExploreScopeFoaf",
             "defaultExploreScopeFriends",
             "defaultExploreScopeMine",
             "rssFeeds",

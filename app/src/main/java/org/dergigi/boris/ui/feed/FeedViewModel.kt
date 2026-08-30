@@ -226,12 +226,21 @@ class FeedViewModel(
 
     private fun loadCatalogFromCache(pubkeyHex: String?): Catalog? {
         val friends = if (pubkeyHex == null) emptySet() else RelayQuery.cachedContactPubkeys(pubkeyHex)
+        val foaf = if (pubkeyHex == null) {
+            emptySet()
+        } else {
+            RelayQuery.cachedFoafPubkeys(pubkeyHex, friends)
+        }
+        val foafAuthors = foafFetchAuthors(foaf)
         val highlightEvents = buildList {
             addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT))
             if (pubkeyHex != null) {
                 addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, pubkeyHex))
                 if (friends.isNotEmpty()) {
                     addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = friends))
+                }
+                if (foafAuthors.isNotEmpty()) {
+                    addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = foafAuthors))
                 }
             }
         }.distinctBy { it.id }.sortedByDescending { it.createdAt }
@@ -242,14 +251,17 @@ class FeedViewModel(
                 if (friends.isNotEmpty()) {
                     addAll(RelayQuery.cachedRecentWritings(WRITING_LIMIT, authors = friends))
                 }
+                if (foafAuthors.isNotEmpty()) {
+                    addAll(RelayQuery.cachedRecentWritings(WRITING_LIMIT, authors = foafAuthors))
+                }
             }
         }.distinctBy { it.id }.sortedByDescending { Nip23.publishedAt(it) }
         if (highlightEvents.isEmpty() && writingEvents.isEmpty()) return null
         val authors = (highlightEvents + writingEvents).map { it.pubkey }.distinct().take(PROFILE_LIMIT)
         val profiles = RelayQuery.cachedProfiles(authors)
         return Catalog(
-            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends),
-            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends),
+            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends, foaf),
+            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends, foaf),
         )
     }
 
@@ -282,6 +294,12 @@ class FeedViewModel(
             }
         }
         val friends = friendsDeferred.await()
+        val foaf = if (pubkeyHex == null) {
+            emptySet()
+        } else {
+            RelayQuery.fetchFoafPubkeys(pubkeyHex, friends)
+        }
+        val foafAuthors = foafFetchAuthors(foaf)
         val (friendsHighlights, friendsWritings) = coroutineScope {
             val highlights = async {
                 if (pubkeyHex == null || friends.isEmpty()) {
@@ -299,10 +317,31 @@ class FeedViewModel(
             }
             highlights.await() to writings.await()
         }
-        val highlightEvents = (globalHighlights.await() + mineHighlights.await() + friendsHighlights)
+        val (foafHighlights, foafWritings) = coroutineScope {
+            val highlights = async {
+                if (pubkeyHex == null || foafAuthors.isEmpty()) {
+                    emptyList()
+                } else {
+                    RelayQuery.fetchRecentHighlightsByAuthors(foafAuthors, relays, HIGHLIGHT_LIMIT)
+                }
+            }
+            val writings = async {
+                if (pubkeyHex == null || foafAuthors.isEmpty()) {
+                    emptyList()
+                } else {
+                    RelayQuery.fetchRecentWritingsByAuthors(foafAuthors, relays, WRITING_LIMIT)
+                }
+            }
+            highlights.await() to writings.await()
+        }
+        val highlightEvents = (
+            globalHighlights.await() + mineHighlights.await() + friendsHighlights + foafHighlights
+            )
             .distinctBy { it.id }
             .sortedByDescending { it.createdAt }
-        val writingEvents = (globalWritings.await() + mineWritings.await() + friendsWritings)
+        val writingEvents = (
+            globalWritings.await() + mineWritings.await() + friendsWritings + foafWritings
+            )
             .distinctBy { it.id }
             .sortedByDescending { Nip23.publishedAt(it) }
         val authors = (highlightEvents + writingEvents)
@@ -311,8 +350,8 @@ class FeedViewModel(
             .take(PROFILE_LIMIT)
         val profiles = RelayQuery.fetchProfiles(relays, authors)
         Catalog(
-            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends),
-            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends),
+            highlights = toHighlightItems(highlightEvents, profiles, pubkeyHex, friends, foaf),
+            writings = toWritingItems(writingEvents, profiles, pubkeyHex, friends, foaf),
         )
     }
 
@@ -321,6 +360,7 @@ class FeedViewModel(
         profiles: Map<String, Profile>,
         sessionHex: String?,
         friends: Set<String>,
+        foaf: Set<String>,
     ): List<FeedItem> {
         return events.map { event ->
             val url = Nip84.articleUrl(event)
@@ -335,7 +375,7 @@ class FeedViewModel(
                 authorName = authorName(event.pubkey, profile),
                 authorPicture = profile?.picture,
                 createdAt = event.createdAt,
-                level = classifyFeedLevel(event.pubkey, sessionHex, friends),
+                level = classifyFeedLevel(event.pubkey, sessionHex, friends, foaf),
             )
         }
     }
@@ -345,10 +385,11 @@ class FeedViewModel(
         profiles: Map<String, Profile>,
         sessionHex: String?,
         friends: Set<String>,
+        foaf: Set<String>,
     ): List<FeedWriting> {
         val now = System.currentTimeMillis() / 1000
         return events.mapNotNull { event ->
-            writingFrom(event, profiles[event.pubkey.lowercase()], sessionHex, friends, now)
+            writingFrom(event, profiles[event.pubkey.lowercase()], sessionHex, friends, foaf, now)
         }
     }
 
@@ -372,6 +413,7 @@ class FeedViewModel(
             profile: Profile?,
             sessionHex: String?,
             friends: Set<String>,
+            foaf: Set<String> = emptySet(),
             nowSeconds: Long,
         ): FeedWriting? {
             if (Nip23.publishedAt(event) > nowSeconds + FUTURE_SLACK_SECONDS) return null
@@ -389,7 +431,7 @@ class FeedViewModel(
                 authorName = authorName(event.pubkey, profile),
                 authorPicture = profile?.picture,
                 publishedAt = Nip23.publishedAt(event),
-                level = classifyFeedLevel(event.pubkey, sessionHex, friends),
+                level = classifyFeedLevel(event.pubkey, sessionHex, friends, foaf),
             )
         }
     }

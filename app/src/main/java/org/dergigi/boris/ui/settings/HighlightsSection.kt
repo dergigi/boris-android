@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.theme.BorisIcons
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -73,6 +74,13 @@ fun HighlightsSection(
                 onSelect = { onUpdate(settings.withString("highlightColorFriends", it)) },
             )
         }
+        SettingRow(stringResource(R.string.settings_color_foaf)) {
+            ColorSwatches(
+                colors = ReadingFonts.HIGHLIGHT_COLORS,
+                selected = settings.highlightColorFoaf,
+                onSelect = { onUpdate(settings.withString("highlightColorFoaf", it)) },
+            )
+        }
         SettingRow(stringResource(R.string.settings_color_nostrverse)) {
             ColorSwatches(
                 colors = ReadingFonts.HIGHLIGHT_COLORS,
@@ -91,6 +99,19 @@ fun HighlightsSection(
                             settings.withBoolean(
                                 "defaultHighlightVisibilityNostrverse",
                                 !settings.defaultHighlightVisibilityNostrverse,
+                            ),
+                        )
+                    },
+                )
+                VisibilityToggle(
+                    on = settings.defaultHighlightVisibilityFoaf,
+                    tint = hexColor(settings.highlightColorFoaf, HighlightFoaf),
+                    contentDescription = stringResource(R.string.settings_visibility_foaf),
+                    onClick = {
+                        onUpdate(
+                            settings.withBoolean(
+                                "defaultHighlightVisibilityFoaf",
+                                !settings.defaultHighlightVisibilityFoaf,
                             ),
                         )
                     },

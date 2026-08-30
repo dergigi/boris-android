@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
@@ -63,12 +64,14 @@ internal fun highlightFilter(
         nostrverse = settings.defaultHighlightVisibilityNostrverse,
         friends = settings.defaultHighlightVisibilityFriends,
         mine = settings.defaultHighlightVisibilityMine,
+        foaf = settings.defaultHighlightVisibilityFoaf,
     )
     if (highlights.isEmpty() || highlights.any(base::shows)) return base
     // Match the highlights pill priority so opening the pane never lands on an empty filter.
     return when {
         highlights.any { it.mine } -> base.copy(mine = true)
         highlights.any { it.friend } -> base.copy(friends = true)
+        highlights.any { it.foaf } -> base.copy(foaf = true)
         else -> base.copy(nostrverse = true)
     }
 }
@@ -76,6 +79,7 @@ internal fun highlightFilter(
 internal fun FeedScope.shows(item: PaintedHighlight): Boolean = when {
     item.mine -> mine
     item.friend -> friends
+    item.foaf -> foaf
     else -> nostrverse
 }
 
@@ -88,6 +92,7 @@ fun HighlightsPane(
     settings: UserSettings,
     mineColor: Color,
     friendsColor: Color,
+    foafColor: Color,
     otherColor: Color,
     onDismiss: () -> Unit,
     onSelect: (PaintedHighlight) -> Unit,
@@ -142,9 +147,11 @@ fun HighlightsPane(
                         showMarks = settings.showHighlights,
                         mineColor = mineColor,
                         friendsColor = friendsColor,
+                        foafColor = foafColor,
                         otherColor = otherColor,
                         onDismiss = onDismiss,
                         onToggleNostrverse = { filter = filter.toggle(FeedLevel.Nostrverse) },
+                        onToggleFoaf = { filter = filter.toggle(FeedLevel.Foaf) },
                         onToggleFriends = { filter = filter.toggle(FeedLevel.Friends) },
                         onToggleMine = { filter = filter.toggle(FeedLevel.Mine) },
                         onOpenHighlightSettings = onOpenHighlightSettings,
@@ -184,6 +191,7 @@ fun HighlightsPane(
                                     color = when {
                                         item.mine -> mineColor
                                         item.friend -> friendsColor
+                                        item.foaf -> foafColor
                                         else -> otherColor
                                     },
                                     createdAt = item.createdAt,
@@ -211,9 +219,11 @@ private fun HighlightsPaneHeader(
     showMarks: Boolean,
     mineColor: Color,
     friendsColor: Color,
+    foafColor: Color,
     otherColor: Color,
     onDismiss: () -> Unit,
     onToggleNostrverse: () -> Unit,
+    onToggleFoaf: () -> Unit,
     onToggleFriends: () -> Unit,
     onToggleMine: () -> Unit,
     onOpenHighlightSettings: () -> Unit,
@@ -244,6 +254,13 @@ private fun HighlightsPaneHeader(
                 onClick = onToggleNostrverse,
             )
             if (loggedIn) {
+                FilterIcon(
+                    icon = Icons.Outlined.Groups,
+                    on = filter.foaf,
+                    tint = foafColor,
+                    contentDescription = stringResource(R.string.feed_scope_foaf),
+                    onClick = onToggleFoaf,
+                )
                 FilterIcon(
                     icon = Icons.Outlined.Group,
                     on = filter.friends,

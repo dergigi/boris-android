@@ -63,6 +63,7 @@
     <string name="home_recently_highlighted">Recently highlighted</string>
     <string name="home_recently_highlighted_by_you">Recently highlighted by you</string>
     <string name="home_recently_highlighted_by_friends">Recently highlighted by friends</string>
+    <string name="home_recently_highlighted_by_foaf">Recently highlighted by friends of friends</string>
     <string name="home_recently_highlighted_by_others">Recently highlighted by others</string>
     <string name="home_search_placeholder">Search your reading…</string>
     <string name="home_clipboard_open">Open from clipboard</string>
@@ -281,13 +282,16 @@
     <string name="feed_error">Could not load the feed.</string>
     <string name="feed_retry">Try again</string>
     <string name="feed_scope_nostrverse">Nostrverse</string>
+    <string name="feed_scope_foaf">Friends of friends</string>
     <string name="feed_scope_friends">Friends</string>
     <string name="feed_scope_mine">You</string>
     <string name="feed_info">Feed visibility</string>
     <string name="feed_info_title">Feed visibility</string>
     <string name="feed_info_nostrverse">Highlights from anyone on nostr. The public firehose.</string>
+    <string name="feed_info_foaf">Highlights from people your friends follow. Needs a login.</string>
     <string name="feed_info_friends">Highlights from people you follow. Needs a login.</string>
     <string name="feed_info_mine">Your own highlights. Needs a login.</string>
+    <string name="feed_scope_foaf_login">Connect to see friends of friends</string>
     <string name="feed_scope_friends_login">Connect to see friends content</string>
     <string name="feed_scope_mine_login">Connect to see your content</string>
     <string name="settings_reading">Reading</string>
@@ -300,6 +304,7 @@
     <string name="settings_align_justify">Justified</string>
     <string name="settings_highlight_visibility">Default Highlight Visibility</string>
     <string name="settings_visibility_nostrverse">Nostrverse highlights</string>
+    <string name="settings_visibility_foaf">Friends of friends highlights</string>
     <string name="settings_visibility_friends">Friends highlights</string>
     <string name="settings_visibility_mine">My highlights</string>
     <string name="settings_reading_font">Reading Font</string>
@@ -307,6 +312,7 @@
     <string name="settings_font_size">Font Size</string>
     <string name="settings_color_mine">My Highlights</string>
     <string name="settings_color_friends">Friends Highlights</string>
+    <string name="settings_color_foaf">Friends of friends Highlights</string>
     <string name="settings_color_nostrverse">Nostrverse Highlights</string>
     <string name="settings_show_highlights">Show highlights</string>
     <string name="settings_preview">Preview</string>

@@ -6,6 +6,7 @@ object FeedScopeStore {
     const val PREFS_NAME = "boris_feed"
     const val KEY_NOSTRVERSE = "nostrverse"
     const val KEY_FRIENDS = "friends"
+    const val KEY_FOAF = "foaf"
     const val KEY_MINE = "mine"
 
     fun load(context: Context): FeedScope? {
@@ -15,8 +16,9 @@ object FeedScopeStore {
             nostrverse = prefs.getBoolean(KEY_NOSTRVERSE, false),
             friends = prefs.getBoolean(KEY_FRIENDS, true),
             mine = prefs.getBoolean(KEY_MINE, false),
+            foaf = prefs.getBoolean(KEY_FOAF, false),
         )
-        if (!scope.nostrverse && !scope.friends && !scope.mine) return null
+        if (!scope.nostrverse && !scope.friends && !scope.mine && !scope.foaf) return null
         return scope
     }
 
@@ -25,6 +27,7 @@ object FeedScopeStore {
             .edit()
             .putBoolean(KEY_NOSTRVERSE, scope.nostrverse)
             .putBoolean(KEY_FRIENDS, scope.friends)
+            .putBoolean(KEY_FOAF, scope.foaf)
             .putBoolean(KEY_MINE, scope.mine)
             .apply()
     }

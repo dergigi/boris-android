@@ -23,9 +23,11 @@ class FeedScopeTest {
         assertTrue(scope.nostrverse)
         assertFalse(scope.friends)
         assertFalse(scope.mine)
+        assertFalse(scope.foaf)
         assertTrue(scope.visible(FeedLevel.Nostrverse))
         assertFalse(scope.visible(FeedLevel.Friends))
         assertFalse(scope.visible(FeedLevel.Mine))
+        assertFalse(scope.visible(FeedLevel.Foaf))
     }
 
     @Test
@@ -34,6 +36,7 @@ class FeedScopeTest {
         assertFalse(scope.nostrverse)
         assertTrue(scope.friends)
         assertFalse(scope.mine)
+        assertFalse(scope.foaf)
     }
 
     @Test
@@ -60,5 +63,40 @@ class FeedScopeTest {
         assertEquals(FeedLevel.Friends, classifyFeedLevel(friend.uppercase(), me, friends))
         assertEquals(FeedLevel.Nostrverse, classifyFeedLevel(other, me, friends))
         assertEquals(FeedLevel.Nostrverse, classifyFeedLevel(friend, null, emptySet()))
+    }
+
+    @Test
+    fun classifyPrefersFriendsOverFoaf() {
+        val me = "aa".repeat(32)
+        val friend = "bb".repeat(32)
+        val foaf = "cc".repeat(32)
+        val stranger = "dd".repeat(32)
+        val friends = setOf(friend)
+        val foafs = setOf(friend, foaf)
+        assertEquals(FeedLevel.Friends, classifyFeedLevel(friend, me, friends, foafs))
+        assertEquals(FeedLevel.Foaf, classifyFeedLevel(foaf.uppercase(), me, friends, foafs))
+        assertEquals(FeedLevel.Nostrverse, classifyFeedLevel(stranger, me, friends, foafs))
+    }
+
+    @Test
+    fun foafPubkeysDropsSelfAndFriends() {
+        val me = "aa".repeat(32)
+        val friend = "bb".repeat(32)
+        val hop = "cc".repeat(32)
+        val contacts = mapOf(
+            friend to setOf(me, hop, friend.uppercase()),
+        )
+        assertEquals(
+            setOf(hop),
+            foafPubkeys(me, setOf(friend)) { hex -> contacts[hex].orEmpty() },
+        )
+    }
+
+    @Test
+    fun foafFetchAuthorsCapsDeterministically() {
+        val keys = (1..100).map { it.toString().padStart(64, '0') }.toSet()
+        val capped = foafFetchAuthors(keys, cap = 80)
+        assertEquals(80, capped.size)
+        assertEquals(keys.sorted().take(80).toSet(), capped)
     }
 }

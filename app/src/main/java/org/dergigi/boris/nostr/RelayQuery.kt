@@ -140,6 +140,56 @@ object RelayQuery {
     fun cachedContactPubkeys(pubkeyHex: String): Set<String> =
         EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)?.pPubkeys() ?: emptySet()
 
+    fun cachedFoafPubkeys(selfHex: String, friends: Set<String>): Set<String> {
+        val self = selfHex.lowercase()
+        val friendSet = friends.map { it.lowercase() }.toSet()
+        val out = mutableSetOf<String>()
+        for (friend in friendSet) {
+            for (hex in cachedContactPubkeys(friend)) {
+                val key = hex.lowercase()
+                if (key != self && key !in friendSet) out += key
+            }
+        }
+        return out
+    }
+
+    fun fetchFoafPubkeys(selfHex: String, friends: Set<String>): Set<String> {
+        val self = selfHex.lowercase()
+        val friendSet = friends.map { it.lowercase() }.filter { it != self }.toSet()
+        if (friendSet.isEmpty()) return emptySet()
+        val missing = friendSet.filter { EventCache.latest(Nip01Event.KIND_CONTACTS, it) == null }
+        if (missing.isEmpty()) {
+            refreshOnce("foaf:$self") { fetchContactListsRemote(friendSet) }
+            return cachedFoafPubkeys(self, friendSet)
+        }
+        fetchContactListsRemote(missing.take(FOAF_FRIEND_CAP))
+        refreshOnce("foaf:$self") { fetchContactListsRemote(friendSet) }
+        return cachedFoafPubkeys(self, friendSet)
+    }
+
+    private fun fetchContactListsRemote(authors: Collection<String>) {
+        val keys = authors.map { it.lowercase() }.distinct()
+        if (keys.isEmpty()) return
+        val relays = reachableRelays(RelayList.FALLBACK)
+        if (relays.isEmpty()) return
+        val allowed = keys.toSet()
+        keys.chunked(AUTHOR_CHUNK).forEach { chunk ->
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_CONTACTS))
+                .put("authors", JSONArray().apply { chunk.forEach { put(it) } })
+                .put("limit", chunk.size)
+            query(relays, listOf(filter))
+                .filter { event ->
+                    event.kind == Nip01Event.KIND_CONTACTS && event.pubkey.lowercase() in allowed
+                }
+                .groupBy { it.pubkey.lowercase() }
+                .values
+                .forEach { group ->
+                    group.maxByOrNull { it.createdAt }?.let { EventCache.put(it) }
+                }
+        }
+    }
+
     private fun fetchContactPubkeysRemote(pubkeyHex: String): Set<String> {
         val relays = buildList {
             addAll(RelayList.FALLBACK)
@@ -985,5 +1035,6 @@ object RelayQuery {
     private const val PROFILE_CHUNK = 25
     private const val EVENT_CHUNK = 25
     private const val AUTHOR_CHUNK = 50
+    private const val FOAF_FRIEND_CAP = 80
 
 }

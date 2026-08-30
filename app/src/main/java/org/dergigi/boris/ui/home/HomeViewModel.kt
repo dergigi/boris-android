@@ -42,6 +42,7 @@ import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.tts.startListening as startArticleListening
 import org.dergigi.boris.ui.MarkAsReadAction
+import org.dergigi.boris.ui.feed.foafFetchAuthors
 
 sealed interface HomeHighlightsState {
     data object Loading : HomeHighlightsState
@@ -50,6 +51,7 @@ sealed interface HomeHighlightsState {
     data class Ready(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
+        val foaf: List<HighlightedArticle> = emptyList(),
         val others: List<HighlightedArticle>,
         val loggedIn: Boolean,
         val archivedKeys: Set<String> = emptySet(),
@@ -129,7 +131,13 @@ class HomeViewModel(
                             if (pubkey == null) emptyList() else loadYours(relays, pubkey)
                         }
                         val friendsDeferred = async { loadFriends(relays, friendKeys) }
-                        val othersDeferred = async { loadOthers(pubkey, friendKeys) }
+                        val foafKeys = if (pubkey == null) {
+                            emptySet()
+                        } else {
+                            RelayQuery.fetchFoafPubkeys(pubkey, friendKeys)
+                        }
+                        val foafDeferred = async { loadFoaf(relays, foafKeys) }
+                        val othersDeferred = async { loadOthers(pubkey, friendKeys, foafKeys) }
                         val mostDeferred = async { fetchMostHighlighted() }
                         val archiveDeferred = async {
                             if (pubkey == null) {
@@ -140,13 +148,14 @@ class HomeViewModel(
                         }
                         val rawYours = HighlightedArticles.hydrate(yoursDeferred.await())
                         val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
+                        val rawFoaf = HighlightedArticles.hydrate(foafDeferred.await())
                         val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
                         val rawContinue = HighlightedArticles.hydrate(ContinueReading.articles(ARTICLE_LIMIT))
                         mostDeferred.await()
                         val rawMost = HighlightedArticles.hydrate(mostHighlightedRows())
                         val hasMostPool = hasMostPool()
                         archiveDeferred.await()
-                        val feedUrls = (rawYours + rawFriends + rawOthers + rawContinue + rawMost)
+                        val feedUrls = (rawYours + rawFriends + rawFoaf + rawOthers + rawContinue + rawMost)
                             .map { it.url }
                         if (pubkey != null) {
                             RelayQuery.fetchArchivesForUrls(pubkey, relays, feedUrls)
@@ -177,6 +186,7 @@ class HomeViewModel(
                         LoadedRows(
                             rawYours,
                             rawFriends,
+                            rawFoaf,
                             rawOthers,
                             keys,
                             rawContinue,
@@ -312,9 +322,23 @@ class HomeViewModel(
                 ARTICLE_LIMIT,
             )
         }
+        val foafKeys = if (pubkey == null) {
+            emptySet()
+        } else {
+            RelayQuery.cachedFoafPubkeys(pubkey, friendKeys)
+        }
+        val foafAuthors = foafFetchAuthors(foafKeys)
+        val foaf = if (foafAuthors.isEmpty()) {
+            emptyList()
+        } else {
+            HighlightedArticles.fromEvents(
+                RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = foafAuthors),
+                ARTICLE_LIMIT,
+            )
+        }
         val others = HighlightedArticles.fromEvents(
             RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT)
-                .filter { event -> isNetworkHighlight(event.pubkey, pubkey, friendKeys) },
+                .filter { event -> isNetworkHighlight(event.pubkey, pubkey, friendKeys, foafKeys) },
             ARTICLE_LIMIT,
         )
         val continueReading = ContinueReading.articles(ARTICLE_LIMIT)
@@ -333,14 +357,14 @@ class HomeViewModel(
         val shortReads = libraryRows.shortReads
         val longReads = libraryRows.longReads
         val randomArticles = libraryRows.randomArticles
-        if (yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+        if (yours.isEmpty() && friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
             continueReading.isEmpty() && mostHighlighted.isEmpty() && !hasMostPool &&
             shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
         ) {
             return null
         }
         val previews = (
-            yours + friends + others + continueReading + mostHighlighted +
+            yours + friends + foaf + others + continueReading + mostHighlighted +
                 shortReads + longReads + randomArticles
             )
             .map { it.url }
@@ -349,6 +373,7 @@ class HomeViewModel(
         return HomeHighlightsState.Ready(
             applyPreviews(yours, previews),
             applyPreviews(friends, previews),
+            applyPreviews(foaf, previews),
             applyPreviews(others, previews),
             loggedIn = pubkey != null,
             archivedKeys = archivedKeys,
@@ -404,9 +429,22 @@ class HomeViewModel(
         )
     }
 
-    private fun loadOthers(excludeHex: String?, friendPubkeys: Set<String>): List<HighlightedArticle> {
+    private fun loadFoaf(relays: List<String>, foafPubkeys: Set<String>): List<HighlightedArticle> {
+        val authors = foafFetchAuthors(foafPubkeys)
+        if (authors.isEmpty()) return emptyList()
+        return HighlightedArticles.fromEvents(
+            RelayQuery.fetchRecentHighlightsByAuthors(authors, relays, HIGHLIGHT_LIMIT),
+            ARTICLE_LIMIT,
+        )
+    }
+
+    private fun loadOthers(
+        excludeHex: String?,
+        friendPubkeys: Set<String>,
+        foafPubkeys: Set<String>,
+    ): List<HighlightedArticle> {
         val events = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
-            .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys) }
+            .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys, foafPubkeys) }
         return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
     }
 
@@ -497,6 +535,7 @@ class HomeViewModel(
     private data class LoadedRows(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
+        val foaf: List<HighlightedArticle>,
         val others: List<HighlightedArticle>,
         val archivedKeys: Set<String>,
         val continueReading: List<HighlightedArticle>,
@@ -507,13 +546,13 @@ class HomeViewModel(
         val randomArticles: List<HighlightedArticle>,
     ) {
         fun isEmpty(): Boolean =
-            yours.isEmpty() && friends.isEmpty() && others.isEmpty() &&
+            yours.isEmpty() && friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
                 continueReading.isEmpty() && mostHighlighted.isEmpty() && !hasMostPool &&
                 shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
 
         fun urls(): List<String> =
             (
-                yours + friends + others + continueReading + mostHighlighted +
+                yours + friends + foaf + others + continueReading + mostHighlighted +
                     shortReads + longReads + randomArticles
                 )
                 .map { it.url }
@@ -526,6 +565,7 @@ class HomeViewModel(
     ): HomeHighlightsState.Ready = HomeHighlightsState.Ready(
         applyPreviews(yours, previews),
         applyPreviews(friends, previews),
+        applyPreviews(foaf, previews),
         applyPreviews(others, previews),
         loggedIn = pubkey != null,
         archivedKeys = archivedKeys,
@@ -560,8 +600,9 @@ internal fun isNetworkHighlight(
     authorHex: String,
     sessionHex: String?,
     friendPubkeys: Set<String>,
+    foafPubkeys: Set<String> = emptySet(),
 ): Boolean {
     val author = authorHex.lowercase()
     if (sessionHex != null && author == sessionHex.lowercase()) return false
-    return author !in friendPubkeys
+    return author !in friendPubkeys && author !in foafPubkeys
 }

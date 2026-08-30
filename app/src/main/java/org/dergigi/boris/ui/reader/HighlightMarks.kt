@@ -15,6 +15,7 @@ import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.QuoteMatch
 import org.dergigi.boris.ui.highlightMark
 import org.dergigi.boris.ui.theme.FindMark
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -183,6 +184,7 @@ fun List<PaintedHighlight>.visibleFor(settings: UserSettings): List<PaintedHighl
         when {
             item.mine -> settings.defaultHighlightVisibilityMine
             item.friend -> settings.defaultHighlightVisibilityFriends
+            item.foaf -> settings.defaultHighlightVisibilityFoaf
             else -> settings.defaultHighlightVisibilityNostrverse
         }
     }
@@ -197,6 +199,7 @@ fun Modifier.drawHighlightMarks(
     underline: Boolean = false,
     findColor: Color = FindMark,
     spokenColor: Color = SpokenMark,
+    foafColor: Color = HighlightFoaf,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (spans.isEmpty()) return@drawBehind
@@ -211,7 +214,8 @@ fun Modifier.drawHighlightMarks(
     paint({ it.spoken }, spokenColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
     // Find matches always use a filled selection-like mark, never underline.
     paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
-    paint({ !it.find && !it.spoken && !it.outline && !it.mine && !it.friend }, otherColor, underline)
+    paint({ !it.find && !it.spoken && !it.outline && !it.mine && !it.friend && !it.foaf }, otherColor, underline)
+    paint({ !it.find && !it.spoken && !it.outline && it.foaf && !it.friend && !it.mine }, foafColor, underline)
     paint({ !it.find && !it.spoken && !it.outline && it.friend && !it.mine }, friendsColor, underline)
     paint({ !it.find && !it.spoken && !it.outline && it.mine }, mineColor, underline)
 }

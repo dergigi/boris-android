@@ -46,6 +46,15 @@ class FeedViewModelTest {
             nowSeconds = 1_610_582_400L,
         )!!
         assertEquals(FeedLevel.Nostrverse, other.level)
+        val hop = FeedViewModel.writingFrom(
+            event = article(d = "from-foaf", title = "Hey"),
+            profile = null,
+            sessionHex = me,
+            friends = emptySet(),
+            foaf = setOf(friend),
+            nowSeconds = 1_610_582_400L,
+        )!!
+        assertEquals(FeedLevel.Foaf, hop.level)
     }
 
     @Test

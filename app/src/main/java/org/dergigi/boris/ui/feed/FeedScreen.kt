@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
@@ -89,6 +90,7 @@ import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -149,6 +151,7 @@ fun FeedScreen(
         hasRssFeeds = settings.rssFeeds.isNotEmpty(),
         settings = settings,
         nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther),
+        foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf),
         friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends),
         mineColor = hexColor(settings.highlightColorMine, HighlightMine),
         onRefresh = viewModel::refresh,
@@ -197,6 +200,7 @@ fun FeedScreenContent(
     hasRssFeeds: Boolean,
     settings: UserSettings,
     nostrverseColor: Color,
+    foafColor: Color,
     friendsColor: Color,
     mineColor: Color,
     onRefresh: () -> Unit,
@@ -224,6 +228,7 @@ fun FeedScreenContent(
     if (showInfo) {
         FeedInfoDialog(
             nostrverseColor = nostrverseColor,
+            foafColor = foafColor,
             friendsColor = friendsColor,
             mineColor = mineColor,
             onDismiss = { showInfo = false },
@@ -256,6 +261,16 @@ fun FeedScreenContent(
                         tint = nostrverseColor,
                         contentDescription = stringResource(R.string.feed_scope_nostrverse),
                         onClick = { onToggle(FeedLevel.Nostrverse) },
+                    )
+                    ScopeToggle(
+                        icon = Icons.Outlined.Groups,
+                        on = scope.foaf,
+                        enabled = loggedIn,
+                        tint = foafColor,
+                        contentDescription = stringResource(
+                            if (loggedIn) R.string.feed_scope_foaf else R.string.feed_scope_foaf_login,
+                        ),
+                        onClick = { onToggle(FeedLevel.Foaf) },
                     )
                     ScopeToggle(
                         icon = Icons.Outlined.Group,
@@ -356,6 +371,7 @@ fun FeedScreenContent(
                             rssLoading = rssLoading,
                             deletedIds = deletedIds,
                             nostrverseColor = nostrverseColor,
+                            foafColor = foafColor,
                             friendsColor = friendsColor,
                             mineColor = mineColor,
                             onRefresh = onRefresh,
@@ -423,6 +439,7 @@ fun FeedScreenContent(
                                                 when (level) {
                                                     FeedLevel.Mine -> mineColor
                                                     FeedLevel.Friends -> friendsColor
+                                                    FeedLevel.Foaf -> foafColor
                                                     FeedLevel.Nostrverse -> nostrverseColor
                                                 }
                                             },
@@ -504,6 +521,7 @@ private fun FeedAllPane(
     rssLoading: Boolean,
     deletedIds: Set<String>,
     nostrverseColor: Color,
+    foafColor: Color,
     friendsColor: Color,
     mineColor: Color,
     onRefresh: () -> Unit,
@@ -594,6 +612,7 @@ private fun FeedAllPane(
                             when (level) {
                                 FeedLevel.Mine -> mineColor
                                 FeedLevel.Friends -> friendsColor
+                                FeedLevel.Foaf -> foafColor
                                 FeedLevel.Nostrverse -> nostrverseColor
                             }
                         },
@@ -996,6 +1015,7 @@ private fun StatusMessage(
 @Composable
 private fun FeedInfoDialog(
     nostrverseColor: Color,
+    foafColor: Color,
     friendsColor: Color,
     mineColor: Color,
     onDismiss: () -> Unit,
@@ -1010,6 +1030,12 @@ private fun FeedInfoDialog(
                     tint = nostrverseColor,
                     title = stringResource(R.string.feed_scope_nostrverse),
                     body = stringResource(R.string.feed_info_nostrverse),
+                )
+                FeedInfoRow(
+                    icon = Icons.Outlined.Groups,
+                    tint = foafColor,
+                    title = stringResource(R.string.feed_scope_foaf),
+                    body = stringResource(R.string.feed_info_foaf),
                 )
                 FeedInfoRow(
                     icon = Icons.Outlined.Group,

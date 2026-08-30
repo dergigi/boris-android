@@ -121,6 +121,7 @@ private fun sectionLabel(id: String): String = stringResource(
         HomeSections.CONTINUE -> R.string.home_continue_reading
         HomeSections.YOURS -> R.string.home_recently_highlighted_by_you
         HomeSections.FRIENDS -> R.string.home_recently_highlighted_by_friends
+        HomeSections.FOAF -> R.string.home_recently_highlighted_by_foaf
         HomeSections.MOST -> R.string.home_most_highlighted
         HomeSections.SHORT -> R.string.home_short_reads
         HomeSections.LONG -> R.string.home_long_reads

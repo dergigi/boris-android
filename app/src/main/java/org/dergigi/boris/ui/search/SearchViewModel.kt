@@ -48,11 +48,15 @@ class SearchViewModel(
                         val friends = sessionHex
                             ?.let { RelayQuery.cachedContactPubkeys(it) }
                             .orEmpty()
+                        val foaf = sessionHex
+                            ?.let { RelayQuery.cachedFoafPubkeys(it, friends) }
+                            .orEmpty()
                         LocalSearch.query(
                             raw = trimmed,
                             limit = Int.MAX_VALUE,
                             sessionHex = sessionHex,
                             friendPubkeys = friends,
+                            foafPubkeys = foaf,
                         )
                     }
                     SearchUiState(query = trimmed, results = hits)

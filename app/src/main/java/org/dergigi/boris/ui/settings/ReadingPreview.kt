@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.reader.paintHighlight
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -53,6 +54,7 @@ fun ReadingPreview(
     )
     val mineColor = hexColor(settings.highlightColorMine, HighlightMine)
     val friendsColor = hexColor(settings.highlightColorFriends, HighlightFriends)
+    val foafColor = hexColor(settings.highlightColorFoaf, HighlightFoaf)
     val nostrverseColor = hexColor(settings.highlightColorNostrverse, HighlightOther)
     Column(
         modifier = modifier
@@ -96,6 +98,17 @@ fun ReadingPreview(
             quote = PreviewCopy.FRIENDS,
             color = friendsColor,
             visible = show && settings.defaultHighlightVisibilityFriends,
+            underline = underline,
+            family = family,
+            fontSize = bodySize,
+            lineHeight = bodyLine,
+            align = align,
+        )
+        PreviewParagraph(
+            text = PreviewCopy.P_FOAF,
+            quote = PreviewCopy.FOAF,
+            color = foafColor,
+            visible = show && settings.defaultHighlightVisibilityFoaf,
             underline = underline,
             family = family,
             fontSize = bodySize,
@@ -177,11 +190,14 @@ internal object PreviewCopy {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
     const val P2 =
         "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium."
+    const val P_FOAF =
+        "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident."
     const val P3 =
         "Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit."
     const val MINE = "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
     const val FRIENDS =
         "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    const val FOAF = "blanditiis praesentium voluptatum deleniti atque corrupti"
     const val NOSTRVERSE =
         "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt."
     const val LINK = "inventore veritatis"

@@ -9,15 +9,20 @@ class UserSettings internal constructor(
     val highlightStyle: String get() = string("highlightStyle", "marker")
     val highlightColorMine: String get() = string("highlightColorMine", "#fde047")
     val highlightColorFriends: String get() = string("highlightColorFriends", "#f97316")
+    val highlightColorFoaf: String get() = string("highlightColorFoaf", "#ec4899")
     val highlightColorNostrverse: String get() = string("highlightColorNostrverse", "#9333ea")
     val defaultHighlightVisibilityNostrverse: Boolean
         get() = bool("defaultHighlightVisibilityNostrverse", true)
+    val defaultHighlightVisibilityFoaf: Boolean
+        get() = bool("defaultHighlightVisibilityFoaf", true)
     val defaultHighlightVisibilityFriends: Boolean
         get() = bool("defaultHighlightVisibilityFriends", true)
     val defaultHighlightVisibilityMine: Boolean
         get() = bool("defaultHighlightVisibilityMine", true)
     val defaultExploreScopeNostrverse: Boolean
         get() = bool("defaultExploreScopeNostrverse", false)
+    val defaultExploreScopeFoaf: Boolean
+        get() = bool("defaultExploreScopeFoaf", false)
     val defaultExploreScopeFriends: Boolean
         get() = bool("defaultExploreScopeFriends", true)
     val defaultExploreScopeMine: Boolean
@@ -125,6 +130,8 @@ class UserSettings internal constructor(
 
     fun visibleFriends(): Boolean = showHighlights && defaultHighlightVisibilityFriends
 
+    fun visibleFoaf(): Boolean = showHighlights && defaultHighlightVisibilityFoaf
+
     fun visibleNostrverse(): Boolean = showHighlights && defaultHighlightVisibilityNostrverse
 
     fun withOwnHighlightsVisible(): UserSettings {
@@ -169,10 +176,12 @@ class UserSettings internal constructor(
         "autoMarkAsReadOnCompletion" -> autoMarkAsReadOnCompletion
         "autoScrollToReadingPosition" -> autoScrollToReadingPosition
         "darkColorTheme" -> darkColorTheme
+        "defaultExploreScopeFoaf" -> defaultExploreScopeFoaf
         "defaultExploreScopeFriends" -> defaultExploreScopeFriends
         "defaultExploreScopeMine" -> defaultExploreScopeMine
         "defaultExploreScopeNostrverse" -> defaultExploreScopeNostrverse
         "defaultFeedView" -> defaultFeedView
+        "defaultHighlightVisibilityFoaf" -> defaultHighlightVisibilityFoaf
         "defaultHighlightVisibilityFriends" -> defaultHighlightVisibilityFriends
         "defaultHighlightVisibilityMine" -> defaultHighlightVisibilityMine
         "defaultHighlightVisibilityNostrverse" -> defaultHighlightVisibilityNostrverse
@@ -184,6 +193,7 @@ class UserSettings internal constructor(
         "hideCompletedOnHome" -> hideCompletedOnHome
         "hideNsfwOnHome" -> hideNsfwOnHome
         "hideTopBarOnScroll" -> hideTopBarOnScroll
+        "highlightColorFoaf" -> highlightColorFoaf
         "highlightColorFriends" -> highlightColorFriends
         "highlightColorMine" -> highlightColorMine
         "highlightColorNostrverse" -> highlightColorNostrverse
@@ -236,12 +246,15 @@ private const val DEFAULT_JSON = """{
   "highlightStyle":"marker",
   "highlightColor":"#fde047",
   "highlightColorNostrverse":"#9333ea",
+  "highlightColorFoaf":"#ec4899",
   "highlightColorFriends":"#f97316",
   "highlightColorMine":"#fde047",
   "defaultHighlightVisibilityNostrverse":true,
+  "defaultHighlightVisibilityFoaf":true,
   "defaultHighlightVisibilityFriends":true,
   "defaultHighlightVisibilityMine":true,
   "defaultExploreScopeNostrverse":false,
+  "defaultExploreScopeFoaf":false,
   "defaultExploreScopeFriends":true,
   "defaultExploreScopeMine":false,
   "zapSplitHighlighterWeight":50,

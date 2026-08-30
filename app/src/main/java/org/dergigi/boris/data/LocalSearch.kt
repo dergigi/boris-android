@@ -32,6 +32,7 @@ object LocalSearch {
             val authorPicture: String?,
             val mine: Boolean,
             val friend: Boolean,
+            val foaf: Boolean = false,
         ) : Hit()
 
         data class Article(
@@ -69,13 +70,15 @@ object LocalSearch {
         limit: Int = DEFAULT_LIMIT,
         sessionHex: String? = null,
         friendPubkeys: Set<String> = emptySet(),
+        foafPubkeys: Set<String> = emptySet(),
     ): List<Hit> {
         val needle = normalize(raw)
         if (needle.length < 2) return emptyList()
         val session = sessionHex?.lowercase()
         val friends = friendPubkeys.map { it.lowercase() }.toSet()
+        val foaf = foafPubkeys.map { it.lowercase() }.toSet()
         val hits = mutableListOf<Hit>()
-        hits += searchHighlights(needle, session, friends)
+        hits += searchHighlights(needle, session, friends, foaf)
         hits += searchArticles(needle)
         hits += searchBookmarks(needle)
         hits += searchPeople(needle)
@@ -89,6 +92,7 @@ object LocalSearch {
         needle: String,
         sessionHex: String?,
         friendPubkeys: Set<String>,
+        foafPubkeys: Set<String>,
     ): List<Hit> =
         EventCache.byKind(Nip01Event.KIND_HIGHLIGHT).mapNotNull { event ->
             val quote = event.content.trim()
@@ -115,6 +119,7 @@ object LocalSearch {
                 authorPicture = profile?.picture,
                 mine = mine,
                 friend = !mine && author in friendPubkeys,
+                foaf = !mine && author !in friendPubkeys && author in foafPubkeys,
             )
         }
 

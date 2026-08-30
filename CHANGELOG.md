@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Library setting for defaulting Save to a private or public bookmark
+- Friend-of-a-friend (FOAF) highlight color and filter, pink by default
 
 ## [1.5.19] - 2026-08-30
 

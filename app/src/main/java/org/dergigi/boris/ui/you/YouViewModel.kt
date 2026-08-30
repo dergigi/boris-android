@@ -436,7 +436,12 @@ class YouViewModel(
             remote -> RelayQuery.fetchContactPubkeys(sessionHex)
             else -> RelayQuery.cachedContactPubkeys(sessionHex)
         }
-        return classifyFeedLevel(profileHex, sessionHex, friends)
+        val foaf = when {
+            sessionHex == null -> emptySet()
+            remote -> RelayQuery.fetchFoafPubkeys(sessionHex, friends)
+            else -> RelayQuery.cachedFoafPubkeys(sessionHex, friends)
+        }
+        return classifyFeedLevel(profileHex, sessionHex, friends, foaf)
     }
 
     private data class Loaded(

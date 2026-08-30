@@ -74,6 +74,7 @@ import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.settings.hexColor
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -119,6 +120,7 @@ fun YouHighlights(
     val highlightColor = when (relation) {
         FeedLevel.Mine -> hexColor(settings.highlightColorMine, HighlightMine)
         FeedLevel.Friends -> hexColor(settings.highlightColorFriends, HighlightFriends)
+        FeedLevel.Foaf -> hexColor(settings.highlightColorFoaf, HighlightFoaf)
         FeedLevel.Nostrverse -> hexColor(settings.highlightColorNostrverse, HighlightOther)
     }
     val displayName = shown?.name?.takeIf { it.isNotBlank() } ?: shortNpub(npub)

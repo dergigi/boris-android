@@ -60,6 +60,7 @@ data class PaintedHighlight(
     val quote: String,
     val mine: Boolean,
     val friend: Boolean = false,
+    val foaf: Boolean = false,
     val pubkey: String = "",
     val createdAt: Long = 0L,
     val context: String? = null,
@@ -1117,17 +1118,20 @@ class ReaderViewModel(
         events: List<Nip01Event>,
         pubkeyHex: String?,
         friends: Set<String>,
+        foaf: Set<String> = emptySet(),
     ) {
         val profiles = RelayQuery.cachedProfiles(events.map { it.pubkey })
         _highlightCount.value = events.size
         _highlights.value = events.map { event ->
             val mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true)
             val key = event.pubkey.lowercase()
+            val friend = !mine && key in friends
             PaintedHighlight(
                 id = event.id,
                 quote = event.content,
                 mine = mine,
-                friend = !mine && key in friends,
+                friend = friend,
+                foaf = !mine && !friend && key in foaf,
                 pubkey = event.pubkey,
                 createdAt = event.createdAt,
                 context = event.tagValue("context"),
@@ -1150,8 +1154,13 @@ class ReaderViewModel(
                 } else {
                     emptySet()
                 }
+                val foaf = if (session != null) {
+                    RelayQuery.cachedFoafPubkeys(session.pubkeyHex, friends)
+                } else {
+                    emptySet()
+                }
                 val cached = cachedHighlightsFor(content)
-                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex, friends)
+                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex, friends, foaf)
                 val relays = OutboxRouter.authorTargets(
                     pubkeyHex = content.authorPubkey?.trim().orEmpty(),
                     base = buildList {
@@ -1161,6 +1170,11 @@ class ReaderViewModel(
                 ).distinct()
                 val contacts = if (session != null) {
                     RelayQuery.fetchContactPubkeys(session.pubkeyHex)
+                } else {
+                    emptySet()
+                }
+                val foafKeys = if (session != null) {
+                    RelayQuery.fetchFoafPubkeys(session.pubkeyHex, contacts)
                 } else {
                     emptySet()
                 }
@@ -1174,11 +1188,11 @@ class ReaderViewModel(
                     }
                     else -> RelayQuery.fetchHighlights(relays, content.url)
                 }
-                paintHighlights(events, session?.pubkeyHex, contacts)
+                paintHighlights(events, session?.pubkeyHex, contacts, foafKeys)
                 val authors = events.map { it.pubkey }.distinct()
                 if (authors.isNotEmpty()) {
                     RelayQuery.fetchProfiles(relays, authors)
-                    paintHighlights(events, session?.pubkeyHex, contacts)
+                    paintHighlights(events, session?.pubkeyHex, contacts, foafKeys)
                 }
             } catch (_: Exception) {
             } finally {

@@ -12,7 +12,7 @@ class HomeSectionsTest {
     @Test
     fun orderKeepsSavedOrderAndAppendsMissing() {
         assertEquals(
-            listOf("most", "yours", "continue", "friends", "others", "short", "long", "random"),
+            listOf("most", "yours", "continue", "friends", "foaf", "others", "short", "long", "random"),
             HomeSections.order(listOf("most", "yours")),
         )
     }
@@ -20,7 +20,7 @@ class HomeSectionsTest {
     @Test
     fun orderDropsUnknownIds() {
         assertEquals(
-            HomeSections.DEFAULT,
+            listOf("continue", "yours", "friends", "others", "most", "short", "long", "random", "foaf"),
             HomeSections.order(
                 listOf("bogus", "continue", "yours", "friends", "others", "most", "short", "long", "random"),
             ),
@@ -30,11 +30,11 @@ class HomeSectionsTest {
     @Test
     fun orderAppendsNewSectionsWhenUpgradingFromOlderSavedOrder() {
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "short", "long", "random"),
+            listOf("continue", "yours", "friends", "others", "most", "foaf", "short", "long", "random"),
             HomeSections.order(listOf("continue", "yours", "friends", "others", "most")),
         )
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "random", "short", "long"),
+            listOf("continue", "yours", "friends", "others", "most", "random", "foaf", "short", "long"),
             HomeSections.order(listOf("continue", "yours", "friends", "others", "most", "random")),
         )
     }
@@ -42,11 +42,11 @@ class HomeSectionsTest {
     @Test
     fun moveSwapsNeighbors() {
         assertEquals(
-            listOf("yours", "continue", "friends", "others", "most", "short", "long", "random"),
+            listOf("yours", "continue", "friends", "foaf", "others", "most", "short", "long", "random"),
             HomeSections.move(HomeSections.DEFAULT, "yours", -1),
         )
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "short", "random", "long"),
+            listOf("continue", "yours", "friends", "foaf", "others", "most", "short", "random", "long"),
             HomeSections.move(HomeSections.DEFAULT, "random", -1),
         )
     }

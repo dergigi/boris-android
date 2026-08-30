@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -32,6 +33,7 @@ import org.dergigi.boris.ui.feed.FeedScopeStore
 import org.dergigi.boris.ui.feed.withExploreScope
 import org.dergigi.boris.ui.icon
 import org.dergigi.boris.ui.label
+import org.dergigi.boris.ui.theme.HighlightFoaf
 import org.dergigi.boris.ui.theme.HighlightFriends
 import org.dergigi.boris.ui.theme.HighlightMine
 import org.dergigi.boris.ui.theme.HighlightOther
@@ -94,6 +96,13 @@ fun FeedSettingsSection(
                     tint = hexColor(settings.highlightColorNostrverse, HighlightOther),
                     contentDescription = stringResource(R.string.feed_scope_nostrverse),
                     onClick = { toggle(FeedLevel.Nostrverse) },
+                )
+                ScopeIcon(
+                    icon = Icons.Outlined.Groups,
+                    on = scope.foaf,
+                    tint = hexColor(settings.highlightColorFoaf, HighlightFoaf),
+                    contentDescription = stringResource(R.string.feed_scope_foaf),
+                    onClick = { toggle(FeedLevel.Foaf) },
                 )
                 ScopeIcon(
                     icon = Icons.Outlined.Group,
