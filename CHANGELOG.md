@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- About Boris button says Say hi on nostr so it is not mistaken for login
+
 ## [1.5.18] - 2026-08-28
 
 ### Added
