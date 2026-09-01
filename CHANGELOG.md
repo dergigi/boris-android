@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.25] - 2026-09-01
+
+### Fixed
+
+- Long articles scroll without recomposing the whole page on every frame
+- TTS sentence ticks only redraw the paragraph being spoken
+- Saving reading progress no longer recomposes the article
+
 ## [1.5.24] - 2026-09-01
 
 ### Added
@@ -1618,7 +1626,9 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.23...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.25...HEAD
+[1.5.25]: https://github.com/dergigi/boris-android/releases/tag/v1.5.25
+[1.5.24]: https://github.com/dergigi/boris-android/releases/tag/v1.5.24
 [1.5.23]: https://github.com/dergigi/boris-android/releases/tag/v1.5.23
 [1.5.22]: https://github.com/dergigi/boris-android/releases/tag/v1.5.22
 [1.5.21]: https://github.com/dergigi/boris-android/releases/tag/v1.5.21
