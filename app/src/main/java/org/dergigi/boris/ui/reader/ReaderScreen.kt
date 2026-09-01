@@ -395,6 +395,30 @@ fun ReaderScreen(
 }
 
 @Composable
+private fun HighlightsBarButton(
+    highlights: List<PaintedHighlight>,
+    hasHighlights: Boolean,
+    settings: UserSettings,
+    onClick: () -> Unit,
+) {
+    val look = rememberDisplayLook(settings)
+    val tint = highlightPillColor(
+        highlights,
+        look.mine,
+        look.friends,
+        look.foaf,
+        look.nostrverse,
+    )
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = if (hasHighlights) BorisIcons.Highlighter else Icons.Filled.Bookmark,
+            contentDescription = stringResource(R.string.reader_open_highlights),
+            tint = if (hasHighlights) tint else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
 private fun SaveLibraryButton(
     choosePrivacy: Boolean,
     inLibrary: Boolean,
@@ -679,6 +703,7 @@ fun ReaderScreenContent(
 
     var findOpen by remember { mutableStateOf(false) }
     var outlineOpen by remember { mutableStateOf(false) }
+    var highlightsOpen by remember { mutableStateOf(false) }
     val readyBody = (state as? ReaderUiState.Ready)?.content?.body
     var outlineItems by remember(readyBody) {
         mutableStateOf(readyBody?.let { ArticleOutline.parse(it) }.orEmpty())
@@ -688,6 +713,7 @@ fun ReaderScreenContent(
     }
     LaunchedEffect(articleUrl) {
         outlineOpen = false
+        highlightsOpen = false
     }
     var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
     rssConfirmFeed?.let { feedUrl ->
@@ -768,13 +794,22 @@ fun ReaderScreenContent(
                 },
                 actions = {
                     if (loggedIn && state is ReaderUiState.Ready) {
-                        SaveLibraryButton(
-                            choosePrivacy = !LibrarySave.isWeb(state.content),
-                            inLibrary = inLibrary,
-                            archived = archived,
-                            canSave = canSave,
-                            onSave = onSave,
-                        )
+                        if (inLibrary && !archived) {
+                            HighlightsBarButton(
+                                highlights = highlights,
+                                hasHighlights = highlightCount > 0,
+                                settings = settings,
+                                onClick = { highlightsOpen = true },
+                            )
+                        } else {
+                            SaveLibraryButton(
+                                choosePrivacy = !LibrarySave.isWeb(state.content),
+                                inLibrary = inLibrary,
+                                archived = archived,
+                                canSave = canSave,
+                                onSave = onSave,
+                            )
+                        }
                     }
                     if (state is ReaderUiState.Ready) {
                         TtsListenButton(
@@ -1259,6 +1294,8 @@ fun ReaderScreenContent(
                     onFindOpenChange = { findOpen = it },
                     outlineOpen = outlineOpen,
                     onOutlineOpenChange = { outlineOpen = it },
+                    highlightsOpen = highlightsOpen,
+                    onHighlightsOpenChange = { highlightsOpen = it },
                     outlineItems = outlineItems,
                     onOutlineItems = { outlineItems = it },
                     onOpenArticle = onOpenArticle,
@@ -1387,6 +1424,8 @@ private fun ArticleBody(
     onFindOpenChange: (Boolean) -> Unit,
     outlineOpen: Boolean,
     onOutlineOpenChange: (Boolean) -> Unit,
+    highlightsOpen: Boolean,
+    onHighlightsOpenChange: (Boolean) -> Unit,
     outlineItems: List<ArticleOutlineItem>,
     onOutlineItems: (List<ArticleOutlineItem>) -> Unit,
     scrollState: ScrollState,
@@ -1557,20 +1596,28 @@ private fun ArticleBody(
             scope.launch { scrollState.animateScrollTo(target) }
         }
     }
-    var paneOpen by remember { mutableStateOf(false) }
     var selectedId by remember { mutableStateOf<String?>(null) }
     var pendingJumpId by remember {
         mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
     }
+    LaunchedEffect(highlightsOpen) {
+        if (!highlightsOpen) return@LaunchedEffect
+        onOutlineOpenChange(false)
+        if (findOpen) {
+            findQuery = ""
+            findIndex = 0
+            onFindOpenChange(false)
+        }
+    }
     LaunchedEffect(findOpen) {
         if (findOpen) {
-            paneOpen = false
+            onHighlightsOpenChange(false)
             onOutlineOpenChange(false)
         }
     }
     LaunchedEffect(outlineOpen) {
         if (outlineOpen) {
-            paneOpen = false
+            onHighlightsOpenChange(false)
             if (findOpen) {
                 findQuery = ""
                 findIndex = 0
@@ -1695,12 +1742,13 @@ private fun ArticleBody(
                 if (autoArchive && loggedIn && !archived) onArchive(false)
             }
     }
+    val openHighlights = rememberUpdatedState(onHighlightsOpenChange)
     val openFromStop = remember<(HighlightStop) -> Unit> {
         { stop ->
             jumpState.value(navigator.select(stop))
             selectedId = stop.highlightId
             onFindOpenChange(false)
-            paneOpen = true
+            openHighlights.value(true)
         }
     }
     fun stepFind(delta: Int) {
@@ -2056,7 +2104,7 @@ private fun ArticleBody(
     fun openHighlightsPane() {
         onOutlineOpenChange(false)
         if (findOpen) closeFindPane()
-        paneOpen = true
+        onHighlightsOpenChange(true)
     }
 
     Box(
@@ -2313,7 +2361,7 @@ private fun ArticleBody(
             },
         )
         HighlightsPane(
-            open = paneOpen,
+            open = highlightsOpen,
             highlights = highlights,
             selectedId = selectedId,
             loggedIn = loggedIn,
@@ -2322,14 +2370,14 @@ private fun ArticleBody(
             friendsColor = friendsColor,
             foafColor = foafColor,
             otherColor = otherColor,
-            onDismiss = { paneOpen = false },
+            onDismiss = { onHighlightsOpenChange(false) },
             onSelect = { item ->
                 selectedId = item.id
                 pendingJumpId = item.id
-                paneOpen = false
+                onHighlightsOpenChange(false)
             },
             onOpenHighlightSettings = {
-                paneOpen = false
+                onHighlightsOpenChange(false)
                 onOpenHighlightSettings()
             },
             onToggleMarks = {
@@ -2348,11 +2396,11 @@ private fun ArticleBody(
                     onGoToQuote = {
                         selectedId = item.id
                         pendingJumpId = item.id
-                        paneOpen = false
+                        onHighlightsOpenChange(false)
                     },
                     onViewProfile = item.pubkey.takeIf { it.isNotBlank() }?.let { hex ->
                         {
-                            paneOpen = false
+                            onHighlightsOpenChange(false)
                             onOpenProfile(hex)
                         }
                     },
