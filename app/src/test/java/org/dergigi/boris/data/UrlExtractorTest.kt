@@ -27,6 +27,14 @@ class UrlExtractorTest {
     }
 
     @Test
+    fun normalizeDropsTextFragment() {
+        assertEquals(
+            "https://example.com/post",
+            UrlExtractor.normalize("https://example.com/post#:~:text=hello world"),
+        )
+    }
+
+    @Test
     fun preferHttpsUpgradesCleartextImageHosts() {
         assertEquals(
             "https://cdn.example.com/a.jpg",

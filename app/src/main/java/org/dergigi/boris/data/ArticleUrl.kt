@@ -33,14 +33,19 @@ object ArticleUrl {
 
     fun normalize(url: String): String {
         val trimmed = url.trim()
-        return try {
-            val raw = if (trimmed.contains("://")) trimmed else "https://$trimmed"
+        val noFragment = trimmed.substringBefore('#')
+        val raw = if (noFragment.contains("://")) noFragment else "https://$noFragment"
+        val (host, path) = try {
             val parsed = java.net.URI(raw)
-            val host = (parsed.host ?: "").lowercase().removePrefix("www.")
-            val path = parsed.path.orEmpty().trimEnd('/')
-            if (host.isEmpty()) trimmed else "https://$host$path"
+            (parsed.host ?: "") to parsed.path.orEmpty()
         } catch (_: Exception) {
-            trimmed
+            // URI rejects spaces and stray characters (text fragments, #132);
+            // fall back to a by-hand split so such URLs still collapse.
+            val rest = raw.substringAfter("://").substringBefore('?')
+            val slash = rest.indexOf('/')
+            if (slash < 0) rest to "" else rest.substring(0, slash) to rest.substring(slash)
         }
+        val cleanHost = host.lowercase().removePrefix("www.")
+        return if (cleanHost.isEmpty()) trimmed else "https://$cleanHost${path.trimEnd('/')}"
     }
 }

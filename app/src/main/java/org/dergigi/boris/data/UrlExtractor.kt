@@ -20,8 +20,13 @@ object UrlExtractor {
         return bareProfileUri(trimmed)
     }
 
+    /**
+     * Fragments never reach the server and only fork the article's identity
+     * (highlights, progress, cache). Browser "share highlight" links carry a
+     * `#:~:text=` fragment that used to leak into highlight `r` tags (#132).
+     */
     fun normalize(url: String): String {
-        val trimmed = url.trim()
+        val trimmed = url.trim().substringBefore('#')
         return if (trimmed.startsWith("http://", ignoreCase = true) ||
             trimmed.startsWith("https://", ignoreCase = true)
         ) {

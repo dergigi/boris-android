@@ -1187,7 +1187,10 @@ class ReaderViewModel(
                             content.eventId,
                         )
                     }
-                    else -> RelayQuery.fetchHighlights(relays, content.url)
+                    else -> {
+                        if (session != null) primeOwnHighlights(relays, session.pubkeyHex)
+                        RelayQuery.fetchHighlights(relays, content.url)
+                    }
                 }
                 paintHighlights(events, session?.pubkeyHex, contacts, foafKeys)
                 val authors = events.map { it.pubkey }.distinct()
@@ -1202,6 +1205,19 @@ class ReaderViewModel(
         }
     }
 
+    /**
+     * `#r` lookups miss the user's own highlights whose `r` tag is not the
+     * clean article URL (older ones carry a `#:~:text=` fragment, #132).
+     * Pulling them by author into the cache lets [RelayQuery.cachedHighlights]
+     * match them by normalized URL instead.
+     */
+    private fun primeOwnHighlights(relays: List<String>, pubkeyHex: String) {
+        val now = System.currentTimeMillis()
+        if (now - ownHighlightsPrimedAt < OWN_HIGHLIGHTS_PRIME_MS) return
+        ownHighlightsPrimedAt = now
+        runCatching { RelayQuery.fetchRecentHighlights(relays, limit = 300, pubkeyHex = pubkeyHex) }
+    }
+
     private fun openAuthUrl(url: String) {
         val app = getApplication<Application>()
         runCatching {
@@ -1214,6 +1230,10 @@ class ReaderViewModel(
     companion object {
         const val URL_ARG = "url"
         const val HIGHLIGHT_ARG = "highlight"
+        private const val OWN_HIGHLIGHTS_PRIME_MS = 15 * 60 * 1000L
+
+        @Volatile
+        private var ownHighlightsPrimedAt = 0L
     }
 }
 

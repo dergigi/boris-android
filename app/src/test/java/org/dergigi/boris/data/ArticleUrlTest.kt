@@ -63,6 +63,26 @@ class ArticleUrlTest {
     }
 
     @Test
+    fun normalizeDropsTextFragmentWithSpaces() {
+        // Issue #132: java.net.URI rejects the spaces, so this used to come back untouched.
+        assertEquals(
+            "https://smallpotatoes.paulbloom.net/p/kids-these-days",
+            ArticleUrl.normalize(
+                "https://smallpotatoes.paulbloom.net/p/kids-these-days#:~:text=But still, things really " +
+                    "are rough for kids today. I opened this post with a graph from Jonathan Haidt’s Anxious Generation.",
+            ),
+        )
+    }
+
+    @Test
+    fun normalizeHandlesUnparseablePathAndQuery() {
+        assertEquals(
+            "https://example.com/some path",
+            ArticleUrl.normalize("http://www.Example.com/some path/?q=a b#frag"),
+        )
+    }
+
+    @Test
     fun normalizeKeepsCleanHttps() {
         assertEquals(
             "https://example.com/path",

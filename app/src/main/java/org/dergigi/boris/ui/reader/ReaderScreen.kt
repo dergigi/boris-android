@@ -1483,13 +1483,17 @@ private fun ArticleBody(
             onImageClick = onImageClick,
         )
     }
-    val focusQuote = remember(focusHighlightId, highlights) {
+    // Captured once: the focus target is cleared after the jump, and re-reading
+    // it on the next highlights update made a feed-opened highlight that the
+    // relays did not return vanish right after it appeared (#132).
+    val focusedQuote = remember(focusHighlightId) {
         ReaderFocus.peek()
             ?.takeIf { it.highlightId.equals(focusHighlightId, ignoreCase = true) }
             ?.quote
             ?.takeIf { it.isNotBlank() }
-            ?: highlights.firstOrNull { it.id.equals(focusHighlightId, ignoreCase = true) }?.quote
     }
+    val focusQuote = focusedQuote
+        ?: highlights.firstOrNull { it.id.equals(focusHighlightId, ignoreCase = true) }?.quote
     var findQuery by remember { mutableStateOf("") }
     var findIndex by remember { mutableIntStateOf(0) }
     var findJump by remember { mutableIntStateOf(0) }
