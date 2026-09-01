@@ -71,7 +71,9 @@ fun FindPane(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onSelect: (Int) -> Unit,
-    topPadding: Dp = 0.dp,
+    // Provider, not value: it tracks the sliding top bar per frame, and the
+    // read must stay inside this pane's scope, not the article tree (#131).
+    topPadding: () -> Dp = { 0.dp },
 ) {
     BackHandler(enabled = open, onBack = onDismiss)
     AnimatedVisibility(
@@ -92,7 +94,7 @@ fun FindPane(
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(top = topPadding)
+                    .padding(top = topPadding())
                     .animateEnterExit(
                         enter = slideInHorizontally { it },
                         exit = slideOutHorizontally { it },

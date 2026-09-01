@@ -1123,11 +1123,13 @@ fun ReaderScreenContent(
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,
                     topScrollInsetPx = if (hideBar) overlayBarPx else 0,
-                    jumpChromePx = {
-                        if (!hideBar) {
-                            0
-                        } else {
-                            HighlightJump.visibleOverlayPx(overlayBarPx, barOffsetPx.floatValue)
+                    jumpChromePx = remember(hideBar, overlayBarPx, barOffsetPx) {
+                        {
+                            if (!hideBar) {
+                                0
+                            } else {
+                                HighlightJump.visibleOverlayPx(overlayBarPx, barOffsetPx.floatValue)
+                            }
                         }
                     },
                     modifier = if (hideBar) sidePad else Modifier.padding(innerPadding),
@@ -1282,11 +1284,16 @@ private fun ArticleBody(
             }
         }
     }
-    val imageTransformer = ClickableCoilImageTransformer(
-        fullWidth = fullWidthImages,
-        maxHeight = maxImageHeight,
-        onImageClick = onImageClick,
-    )
+    // Remembered so Markdown sees an equal argument and can skip its whole
+    // node tree on unrelated recompositions; a fresh instance per pass forced
+    // a full re-walk of every markdown node and made long articles lag (#131).
+    val imageTransformer = remember(fullWidthImages, maxImageHeight, onImageClick) {
+        ClickableCoilImageTransformer(
+            fullWidth = fullWidthImages,
+            maxHeight = maxImageHeight,
+            onImageClick = onImageClick,
+        )
+    }
     val focusQuote = remember(focusHighlightId, highlights) {
         ReaderFocus.peek()
             ?.takeIf { it.highlightId.equals(focusHighlightId, ignoreCase = true) }
@@ -1336,7 +1343,12 @@ private fun ArticleBody(
     val headingFamily = typography.headlineLarge.copy(fontFamily = family)
     val clipboard = LocalClipboardManager.current
     val density = LocalDensity.current
-    val paneTopPadding = with(density) { jumpChromePx().toDp() }
+    // Deferred: jumpChromePx reads the top-bar slide offset, which changes on
+    // every scroll frame. Calling it here would recompose this whole
+    // composable, and with it the entire markdown tree, per frame (#131).
+    val paneTopPadding = remember(density, jumpChromePx) {
+        { with(density) { jumpChromePx().toDp() } }
+    }
     val selection = remember { ReaderSelectionState() }
     val scope = rememberCoroutineScope()
     var titleTtsIndex by remember(content.url) { mutableStateOf<Int?>(null) }

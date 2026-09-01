@@ -100,7 +100,9 @@ fun HighlightsPane(
     onToggleMarks: () -> Unit,
     articleUrl: String? = null,
     articleTexts: List<String> = emptyList(),
-    topPadding: Dp = 0.dp,
+    // Provider, not value: it tracks the sliding top bar per frame, and the
+    // read must stay inside this pane's scope, not the article tree (#131).
+    topPadding: () -> Dp = { 0.dp },
     menuFor: (PaintedHighlight) -> HighlightCardMenu,
 ) {
     var filter by remember(open) { mutableStateOf(highlightFilter(settings, highlights)) }
@@ -131,7 +133,7 @@ fun HighlightsPane(
                 color = MaterialTheme.colorScheme.background,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(top = topPadding)
+                    .padding(top = topPadding())
                     .animateEnterExit(
                         enter = slideInHorizontally { it },
                         exit = slideOutHorizontally { it },
