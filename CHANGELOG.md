@@ -9,6 +9,18 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.24] - 2026-09-01
+
+### Added
+
+- Open gallery from the article overflow menu
+
+### Fixed
+
+- Very long articles no longer crash the reader
+- Reading progress is not marked complete while a long article is still loading
+- Cover image is included in the article gallery
+
 ## [1.5.23] - 2026-08-30
 
 ### Added
