@@ -93,6 +93,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -1581,6 +1582,7 @@ private fun ArticleBody(
         }
     }
     val navigator = remember { HighlightNavigator() }
+    val activeOutlineId = remember { mutableStateOf<String?>(null) }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
     var viewportHeight by remember { mutableIntStateOf(0) }
@@ -2094,7 +2096,9 @@ private fun ArticleBody(
     val ttsMiniPlayerVisible by remember {
         TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(false)
-    val bottomChromePadding = if (ttsMiniPlayerVisible) 104.dp else 48.dp
+    val headingChrome = if (outlineItems.isNotEmpty()) 14.dp else 0.dp
+    val bottomChromePadding =
+        (if (ttsMiniPlayerVisible) 104.dp else 48.dp) + headingChrome
     SelectionBackHandler(selection)
     fun closeFindPane() {
         findQuery = ""
@@ -2318,6 +2322,8 @@ private fun ArticleBody(
                 scrollState = scrollState,
                 driftFraction = if (showArticle) driftFraction else savedFraction,
                 scrollLive = showArticle,
+                outlineItems = outlineItems,
+                activeOutlineId = activeOutlineId,
             )
             Spacer(
                 modifier = Modifier
@@ -2434,10 +2440,9 @@ private fun ArticleBody(
                 onFindOpenChange(false)
             },
         )
-        var activeOutlineId by remember { mutableStateOf<String?>(null) }
-        LaunchedEffect(outlineOpen, outlineItems, topScrollInsetPx) {
-            if (!outlineOpen) {
-                activeOutlineId = null
+        LaunchedEffect(outlineItems, topScrollInsetPx) {
+            if (outlineItems.isEmpty()) {
+                activeOutlineId.value = null
                 return@LaunchedEffect
             }
             snapshotFlow {
@@ -2451,12 +2456,12 @@ private fun ArticleBody(
                     if (viewport == null || !coords.isAttached || !viewport.isAttached) return@activeId null
                     viewport.localPositionOf(coords, Offset(0f, stop.localTop)).y
                 }, pad)
-            }.distinctUntilChanged().collect { activeOutlineId = it }
+            }.distinctUntilChanged().collect { activeOutlineId.value = it }
         }
-        OutlinePane(
+        OutlinePaneHost(
             open = outlineOpen,
             items = outlineItems,
-            activeId = activeOutlineId,
+            activeOutlineId = activeOutlineId,
             topPadding = paneTopPadding,
             onDismiss = { onOutlineOpenChange(false) },
             onSelect = { item ->
@@ -2767,7 +2772,12 @@ private fun ArticleScrollProgress(
     scrollState: ScrollState,
     driftFraction: Float?,
     scrollLive: Boolean = true,
+    outlineItems: List<ArticleOutlineItem> = emptyList(),
+    activeOutlineId: MutableState<String?>? = null,
 ) {
+    val heading = activeOutlineId?.value?.let { id ->
+        outlineItems.firstOrNull { it.id == id }?.title
+    }
     val scrollPercent = ReadingProgress.percent(scrollState.value, scrollState.maxValue)
     if (driftFraction != null) {
         // Drifted: the fill keeps the saved reading position, the dot marks
@@ -2775,10 +2785,33 @@ private fun ArticleScrollProgress(
         ReadingProgressBar(
             percent = (driftFraction * 100f).roundToInt(),
             scrollPercent = scrollPercent.takeIf { scrollLive },
+            heading = heading,
         )
     } else {
-        ReadingProgressBar(percent = if (scrollLive) scrollPercent else 0)
+        ReadingProgressBar(
+            percent = if (scrollLive) scrollPercent else 0,
+            heading = heading,
+        )
     }
+}
+
+@Composable
+private fun OutlinePaneHost(
+    open: Boolean,
+    items: List<ArticleOutlineItem>,
+    activeOutlineId: MutableState<String?>,
+    onDismiss: () -> Unit,
+    onSelect: (ArticleOutlineItem) -> Unit,
+    topPadding: () -> Dp,
+) {
+    OutlinePane(
+        open = open,
+        items = items,
+        activeId = activeOutlineId.value,
+        onDismiss = onDismiss,
+        onSelect = onSelect,
+        topPadding = topPadding,
+    )
 }
 
 @Composable
