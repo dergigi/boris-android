@@ -45,6 +45,38 @@ class ArticleImagesTest {
     }
 
     @Test
+    fun urlsForPutsCoverFirstAndSkipsDuplicates() {
+        val content = ReadableContent(
+            url = "https://example.com/a",
+            markdown = "![a](https://cdn.example.com/a.jpg)\n\n![b](https://cdn.example.com/b.jpg)",
+            imageUrl = "https://cdn.example.com/cover.jpg",
+        )
+        assertEquals(
+            listOf(
+                "https://cdn.example.com/cover.jpg",
+                "https://cdn.example.com/a.jpg",
+                "https://cdn.example.com/b.jpg",
+            ),
+            ArticleImages.urlsFor(content),
+        )
+        val stripped = content.copy(
+            markdown = ArticleCover.stripLeadingImage(
+                "![cover](https://cdn.example.com/cover.jpg)\n\n![a](https://cdn.example.com/a.jpg)",
+                "https://cdn.example.com/cover.jpg",
+            ),
+        )
+        assertEquals(
+            listOf("https://cdn.example.com/cover.jpg", "https://cdn.example.com/a.jpg"),
+            ArticleImages.urlsFor(stripped),
+        )
+        val coverAlsoInBody = content.copy(imageUrl = "https://cdn.example.com/a.jpg")
+        assertEquals(
+            listOf("https://cdn.example.com/a.jpg", "https://cdn.example.com/b.jpg"),
+            ArticleImages.urlsFor(coverAlsoInBody),
+        )
+    }
+
+    @Test
     fun offlineImagesDefaultOn() {
         assertTrue(UserSettings.defaults().offlineDownloadEnabled(ArticleImages.SETTINGS_KEY))
         assertFalse(

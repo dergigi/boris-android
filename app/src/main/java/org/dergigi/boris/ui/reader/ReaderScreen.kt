@@ -1252,12 +1252,13 @@ private fun ArticleBody(
     }
     val fullWidthImages = settings.fullWidthImages
     val maxImageHeight = (LocalConfiguration.current.screenHeightDp * 0.7f).dp
-    val onImageClick = remember(content.url, content.body, onOpenGallery) {
+    val onImageClick = remember(content.url, content.body, content.imageUrl, onOpenGallery) {
         { link: String ->
             val opened = UrlExtractor.articleUrl(link, content.url)
+                ?.let(UrlExtractor::preferHttps)
             if (opened != null) {
-                val urls = UrlExtractor.imageUrls(content.body, content.url).toMutableList()
-                if (opened !in urls) urls.add(0, opened)
+                val urls = ArticleImages.urlsFor(content).toMutableList()
+                if (opened !in urls) urls.add(opened)
                 onOpenGallery(urls, urls.indexOf(opened).coerceAtLeast(0))
             }
         }
@@ -1898,11 +1899,7 @@ private fun ArticleBody(
                 selection = selection,
                 ttsStartIndex = titleTtsIndex,
                 onClick = {
-                    val urls = buildList {
-                        add(coverUrl)
-                        addAll(UrlExtractor.imageUrls(content.body, content.url))
-                    }.distinct()
-                    onOpenGallery(urls, 0)
+                    onOpenGallery(ArticleImages.urlsFor(content), 0)
                 },
             )
         }
