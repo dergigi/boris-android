@@ -587,10 +587,6 @@ fun ReaderScreenContent(
         is ReaderUiState.Loading -> state.url.takeIf { it.isNotBlank() }
         is ReaderUiState.ImageOnly -> state.url
     }
-    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
-    val hasProgress = remember(articleUrl, progressVersion) {
-        articleUrl != null && ReadingPositionStore.fraction(articleUrl) > 0f
-    }
     val galleryUrls = remember(state) {
         (state as? ReaderUiState.Ready)?.let { ArticleImages.urlsFor(it.content) }.orEmpty()
     }
@@ -784,6 +780,15 @@ fun ReaderScreenContent(
                                 expanded = menuOpen,
                                 onDismissRequest = { menuOpen = false },
                             ) {
+                                // Read inside the menu so progress saves (which
+                                // bump the store version on every scroll settle)
+                                // do not recompose the whole scaffold.
+                                val progressVersion by ReadingPositionStore.version
+                                    .collectAsStateWithLifecycle()
+                                val hasProgress = remember(articleUrl, progressVersion) {
+                                    articleUrl != null &&
+                                        ReadingPositionStore.fraction(articleUrl) > 0f
+                                }
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.reader_share)) },
                                     leadingIcon = {
@@ -1510,11 +1515,17 @@ private fun ArticleBody(
             drifting = readingTracker.drifting
         }
     }
-    // While drifted, the saved position can still advance (TTS listening), so
-    // read it live from the store instead of a settle-time snapshot.
-    val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
-    val savedFraction = remember(content.url, progressVersion) {
-        ReadingPositionStore.fraction(content.url)
+    // The saved fraction is only shown while drifted (jump-back pill) or while
+    // the body is still parsing (loading progress bar). Only subscribe to the
+    // store then: every save bumps version, and an unconditional read here
+    // would recompose the whole article on each scroll-settle save.
+    val savedFraction = if (drifting || !articleReady) {
+        val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+        remember(content.url, progressVersion) {
+            ReadingPositionStore.fraction(content.url)
+        }
+    } else {
+        0f
     }
     val driftFraction = savedFraction.takeIf { drifting }
     val jumpBackFraction = driftFraction?.takeIf { ReadingProgress.showsJumpBack(it) }
