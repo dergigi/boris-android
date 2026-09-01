@@ -214,6 +214,9 @@
     <string name="reader_archive_rejected">Archive rejected.</string>
     <string name="reader_archive_failed">Could not update archive.</string>
     <string name="reader_share">Share</string>
+    <string name="reader_copy">Copy</string>
+    <string name="reader_open">Open</string>
+    <string name="reader_menu_back">Back</string>
     <string name="reader_copy_link">Copy link</string>
     <string name="reader_copy_njump_link">Copy njump link</string>
     <string name="reader_copy_xcancel_link">Copy xcancel link</string>

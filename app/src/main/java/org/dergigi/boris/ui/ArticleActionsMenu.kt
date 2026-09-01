@@ -128,6 +128,9 @@ fun ArticleActionsMenu(
     }
 }
 
+fun hasAlternateCopyLinks(url: String): Boolean =
+    NostrLink.njumpCopyUrl(url) != null || XcancelLink.copyUrl(url) != null
+
 @Composable
 fun ArticleCopyMenuItems(
     url: String,

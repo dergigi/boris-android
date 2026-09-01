@@ -41,11 +41,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -71,6 +73,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -200,6 +203,7 @@ import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.ArticleCopyMenuItems
+import org.dergigi.boris.ui.hasAlternateCopyLinks
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.browser.InAppBrowser
 import org.dergigi.boris.ui.openOriginalArticle
@@ -460,6 +464,26 @@ private fun SaveLibraryButton(
             }
         }
     }
+}
+
+private enum class ReaderOverflowPage { Root, Copy, Open }
+
+@Composable
+private fun ReaderOverflowBackItem(
+    label: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        leadingIcon = {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.reader_menu_back),
+            )
+        },
+        onClick = onClick,
+    )
+    HorizontalDivider()
 }
 
 @Composable
@@ -772,13 +796,18 @@ fun ReaderScreenContent(
                             NostrLink.parse(articleUrl)?.uri
                         }
                         var menuOpen by remember { mutableStateOf(false) }
+                        var menuPage by remember { mutableStateOf(ReaderOverflowPage.Root) }
+                        fun dismissMenu() {
+                            menuOpen = false
+                            menuPage = ReaderOverflowPage.Root
+                        }
                         Box {
                             IconButton(onClick = { menuOpen = true }) {
                                 Icon(Icons.Filled.MoreVert, contentDescription = "More")
                             }
                             DropdownMenu(
                                 expanded = menuOpen,
-                                onDismissRequest = { menuOpen = false },
+                                onDismissRequest = { dismissMenu() },
                             ) {
                                 // Read inside the menu so progress saves (which
                                 // bump the store version on every scroll settle)
@@ -789,145 +818,258 @@ fun ReaderScreenContent(
                                     articleUrl != null &&
                                         ReadingPositionStore.fraction(articleUrl) > 0f
                                 }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_share)) },
-                                    leadingIcon = {
-                                        Icon(Icons.Filled.Share, contentDescription = null)
-                                    },
-                                    onClick = {
-                                        menuOpen = false
-                                        shareArticle()
-                                    },
-                                )
-                                ArticleCopyMenuItems(
-                                    url = articleUrl,
-                                    onDismiss = { menuOpen = false },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_open_in_browser)) },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Language, contentDescription = null)
-                                    },
-                                    onClick = {
-                                        menuOpen = false
-                                        openOriginal()
-                                    },
-                                )
-                                if (canOpenArchive) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_open_wayback)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.History, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            openWayback()
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_open_archive_ph)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.Public, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            openArchivePh()
-                                        },
-                                    )
+                                val copyHasExtras = remember(articleUrl) {
+                                    hasAlternateCopyLinks(articleUrl)
                                 }
-                                if (nativeUri != null) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(stringResource(R.string.reader_open_native))
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Smartphone,
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            openNative()
-                                        },
-                                    )
-                                }
-                                if (state is ReaderUiState.Ready) {
-                                    if (galleryUrls.isNotEmpty()) {
+                                val articleReady = state is ReaderUiState.Ready
+                                val showArticleActions = articleReady || hasProgress
+                                val showMarkAsRead =
+                                    loggedIn && articleReady && !archived
+                                when (menuPage) {
+                                    ReaderOverflowPage.Root -> {
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.reader_open_gallery)) },
+                                            text = { Text(stringResource(R.string.reader_share)) },
+                                            leadingIcon = {
+                                                Icon(Icons.Filled.Share, contentDescription = null)
+                                            },
+                                            onClick = {
+                                                dismissMenu()
+                                                shareArticle()
+                                            },
+                                        )
+                                        if (copyHasExtras) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(R.string.reader_copy)) },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Filled.ContentCopy,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    menuPage = ReaderOverflowPage.Copy
+                                                },
+                                            )
+                                        } else {
+                                            ArticleCopyMenuItems(
+                                                url = articleUrl,
+                                                onDismiss = { dismissMenu() },
+                                            )
+                                        }
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.reader_open)) },
                                             leadingIcon = {
                                                 Icon(
-                                                    Icons.Outlined.PhotoLibrary,
+                                                    Icons.Outlined.Language,
+                                                    contentDescription = null,
+                                                )
+                                            },
+                                            trailingIcon = {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                                     contentDescription = null,
                                                 )
                                             },
                                             onClick = {
-                                                menuOpen = false
-                                                onOpenGallery(galleryUrls, 0)
+                                                menuPage = ReaderOverflowPage.Open
                                             },
                                         )
-                                    }
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_find)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.Search, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            findOpen = true
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_refresh)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.Refresh, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            onRefresh()
-                                        },
-                                    )
-                                }
-                                if (hasProgress) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_reset_progress)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.RestartAlt, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            val url = articleUrl ?: return@DropdownMenuItem
-                                            menuOpen = false
-                                            ReadingPositionStore.reset(url)
-                                            readerScope.launch {
-                                                articleScrollState.animateScrollTo(0)
+                                        if (articleReady) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(R.string.reader_find)) },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Search,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    dismissMenu()
+                                                    findOpen = true
+                                                },
+                                            )
+                                            if (galleryUrls.isNotEmpty()) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.reader_open_gallery))
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.Outlined.PhotoLibrary,
+                                                            contentDescription = null,
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        dismissMenu()
+                                                        onOpenGallery(galleryUrls, 0)
+                                                    },
+                                                )
                                             }
-                                        },
-                                    )
-                                }
-                                if (loggedIn && state is ReaderUiState.Ready && !archived) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_mark_as_read)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Filled.CheckCircle, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            onArchive(false)
-                                        },
-                                    )
-                                }
-                                if (loggedIn) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.reader_settings)) },
-                                        leadingIcon = {
-                                            Icon(Icons.Outlined.Settings, contentDescription = null)
-                                        },
-                                        onClick = {
-                                            menuOpen = false
-                                            onOpenReaderSettings()
-                                        },
-                                    )
+                                        }
+                                        if (showArticleActions) {
+                                            HorizontalDivider()
+                                            if (articleReady) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.reader_refresh))
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.Outlined.Refresh,
+                                                            contentDescription = null,
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        dismissMenu()
+                                                        onRefresh()
+                                                    },
+                                                )
+                                            }
+                                            if (hasProgress) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.reader_reset_progress))
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.Outlined.RestartAlt,
+                                                            contentDescription = null,
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        val url = articleUrl
+                                                            ?: return@DropdownMenuItem
+                                                        dismissMenu()
+                                                        ReadingPositionStore.reset(url)
+                                                        readerScope.launch {
+                                                            articleScrollState.animateScrollTo(0)
+                                                        }
+                                                    },
+                                                )
+                                            }
+                                            if (showMarkAsRead) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.reader_mark_as_read))
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.Filled.CheckCircle,
+                                                            contentDescription = null,
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        dismissMenu()
+                                                        onArchive(false)
+                                                    },
+                                                )
+                                            }
+                                        }
+                                        if (loggedIn) {
+                                            HorizontalDivider()
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(stringResource(R.string.reader_settings))
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Settings,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    dismissMenu()
+                                                    onOpenReaderSettings()
+                                                },
+                                            )
+                                        }
+                                    }
+                                    ReaderOverflowPage.Copy -> {
+                                        ReaderOverflowBackItem(
+                                            label = stringResource(R.string.reader_copy),
+                                            onClick = { menuPage = ReaderOverflowPage.Root },
+                                        )
+                                        ArticleCopyMenuItems(
+                                            url = articleUrl,
+                                            onDismiss = { dismissMenu() },
+                                        )
+                                    }
+                                    ReaderOverflowPage.Open -> {
+                                        ReaderOverflowBackItem(
+                                            label = stringResource(R.string.reader_open),
+                                            onClick = { menuPage = ReaderOverflowPage.Root },
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(stringResource(R.string.reader_open_in_browser))
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.Language,
+                                                    contentDescription = null,
+                                                )
+                                            },
+                                            onClick = {
+                                                dismissMenu()
+                                                openOriginal()
+                                            },
+                                        )
+                                        if (nativeUri != null) {
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(stringResource(R.string.reader_open_native))
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Smartphone,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    dismissMenu()
+                                                    openNative()
+                                                },
+                                            )
+                                        }
+                                        if (canOpenArchive) {
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(stringResource(R.string.reader_open_wayback))
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.History,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    dismissMenu()
+                                                    openWayback()
+                                                },
+                                            )
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(stringResource(R.string.reader_open_archive_ph))
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Public,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    dismissMenu()
+                                                    openArchivePh()
+                                                },
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
