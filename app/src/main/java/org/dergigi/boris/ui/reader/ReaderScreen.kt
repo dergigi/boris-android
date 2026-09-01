@@ -164,6 +164,7 @@ import com.mikepenz.markdown.model.rememberMarkdownState
 import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.Footnotes
+import org.dergigi.boris.data.LongParagraphs
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrEventRef
@@ -1431,6 +1432,11 @@ private fun ArticleBody(
         }
     }
     var positionRestored by remember(content.url) { mutableStateOf(false) }
+    // True once the markdown body has parsed and rendered. Before that the
+    // scroll range only covers title/summary chrome, so any progress computed
+    // against it is garbage: scrolling a still-loading article could save
+    // 100% and even auto-archive it (issue #131).
+    var articleReady by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
         if (positionRestored) return@LaunchedEffect
         if (focusHighlightId.isNotBlank()) {
@@ -1440,7 +1446,7 @@ private fun ArticleBody(
         // Throttled no-op most of the time; first call pulls positions from relays.
         withContext(Dispatchers.IO) { ReadingPositionSync.refresh(appContext) }
         val saved = ReadingPositionStore.fraction(content.url)
-        val max = snapshotFlow { scrollState.maxValue }.first { it > 0 }
+        val max = snapshotFlow { if (articleReady) scrollState.maxValue else 0 }.first { it > 0 }
         if (settings.autoScrollToReadingPosition && scrollState.value == 0) {
             ReadingProgress.restoreOffset(saved, max)?.let { scrollState.scrollTo(it) }
         }
@@ -1453,7 +1459,7 @@ private fun ArticleBody(
     var drifting by remember(content.url) { mutableStateOf(false) }
     LaunchedEffect(content.url) {
         snapshotFlow { scrollState.value }.collectLatest { value ->
-            if (!positionRestored) return@collectLatest
+            if (!positionRestored || !articleReady) return@collectLatest
             val max = scrollState.maxValue
             if (max <= 0) return@collectLatest
             delay(400)
@@ -1495,7 +1501,7 @@ private fun ArticleBody(
     LaunchedEffect(content.url, loggedIn, archived, autoArchive) {
         snapshotFlow { ReadingProgress.percent(scrollState.value, scrollState.maxValue) }
             .collectLatest { percent ->
-                if (percent < 100 || !positionRestored) return@collectLatest
+                if (percent < 100 || !positionRestored || !articleReady) return@collectLatest
                 // Mirrors the webapp: complete only after holding 100% for 2s.
                 delay(2000)
                 ReadingPositionSync.publishAsync(appContext, content.url)
@@ -1528,10 +1534,12 @@ private fun ArticleBody(
     }
     LaunchedEffect(content.url, content.body, eventRefs, noteByAuthor) {
         val body = withContext(Dispatchers.Default) {
-            NostrMentions.rewrite(
-                NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
-                    noteByAuthor.format(name)
-                },
+            LongParagraphs.split(
+                NostrMentions.rewrite(
+                    NostrEventRefs.rewrite(Footnotes.expand(content.body), eventRefs) { name ->
+                        noteByAuthor.format(name)
+                    },
+                ),
             )
         }
         markdownBody = body
@@ -1842,13 +1850,12 @@ private fun ArticleBody(
         referenceLinkHandler = referenceLinkHandler,
     )
     val markdownRender by markdownState.state.collectAsState()
-    var markdownReady by remember(content.url) { mutableStateOf(false) }
     val parsedSuccess = markdownRender as? MarkdownParseState.Success
     val parsedNow = markdownBody != null && parsedSuccess?.content == markdownBody
     SideEffect {
-        if (parsedNow) markdownReady = true
+        if (parsedNow) articleReady = true
     }
-    val showArticle = markdownReady || parsedNow
+    val showArticle = articleReady || parsedNow
     val ttsMiniPlayerVisible by remember {
         TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(false)
@@ -2074,7 +2081,13 @@ private fun ArticleBody(
                 onOpenArticle = onOpenArticle,
                 showCurrentArticle = true,
             )
-            ArticleScrollProgress(scrollState, driftFraction)
+            // Until the body is rendered the scroll range is meaningless, so
+            // the bar shows the saved position instead (issue #131).
+            ArticleScrollProgress(
+                scrollState = scrollState,
+                driftFraction = if (showArticle) driftFraction else savedFraction,
+                scrollLive = showArticle,
+            )
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2519,17 +2532,21 @@ private fun HighlightedMarkdownNode(
 }
 
 @Composable
-private fun ArticleScrollProgress(scrollState: ScrollState, driftFraction: Float?) {
+private fun ArticleScrollProgress(
+    scrollState: ScrollState,
+    driftFraction: Float?,
+    scrollLive: Boolean = true,
+) {
     val scrollPercent = ReadingProgress.percent(scrollState.value, scrollState.maxValue)
     if (driftFraction != null) {
         // Drifted: the fill keeps the saved reading position, the dot marks
         // where the viewport currently is.
         ReadingProgressBar(
             percent = (driftFraction * 100f).roundToInt(),
-            scrollPercent = scrollPercent,
+            scrollPercent = scrollPercent.takeIf { scrollLive },
         )
     } else {
-        ReadingProgressBar(percent = scrollPercent)
+        ReadingProgressBar(percent = if (scrollLive) scrollPercent else 0)
     }
 }
 

@@ -3,6 +3,7 @@ package org.dergigi.boris.tts
 import org.dergigi.boris.data.ArticleUrl
 import org.dergigi.boris.data.ContinueReading
 import org.dergigi.boris.data.Footnotes
+import org.dergigi.boris.data.LongParagraphs
 import org.dergigi.boris.data.MarkdownInline
 import org.dergigi.boris.data.NostrMentions
 import org.dergigi.boris.data.ReadableContent
@@ -13,7 +14,7 @@ object TtsText {
         val out = mutableListOf<String>()
         content.title?.let { addCleaned(out, it) }
         content.summary?.let { addCleaned(out, it) }
-        for (block in splitMarkdownBlocks(NostrMentions.rewrite(Footnotes.expand(content.body)))) {
+        for (block in splitMarkdownBlocks(rewrittenMarkdown(content))) {
             addCleaned(out, block)
         }
         return out
@@ -149,10 +150,16 @@ object TtsText {
         return if (found >= 0) found else searchFrom
     }
 
-    fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? {
-        val markdown = NostrMentions.rewrite(Footnotes.expand(content.body))
-        return startIndexForMarkdownOffset(content, markdown, markdownOffset)
-    }
+    fun startIndexForMarkdownOffset(content: ReadableContent, markdownOffset: Int): Int? =
+        startIndexForMarkdownOffset(content, rewrittenMarkdown(content), markdownOffset)
+
+    /**
+     * Mirrors the reader's markdown pipeline (minus event-ref embeds) so TTS
+     * paragraph indices line up with rendered nodes, including the long
+     * paragraph splits from [LongParagraphs] (issue #131).
+     */
+    private fun rewrittenMarkdown(content: ReadableContent): String =
+        LongParagraphs.split(NostrMentions.rewrite(Footnotes.expand(content.body)))
 
     fun startIndexForMarkdownOffset(
         content: ReadableContent,

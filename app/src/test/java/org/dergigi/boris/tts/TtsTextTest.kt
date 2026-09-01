@@ -382,6 +382,27 @@ class TtsTextTest {
     }
 
     @Test
+    fun longParagraphSplitKeepsMarkdownOffsetsAligned() {
+        // Issue #131: the reader splits over-long paragraphs into several
+        // blocks; TTS paragraphs must split identically or every index after
+        // the wall of text points at the wrong paragraph.
+        val wall = "This sentence keeps the wall of text growing without a break. "
+            .repeat(400)
+            .trim()
+        val markdown = "Intro paragraph.\n\n$wall\n\nOutro paragraph."
+        val content = ReadableContent(url = "https://example.com/wall", markdown = markdown)
+        val paragraphs = TtsText.paragraphs(content)
+        assertTrue(paragraphs.size > 3)
+        assertTrue(paragraphs.all { it.length <= org.dergigi.boris.data.LongParagraphs.MAX_LENGTH })
+        val rendered = org.dergigi.boris.data.LongParagraphs.split(markdown)
+        assertEquals(
+            paragraphs.lastIndex,
+            TtsText.startIndexForMarkdownOffset(content, rendered, rendered.lastIndexOf("Outro")),
+        )
+        assertEquals(0, TtsText.startIndexForMarkdownOffset(content, rendered, 0))
+    }
+
+    @Test
     fun chunksSplitLongTextOnSentencesThenSpaces() {
         val sentence = "This is a sentence. " // 20 chars
         val long = sentence.repeat(10).trim()
