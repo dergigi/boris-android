@@ -404,6 +404,7 @@
     <string name="reader_outline">Contents</string>
     <string name="reader_outline_title">Contents</string>
     <string name="reader_outline_close">Close contents</string>
+    <string name="reader_open_gallery">Open gallery</string>
     <string name="reader_find">Find in article</string>
     <string name="reader_refresh">Refresh article</string>
     <string name="reader_find_title">Find</string>

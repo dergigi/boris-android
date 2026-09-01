@@ -56,6 +56,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
@@ -588,6 +589,9 @@ fun ReaderScreenContent(
     val hasProgress = remember(articleUrl, progressVersion) {
         articleUrl != null && ReadingPositionStore.fraction(articleUrl) > 0f
     }
+    val galleryUrls = remember(state) {
+        (state as? ReaderUiState.Ready)?.let { ArticleImages.urlsFor(it.content) }.orEmpty()
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val readerScope = rememberCoroutineScope()
     val articleScrollState = rememberScrollState()
@@ -842,6 +846,21 @@ fun ReaderScreenContent(
                                     )
                                 }
                                 if (state is ReaderUiState.Ready) {
+                                    if (galleryUrls.isNotEmpty()) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.reader_open_gallery)) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.PhotoLibrary,
+                                                    contentDescription = null,
+                                                )
+                                            },
+                                            onClick = {
+                                                menuOpen = false
+                                                onOpenGallery(galleryUrls, 0)
+                                            },
+                                        )
+                                    }
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.reader_find)) },
                                         leadingIcon = {
