@@ -93,6 +93,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -102,6 +103,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -2299,20 +2301,20 @@ private fun rememberHighlightMarks(
     val base = remember(displayed, painted) {
         matchHighlightSpans(displayed, painted)
     }
-    val spokenSpans = remember(
-        displayed,
-        spoken.sentence,
-        spoken.paragraph,
-        spoken.paragraphIndex,
-        ttsStartIndex,
-    ) {
-        matchSpokenSpansForParagraph(
-            displayed = displayed,
-            sentence = spoken.sentence,
-            paragraph = spoken.paragraph,
-            displayedTtsIndex = ttsStartIndex,
-            spokenTtsIndex = spoken.paragraphIndex,
-        )
+    // Derived, not remembered on spoken.* keys: reading those states directly
+    // here subscribed every node in the article, so each TTS sentence tick
+    // recomposed the whole tree. The derived value only changes for the
+    // paragraph being spoken; all other nodes keep emptyList and stay still.
+    val spokenSpans by remember(displayed, ttsStartIndex) {
+        derivedStateOf(structuralEqualityPolicy()) {
+            matchSpokenSpansForParagraph(
+                displayed = displayed,
+                sentence = spoken.sentence,
+                paragraph = spoken.paragraph,
+                displayedTtsIndex = ttsStartIndex,
+                spokenTtsIndex = spoken.paragraphIndex,
+            )
+        }
     }
     return if (spokenSpans.isEmpty()) base else base + spokenSpans
 }
