@@ -9,6 +9,17 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.26] - 2026-09-01
+
+### Added
+
+- Current heading under the reading progress bar
+- Saved-article bookmark opens the highlights pane, and shows the highlighter when the article has highlights
+
+### Changed
+
+- Reader overflow menu groups Copy and Open on their own pages
+
 ## [1.5.25] - 2026-09-01
 
 ### Fixed
@@ -1626,7 +1637,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.25...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.26...HEAD
+[1.5.26]: https://github.com/dergigi/boris-android/releases/tag/v1.5.26
 [1.5.25]: https://github.com/dergigi/boris-android/releases/tag/v1.5.25
 [1.5.24]: https://github.com/dergigi/boris-android/releases/tag/v1.5.24
 [1.5.23]: https://github.com/dergigi/boris-android/releases/tag/v1.5.23
