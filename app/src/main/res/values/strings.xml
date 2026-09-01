@@ -367,7 +367,6 @@
     <string name="settings_display_type">Display type</string>
     <string name="settings_display_color">Color</string>
     <string name="settings_display_eink">E-ink</string>
-    <string name="settings_display_eink_note">High-contrast page and underline marks that stay visible in daylight.</string>
     <string name="settings_highlights_eink_note">E-ink display uses high-contrast underlines.</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme_light">Light theme</string>

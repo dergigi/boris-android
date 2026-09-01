@@ -9,7 +9,6 @@ import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,13 +62,6 @@ fun ThemeSection(
                     label = { Text(stringResource(R.string.settings_display_eink)) },
                 )
             }
-        }
-        if (eink) {
-            Text(
-                text = stringResource(R.string.settings_display_eink_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         SettingRow(stringResource(R.string.settings_theme)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
