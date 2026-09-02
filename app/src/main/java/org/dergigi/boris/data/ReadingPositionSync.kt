@@ -5,15 +5,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.dergigi.boris.nostr.BunkerClient
-import org.dergigi.boris.nostr.BunkerSignResult
 import org.dergigi.boris.nostr.EventPublisher
-import org.dergigi.boris.nostr.Nip01Event
+import org.dergigi.boris.nostr.EventSigner
 import org.dergigi.boris.nostr.Nip85
+import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
-import org.dergigi.boris.nostr.RemoteSignerBridge
-import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -76,36 +73,19 @@ object ReadingPositionSync {
         if (lastPublished[key] == fraction) return
         val ts = ReadingPositionStore.updatedAt(url)
             .takeIf { it > 0 } ?: System.currentTimeMillis() / 1000
-        val event = when (session) {
-            is Session.Amber -> {
-                val unsigned = Nip85.unsignedJson(url, fraction, ts, session.pubkeyHex) ?: return
-                val signed = RemoteSignerBridge.signEventSilently(
-                    context,
-                    unsigned,
-                    session.signerPackage,
-                    session.pubkeyHex,
-                ) ?: return
-                runCatching { Nip01Event.parse(JSONObject(signed)) }.getOrNull() ?: return
-            }
-            is Session.Bunker -> {
-                val unsigned = Nip85.unsignedJson(url, fraction, ts) ?: return
-                val privkey = SecretBox.unwrap(context, session.clientPrivkeyCiphertext) ?: return
-                val result = try {
-                    BunkerClient(onAuthUrl = {}).signEvent(
-                        session.relays,
-                        session.remoteSignerPubkey,
-                        privkey,
-                        unsigned,
-                    )
-                } finally {
-                    privkey.fill(0)
-                }
-                (result as? BunkerSignResult.Signed)?.event ?: return
-            }
-        }
+        val tags = Nip85.tags(url) ?: return
+        val event = EventSigner.signSilently(
+            context,
+            session,
+            PendingUnsignedEvent(
+                pubkey = session.pubkeyHex,
+                createdAt = System.currentTimeMillis() / 1000,
+                kind = Nip85.KIND,
+                tags = tags,
+                content = Nip85.contentJson(fraction, ts),
+            ),
+        ) ?: return
         if (event.kind != Nip85.KIND) return
-        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
-        if (!event.verify()) return
         lastPublished[key] = fraction
         EventPublisher.publish(session.pubkeyHex, event)
     }
