@@ -31,6 +31,7 @@ import org.dergigi.boris.nostr.NipB0
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.nostr.SocialGraphs
 import org.dergigi.boris.ui.ContentTab
 import org.dergigi.boris.ui.feed.FeedLevel
 import org.dergigi.boris.ui.feed.classifyFeedLevel
@@ -431,17 +432,8 @@ class YouViewModel(
 
     private fun relationFor(profileHex: String, remote: Boolean): FeedLevel {
         val sessionHex = SessionStore.load(getApplication())?.pubkeyHex
-        val friends = when {
-            sessionHex == null -> emptySet()
-            remote -> RelayQuery.fetchContactPubkeys(sessionHex)
-            else -> RelayQuery.cachedContactPubkeys(sessionHex)
-        }
-        val foaf = when {
-            sessionHex == null -> emptySet()
-            remote -> RelayQuery.fetchFoafPubkeys(sessionHex, friends)
-            else -> RelayQuery.cachedFoafPubkeys(sessionHex, friends)
-        }
-        return classifyFeedLevel(profileHex, sessionHex, friends, foaf)
+        val graph = if (remote) SocialGraphs.fetch(sessionHex) else SocialGraphs.cached(sessionHex)
+        return classifyFeedLevel(profileHex, graph)
     }
 
     private data class Loaded(

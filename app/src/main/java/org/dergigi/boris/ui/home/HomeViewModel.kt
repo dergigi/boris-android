@@ -38,7 +38,7 @@ import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
-import org.dergigi.boris.nostr.RelayList
+import org.dergigi.boris.nostr.SocialGraphs
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.tts.startListening as startArticleListening
 import org.dergigi.boris.ui.MarkAsReadAction
@@ -112,30 +112,16 @@ class HomeViewModel(
             try {
                 val rows = withContext(Dispatchers.IO) {
                     coroutineScope {
-                        val friendKeysDeferred = async {
-                            if (pubkey == null) {
-                                emptySet()
-                            } else {
-                                RelayQuery.fetchContactPubkeys(pubkey) - pubkey.lowercase()
-                            }
+                        val graph = SocialGraphs.fetch(pubkey)
+                        val friendKeys = graph.friends.let { keys ->
+                            if (pubkey == null) keys else keys - pubkey.lowercase()
                         }
-                        val relaysDeferred = async {
-                            buildList {
-                                addAll(RelayList.FALLBACK)
-                                if (pubkey != null) addAll(RelayQuery.fetchRelayList(pubkey).read)
-                            }.distinct()
-                        }
-                        val friendKeys = friendKeysDeferred.await()
-                        val relays = relaysDeferred.await()
+                        val relays = graph.relays
+                        val foafKeys = graph.foaf
                         val yoursDeferred = async {
                             if (pubkey == null) emptyList() else loadYours(relays, pubkey)
                         }
                         val friendsDeferred = async { loadFriends(relays, friendKeys) }
-                        val foafKeys = if (pubkey == null) {
-                            emptySet()
-                        } else {
-                            RelayQuery.fetchFoafPubkeys(pubkey, friendKeys)
-                        }
                         val foafDeferred = async { loadFoaf(relays, foafKeys) }
                         val othersDeferred = async { loadOthers(pubkey, friendKeys, foafKeys) }
                         val mostDeferred = async { fetchMostHighlighted() }
@@ -301,10 +287,9 @@ class HomeViewModel(
     }
 
     private fun loadCached(pubkey: String?): HomeHighlightsState.Ready? {
-        val friendKeys = if (pubkey == null) {
-            emptySet()
-        } else {
-            RelayQuery.cachedContactPubkeys(pubkey) - pubkey.lowercase()
+        val graph = SocialGraphs.cached(pubkey)
+        val friendKeys = graph.friends.let { keys ->
+            if (pubkey == null) keys else keys - pubkey.lowercase()
         }
         val yours = if (pubkey == null) {
             emptyList()
@@ -322,11 +307,7 @@ class HomeViewModel(
                 ARTICLE_LIMIT,
             )
         }
-        val foafKeys = if (pubkey == null) {
-            emptySet()
-        } else {
-            RelayQuery.cachedFoafPubkeys(pubkey, friendKeys)
-        }
+        val foafKeys = graph.foaf
         val foafAuthors = foafFetchAuthors(foafKeys)
         val foaf = if (foafAuthors.isEmpty()) {
             emptyList()

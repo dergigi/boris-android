@@ -21,8 +21,8 @@ import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.OutboxRouter
 import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.nostr.SocialGraphs
 import org.dergigi.boris.nostr.SignOutcome
 import org.dergigi.boris.nostr.ZapSplits
 
@@ -133,35 +133,18 @@ class ReaderHighlights(
         onPublishSaveState()
         highlightJob = scope.launch(Dispatchers.IO) {
             try {
-                val friends = if (session != null) {
-                    RelayQuery.cachedContactPubkeys(session.pubkeyHex)
-                } else {
-                    emptySet()
-                }
-                val foaf = if (session != null) {
-                    RelayQuery.cachedFoafPubkeys(session.pubkeyHex, friends)
-                } else {
-                    emptySet()
-                }
+                val cachedGraph = SocialGraphs.cached(session?.pubkeyHex)
                 val cached = cachedHighlightsFor(content)
-                if (cached.isNotEmpty()) paint(cached, session?.pubkeyHex, friends, foaf)
+                if (cached.isNotEmpty()) {
+                    paint(cached, session?.pubkeyHex, cachedGraph.friends, cachedGraph.foaf)
+                }
+                val live = SocialGraphs.fetch(session?.pubkeyHex)
                 val relays = OutboxRouter.authorTargets(
                     pubkeyHex = content.authorPubkey?.trim().orEmpty(),
-                    base = buildList {
-                        addAll(RelayList.FALLBACK)
-                        if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
-                    },
+                    base = live.relays,
                 ).distinct()
-                val contacts = if (session != null) {
-                    RelayQuery.fetchContactPubkeys(session.pubkeyHex)
-                } else {
-                    emptySet()
-                }
-                val foafKeys = if (session != null) {
-                    RelayQuery.fetchFoafPubkeys(session.pubkeyHex, contacts)
-                } else {
-                    emptySet()
-                }
+                val contacts = live.friends
+                val foafKeys = live.foaf
                 val events = when {
                     !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
                         RelayQuery.fetchHighlightsForArticle(

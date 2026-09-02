@@ -24,8 +24,8 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.nostr.SocialGraphs
 
 data class FeedItem(
     val id: String,
@@ -225,12 +225,9 @@ class FeedViewModel(
     }
 
     private fun loadCatalogFromCache(pubkeyHex: String?): Catalog? {
-        val friends = if (pubkeyHex == null) emptySet() else RelayQuery.cachedContactPubkeys(pubkeyHex)
-        val foaf = if (pubkeyHex == null) {
-            emptySet()
-        } else {
-            RelayQuery.cachedFoafPubkeys(pubkeyHex, friends)
-        }
+        val graph = SocialGraphs.cached(pubkeyHex)
+        val friends = graph.friends
+        val foaf = graph.foaf
         val foafAuthors = foafFetchAuthors(foaf)
         val highlightEvents = buildList {
             addAll(RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT))
@@ -266,13 +263,10 @@ class FeedViewModel(
     }
 
     private suspend fun loadCatalog(pubkeyHex: String?): Catalog = coroutineScope {
-        val relays = buildList {
-            addAll(RelayList.FALLBACK)
-            if (pubkeyHex != null) addAll(RelayQuery.fetchRelayList(pubkeyHex).read)
-        }.distinct()
-        val friendsDeferred = async {
-            if (pubkeyHex == null) emptySet() else RelayQuery.fetchContactPubkeys(pubkeyHex)
-        }
+        val graph = SocialGraphs.fetch(pubkeyHex)
+        val relays = graph.relays
+        val friends = graph.friends
+        val foaf = graph.foaf
         val globalHighlights = async {
             RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
         }
@@ -292,12 +286,6 @@ class FeedViewModel(
             } else {
                 RelayQuery.fetchRecentWritings(relays, WRITING_LIMIT, pubkeyHex)
             }
-        }
-        val friends = friendsDeferred.await()
-        val foaf = if (pubkeyHex == null) {
-            emptySet()
-        } else {
-            RelayQuery.fetchFoafPubkeys(pubkeyHex, friends)
         }
         val foafAuthors = foafFetchAuthors(foaf)
         val (friendsHighlights, friendsWritings) = coroutineScope {

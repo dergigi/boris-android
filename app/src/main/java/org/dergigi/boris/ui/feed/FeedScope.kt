@@ -1,6 +1,7 @@
 package org.dergigi.boris.ui.feed
 
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.SocialGraph
 
 enum class FeedLevel {
     Nostrverse,
@@ -62,6 +63,9 @@ fun classifyFeedLevel(
     if (author in foafPubkeys) return FeedLevel.Foaf
     return FeedLevel.Nostrverse
 }
+
+fun classifyFeedLevel(authorHex: String, graph: SocialGraph): FeedLevel =
+    classifyFeedLevel(authorHex, graph.pubkey, graph.friends, graph.foaf)
 
 /** People followed by [friendPubkeys], minus you and those friends. */
 fun foafPubkeys(
