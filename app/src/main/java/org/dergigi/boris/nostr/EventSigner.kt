@@ -42,23 +42,24 @@ class EventSigner(
         session: Session,
         unsigned: PendingUnsignedEvent,
         onResult: (SignOutcome) -> Unit,
-    ) {
-        when (session) {
+    ): Intent? {
+        return when (session) {
             is Session.Amber -> {
                 pending = Pending.Sign(unsigned, session.pubkeyHex, onResult)
-                onSignIntent(
-                    RemoteSignerBridge.buildSignEventIntent(
-                        unsigned.toUnsignedJson(includePubkey = true),
-                        session.signerPackage,
-                        session.pubkeyHex,
-                    ),
+                val intent = RemoteSignerBridge.buildSignEventIntent(
+                    unsigned.toUnsignedJson(includePubkey = true),
+                    session.signerPackage,
+                    session.pubkeyHex,
                 )
+                onSignIntent(intent)
+                intent
             }
             is Session.Bunker -> {
                 pending = null
                 scope.launch {
                     onResult(signWithBunker(app, session, unsigned.toUnsignedJson(includePubkey = false)))
                 }
+                null
             }
         }
     }
@@ -69,19 +70,19 @@ class EventSigner(
         peerPubkeyHex: String,
         nip44: Boolean,
         onResult: (CryptoOutcome) -> Unit,
-    ) {
-        when (session) {
+    ): Intent? {
+        return when (session) {
             is Session.Amber -> {
                 pending = Pending.Crypto(onResult)
-                onSignIntent(
-                    RemoteSignerBridge.buildDecryptIntent(
-                        ciphertext = ciphertext,
-                        signerPackage = session.signerPackage,
-                        currentUserHex = session.pubkeyHex,
-                        peerPubkeyHex = peerPubkeyHex,
-                        nip44 = nip44,
-                    ),
+                val intent = RemoteSignerBridge.buildDecryptIntent(
+                    ciphertext = ciphertext,
+                    signerPackage = session.signerPackage,
+                    currentUserHex = session.pubkeyHex,
+                    peerPubkeyHex = peerPubkeyHex,
+                    nip44 = nip44,
                 )
+                onSignIntent(intent)
+                intent
             }
             is Session.Bunker -> {
                 pending = null
@@ -90,6 +91,7 @@ class EventSigner(
                         decryptWithBunker(app, session, ciphertext, peerPubkeyHex, nip44),
                     )
                 }
+                null
             }
         }
     }
@@ -99,24 +101,25 @@ class EventSigner(
         plaintext: String,
         peerPubkeyHex: String,
         onResult: (CryptoOutcome) -> Unit,
-    ) {
-        when (session) {
+    ): Intent? {
+        return when (session) {
             is Session.Amber -> {
                 pending = Pending.Crypto(onResult)
-                onSignIntent(
-                    RemoteSignerBridge.buildEncryptIntent(
-                        plaintext = plaintext,
-                        signerPackage = session.signerPackage,
-                        currentUserHex = session.pubkeyHex,
-                        peerPubkeyHex = peerPubkeyHex,
-                    ),
+                val intent = RemoteSignerBridge.buildEncryptIntent(
+                    plaintext = plaintext,
+                    signerPackage = session.signerPackage,
+                    currentUserHex = session.pubkeyHex,
+                    peerPubkeyHex = peerPubkeyHex,
                 )
+                onSignIntent(intent)
+                intent
             }
             is Session.Bunker -> {
                 pending = null
                 scope.launch {
                     onResult(encryptWithBunker(app, session, plaintext, peerPubkeyHex))
                 }
+                null
             }
         }
     }
