@@ -682,19 +682,13 @@ fun ReaderScreenContent(
         shareArticleLink(context, title, url)
     }
 
-    var findOpen by remember { mutableStateOf(false) }
-    var outlineOpen by remember { mutableStateOf(false) }
-    var highlightsOpen by remember { mutableStateOf(false) }
+    val pane = remember { ReaderPaneState() }
     val readyBody = (state as? ReaderUiState.Ready)?.content?.body
     var outlineItems by remember(readyBody) {
         mutableStateOf(readyBody?.let { ArticleOutline.parse(it) }.orEmpty())
     }
-    LaunchedEffect(findOpen) {
-        if (findOpen) outlineOpen = false
-    }
     LaunchedEffect(articleUrl) {
-        outlineOpen = false
-        highlightsOpen = false
+        pane.onArticleChanged()
     }
     var rssConfirmFeed by remember { mutableStateOf<String?>(null) }
     rssConfirmFeed?.let { feedUrl ->
@@ -760,10 +754,7 @@ fun ReaderScreenContent(
                         }
                         if (outlineItems.isNotEmpty()) {
                             IconButton(
-                                onClick = {
-                                    findOpen = false
-                                    outlineOpen = true
-                                },
+                                onClick = { pane.openOutline() },
                             ) {
                                 Icon(
                                     Icons.AutoMirrored.Outlined.FormatListBulleted,
@@ -780,7 +771,7 @@ fun ReaderScreenContent(
                                 highlights = highlights,
                                 hasHighlights = highlightCount > 0,
                                 settings = settings,
-                                onClick = { highlightsOpen = true },
+                                onClick = { pane.openHighlights() },
                             )
                         } else {
                             SaveLibraryButton(
@@ -907,7 +898,7 @@ fun ReaderScreenContent(
                                                 },
                                                 onClick = {
                                                     dismissMenu()
-                                                    findOpen = true
+                                                    pane.openFind()
                                                 },
                                             )
                                             if (galleryUrls.isNotEmpty()) {
@@ -1271,12 +1262,7 @@ fun ReaderScreenContent(
                     rssFeedSuggestion = rssFeedSuggestion,
                     // D-19: while TTS is speaking, volume keys change volume, not scroll.
                     volumeScroll = gallery == null,
-                    findOpen = findOpen,
-                    onFindOpenChange = { findOpen = it },
-                    outlineOpen = outlineOpen,
-                    onOutlineOpenChange = { outlineOpen = it },
-                    highlightsOpen = highlightsOpen,
-                    onHighlightsOpenChange = { highlightsOpen = it },
+                    pane = pane,
                     outlineItems = outlineItems,
                     onOutlineItems = { outlineItems = it },
                     onOpenArticle = onOpenArticle,
@@ -1401,12 +1387,7 @@ private fun ArticleBody(
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
-    findOpen: Boolean,
-    onFindOpenChange: (Boolean) -> Unit,
-    outlineOpen: Boolean,
-    onOutlineOpenChange: (Boolean) -> Unit,
-    highlightsOpen: Boolean,
-    onHighlightsOpenChange: (Boolean) -> Unit,
+    pane: ReaderPaneState,
     outlineItems: List<ArticleOutlineItem>,
     onOutlineItems: (List<ArticleOutlineItem>) -> Unit,
     scrollState: ScrollState,
@@ -1586,28 +1567,28 @@ private fun ArticleBody(
     var pendingJumpId by remember {
         mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
     }
-    LaunchedEffect(highlightsOpen) {
-        if (!highlightsOpen) return@LaunchedEffect
-        onOutlineOpenChange(false)
-        if (findOpen) {
+    LaunchedEffect(pane.highlightsOpen) {
+        if (!pane.highlightsOpen) return@LaunchedEffect
+        pane.closeOutline()
+        if (pane.findOpen) {
             findQuery = ""
             findIndex = 0
-            onFindOpenChange(false)
+            pane.closeFind()
         }
     }
-    LaunchedEffect(findOpen) {
-        if (findOpen) {
-            onHighlightsOpenChange(false)
-            onOutlineOpenChange(false)
+    LaunchedEffect(pane.findOpen) {
+        if (pane.findOpen) {
+            pane.closeHighlights()
+            pane.closeOutline()
         }
     }
-    LaunchedEffect(outlineOpen) {
-        if (outlineOpen) {
-            onHighlightsOpenChange(false)
-            if (findOpen) {
+    LaunchedEffect(pane.outlineOpen) {
+        if (pane.outlineOpen) {
+            pane.closeHighlights()
+            if (pane.findOpen) {
                 findQuery = ""
                 findIndex = 0
-                onFindOpenChange(false)
+                pane.closeFind()
             }
         }
     }
@@ -1728,13 +1709,12 @@ private fun ArticleBody(
                 if (autoArchive && loggedIn && !archived) onArchive(false)
             }
     }
-    val openHighlights = rememberUpdatedState(onHighlightsOpenChange)
     val openFromStop = remember<(HighlightStop) -> Unit> {
         { stop ->
             jumpState.value(navigator.select(stop))
             selectedId = stop.highlightId
-            onFindOpenChange(false)
-            openHighlights.value(true)
+            pane.closeFind()
+            pane.openHighlights()
         }
     }
     fun stepFind(delta: Int) {
@@ -2087,12 +2067,12 @@ private fun ArticleBody(
     fun closeFindPane() {
         findQuery = ""
         findIndex = 0
-        onFindOpenChange(false)
+        pane.closeFind()
     }
     fun openHighlightsPane() {
-        onOutlineOpenChange(false)
-        if (findOpen) closeFindPane()
-        onHighlightsOpenChange(true)
+        pane.closeOutline()
+        if (pane.findOpen) closeFindPane()
+        pane.openHighlights()
     }
 
     Box(
@@ -2351,7 +2331,7 @@ private fun ArticleBody(
             },
         )
         HighlightsPane(
-            open = highlightsOpen,
+            open = pane.highlightsOpen,
             highlights = highlights,
             selectedId = selectedId,
             loggedIn = loggedIn,
@@ -2360,14 +2340,14 @@ private fun ArticleBody(
             friendsColor = friendsColor,
             foafColor = foafColor,
             otherColor = otherColor,
-            onDismiss = { onHighlightsOpenChange(false) },
+            onDismiss = { pane.closeHighlights() },
             onSelect = { item ->
                 selectedId = item.id
                 pendingJumpId = item.id
-                onHighlightsOpenChange(false)
+                pane.closeHighlights()
             },
             onOpenHighlightSettings = {
-                onHighlightsOpenChange(false)
+                pane.closeHighlights()
                 onOpenHighlightSettings()
             },
             onToggleMarks = {
@@ -2386,11 +2366,11 @@ private fun ArticleBody(
                     onGoToQuote = {
                         selectedId = item.id
                         pendingJumpId = item.id
-                        onHighlightsOpenChange(false)
+                        pane.closeHighlights()
                     },
                     onViewProfile = item.pubkey.takeIf { it.isNotBlank() }?.let { hex ->
                         {
-                            onHighlightsOpenChange(false)
+                            pane.closeHighlights()
                             onOpenProfile(hex)
                         }
                     },
@@ -2403,7 +2383,7 @@ private fun ArticleBody(
             },
         )
         FindPane(
-            open = findOpen,
+            open = pane.findOpen,
             query = findQuery,
             hits = findHits,
             activeIndex = findIndex,
@@ -2421,7 +2401,7 @@ private fun ArticleBody(
             onNext = { stepFind(1) },
             onSelect = { index ->
                 goFind(index)
-                onFindOpenChange(false)
+                pane.closeFind()
             },
         )
         LaunchedEffect(outlineItems, topScrollInsetPx) {
@@ -2443,15 +2423,15 @@ private fun ArticleBody(
             }.distinctUntilChanged().collect { activeOutlineId.value = it }
         }
         OutlinePaneHost(
-            open = outlineOpen,
+            open = pane.outlineOpen,
             items = outlineItems,
             activeOutlineId = activeOutlineId,
             topPadding = paneTopPadding,
-            onDismiss = { onOutlineOpenChange(false) },
+            onDismiss = { pane.closeOutline() },
             onSelect = { item ->
                 pendingJumpId = item.id
                 selectedId = item.id
-                onOutlineOpenChange(false)
+                pane.closeOutline()
             },
         )
     }
