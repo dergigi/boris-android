@@ -2,7 +2,6 @@ package org.dergigi.boris.ui.reader
 
 import android.app.Application
 import android.content.Intent
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
@@ -31,44 +29,14 @@ import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.takeIfActive
 import org.dergigi.boris.data.ReaderRepository
 import org.dergigi.boris.data.RssRepository
-import org.dergigi.boris.data.SecretBox
-import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Archive
-import org.dergigi.boris.nostr.EventPublisher
-import org.dergigi.boris.nostr.BunkerClient
-import org.dergigi.boris.nostr.BunkerSignResult
-import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Profile
-import org.dergigi.boris.nostr.Nip84
-import org.dergigi.boris.nostr.OutboxRouter
-import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
-import org.dergigi.boris.nostr.RemoteSignerBridge
-import org.dergigi.boris.nostr.SignerResult
-import org.dergigi.boris.nostr.SignerResults
-import org.dergigi.boris.nostr.ZapSplits
 import org.dergigi.boris.ui.ArchiveAction
 import org.dergigi.boris.ui.LibrarySaveAction
-
-data class PaintedHighlight(
-    val id: String,
-    val quote: String,
-    val mine: Boolean,
-    val friend: Boolean = false,
-    val foaf: Boolean = false,
-    val pubkey: String = "",
-    val createdAt: Long = 0L,
-    val context: String? = null,
-    val authorName: String = "",
-    val authorPicture: String? = null,
-    val find: Boolean = false,
-    val ignoreCase: Boolean = false,
-    val spoken: Boolean = false,
-    val outline: Boolean = false,
-)
 
 class ReaderViewModel(
     application: Application,
@@ -86,14 +54,9 @@ class ReaderViewModel(
     private val _gallery = MutableStateFlow<ImageGalleryState?>(null)
     val gallery: StateFlow<ImageGalleryState?> = _gallery.asStateFlow()
 
-    private val _highlights = MutableStateFlow<List<PaintedHighlight>>(emptyList())
-    val highlights: StateFlow<List<PaintedHighlight>> = _highlights.asStateFlow()
-
-    private val _highlightCount = MutableStateFlow(0)
-    val highlightCount: StateFlow<Int> = _highlightCount.asStateFlow()
-
-    private val _highlightsLoaded = MutableStateFlow(false)
-    val highlightsLoaded: StateFlow<Boolean> = _highlightsLoaded.asStateFlow()
+    val highlights: StateFlow<List<PaintedHighlight>> get() = readerHighlights.highlights
+    val highlightCount: StateFlow<Int> get() = readerHighlights.highlightCount
+    val highlightsLoaded: StateFlow<Boolean> get() = readerHighlights.highlightsLoaded
 
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
@@ -122,15 +85,22 @@ class ReaderViewModel(
     private val _eventRefs = MutableStateFlow<Map<String, ResolvedEventRef>>(emptyMap())
     val eventRefs: StateFlow<Map<String, ResolvedEventRef>> = _eventRefs.asStateFlow()
 
-    private var highlightJob: Job? = null
     private var membershipJob: Job? = null
     private var archiveJob: Job? = null
     private var authorJob: Job? = null
     private var rssFeedJob: Job? = null
     private var eventRefJob: Job? = null
     private var loadJob: Job? = null
-    private var pendingUnsigned: PendingUnsignedEvent? = null
     private var saving = false
+    private val readerHighlights = ReaderHighlights(
+        app = application,
+        scope = viewModelScope,
+        onMessage = { _message.value = it },
+        onSignIntent = { _signIntent.value = it },
+        currentContent = { (_state.value as? ReaderUiState.Ready)?.content },
+        onLoggedIn = { _loggedIn.value = it },
+        onPublishSaveState = { publishSaveState() },
+    )
     private val librarySave = LibrarySaveAction(
         app = application,
         scope = viewModelScope,
@@ -168,8 +138,6 @@ class ReaderViewModel(
     )
     private var archiving = false
     private var archiveIds = emptyList<String>()
-    private var pendingExternalQuote: String? = null
-
     init {
         load()
     }
@@ -207,9 +175,7 @@ class ReaderViewModel(
     fun load(refresh: Boolean = false) {
         if (url.isBlank()) {
             _state.value = ReaderUiState.Error("No URL to read.", url)
-            _highlights.value = emptyList()
-            _highlightCount.value = 0
-            _highlightsLoaded.value = true
+            readerHighlights.clear(loaded = true)
             _inLibrary.value = false
             resetArchive()
             resetAuthor()
@@ -218,7 +184,7 @@ class ReaderViewModel(
         }
         val imageUrl = UrlExtractor.preferHttps(url).takeIf { UrlExtractor.isImageUrl(it) }
         loadJob?.cancel()
-        highlightJob?.cancel()
+        readerHighlights.cancel()
         membershipJob?.cancel()
         archiveJob?.cancel()
         authorJob?.cancel()
@@ -228,9 +194,7 @@ class ReaderViewModel(
         if (imageUrl != null) {
             _state.value = ReaderUiState.ImageOnly(imageUrl)
             openGallery(listOf(imageUrl), 0)
-            _highlights.value = emptyList()
-            _highlightCount.value = 0
-            _highlightsLoaded.value = true
+            readerHighlights.clear(loaded = true)
             _inLibrary.value = false
             resetArchive()
             resetAuthor()
@@ -239,9 +203,7 @@ class ReaderViewModel(
         }
         loadJob = viewModelScope.launch {
             _state.value = readerLoadingState(url)
-            _highlights.value = emptyList()
-            _highlightCount.value = 0
-            _highlightsLoaded.value = false
+            readerHighlights.clear(loaded = false)
             _inLibrary.value = false
             _rssFeedSuggestion.value = null
             resetArchive()
@@ -250,8 +212,8 @@ class ReaderViewModel(
             try {
                 val content = withContext(Dispatchers.IO) { repository.fetch(url, refresh) }
                 _state.value = ReaderUiState.Ready(content)
-                tryExternalHighlight()
-                startHighlightFetch(content)
+                readerHighlights.tryExternal()
+                readerHighlights.startFetch(content)
                 startMembershipCheck(content)
                 startArchiveCheck(content)
                 startAuthorFetch(content)
@@ -260,40 +222,34 @@ class ReaderViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ReaderImageException) {
-                highlightJob?.cancel()
+                readerHighlights.cancel()
                 membershipJob?.cancel()
                 archiveJob?.cancel()
                 authorJob?.cancel()
                 rssFeedJob?.cancel()
                 eventRefJob?.cancel()
-                _highlights.value = emptyList()
-                _highlightCount.value = 0
-                _highlightsLoaded.value = true
+                readerHighlights.clear(loaded = true)
                 _state.value = ReaderUiState.ImageOnly(e.imageUrl)
                 openGallery(listOf(e.imageUrl), 0)
                 publishSaveState()
             } catch (e: ReaderHighlightException) {
-                highlightJob?.cancel()
+                readerHighlights.cancel()
                 membershipJob?.cancel()
                 archiveJob?.cancel()
                 rssFeedJob?.cancel()
                 eventRefJob?.cancel()
-                _highlights.value = emptyList()
-                _highlightCount.value = 0
-                _highlightsLoaded.value = true
+                readerHighlights.clear(loaded = true)
                 _state.value = ReaderUiState.Highlight(e.highlight, url)
                 startAuthorFetch(e.highlight.authorPubkey)
                 publishSaveState()
             } catch (e: Exception) {
-                highlightJob?.cancel()
+                readerHighlights.cancel()
                 membershipJob?.cancel()
                 archiveJob?.cancel()
                 authorJob?.cancel()
                 rssFeedJob?.cancel()
                 eventRefJob?.cancel()
-                _highlights.value = emptyList()
-                _highlightCount.value = 0
-                _highlightsLoaded.value = true
+                readerHighlights.clear(loaded = true)
                 _state.value = ReaderUiState.Error(
                     e.message ?: "Could not reach this page.",
                     url,
@@ -305,108 +261,14 @@ class ReaderViewModel(
     }
 
     fun offerExternalHighlight(quote: String) {
-        pendingExternalQuote = quote.trim().takeIf { it.isNotBlank() }
-        tryExternalHighlight()
+        readerHighlights.offerExternal(quote)
     }
 
-    private fun tryExternalHighlight() {
-        val quote = pendingExternalQuote ?: return
-        if (_state.value !is ReaderUiState.Ready) return
-        pendingExternalQuote = null
-        highlight(quote)?.let { _signIntent.value = it }
-    }
-
-    fun highlight(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? {
-        val trimmed = quote.trim()
-        val app = getApplication<Application>()
-        if (trimmed.isBlank()) {
-            _message.value = app.getString(R.string.highlight_cancelled)
-            return null
-        }
-        val session = SessionStore.load(app) ?: run {
-            _message.value = app.getString(R.string.highlight_sign_in)
-            return null
-        }
-        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
-        val selectedStart = Nip84.locateSelection(
-            articleContent = content.body,
-            selectedText = trimmed,
-            ownerText = ownerText,
-            ownerOffset = ownerOffset,
-        )
-        val context = Nip84.extractContext(trimmed, content.body, selectedStart)
-        val zapSplits = zapSplitTags(content, session.pubkeyHex)
-        when (session) {
-            is Session.Amber -> {
-                val createdAt = System.currentTimeMillis() / 1000
-                val tags = Nip84.tags(
-                    content.url,
-                    context,
-                    content.articleCoordinate,
-                    content.eventId,
-                    content.authorPubkey,
-                    zapSplits,
-                )
-                pendingUnsigned = PendingUnsignedEvent(
-                    pubkey = session.pubkeyHex,
-                    createdAt = createdAt,
-                    kind = Nip01Event.KIND_HIGHLIGHT,
-                    tags = tags,
-                    content = trimmed,
-                )
-                val unsigned = Nip84.unsignedJson(
-                    trimmed,
-                    content.url,
-                    context,
-                    session.pubkeyHex,
-                    createdAt,
-                    content.articleCoordinate,
-                    content.eventId,
-                    content.authorPubkey,
-                    zapSplits,
-                )
-                return RemoteSignerBridge.buildSignEventIntent(
-                    unsigned,
-                    session.signerPackage,
-                    session.pubkeyHex,
-                )
-            }
-            is Session.Bunker -> {
-                pendingUnsigned = null
-                val unsigned = Nip84.unsignedJson(
-                    trimmed,
-                    content.url,
-                    context,
-                    pubkeyHex = null,
-                    coordinate = content.articleCoordinate,
-                    eventId = content.eventId,
-                    authorPubkey = content.authorPubkey,
-                    zapSplits = zapSplits,
-                )
-                viewModelScope.launch {
-                    signWithBunker(session, unsigned)
-                }
-                return null
-            }
-        }
-    }
+    fun highlight(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? =
+        readerHighlights.create(quote, ownerText, ownerOffset)
 
     fun dismissRssFeedSuggestion() {
         _rssFeedSuggestion.value = null
-    }
-
-    private fun zapSplitTags(content: ReadableContent, highlighterPubkey: String): List<List<String>> {
-        // Web pages without a NIP-21 author skip the author share.
-        val settings = SettingsSync.settings.value
-        if (!settings.zapSplitsEnabled) return emptyList()
-        return ZapSplits.tags(
-            highlighterPubkey = highlighterPubkey,
-            sourceAuthorPubkey = content.authorPubkey,
-            sourceZapTags = content.sourceZapTags,
-            highlighterWeight = settings.zapSplitHighlighterWeight,
-            borisWeight = settings.zapSplitBorisWeight,
-            authorWeight = settings.zapSplitAuthorWeight,
-        )
     }
 
     fun archive(): Intent? {
@@ -433,46 +295,7 @@ class ReaderViewModel(
     fun onSignerResult(resultCode: Int, data: Intent?) {
         if (librarySave.onSignerResult(resultCode, data)) return
         if (archiveAction.onSignerResult(resultCode, data)) return
-        val app = getApplication<Application>()
-        val session = SessionStore.load(app) ?: return
-        val pending = pendingUnsigned
-        pendingUnsigned = null
-        when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
-            is SignerResult.Signed -> onSignedEvent(result.event)
-            SignerResult.Rejected -> _message.value = app.getString(R.string.highlight_rejected)
-            SignerResult.Cancelled, is SignerResult.Success -> {
-                _message.value = app.getString(R.string.highlight_cancelled)
-            }
-        }
-    }
-
-    fun onSignedEvent(event: Nip01Event) {
-        val app = getApplication<Application>()
-        val session = SessionStore.load(app) ?: return
-        if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
-        if (!event.verify()) return
-        if (event.kind == Nip01Event.KIND_HIGHLIGHT) onSignedHighlight(session, event)
-    }
-
-    private fun onSignedHighlight(session: Session, event: Nip01Event) {
-        val settings = SettingsSync.settings.value
-        val visibleSettings = settings.withOwnHighlightsVisible()
-        if (visibleSettings !== settings) SettingsSync.apply(visibleSettings)
-        val painted = PaintedHighlight(
-            id = event.id,
-            quote = event.content,
-            mine = true,
-            pubkey = event.pubkey,
-            createdAt = event.createdAt,
-            context = event.tagValue("context"),
-        )
-        if (_highlights.value.none { it.id == event.id }) {
-            _highlights.value = _highlights.value + painted
-            _highlightCount.value = _highlightCount.value + 1
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            publish(session, event)
-        }
+        readerHighlights.onSignerResult(resultCode, data)
     }
 
     private fun startArchiveCheck(content: ReadableContent) {
@@ -576,6 +399,13 @@ class ReaderViewModel(
         archiving = false
     }
 
+    private fun publishSaveState() {
+        _canSave.value = _loggedIn.value &&
+            !_inLibrary.value &&
+            !saving &&
+            _state.value is ReaderUiState.Ready
+    }
+
 
     private fun startMembershipCheck(content: ReadableContent) {
         membershipJob?.cancel()
@@ -602,170 +432,9 @@ class ReaderViewModel(
         }
     }
 
-    private fun publish(session: Session, event: Nip01Event) {
-        EventPublisher.publish(session.pubkeyHex, event)
-    }
-
-    private fun publishSaveState() {
-        _canSave.value = _loggedIn.value &&
-            !_inLibrary.value &&
-            !saving &&
-            _state.value is ReaderUiState.Ready
-    }
-
-    private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String) {
-        val app = getApplication<Application>()
-        val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
-        if (privkey == null) {
-            _message.value = app.getString(R.string.highlight_cancelled)
-            return
-        }
-        try {
-            val result = withContext(Dispatchers.IO) {
-                BunkerClient(onAuthUrl = ::openAuthUrl).signEvent(
-                    session.relays,
-                    session.remoteSignerPubkey,
-                    privkey,
-                    unsignedJson,
-                )
-            }
-            when (result) {
-                is BunkerSignResult.Signed -> onSignedEvent(result.event)
-                BunkerSignResult.Rejected -> _message.value = app.getString(R.string.highlight_rejected)
-                BunkerSignResult.RelayTimeout -> _message.value = app.getString(R.string.highlight_cancelled)
-            }
-        } finally {
-            privkey.fill(0)
-        }
-    }
-
-    private fun cachedHighlightsFor(content: ReadableContent): List<Nip01Event> =
-        when {
-            !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
-                RelayQuery.cachedHighlightsForArticle(content.articleCoordinate, content.eventId)
-            }
-            else -> RelayQuery.cachedHighlights(content.url)
-        }
-
-    private fun paintHighlights(
-        events: List<Nip01Event>,
-        pubkeyHex: String?,
-        friends: Set<String>,
-        foaf: Set<String> = emptySet(),
-    ) {
-        val profiles = RelayQuery.cachedProfiles(events.map { it.pubkey })
-        _highlightCount.value = events.size
-        _highlights.value = events.map { event ->
-            val mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true)
-            val key = event.pubkey.lowercase()
-            val friend = !mine && key in friends
-            PaintedHighlight(
-                id = event.id,
-                quote = event.content,
-                mine = mine,
-                friend = friend,
-                foaf = !mine && !friend && key in foaf,
-                pubkey = event.pubkey,
-                createdAt = event.createdAt,
-                context = event.tagValue("context"),
-                authorName = Profile.displayName(event.pubkey, profiles[key]),
-                authorPicture = profiles[key]?.picture,
-            )
-        }
-    }
-
-    private fun startHighlightFetch(content: ReadableContent) {
-        highlightJob?.cancel()
-        val session = SessionStore.load(getApplication())
-        _loggedIn.value = session != null
-        _highlightsLoaded.value = false
-        publishSaveState()
-        highlightJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val friends = if (session != null) {
-                    RelayQuery.cachedContactPubkeys(session.pubkeyHex)
-                } else {
-                    emptySet()
-                }
-                val foaf = if (session != null) {
-                    RelayQuery.cachedFoafPubkeys(session.pubkeyHex, friends)
-                } else {
-                    emptySet()
-                }
-                val cached = cachedHighlightsFor(content)
-                if (cached.isNotEmpty()) paintHighlights(cached, session?.pubkeyHex, friends, foaf)
-                val relays = OutboxRouter.authorTargets(
-                    pubkeyHex = content.authorPubkey?.trim().orEmpty(),
-                    base = buildList {
-                        addAll(RelayList.FALLBACK)
-                        if (session != null) addAll(RelayQuery.fetchRelayList(session.pubkeyHex).read)
-                    },
-                ).distinct()
-                val contacts = if (session != null) {
-                    RelayQuery.fetchContactPubkeys(session.pubkeyHex)
-                } else {
-                    emptySet()
-                }
-                val foafKeys = if (session != null) {
-                    RelayQuery.fetchFoafPubkeys(session.pubkeyHex, contacts)
-                } else {
-                    emptySet()
-                }
-                val events = when {
-                    !content.articleCoordinate.isNullOrBlank() || !content.eventId.isNullOrBlank() -> {
-                        RelayQuery.fetchHighlightsForArticle(
-                            relays,
-                            content.articleCoordinate,
-                            content.eventId,
-                        )
-                    }
-                    else -> {
-                        if (session != null) primeOwnHighlights(relays, session.pubkeyHex)
-                        RelayQuery.fetchHighlights(relays, content.url)
-                    }
-                }
-                paintHighlights(events, session?.pubkeyHex, contacts, foafKeys)
-                val authors = events.map { it.pubkey }.distinct()
-                if (authors.isNotEmpty()) {
-                    RelayQuery.fetchProfiles(relays, authors)
-                    paintHighlights(events, session?.pubkeyHex, contacts, foafKeys)
-                }
-            } catch (_: Exception) {
-            } finally {
-                _highlightsLoaded.value = true
-            }
-        }
-    }
-
-    /**
-     * `#r` lookups miss the user's own highlights whose `r` tag is not the
-     * clean article URL (older ones carry a `#:~:text=` fragment, #132).
-     * Pulling them by author into the cache lets [RelayQuery.cachedHighlights]
-     * match them by normalized URL instead.
-     */
-    private fun primeOwnHighlights(relays: List<String>, pubkeyHex: String) {
-        val now = System.currentTimeMillis()
-        if (now - ownHighlightsPrimedAt < OWN_HIGHLIGHTS_PRIME_MS) return
-        ownHighlightsPrimedAt = now
-        runCatching { RelayQuery.fetchRecentHighlights(relays, limit = 300, pubkeyHex = pubkeyHex) }
-    }
-
-    private fun openAuthUrl(url: String) {
-        val app = getApplication<Application>()
-        runCatching {
-            app.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
-    }
-
     companion object {
         const val URL_ARG = "url"
         const val HIGHLIGHT_ARG = "highlight"
-        private const val OWN_HIGHLIGHTS_PRIME_MS = 15 * 60 * 1000L
-
-        @Volatile
-        private var ownHighlightsPrimedAt = 0L
     }
 }
 
