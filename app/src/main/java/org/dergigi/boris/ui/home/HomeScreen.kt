@@ -1,7 +1,6 @@
 package org.dergigi.boris.ui.home
 
 import android.Manifest
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -108,6 +107,7 @@ import org.dergigi.boris.data.MostHighlightedWindow
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.NsfwBadge
+import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleActionsMenu
@@ -152,19 +152,14 @@ fun HomeScreen(
     val hasRemoteSettings by SettingsSync.hasRemote.collectAsStateWithLifecycle()
     val loggedIn = authState is AuthUiState.LoggedIn
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        viewModel.onSignerResult(result.resultCode, result.data)
-    }
+    val launchSign = SignerEffects(
+        message = message,
+        onConsumeMessage = viewModel::consumeMessage,
+        onSignerResult = viewModel::onSignerResult,
+    )
     val ttsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
-    LaunchedEffect(message) {
-        val text = message ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        viewModel.consumeMessage()
-    }
     var loginPromptDismissed by remember {
         mutableStateOf(HomeOnboardingStore.isLoginDismissed(context))
     }
@@ -291,7 +286,7 @@ fun HomeScreen(
                     viewModel.refreshMostHighlighted()
                 },
                 onMarkAsRead = { article ->
-                    viewModel.markAsRead(article)?.let(launcher::launch)
+                    viewModel.markAsRead(article)?.let(launchSign)
                 },
                 modifier = Modifier.weight(1f),
             )

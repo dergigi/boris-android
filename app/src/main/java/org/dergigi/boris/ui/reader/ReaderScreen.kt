@@ -203,6 +203,7 @@ import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
+import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.ArticleCopyMenuItems
 import org.dergigi.boris.ui.hasAlternateCopyLinks
 import org.dergigi.boris.ui.openExternalUri
@@ -278,54 +279,33 @@ fun ReaderScreen(
     }
     val context = LocalContext.current
     var closeAfterArchive by remember { mutableStateOf(false) }
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        viewModel.onSignerResult(result.resultCode, result.data)
-    }
-    val menuLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        menuViewModel.onSignerResult(result.resultCode, result.data)
-    }
-    val settingsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        settingsViewModel.onSignerResult(result.resultCode, result.data)
-    }
-    LaunchedEffect(message) {
-        val text = message ?: return@LaunchedEffect
-        if (isArchiveFailureMessage(context, text)) closeAfterArchive = false
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        viewModel.consumeMessage()
-    }
-    LaunchedEffect(menuMessage) {
-        val text = menuMessage ?: return@LaunchedEffect
-        menuViewModel.consumeMessage()
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-    }
-    LaunchedEffect(settingsMessage) {
-        val text = settingsMessage ?: return@LaunchedEffect
-        settingsViewModel.consumeMessage()
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-    }
-    LaunchedEffect(signIntent) {
-        val intent = signIntent ?: return@LaunchedEffect
-        viewModel.consumeSignIntent()
-        launcher.launch(intent)
-    }
+    val launchSign = SignerEffects(
+        signIntent = signIntent,
+        message = message,
+        onConsumeSignIntent = viewModel::consumeSignIntent,
+        onConsumeMessage = viewModel::consumeMessage,
+        onSignerResult = viewModel::onSignerResult,
+        onMessage = { text ->
+            if (isArchiveFailureMessage(context, text)) closeAfterArchive = false
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        },
+    )
+    SignerEffects(
+        signIntent = menuSignIntent,
+        message = menuMessage,
+        onConsumeSignIntent = menuViewModel::consumeSignIntent,
+        onConsumeMessage = menuViewModel::consumeMessage,
+        onSignerResult = menuViewModel::onSignerResult,
+    )
+    SignerEffects(
+        signIntent = settingsSignIntent,
+        message = settingsMessage,
+        onConsumeSignIntent = settingsViewModel::consumeSignIntent,
+        onConsumeMessage = settingsViewModel::consumeMessage,
+        onSignerResult = settingsViewModel::onSignerResult,
+    )
     LaunchedEffect(Unit) {
         PendingHighlight.consume()?.let(viewModel::offerExternalHighlight)
-    }
-    LaunchedEffect(menuSignIntent) {
-        val intent = menuSignIntent ?: return@LaunchedEffect
-        menuViewModel.consumeSignIntent()
-        menuLauncher.launch(intent)
-    }
-    LaunchedEffect(settingsSignIntent) {
-        val intent = settingsSignIntent ?: return@LaunchedEffect
-        settingsViewModel.consumeSignIntent()
-        settingsLauncher.launch(intent)
     }
     val readyArticleUrl = (state as? ReaderUiState.Ready)?.content?.url
     LaunchedEffect(readyArticleUrl) {
@@ -368,16 +348,16 @@ fun ReaderScreen(
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
         onHighlight = { quote, ownerText, ownerOffset ->
-            viewModel.highlight(quote, ownerText, ownerOffset)?.let(launcher::launch)
+            viewModel.highlight(quote, ownerText, ownerOffset)?.let(launchSign)
         },
         onSave = { privateBookmark ->
-            viewModel.saveToLibrary(privateBookmark)?.let(launcher::launch)
+            viewModel.saveToLibrary(privateBookmark)?.let(launchSign)
         },
         onArchive = { closeAfterSuccess ->
             closeAfterArchive = closeAfterSuccess && !archived
             val intent = viewModel.archive()
             if (intent == null && !viewModel.archiveInFlight()) closeAfterArchive = false
-            intent?.let(launcher::launch)
+            intent?.let(launchSign)
         },
         onAddRssFeed = { feedUrl ->
             settingsViewModel.update { current ->

@@ -1,9 +1,6 @@
 package org.dergigi.boris.ui.settings
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -84,6 +81,7 @@ import org.dergigi.boris.data.DisplayType
 import org.dergigi.boris.data.DisplayTypeStore
 import org.dergigi.boris.data.OfflineShelf
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.feed.FeedScopeStore
 import org.dergigi.boris.ui.theme.BorisIcons
 
@@ -247,26 +245,17 @@ fun SettingsScreen(
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val signIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val settingsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        settingsViewModel.onSignerResult(result.resultCode, result.data)
-    }
+    SignerEffects(
+        signIntent = signIntent,
+        message = settingsMessage,
+        onConsumeSignIntent = settingsViewModel::consumeSignIntent,
+        onConsumeMessage = settingsViewModel::consumeMessage,
+        onSignerResult = settingsViewModel::onSignerResult,
+    )
     var openCategory by rememberSaveable { mutableStateOf(initialCategory) }
     var pendingReset by rememberSaveable { mutableStateOf<String?>(null) }
     val displayType by DisplayTypeStore.type.collectAsStateWithLifecycle()
     val category = openCategory?.let { name -> SettingsCategory.entries.firstOrNull { it.name == name } }
-
-    LaunchedEffect(signIntent) {
-        val intent = signIntent ?: return@LaunchedEffect
-        settingsViewModel.consumeSignIntent()
-        settingsLauncher.launch(intent)
-    }
-    LaunchedEffect(settingsMessage) {
-        val text = settingsMessage ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        settingsViewModel.consumeMessage()
-    }
     BackHandler(enabled = category != null) { openCategory = null }
 
     pendingReset?.let { target ->

@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -128,19 +127,14 @@ fun rememberArticleActions(
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val archivedKeys by viewModel.archivedKeys.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
-    val archiveLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        viewModel.onArchiveSignerResult(result.resultCode, result.data)
-    }
+    val launchArchive = SignerEffects(
+        message = message,
+        onConsumeMessage = viewModel::consumeMessage,
+        onSignerResult = viewModel::onArchiveSignerResult,
+    )
     val ttsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
-    LaunchedEffect(message) {
-        val text = message ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        viewModel.consumeMessage()
-    }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshSession()
     }
@@ -154,7 +148,7 @@ fun rememberArticleActions(
             viewModel.startListening(url)
         },
         onMarkAsRead = { url, title, imageUrl ->
-            viewModel.markAsRead(url, title, imageUrl)?.let(archiveLauncher::launch)
+            viewModel.markAsRead(url, title, imageUrl)?.let(launchArchive)
         },
     )
 }

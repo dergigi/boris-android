@@ -1,8 +1,6 @@
 package org.dergigi.boris.ui.you
 
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import org.dergigi.boris.ui.SignerEffects
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -95,22 +92,13 @@ fun YouHighlights(
     val deletedIds by menuViewModel.deleted.collectAsStateWithLifecycle()
     val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
     val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val signLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        menuViewModel.onSignerResult(result.resultCode, result.data)
-    }
-    LaunchedEffect(menuSignIntent) {
-        val intent = menuSignIntent ?: return@LaunchedEffect
-        menuViewModel.consumeSignIntent()
-        signLauncher.launch(intent)
-    }
-    LaunchedEffect(menuMessage) {
-        val message = menuMessage ?: return@LaunchedEffect
-        menuViewModel.consumeMessage()
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+    SignerEffects(
+        signIntent = menuSignIntent,
+        message = menuMessage,
+        onConsumeSignIntent = menuViewModel::consumeSignIntent,
+        onConsumeMessage = menuViewModel::consumeMessage,
+        onSignerResult = menuViewModel::onSignerResult,
+    )
     val authorHex = remember(npub) { runCatching { Nip19.npubDecode(npub) }.getOrNull() }
     val shown = profile ?: fetchedProfile
     val look = rememberDisplayLook(settings)

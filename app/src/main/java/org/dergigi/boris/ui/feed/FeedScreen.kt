@@ -1,8 +1,6 @@
 package org.dergigi.boris.ui.feed
 
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import org.dergigi.boris.ui.SignerEffects
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -114,21 +112,13 @@ fun FeedScreen(
     val menuSignIntent by menuViewModel.signIntent.collectAsStateWithLifecycle()
     val menuMessage by menuViewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val signLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        menuViewModel.onSignerResult(result.resultCode, result.data)
-    }
-    LaunchedEffect(menuSignIntent) {
-        val intent = menuSignIntent ?: return@LaunchedEffect
-        menuViewModel.consumeSignIntent()
-        signLauncher.launch(intent)
-    }
-    LaunchedEffect(menuMessage) {
-        val message = menuMessage ?: return@LaunchedEffect
-        menuViewModel.consumeMessage()
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+    SignerEffects(
+        signIntent = menuSignIntent,
+        message = menuMessage,
+        onConsumeSignIntent = menuViewModel::consumeSignIntent,
+        onConsumeMessage = menuViewModel::consumeMessage,
+        onSignerResult = menuViewModel::onSignerResult,
+    )
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
     }

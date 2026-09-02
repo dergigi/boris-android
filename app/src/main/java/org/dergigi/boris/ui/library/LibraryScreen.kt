@@ -1,7 +1,6 @@
 package org.dergigi.boris.ui.library
 
 import android.Manifest
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -71,6 +70,7 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
+import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
@@ -110,11 +110,11 @@ fun LibraryScreen(
     ) { result ->
         viewModel.onDecryptResult(result.resultCode, result.data)
     }
-    val archiveLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        viewModel.onArchiveSignerResult(result.resultCode, result.data)
-    }
+    val launchArchive = SignerEffects(
+        message = message,
+        onConsumeMessage = viewModel::consumeMessage,
+        onSignerResult = viewModel::onArchiveSignerResult,
+    )
     val ttsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
@@ -122,11 +122,6 @@ fun LibraryScreen(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         authViewModel.onSignerResult(result.resultCode, result.data)
-    }
-    LaunchedEffect(message) {
-        val text = message ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        viewModel.consumeMessage()
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refresh()
@@ -155,7 +150,7 @@ fun LibraryScreen(
             }
         },
         onMarkAsRead = { item ->
-            viewModel.markAsRead(item)?.let(archiveLauncher::launch)
+            viewModel.markAsRead(item)?.let(launchArchive)
         },
         onConnect = { authViewModel.connectIntent()?.let(authLauncher::launch) },
         onConnectBunker = { authViewModel.connectBunker(bunkerUri) },

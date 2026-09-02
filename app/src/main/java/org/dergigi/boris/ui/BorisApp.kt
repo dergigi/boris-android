@@ -1,8 +1,6 @@
 package org.dergigi.boris.ui
 
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -133,11 +131,15 @@ fun BorisApp(
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
-    val shareSaveLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        shareSaveViewModel.onSignerResult(result.resultCode, result.data)
-    }
+    val shareSaveMessage by shareSaveViewModel.message.collectAsStateWithLifecycle()
+    val shareSaveSignIntent by shareSaveViewModel.signIntent.collectAsStateWithLifecycle()
+    val launchShareSave = SignerEffects(
+        signIntent = shareSaveSignIntent,
+        message = shareSaveMessage,
+        onConsumeSignIntent = shareSaveViewModel::consumeSignIntent,
+        onConsumeMessage = shareSaveViewModel::consumeMessage,
+        onSignerResult = shareSaveViewModel::onSignerResult,
+    )
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val pictureUrl by authViewModel.pictureUrl.collectAsStateWithLifecycle()
     val backStack by navController.currentBackStackEntryAsState()
@@ -193,18 +195,6 @@ fun BorisApp(
             onIncomingUrlConsumed()
         }
     }
-    val shareSaveMessage by shareSaveViewModel.message.collectAsStateWithLifecycle()
-    val shareSaveSignIntent by shareSaveViewModel.signIntent.collectAsStateWithLifecycle()
-    LaunchedEffect(shareSaveMessage) {
-        val text = shareSaveMessage ?: return@LaunchedEffect
-        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-        shareSaveViewModel.consumeMessage()
-    }
-    LaunchedEffect(shareSaveSignIntent) {
-        val intent = shareSaveSignIntent ?: return@LaunchedEffect
-        shareSaveViewModel.consumeSignIntent()
-        shareSaveLauncher.launch(intent)
-    }
     LaunchedEffect(incomingSave, authState) {
         val save = incomingSave ?: return@LaunchedEffect
         val loginKey = save.url + "\n" + save.title.orEmpty()
@@ -218,7 +208,7 @@ fun BorisApp(
         }
         saveLoginPromptKey = null
         onIncomingSaveConsumed()
-        shareSaveViewModel.save(save.url, save.title)?.let(shareSaveLauncher::launch)
+        shareSaveViewModel.save(save.url, save.title)?.let(launchShareSave)
         goToTab(MainTab.Library)
     }
     LaunchedEffect(incomingBunker) {
