@@ -17,7 +17,16 @@ data class PendingUnsignedEvent(
     val kind: Int,
     val tags: List<List<String>>,
     val content: String,
-)
+) {
+    fun toUnsignedJson(includePubkey: Boolean = true): String =
+        Nip01Event.unsignedJson(
+            kind = kind,
+            content = content,
+            tags = tags,
+            pubkeyHex = pubkey.takeIf { includePubkey && it.isNotBlank() },
+            createdAt = createdAt,
+        )
+}
 
 object SignerResults {
     fun parse(
