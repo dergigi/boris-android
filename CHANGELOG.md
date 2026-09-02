@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.27] - 2026-09-02
+
+### Fixed
+
+- Highlights created from browser "share highlight" links (`#:~:text=`) show up in the reader and highlights pane
+
 ## [1.5.26] - 2026-09-01
 
 ### Added
