@@ -53,9 +53,8 @@ class LibrarySaveAction(
         }
     }
 
-    fun onSignerResult(resultCode: Int, data: Intent?) {
+    fun onSignerResult(resultCode: Int, data: Intent?): Boolean =
         signer.onSignerResult(resultCode, data)
-    }
 
     private fun requestWebBookmark(session: Session, content: ReadableContent): Intent? {
         val createdAt = System.currentTimeMillis() / 1000
