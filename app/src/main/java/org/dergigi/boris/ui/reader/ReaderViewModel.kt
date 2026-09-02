@@ -50,6 +50,7 @@ import org.dergigi.boris.nostr.RemoteSignerBridge
 import org.dergigi.boris.nostr.SignerResult
 import org.dergigi.boris.nostr.SignerResults
 import org.dergigi.boris.nostr.ZapSplits
+import org.dergigi.boris.ui.ArchiveAction
 import org.dergigi.boris.ui.LibrarySaveAction
 
 data class PaintedHighlight(
@@ -147,8 +148,25 @@ class ReaderViewModel(
             publishSaveState()
         },
     )
+    private val archiveAction = ArchiveAction(
+        app = application,
+        scope = viewModelScope,
+        onMessage = { text ->
+            _message.value = text
+            archiving = false
+        },
+        onArchived = { _, _, eventId ->
+            archiveIds = listOf(eventId)
+            _archived.value = true
+            archiving = false
+        },
+        onUnarchived = {
+            archiveIds = emptyList()
+            _archived.value = false
+            archiving = false
+        },
+    )
     private var archiving = false
-    private var pendingArchive = false
     private var archiveIds = emptyList<String>()
     private var pendingExternalQuote: String? = null
 
@@ -392,20 +410,17 @@ class ReaderViewModel(
     }
 
     fun archive(): Intent? {
-        val app = getApplication<Application>()
-        if (archiving) return null
-        val session = SessionStore.load(app) ?: return null
+        if (archiving || archiveAction.inFlight()) return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
         archiving = true
-        pendingArchive = true
         return if (_archived.value) {
-            requestUnarchive(session)
+            archiveAction.unarchive(archiveIds)
         } else {
-            requestArchive(session, content)
+            archiveAction.request(content)
         }
     }
 
-    fun archiveInFlight(): Boolean = archiving
+    fun archiveInFlight(): Boolean = archiving || archiveAction.inFlight()
 
     fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         if (saving || _inLibrary.value) return null
@@ -417,29 +432,16 @@ class ReaderViewModel(
 
     fun onSignerResult(resultCode: Int, data: Intent?) {
         if (librarySave.onSignerResult(resultCode, data)) return
+        if (archiveAction.onSignerResult(resultCode, data)) return
         val app = getApplication<Application>()
         val session = SessionStore.load(app) ?: return
         val pending = pendingUnsigned
         pendingUnsigned = null
-        val archiveOp = pendingArchive ||
-            pending?.kind == Nip01Event.KIND_DELETION ||
-            (pending != null && Archive.isArchiveKind(pending.kind))
-        pendingArchive = false
         when (val result = SignerResults.parseSignedEvent(resultCode, data, session.pubkeyHex, pending)) {
             is SignerResult.Signed -> onSignedEvent(result.event)
-            SignerResult.Rejected -> {
-                if (archiveOp) {
-                    failArchive(app.getString(R.string.reader_archive_rejected))
-                } else {
-                    _message.value = app.getString(R.string.highlight_rejected)
-                }
-            }
+            SignerResult.Rejected -> _message.value = app.getString(R.string.highlight_rejected)
             SignerResult.Cancelled, is SignerResult.Success -> {
-                if (archiveOp) {
-                    failArchive(app.getString(R.string.reader_archive_cancelled))
-                } else {
-                    _message.value = app.getString(R.string.highlight_cancelled)
-                }
+                _message.value = app.getString(R.string.highlight_cancelled)
             }
         }
     }
@@ -449,11 +451,7 @@ class ReaderViewModel(
         val session = SessionStore.load(app) ?: return
         if (!event.pubkey.equals(session.pubkeyHex, ignoreCase = true)) return
         if (!event.verify()) return
-        when {
-            event.kind == Nip01Event.KIND_HIGHLIGHT -> onSignedHighlight(session, event)
-            Archive.isArchive(event) -> onSignedArchive(session, event)
-            event.kind == Nip01Event.KIND_DELETION -> onSignedUnarchive(session, event)
-        }
+        if (event.kind == Nip01Event.KIND_HIGHLIGHT) onSignedHighlight(session, event)
     }
 
     private fun onSignedHighlight(session: Session, event: Nip01Event) {
@@ -472,95 +470,6 @@ class ReaderViewModel(
             _highlights.value = _highlights.value + painted
             _highlightCount.value = _highlightCount.value + 1
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            publish(session, event)
-        }
-    }
-
-    private fun requestArchive(session: Session, content: ReadableContent): Intent? {
-        val createdAt = System.currentTimeMillis() / 1000
-        val kind = Archive.kind(content)
-        val tags = Archive.tags(content)
-        if (kind == null || tags == null) {
-            failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
-            return null
-        }
-        return when (session) {
-            is Session.Amber -> {
-                pendingUnsigned = PendingUnsignedEvent(
-                    pubkey = session.pubkeyHex,
-                    createdAt = createdAt,
-                    kind = kind,
-                    tags = tags,
-                    content = Archive.EMOJI,
-                )
-                val unsigned = Archive.unsignedJson(content, session.pubkeyHex, createdAt)
-                if (unsigned == null) {
-                    failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
-                    return null
-                }
-                RemoteSignerBridge.buildSignEventIntent(unsigned, session.signerPackage, session.pubkeyHex)
-            }
-            is Session.Bunker -> {
-                pendingUnsigned = null
-                val unsigned = Archive.unsignedJson(content, pubkeyHex = null, createdAt)
-                if (unsigned == null) {
-                    failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
-                    return null
-                }
-                viewModelScope.launch { signWithBunker(session, unsigned, SignOp.Archive) }
-                null
-            }
-        }
-    }
-
-    private fun requestUnarchive(session: Session): Intent? {
-        val createdAt = System.currentTimeMillis() / 1000
-        val unsignedAmber = Archive.deleteUnsignedJson(archiveIds, session.pubkeyHex, createdAt)
-        if (unsignedAmber == null) {
-            failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
-            return null
-        }
-        val tags = Archive.deleteTags(archiveIds)
-        return when (session) {
-            is Session.Amber -> {
-                pendingUnsigned = PendingUnsignedEvent(
-                    pubkey = session.pubkeyHex,
-                    createdAt = createdAt,
-                    kind = Nip01Event.KIND_DELETION,
-                    tags = tags,
-                    content = "unarchive",
-                )
-                RemoteSignerBridge.buildSignEventIntent(unsignedAmber, session.signerPackage, session.pubkeyHex)
-            }
-            is Session.Bunker -> {
-                pendingUnsigned = null
-                val unsigned = Archive.deleteUnsignedJson(archiveIds, pubkeyHex = null, createdAt)
-                    ?: run {
-                        failArchive(getApplication<Application>().getString(R.string.reader_archive_failed))
-                        return null
-                    }
-                viewModelScope.launch { signWithBunker(session, unsigned, SignOp.Archive) }
-                null
-            }
-        }
-    }
-
-    private fun onSignedArchive(session: Session, event: Nip01Event) {
-        archiveIds = listOf(event.id)
-        _archived.value = true
-        archiving = false
-        pendingArchive = false
-        viewModelScope.launch(Dispatchers.IO) {
-            publish(session, event)
-        }
-    }
-
-    private fun onSignedUnarchive(session: Session, event: Nip01Event) {
-        archiveIds = emptyList()
-        _archived.value = false
-        archiving = false
-        pendingArchive = false
         viewModelScope.launch(Dispatchers.IO) {
             publish(session, event)
         }
@@ -665,14 +574,6 @@ class ReaderViewModel(
         archiveIds = emptyList()
         _archived.value = false
         archiving = false
-        pendingArchive = false
-    }
-
-    private fun failArchive(message: String) {
-        archiving = false
-        pendingArchive = false
-        pendingUnsigned = null
-        _message.value = message
     }
 
 
@@ -713,18 +614,10 @@ class ReaderViewModel(
     }
 
     private suspend fun signWithBunker(session: Session.Bunker, unsignedJson: String) {
-        signWithBunker(session, unsignedJson, SignOp.Highlight)
-    }
-
-    private suspend fun signWithBunker(
-        session: Session.Bunker,
-        unsignedJson: String,
-        op: SignOp,
-    ) {
         val app = getApplication<Application>()
         val privkey = SecretBox.unwrap(app, session.clientPrivkeyCiphertext)
         if (privkey == null) {
-            bunkerFailure(op, rejected = false)
+            _message.value = app.getString(R.string.highlight_cancelled)
             return
         }
         try {
@@ -738,25 +631,11 @@ class ReaderViewModel(
             }
             when (result) {
                 is BunkerSignResult.Signed -> onSignedEvent(result.event)
-                BunkerSignResult.Rejected -> bunkerFailure(op, rejected = true)
-                BunkerSignResult.RelayTimeout -> bunkerFailure(op, rejected = false)
+                BunkerSignResult.Rejected -> _message.value = app.getString(R.string.highlight_rejected)
+                BunkerSignResult.RelayTimeout -> _message.value = app.getString(R.string.highlight_cancelled)
             }
         } finally {
             privkey.fill(0)
-        }
-    }
-
-    private fun bunkerFailure(op: SignOp, rejected: Boolean) {
-        val app = getApplication<Application>()
-        when (op) {
-            SignOp.Archive -> failArchive(
-                app.getString(if (rejected) R.string.reader_archive_rejected else R.string.reader_archive_cancelled),
-            )
-            SignOp.Highlight -> {
-                _message.value = app.getString(
-                    if (rejected) R.string.highlight_rejected else R.string.highlight_cancelled,
-                )
-            }
         }
     }
 
@@ -918,4 +797,3 @@ internal fun readerLoadingState(url: String): ReaderUiState.Loading {
     )
 }
 
-private enum class SignOp { Highlight, Archive }

@@ -82,7 +82,7 @@ class HomeViewModel(
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },
-        onArchived = { key, _ ->
+        onArchived = { key, _, _ ->
             val current = _highlights.value
             if (key != null && current is HomeHighlightsState.Ready) {
                 _highlights.value = current.copy(archivedKeys = current.archivedKeys + key)

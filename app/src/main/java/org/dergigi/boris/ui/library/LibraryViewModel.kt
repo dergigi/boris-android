@@ -80,7 +80,7 @@ class LibraryViewModel(
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },
-        onArchived = { _, _ -> refresh() },
+        onArchived = { _, _, _ -> refresh() },
     )
 
     fun refresh() {

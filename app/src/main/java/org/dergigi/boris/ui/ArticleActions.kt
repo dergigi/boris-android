@@ -85,7 +85,7 @@ class ArticleActionsViewModel(
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },
-        onArchived = { key, _ ->
+        onArchived = { key, _, _ ->
             if (key != null) _archivedKeys.value += key
         },
     )
