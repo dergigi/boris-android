@@ -50,6 +50,8 @@ class UserSettings internal constructor(
     val justifyParagraphs: Boolean get() = paragraphAlignment != "left"
     val fullWidthImages: Boolean get() = bool("fullWidthImages", true)
     val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
+    val showReaderProgressBar: Boolean get() = bool("showReaderProgressBar", true)
+    val showReaderProgressHeading: Boolean get() = bool("showReaderProgressHeading", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", true)
     val hideCompletedOnHome: Boolean get() = bool("hideCompletedOnHome", false)
@@ -209,6 +211,8 @@ class UserSettings internal constructor(
         "readingFont" -> readingFont
         "rssFeeds" -> rssFeeds
         "showHighlights" -> showHighlights
+        "showReaderProgressBar" -> showReaderProgressBar
+        "showReaderProgressHeading" -> showReaderProgressHeading
         "syncReadingPosition" -> syncReadingPosition
         "theme" -> theme
         "ttsDefaultSpeed" -> ttsDefaultSpeed
@@ -268,6 +272,8 @@ private const val DEFAULT_JSON = """{
   "rebroadcastToAllRelays":false,
   "paragraphAlignment":"justify",
   "fullWidthImages":true,
+  "showReaderProgressBar":true,
+  "showReaderProgressHeading":true,
   "renderVideoLinksAsEmbeds":true,
   "syncReadingPosition":true,
   "autoScrollToReadingPosition":true,

@@ -239,8 +239,9 @@ internal fun ArticleScrollProgress(
     scrollLive: Boolean = true,
     outlineItems: List<ArticleOutlineItem> = emptyList(),
     activeOutlineId: MutableState<String?>? = null,
+    showHeading: Boolean = true,
 ) {
-    val heading = activeOutlineId?.value?.let { id ->
+    val heading = activeOutlineId?.value?.takeIf { showHeading }?.let { id ->
         outlineItems.firstOrNull { it.id == id }?.title
     }
     val scrollPercent = ReadingProgress.percent(scrollState.value, scrollState.maxValue)
@@ -401,4 +402,3 @@ internal fun ReadingProgressEffects(
         jumpBackFraction = jumpBackFraction,
     )
 }
-
