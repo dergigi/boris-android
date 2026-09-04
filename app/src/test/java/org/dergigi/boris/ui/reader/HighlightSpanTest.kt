@@ -13,6 +13,25 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun uniqueShortHighlightWithoutContextStillPaints() {
+        val mine = PaintedHighlight(id = "a", quote = "cat", mine = true)
+        val spans = matchHighlightSpans("the cat sat", listOf(mine))
+        assertEquals(listOf(4 to 7), spans.map { it.start to it.end })
+    }
+
+    @Test
+    fun uniqueShortHighlightWithUnmatchedContextStillPaints() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "cat",
+            mine = true,
+            context = "The selected context lives in a different article.",
+        )
+        val spans = matchHighlightSpans("the cat sat", listOf(mine))
+        assertEquals(listOf(4 to 7), spans.map { it.start to it.end })
+    }
+
+    @Test
     fun longerLegacyHighlightWithoutContextCanStillMatchEveryOccurrence() {
         val mine = PaintedHighlight(id = "a", quote = "quiet reading flow", mine = true)
         val spans = matchHighlightSpans(

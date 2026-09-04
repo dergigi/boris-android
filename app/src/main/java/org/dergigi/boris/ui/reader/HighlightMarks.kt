@@ -87,7 +87,8 @@ private fun quoteOccurrences(displayed: String, item: PaintedHighlight): List<Hi
 /**
  * When a highlight has context, paint only the occurrence that sits in that
  * window. Missing or unmatched context falls back to every occurrence for
- * longer legacy highlights, but short ambiguous highlights fail closed.
+ * longer legacy highlights. Short quotes without a usable window paint only
+ * when they appear once; multiple hits fail closed so the reader is not flooded.
  */
 private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
     val fallback = { fallbackQuoteSpans(displayed, item) }
@@ -121,8 +122,9 @@ private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<
 }
 
 private fun fallbackQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
-    if (isShortAmbiguousHighlight(item.quote)) return emptyList()
+    if (item.quote.isBlank()) return emptyList()
     val matches = quoteOccurrences(displayed, item)
+    if (isShortAmbiguousHighlight(item.quote) && matches.size > 1) return emptyList()
     return matches
 }
 
