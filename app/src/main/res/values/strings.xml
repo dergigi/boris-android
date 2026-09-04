@@ -218,8 +218,6 @@
     <string name="reader_reaction_love">Love it</string>
     <string name="reader_reaction_good">Good read</string>
     <string name="reader_reaction_slop">Slop</string>
-    <string name="reader_reacted">Reacted %1$s</string>
-    <string name="reader_reaction_removed">Reaction removed.</string>
     <string name="reader_reaction_cancelled">Reaction cancelled.</string>
     <string name="reader_reaction_rejected">Reaction rejected.</string>
     <string name="reader_reaction_failed">Could not update reaction.</string>

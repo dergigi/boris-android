@@ -117,10 +117,8 @@ class ReactionAction(
             pending = null
             if (reaction == null) {
                 onRemoved()
-                onMessage(app.getString(R.string.reader_reaction_removed))
             } else {
                 onReacted(reaction, event.id)
-                onMessage(app.getString(R.string.reader_reacted, reaction.emoji))
             }
         }
     }
