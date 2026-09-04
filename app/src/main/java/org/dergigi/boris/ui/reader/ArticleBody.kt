@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
@@ -138,6 +139,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
@@ -147,6 +149,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -206,6 +209,7 @@ import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.HighlightMenuViewModel
 import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.ArticleCopyMenuItems
+import org.dergigi.boris.ui.copyPlainLink
 import org.dergigi.boris.ui.hasAlternateCopyLinks
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.browser.InAppBrowser
@@ -419,6 +423,7 @@ internal fun ArticleBody(
     }
     val navigator = remember { HighlightNavigator() }
     val activeOutlineId = remember { mutableStateOf<String?>(null) }
+    var linkMenu by remember(content.url) { mutableStateOf<ReaderLinkMenuState?>(null) }
     val paintedHolder = remember { mutableStateOf(painted) }
     paintedHolder.value = painted
     var viewportHeight by remember { mutableIntStateOf(0) }
@@ -569,6 +574,22 @@ internal fun ArticleBody(
     // Cheap range lookup; the regex-heavy walk happens once, off the main thread.
     fun ttsStartIndexForRenderedMarkdown(markdownOffset: Int): Int? =
         ttsOffsetIndex?.startIndexFor(markdownOffset)
+    val showLinkMenu = remember(content.url, selection) {
+        { uri: String, position: Offset, coords: LayoutCoordinates ->
+            val viewport = scrollViewport
+            val rootOrigin = viewport?.takeIf { it.isAttached }?.localToWindow(Offset.Zero) ?: Offset.Zero
+            val windowPosition = coords.localToWindow(position)
+            linkMenu = ReaderLinkMenuState(
+                uri = uri,
+                target = readerLinkContextTarget(uri, content.url),
+                offset = IntOffset(
+                    x = (windowPosition.x - rootOrigin.x).toInt(),
+                    y = (windowPosition.y - rootOrigin.y).toInt(),
+                ),
+            )
+            selection.clear()
+        }
+    }
     val highlightedComponents = remember(
         mineColor,
         friendsColor,
@@ -592,6 +613,7 @@ internal fun ArticleBody(
         eventRefs,
         onOpenArticle,
         outlineItems,
+        showLinkMenu,
     ) {
         markdownComponents(
             text = {
@@ -609,6 +631,7 @@ internal fun ArticleBody(
                     openFromStop,
                     spokenMark,
                     ttsStartIndexForRenderedMarkdown(it.node.startOffset),
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             paragraph = { model ->
@@ -657,6 +680,7 @@ internal fun ArticleBody(
                             openFromStop,
                             spokenMark,
                             ttsStartIndexForRenderedMarkdown(model.node.startOffset),
+                            onLinkLongPress = showLinkMenu,
                         )
                     }
                 }
@@ -691,6 +715,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             heading2 = {
@@ -712,6 +737,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             heading3 = {
@@ -733,6 +759,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             heading4 = {
@@ -754,6 +781,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             heading5 = {
@@ -775,6 +803,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             heading6 = {
@@ -796,6 +825,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.ATX_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             setextHeading1 = {
@@ -817,6 +847,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
             setextHeading2 = {
@@ -838,6 +869,7 @@ internal fun ArticleBody(
                     it.node.startOffset,
                     MarkdownTokenTypes.SETEXT_CONTENT,
                     isHeading = true,
+                    onLinkLongPress = showLinkMenu,
                 )
             },
         )
@@ -1231,6 +1263,11 @@ internal fun ArticleBody(
                 pane.closeFind()
             },
         )
+        LinkContextMenu(
+            state = linkMenu,
+            onDismiss = { linkMenu = null },
+            onOpen = { uriHandler.openUri(it) },
+        )
         LaunchedEffect(outlineItems, topScrollInsetPx) {
             if (outlineItems.isEmpty()) {
                 activeOutlineId.value = null
@@ -1374,6 +1411,7 @@ internal fun HighlightedMarkdownNode(
     outlineStartOffset: Int? = null,
     contentChildType: IElementType? = null,
     isHeading: Boolean = false,
+    onLinkLongPress: ((String, Offset, LayoutCoordinates) -> Unit)? = null,
 ) {
     val annotator = annotatorSettings()
     val textNode = remember(model.node, contentChildType) {
@@ -1437,9 +1475,81 @@ internal fun HighlightedMarkdownNode(
                     onHighlightTap(stop)
                     true
                 },
+                onLongPress = { position, coords ->
+                    val laid = layout ?: return@readerSelectable false
+                    val index = JustifiedLayout.offsetAt(laid, position)
+                    val url = styledText.linkUrlAt(index) ?: return@readerSelectable false
+                    onLinkLongPress?.invoke(url, position, coords)
+                    onLinkLongPress != null
+                },
             ),
         onTextLayout = { result, _ -> layout = result },
     )
+}
+
+private data class ReaderLinkMenuState(
+    val uri: String,
+    val target: String,
+    val offset: IntOffset,
+)
+
+@Composable
+private fun LinkContextMenu(
+    state: ReaderLinkMenuState?,
+    onDismiss: () -> Unit,
+    onOpen: (String) -> Unit,
+) {
+    if (state == null) return
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    Box(modifier = Modifier.offset { state.offset }) {
+        DropdownMenu(
+            expanded = true,
+            onDismissRequest = onDismiss,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_copy_link)) },
+                leadingIcon = {
+                    Icon(Icons.Filled.ContentCopy, contentDescription = null)
+                },
+                onClick = {
+                    onDismiss()
+                    copyPlainLink(context, clipboard, state.target)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_open_link)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.Language, contentDescription = null)
+                },
+                onClick = {
+                    onDismiss()
+                    onOpen(state.uri)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_share_link)) },
+                leadingIcon = {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                },
+                onClick = {
+                    onDismiss()
+                    shareArticleLink(context, null, state.target)
+                },
+            )
+        }
+    }
+}
+
+internal fun AnnotatedString.linkUrlAt(offset: Int): String? {
+    if (offset !in 0 until text.length) return null
+    return getLinkAnnotations(offset, offset + 1).firstOrNull()?.item?.let { link ->
+        when (link) {
+            is LinkAnnotation.Url -> link.url
+            is LinkAnnotation.Clickable -> link.tag
+            else -> null
+        }
+    }
 }
 
 @Composable

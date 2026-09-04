@@ -228,6 +228,8 @@
     <string name="reader_open">Open</string>
     <string name="reader_menu_back">Back</string>
     <string name="reader_copy_link">Copy link</string>
+    <string name="reader_open_link">Open link</string>
+    <string name="reader_share_link">Share link</string>
     <string name="reader_copy_njump_link">Copy njump link</string>
     <string name="reader_copy_xcancel_link">Copy xcancel link</string>
     <string name="reader_copied">Copied.</string>
