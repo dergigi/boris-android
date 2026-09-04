@@ -63,6 +63,18 @@ class ReaderLinksTest {
     }
 
     @Test
+    fun linkContextTargetsResolveRelativeUrlsForCopyAndShare() {
+        assertEquals(
+            "https://example.com/posts/next",
+            readerLinkContextTarget("/posts/next", "https://example.com/posts/current"),
+        )
+        assertEquals(
+            "mailto:hi@example.com",
+            readerLinkContextTarget("mailto:hi@example.com", "https://example.com/posts/current"),
+        )
+    }
+
+    @Test
     fun mailtoAlwaysGoesOutside() {
         val action = readerLinkAction(
             uri = "mailto:hi@example.com",
