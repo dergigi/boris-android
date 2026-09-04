@@ -45,3 +45,6 @@ internal fun openWeblink(
         is ReaderLinkAction.OpenProfile -> Unit
     }
 }
+
+internal fun readerLinkContextTarget(uri: String, currentUrl: String): String =
+    UrlExtractor.articleUrl(uri, currentUrl) ?: uri

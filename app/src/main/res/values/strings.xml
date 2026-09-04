@@ -228,6 +228,8 @@
     <string name="reader_open">Open</string>
     <string name="reader_menu_back">Back</string>
     <string name="reader_copy_link">Copy link</string>
+    <string name="reader_open_link">Open link</string>
+    <string name="reader_share_link">Share link</string>
     <string name="reader_copy_njump_link">Copy njump link</string>
     <string name="reader_copy_xcancel_link">Copy xcancel link</string>
     <string name="reader_copied">Copied.</string>
@@ -332,6 +334,8 @@
     <string name="settings_preview">Preview</string>
     <string name="settings_media">Media</string>
     <string name="settings_full_width_images">Full-width images in articles</string>
+    <string name="settings_show_reader_progress_bar">Show reader progress bar</string>
+    <string name="settings_show_reader_progress_heading">Show current section in progress bar</string>
     <string name="settings_open_links_in_reader">Open weblinks in Boris</string>
     <string name="settings_home">Home</string>
     <string name="settings_library">Library</string>
@@ -429,7 +433,7 @@
     <string name="reader_find_previous">Previous match</string>
     <string name="reader_find_next">Next match</string>
     <string name="settings_appearance_summary">Theme, display type, dark and light colors</string>
-    <string name="settings_reading_summary">Font, size, alignment, weblinks</string>
+    <string name="settings_reading_summary">Font, size, alignment, progress</string>
     <string name="settings_tts_summary">Speed, voice, preview, follow-along</string>
     <string name="settings_media_summary">Full-width images</string>
     <string name="settings_highlights_summary">Style, colors, visibility</string>

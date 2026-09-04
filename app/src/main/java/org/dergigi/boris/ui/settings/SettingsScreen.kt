@@ -153,6 +153,8 @@ private val SettingsCategory.resetKeys: Set<String>
             "paragraphAlignment",
             "linkColorDark",
             "linkColorLight",
+            "showReaderProgressBar",
+            "showReaderProgressHeading",
         )
         SettingsCategory.Tts -> setOf(
             "ttsDefaultSpeed",

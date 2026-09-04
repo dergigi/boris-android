@@ -161,6 +161,7 @@ fun Modifier.readerSelectable(
     state: ReaderSelectionState,
     onCoordinates: (LayoutCoordinates) -> Unit,
     onTap: ((Offset) -> Boolean)? = null,
+    onLongPress: ((Offset, LayoutCoordinates) -> Boolean)? = null,
     ttsStartIndex: Int? = null,
 ): Modifier = composed {
     val colors = LocalTextSelectionColors.current
@@ -171,6 +172,7 @@ fun Modifier.readerSelectable(
     val coordsRef = rememberUpdatedState(coordinates)
     val textRef = rememberUpdatedState(text)
     val onTapRef = rememberUpdatedState(onTap)
+    val onLongPressRef = rememberUpdatedState(onLongPress)
     val ttsStartIndexRef = rememberUpdatedState(ttsStartIndex)
     val density = LocalDensity.current
     val statusTop = WindowInsets.statusBars.getTop(density)
@@ -239,6 +241,9 @@ fun Modifier.readerSelectable(
                         longPressTimeout = longPressTimeout,
                         handleSlop = handleSlop,
                         onTap = { onTapRef.value?.invoke(it) == true },
+                        onLongPress = { position, coords ->
+                            onLongPressRef.value?.invoke(position, coords) == true
+                        },
                         ttsStartIndex = { ttsStartIndexRef.value },
                     )
                 }
@@ -258,6 +263,7 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     longPressTimeout: Long,
     handleSlop: Float,
     onTap: (Offset) -> Boolean,
+    onLongPress: (Offset, LayoutCoordinates) -> Boolean,
     ttsStartIndex: () -> Int?,
 ) {
     val pass = PointerEventPass.Initial
@@ -300,6 +306,8 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val index = JustifiedLayout.offsetAt(laid, change.position)
+        val coords = coordinates()
+        if (coords != null && onLongPress(change.position, coords)) return
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
         state.showLoupe(loupeSource(laid, index))
         while (true) {
