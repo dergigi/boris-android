@@ -307,7 +307,10 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         val index = JustifiedLayout.offsetAt(laid, change.position)
         val coords = coordinates()
-        if (coords != null && onLongPress(change.position, coords)) return
+        if (coords != null && onLongPress(change.position, coords)) {
+            consumePointerUntilUp(down.id, pass)
+            return
+        }
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
         state.showLoupe(loupeSource(laid, index))
         while (true) {
@@ -331,6 +334,18 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         } else if (onTap(down.position)) {
             change.consume()
         }
+    }
+}
+
+private suspend fun AwaitPointerEventScope.consumePointerUntilUp(
+    pointerId: PointerId,
+    pass: PointerEventPass,
+) {
+    while (true) {
+        val event = awaitPointerEvent(pass)
+        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+        change.consume()
+        if (!change.pressed) break
     }
 }
 
