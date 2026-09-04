@@ -254,6 +254,7 @@ internal fun ArticleBody(
     rssFeedSuggestion: String?,
     onOpenArticle: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    onOpenBrowser: (String) -> Unit,
     onAddRssFeed: (String) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
@@ -1274,7 +1275,9 @@ internal fun ArticleBody(
                     is ReaderLinkAction.OpenProfile -> onOpenProfile(action.pubkeyHex)
                 }
             },
-            onOpenInBrowser = { defaultUriHandler.openUri(it) },
+            onOpenInBrowser = { target ->
+                InAppBrowser.targetUrl(target)?.let(onOpenBrowser) ?: defaultUriHandler.openUri(target)
+            },
         )
         LaunchedEffect(outlineItems, topScrollInsetPx) {
             if (outlineItems.isEmpty()) {

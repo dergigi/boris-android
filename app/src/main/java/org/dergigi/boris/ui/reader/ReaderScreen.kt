@@ -654,6 +654,7 @@ fun ReaderScreenContent(
                     onOutlineItems = { outlineItems = it },
                     onOpenArticle = onOpenArticle,
                     onOpenProfile = onOpenProfile,
+                    onOpenBrowser = onOpenBrowser,
                     onAddRssFeed = { feed -> rssConfirmFeed = feed },
                     onOpenHighlightSettings = onOpenHighlightSettings,
                     onOpenGallery = onOpenGallery,
@@ -697,4 +698,3 @@ fun ReaderScreenContent(
     }
     }
 }
-
