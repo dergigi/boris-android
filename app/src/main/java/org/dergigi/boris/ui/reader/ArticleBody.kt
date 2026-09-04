@@ -1257,7 +1257,15 @@ internal fun ArticleBody(
         LinkContextMenu(
             state = linkMenu,
             onDismiss = { linkMenu = null },
-            onOpen = { uriHandler.openUri(it) },
+            onOpenInReader = { uri ->
+                when (val action = readerLinkAction(uri, content.url, openInReader = true)) {
+                    ReaderLinkAction.Ignore -> Unit
+                    is ReaderLinkAction.OpenInReader -> onOpenArticle(action.url)
+                    is ReaderLinkAction.OpenExternal -> defaultUriHandler.openUri(action.url)
+                    is ReaderLinkAction.OpenProfile -> onOpenProfile(action.pubkeyHex)
+                }
+            },
+            onOpenInBrowser = { defaultUriHandler.openUri(it) },
         )
         LaunchedEffect(outlineItems, topScrollInsetPx) {
             if (outlineItems.isEmpty()) {
@@ -1488,7 +1496,8 @@ private data class ReaderLinkMenuState(
 private fun LinkContextMenu(
     state: ReaderLinkMenuState?,
     onDismiss: () -> Unit,
-    onOpen: (String) -> Unit,
+    onOpenInReader: (String) -> Unit,
+    onOpenInBrowser: (String) -> Unit,
 ) {
     if (state == null) return
     val context = LocalContext.current
@@ -1509,13 +1518,23 @@ private fun LinkContextMenu(
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.reader_open_link)) },
+                text = { Text(stringResource(R.string.reader_open_link_in_reader)) },
+                leadingIcon = {
+                    Icon(Icons.AutoMirrored.Outlined.Article, contentDescription = null)
+                },
+                onClick = {
+                    onDismiss()
+                    onOpenInReader(state.uri)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.reader_open_link_in_browser)) },
                 leadingIcon = {
                     Icon(Icons.Outlined.Language, contentDescription = null)
                 },
                 onClick = {
                     onDismiss()
-                    onOpen(state.uri)
+                    onOpenInBrowser(state.target)
                 },
             )
             DropdownMenuItem(
