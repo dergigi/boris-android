@@ -208,7 +208,7 @@ fun ReadingProgressBar(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, bottom = 2.dp),
+                    .padding(start = 12.dp, end = 12.dp, bottom = 2.dp),
             )
         }
     }
