@@ -1100,13 +1100,16 @@ internal fun ArticleBody(
             )
             // Until the body is rendered the scroll range is meaningless, so
             // the bar shows the saved position instead (issue #131).
-            ArticleScrollProgress(
-                scrollState = scrollState,
-                driftFraction = if (showArticle) driftFraction else savedFraction,
-                scrollLive = showArticle,
-                outlineItems = outlineItems,
-                activeOutlineId = activeOutlineId,
-            )
+            if (settings.showReaderProgressBar) {
+                ArticleScrollProgress(
+                    scrollState = scrollState,
+                    driftFraction = if (showArticle) driftFraction else savedFraction,
+                    scrollLive = showArticle,
+                    outlineItems = outlineItems,
+                    activeOutlineId = activeOutlineId,
+                    showHeading = settings.showReaderProgressHeading,
+                )
+            }
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
