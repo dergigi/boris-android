@@ -200,14 +200,15 @@ fun ReadingProgressBar(
         if (title != null) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.sp,
+                lineHeight = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
+                    .padding(horizontal = 12.dp, bottom = 2.dp),
             )
         }
     }

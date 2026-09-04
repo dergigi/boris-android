@@ -874,7 +874,7 @@ internal fun ArticleBody(
     val ttsMiniPlayerVisible by remember {
         TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(false)
-    val headingChrome = if (outlineItems.isNotEmpty()) 20.dp else 0.dp
+    val headingChrome = if (outlineItems.isNotEmpty()) 14.dp else 0.dp
     val bottomChromePadding =
         (if (ttsMiniPlayerVisible) 104.dp else 48.dp) + headingChrome
     SelectionBackHandler(selection)
