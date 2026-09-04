@@ -9,6 +9,19 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.33] - 2026-09-04
+
+### Added
+
+- Long-press a link in an article to copy, open, or share it
+- Settings to hide the reader progress bar or just the current-section heading
+
+### Fixed
+
+- In-app browser no longer destroys its WebView as soon as it opens
+- Article errors keep the cached title and cover instead of a blank error screen
+- Successful reactions no longer show a toast
+
 ## [1.5.32] - 2026-09-04
 
 ### Fixed
@@ -1677,7 +1690,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.32...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.33...HEAD
+[1.5.33]: https://github.com/dergigi/boris-android/releases/tag/v1.5.33
 [1.5.32]: https://github.com/dergigi/boris-android/releases/tag/v1.5.32
 [1.5.31]: https://github.com/dergigi/boris-android/releases/tag/v1.5.31
 [1.5.30]: https://github.com/dergigi/boris-android/releases/tag/v1.5.30
