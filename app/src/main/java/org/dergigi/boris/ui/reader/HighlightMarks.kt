@@ -86,14 +86,16 @@ private fun quoteOccurrences(displayed: String, item: PaintedHighlight): List<Hi
 
 /**
  * When a highlight has context, paint only the occurrence that sits in that
- * window. Missing or unmatched context falls back to every occurrence.
+ * window. Missing or unmatched context falls back to every occurrence for
+ * longer legacy highlights, but short ambiguous highlights fail closed.
  */
 private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
-    val context = item.context?.takeIf { it.isNotBlank() } ?: return quoteOccurrences(displayed, item)
+    val fallback = { fallbackQuoteSpans(displayed, item) }
+    val context = item.context?.takeIf { it.isNotBlank() } ?: return fallback()
     val mark = highlightMark(item.quote, context)
     if (mark.isBlank()) return emptyList()
     val ignoreCase = item.ignoreCase
-    val quoteInContext = preferredQuoteRange(context, mark, ignoreCase) ?: return quoteOccurrences(displayed, item)
+    val quoteInContext = preferredQuoteRange(context, mark, ignoreCase) ?: return fallback()
     val contextHits = QuoteMatch.occurrences(displayed, context, ignoreCase = ignoreCase)
     if (contextHits.isNotEmpty()) {
         val hit = contextHits.first()
@@ -115,7 +117,18 @@ private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<
         }
         return emptyList()
     }
-    return quoteOccurrences(displayed, item)
+    return fallback()
+}
+
+private fun fallbackQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
+    if (isShortAmbiguousHighlight(item.quote)) return emptyList()
+    val matches = quoteOccurrences(displayed, item)
+    return matches
+}
+
+private fun isShortAmbiguousHighlight(quote: String): Boolean {
+    val words = quote.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    return words.size <= 2 && words.sumOf { it.length } <= 24
 }
 
 /** Prefer the quote nearest the middle of [context] when it appears more than once. */
