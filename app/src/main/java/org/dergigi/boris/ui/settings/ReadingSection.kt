@@ -101,11 +101,13 @@ fun ReadingSection(
             checked = settings.showReaderProgressBar,
             onCheckedChange = { onUpdate(settings.withBoolean("showReaderProgressBar", it)) },
         )
-        SettingCheckbox(
-            label = stringResource(R.string.settings_show_reader_progress_heading),
-            checked = settings.showReaderProgressHeading,
-            onCheckedChange = { onUpdate(settings.withBoolean("showReaderProgressHeading", it)) },
-        )
+        if (settings.showReaderProgressBar) {
+            SettingCheckbox(
+                label = stringResource(R.string.settings_show_reader_progress_heading),
+                checked = settings.showReaderProgressHeading,
+                onCheckedChange = { onUpdate(settings.withBoolean("showReaderProgressHeading", it)) },
+            )
+        }
         SettingCheckbox(
             label = stringResource(R.string.settings_open_links_in_reader),
             checked = settings.openLinksInReader,

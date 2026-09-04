@@ -874,9 +874,15 @@ internal fun ArticleBody(
     val ttsMiniPlayerVisible by remember {
         TtsPlayback.session.map { it?.url?.isNotBlank() == true }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(false)
-    val headingChrome = if (outlineItems.isNotEmpty()) 14.dp else 0.dp
-    val bottomChromePadding =
-        (if (ttsMiniPlayerVisible) 104.dp else 48.dp) + headingChrome
+    val headingChrome =
+        if (settings.showReaderProgressBar && settings.showReaderProgressHeading && outlineItems.isNotEmpty()) {
+            14.dp
+        } else {
+            0.dp
+        }
+    val barChrome = if (settings.showReaderProgressBar) 48.dp else 0.dp
+    val ttsChrome = if (ttsMiniPlayerVisible) 56.dp else 0.dp
+    val bottomChromePadding = ttsChrome + barChrome + headingChrome
     SelectionBackHandler(selection)
     fun closeFindPane() {
         findQuery = ""
