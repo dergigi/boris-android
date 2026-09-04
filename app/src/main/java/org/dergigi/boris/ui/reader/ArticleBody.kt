@@ -1532,14 +1532,16 @@ private fun LinkContextMenu(
     }
 }
 
-private fun AnnotatedString.linkUrlAt(offset: Int): String? =
-    getLinkAnnotations(offset, offset).firstOrNull()?.item?.let { link ->
+internal fun AnnotatedString.linkUrlAt(offset: Int): String? {
+    if (offset !in 0 until text.length) return null
+    return getLinkAnnotations(offset, offset + 1).firstOrNull()?.item?.let { link ->
         when (link) {
             is LinkAnnotation.Url -> link.url
             is LinkAnnotation.Clickable -> link.tag
             else -> null
         }
     }
+}
 
 @Composable
 internal fun OutlinePaneHost(

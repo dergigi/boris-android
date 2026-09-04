@@ -1,8 +1,11 @@
 package org.dergigi.boris.ui.reader
 
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.buildAnnotatedString
 import org.dergigi.boris.nostr.HintedRelays
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -72,6 +75,24 @@ class ReaderLinksTest {
             "mailto:hi@example.com",
             readerLinkContextTarget("mailto:hi@example.com", "https://example.com/posts/current"),
         )
+    }
+
+    @Test
+    fun linkAnnotationsResolveFromAnyCharacterInTheLink() {
+        val text = buildAnnotatedString {
+            append("Read example now")
+            addLink(
+                LinkAnnotation.Url("https://example.com"),
+                start = 5,
+                end = 12,
+            )
+        }
+
+        assertEquals("https://example.com", text.linkUrlAt(5))
+        assertEquals("https://example.com", text.linkUrlAt(8))
+        assertEquals("https://example.com", text.linkUrlAt(11))
+        assertNull(text.linkUrlAt(12))
+        assertNull(text.linkUrlAt(-1))
     }
 
     @Test
