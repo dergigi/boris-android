@@ -9,6 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.29] - 2026-09-04
+
+### Added
+
+- Reaction button next to Move to Archive: tap for an orange heart, long-press to pick another reaction or remove yours. Works for Nostr articles, notes, and web pages
+
+### Fixed
+
+- Reader metadata pills (author, date, reading time, NSFW) are the same height
+
 ## [1.5.28] - 2026-09-02
 
 ### Changed
@@ -1649,7 +1659,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.28...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.29...HEAD
+[1.5.29]: https://github.com/dergigi/boris-android/releases/tag/v1.5.29
 [1.5.28]: https://github.com/dergigi/boris-android/releases/tag/v1.5.28
 [1.5.27]: https://github.com/dergigi/boris-android/releases/tag/v1.5.27
 [1.5.26]: https://github.com/dergigi/boris-android/releases/tag/v1.5.26
