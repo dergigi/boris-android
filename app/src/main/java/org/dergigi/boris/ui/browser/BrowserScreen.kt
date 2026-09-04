@@ -69,7 +69,8 @@ fun BrowserScreen(
         if (startUrl.isBlank()) onBack()
     }
     DisposableEffect(webView) {
-        onDispose { webView?.destroy() }
+        val view = webView
+        onDispose { view?.destroy() }
     }
 
     Scaffold(
