@@ -99,65 +99,95 @@ internal fun ReaderErrorPane(
     modifier: Modifier = Modifier,
 ) {
     var detailsOpen by remember(state.detail) { mutableStateOf(false) }
+    val coverUrl = state.imageUrl?.takeIf { it.isNotBlank() }
+    val hasPreview = coverUrl != null || !state.title.isNullOrBlank()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .then(modifier)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+            .then(if (hasPreview) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+        verticalArrangement = if (hasPreview) Arrangement.Top else Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = state.message,
-            style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-        )
-        if (!state.detail.isNullOrBlank()) {
-            TextButton(onClick = { detailsOpen = !detailsOpen }) {
-                Text(
-                    stringResource(
-                        if (detailsOpen) {
-                            R.string.reader_error_hide_details
-                        } else {
-                            R.string.reader_error_details
-                        },
-                    ),
-                )
-            }
-            if (detailsOpen) {
-                Text(
-                    text = state.detail,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        textAlign = TextAlign.Center,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        if (coverUrl != null) {
+            ArticleHero(
+                imageUrl = coverUrl,
+                title = state.title,
+                summary = null,
+                onClick = {},
+            )
+        } else if (!state.title.isNullOrBlank()) {
+            Text(
+                text = state.title,
+                style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 8.dp, bottom = 12.dp),
+            )
         }
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.padding(top = 16.dp),
+        Column(
+            modifier = Modifier
+                .widthIn(max = 720.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = if (hasPreview) 24.dp else 0.dp, bottom = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("Try again")
-        }
-        if (state.url.isNotBlank()) {
-            OutlinedButton(
-                onClick = onOpenOriginal,
-                modifier = Modifier.padding(top = 8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Language,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.reader_open_in_browser))
-            }
-            if (InAppBrowser.waybackUrl(state.url) != null) {
-                TextButton(onClick = onOpenWayback) {
-                    Text(stringResource(R.string.reader_open_wayback))
+            Text(
+                text = state.message,
+                style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+            )
+            if (!state.detail.isNullOrBlank()) {
+                TextButton(onClick = { detailsOpen = !detailsOpen }) {
+                    Text(
+                        stringResource(
+                            if (detailsOpen) {
+                                R.string.reader_error_hide_details
+                            } else {
+                                R.string.reader_error_details
+                            },
+                        ),
+                    )
                 }
-                TextButton(onClick = onOpenArchivePh) {
-                    Text(stringResource(R.string.reader_open_archive_ph))
+                if (detailsOpen) {
+                    Text(
+                        text = state.detail,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            textAlign = TextAlign.Center,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Button(
+                onClick = onRetry,
+                modifier = Modifier.padding(top = 16.dp),
+            ) {
+                Text("Try again")
+            }
+            if (state.url.isNotBlank()) {
+                OutlinedButton(
+                    onClick = onOpenOriginal,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Language,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.reader_open_in_browser))
+                }
+                if (InAppBrowser.waybackUrl(state.url) != null) {
+                    TextButton(onClick = onOpenWayback) {
+                        Text(stringResource(R.string.reader_open_wayback))
+                    }
+                    TextButton(onClick = onOpenArchivePh) {
+                        Text(stringResource(R.string.reader_open_archive_ph))
+                    }
                 }
             }
         }

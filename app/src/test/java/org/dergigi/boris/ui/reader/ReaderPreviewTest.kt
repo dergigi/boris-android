@@ -61,6 +61,27 @@ class ReaderPreviewTest {
     }
 
     @Test
+    fun errorStateKeepsCachedWebPreview() {
+        val url = "https://pubmed.ncbi.nlm.nih.gov/41231585/"
+        ArticlePreview.remember(
+            ReadableContent(
+                url = url,
+                title = "Cached PubMed title",
+                imageUrl = "https://cdn.example.com/pubmed-cover.jpg",
+            ),
+        )
+        val state = readerErrorState(
+            message = "Could not find an article on this page.",
+            url = url,
+            detail = "No readable article in the page",
+        )
+        assertEquals(url, state.url)
+        assertEquals("Cached PubMed title", state.title)
+        assertEquals("https://cdn.example.com/pubmed-cover.jpg", state.imageUrl)
+        assertEquals("No readable article in the page", state.detail)
+    }
+
+    @Test
     fun loadingStateFindsNostrAliasPreview() {
         val pubkey = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
         val coordinate = "30023:$pubkey:i-left-the-future-and-arrived-at-home"
