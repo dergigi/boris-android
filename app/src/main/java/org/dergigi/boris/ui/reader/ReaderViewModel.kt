@@ -197,7 +197,7 @@ class ReaderViewModel(
 
     fun load(refresh: Boolean = false) {
         if (url.isBlank()) {
-            _state.value = ReaderUiState.Error("No URL to read.", url)
+            _state.value = readerErrorState("No URL to read.", url)
             readerHighlights.clear(loaded = true)
             _inLibrary.value = false
             resetArchive()
@@ -273,9 +273,9 @@ class ReaderViewModel(
                 rssFeedJob?.cancel()
                 eventRefJob?.cancel()
                 readerHighlights.clear(loaded = true)
-                _state.value = ReaderUiState.Error(
-                    e.message ?: "Could not reach this page.",
-                    url,
+                _state.value = readerErrorState(
+                    message = e.message ?: "Could not reach this page.",
+                    url = url,
                     detail = (e as? ReaderFetchException)?.detail,
                 )
                 publishSaveState()
@@ -501,6 +501,8 @@ sealed interface ReaderUiState {
         val message: String,
         val url: String,
         val detail: String? = null,
+        val title: String? = null,
+        val imageUrl: String? = null,
     ) : ReaderUiState
 }
 
@@ -513,3 +515,17 @@ internal fun readerLoadingState(url: String): ReaderUiState.Loading {
     )
 }
 
+internal fun readerErrorState(
+    message: String,
+    url: String,
+    detail: String? = null,
+): ReaderUiState.Error {
+    val preview = ArticlePreview.get(url)
+    return ReaderUiState.Error(
+        message = message,
+        url = url,
+        detail = detail,
+        title = preview?.title?.let { HtmlToMarkdown.decode(it) }?.trim()?.takeIf { it.isNotEmpty() },
+        imageUrl = preview?.imageUrl?.trim()?.takeIf { it.isNotEmpty() },
+    )
+}
