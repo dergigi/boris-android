@@ -46,10 +46,12 @@ class ReaderHighlights(
 
     private var highlightJob: Job? = null
     private var pendingExternalQuote: String? = null
+    // Callers launch the Intent returned by create(); only tryExternal emits via onSignIntent.
+    // Wiring the signer to onSignIntent as well launched Amber twice per highlight (#135).
     private val signer = EventSigner(
         app = app,
         scope = scope,
-        onSignIntent = onSignIntent,
+        onSignIntent = {},
     )
 
     fun clear(loaded: Boolean) {
