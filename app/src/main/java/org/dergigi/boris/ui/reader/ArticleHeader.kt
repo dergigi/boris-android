@@ -406,7 +406,10 @@ internal fun ArticleMetaRow(
             MetaChip(text = readingTime, icon = Icons.Outlined.Schedule)
         }
         if (nsfwWarning != null) {
-            NsfwBadge(nsfwWarning)
+            NsfwBadge(
+                nsfwWarning,
+                modifier = Modifier.heightIn(min = MetaChipMinHeight),
+            )
         }
         if (highlightsLabel != null) {
             MetaChip(
@@ -422,21 +425,30 @@ internal fun ArticleMetaRow(
     }
 }
 
+private val MetaChipMinHeight = 28.dp
+private val MetaChipLeadingSize = 14.dp
+private val MetaChipShape = RoundedCornerShape(8.dp)
+
+private fun Modifier.metaChipChrome(
+    border: Color,
+    onClick: (() -> Unit)?,
+): Modifier = this
+    .heightIn(min = MetaChipMinHeight)
+    .clip(MetaChipShape)
+    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+    .border(1.dp, border, MetaChipShape)
+    .padding(horizontal = 8.dp, vertical = 6.dp)
+
 @Composable
 internal fun AuthorMetaChip(
     name: String,
     pictureUrl: String?,
     onClick: (() -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(8.dp)
     val fg = MaterialTheme.colorScheme.onSurfaceVariant
     val fallback = rememberVectorPainter(Icons.Outlined.AccountCircle)
     Row(
-        modifier = Modifier
-            .clip(shape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .border(1.dp, MaterialTheme.colorScheme.outline, shape)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier = Modifier.metaChipChrome(MaterialTheme.colorScheme.outline, onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -448,7 +460,7 @@ internal fun AuthorMetaChip(
             error = fallback,
             fallback = fallback,
             modifier = Modifier
-                .size(18.dp)
+                .size(MetaChipLeadingSize)
                 .clip(CircleShape),
         )
         Text(
@@ -475,13 +487,8 @@ internal fun MetaChip(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     val iconTint = accent ?: fg
-    val shape = RoundedCornerShape(8.dp)
     Row(
-        modifier = Modifier
-            .clip(shape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .border(1.dp, border, shape)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+        modifier = Modifier.metaChipChrome(border, onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -489,7 +496,7 @@ internal fun MetaChip(
             imageVector = icon,
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(MetaChipLeadingSize),
         )
         Text(
             text = text,
