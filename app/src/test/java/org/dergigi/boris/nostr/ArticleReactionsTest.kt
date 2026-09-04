@@ -64,8 +64,47 @@ class ArticleReactionsTest {
     }
 
     @Test
-    fun webArticleIsOutOfScopeForFirstPass() {
+    fun webArticleUsesKind17UrlReaction() {
         val content = ReadableContent(url = "https://example.com/post")
+
+        assertEquals(Nip01Event.KIND_URL_REACTION, ArticleReactions.kind(content))
+        assertEquals(listOf(listOf("r", "https://example.com/post")), ArticleReactions.tags(content))
+        val json = JSONObject(ArticleReactions.unsignedJson(ArticleReaction.Good, content, reader, createdAt = 123)!!)
+        assertEquals(Nip01Event.KIND_URL_REACTION, json.getInt("kind"))
+        assertEquals("👍", json.getString("content"))
+    }
+
+    @Test
+    fun noteUsesArchiveStyleEventTags() {
+        val content = ReadableContent(url = "nostr:nevent1qq", eventId = articleEventId, authorPubkey = author)
+
+        assertEquals(Nip01Event.KIND_REACTION, ArticleReactions.kind(content))
+        assertEquals(
+            listOf(listOf("e", articleEventId), listOf("p", author), listOf("k", "1")),
+            ArticleReactions.tags(content),
+        )
+    }
+
+    @Test
+    fun currentReactionMatchesWebUrlByNormalizedRTag() {
+        val content = ReadableContent(url = "https://www.example.com/post?utm_source=x")
+        val match = Nip01Event(
+            id = "00".repeat(32),
+            pubkey = reader,
+            createdAt = 10,
+            kind = Nip01Event.KIND_URL_REACTION,
+            tags = listOf(listOf("r", "https://example.com/post")),
+            content = "🧡",
+            sig = "ff".repeat(64),
+        )
+        val otherPage = match.copy(tags = listOf(listOf("r", "https://example.com/other")), createdAt = 20)
+
+        assertEquals(ArticleReaction.Love, ArticleReactions.currentReaction(listOf(match, otherPage), content, reader))
+    }
+
+    @Test
+    fun unsupportedContentHasNoReactionKind() {
+        val content = ReadableContent(url = "file:///tmp/x")
 
         assertNull(ArticleReactions.kind(content))
         assertNull(ArticleReactions.tags(content))

@@ -33,6 +33,31 @@ object Archive {
     fun isArchiveKind(kind: Int): Boolean =
         kind == Nip01Event.KIND_REACTION || kind == Nip01Event.KIND_URL_REACTION
 
+    /** True when [event] points at [content]: by `e`/`a` tag for Nostr events, by normalized `r` tag for URLs. */
+    fun matchesTarget(event: Nip01Event, content: ReadableContent): Boolean {
+        val kind = kind(content) ?: return false
+        if (event.kind != kind) return false
+        return when (kind) {
+            Nip01Event.KIND_REACTION -> {
+                val eventId = content.eventId?.trim()?.lowercase()
+                val address = content.articleCoordinate?.trim()
+                event.tags.any { tag ->
+                    tag.size >= 2 && (
+                        (eventId != null && tag[0] == "e" && tag[1].lowercase() == eventId) ||
+                            (address != null && tag[0] == "a" && tag[1].equals(address, ignoreCase = true))
+                        )
+                }
+            }
+            Nip01Event.KIND_URL_REACTION -> {
+                val target = ArticleUrl.normalize(content.url)
+                event.tags.any {
+                    it.size >= 2 && it[0] == "r" && ArticleUrl.normalize(it[1]) == target
+                }
+            }
+            else -> false
+        }
+    }
+
     fun normalizeUrl(url: String): String {
         return try {
             val parsed = URL(url.trim())

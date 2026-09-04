@@ -333,7 +333,7 @@ class ReaderViewModel(
         readerHighlights.onSignerResult(resultCode, data)
     }
 
-    /** Loads the reader's own kind-7 state for this article: the archive mark and the emoji reaction. */
+    /** Loads the reader's own reaction state for this article: the archive mark and the emoji reaction. */
     private fun startArchiveCheck(content: ReadableContent) {
         archiveJob?.cancel()
         val session = SessionStore.load(getApplication())

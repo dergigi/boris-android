@@ -801,107 +801,60 @@ object RelayQuery {
             EventCache.latest(Nip01Event.KIND_METADATA, key)?.let { key to Profile.parse(it.content) }
         }.toMap()
 
+    /** The reader's own archive marks (📚) for [content]. */
     fun fetchArchives(
         readRelays: List<String>,
         pubkeyHex: String,
         content: ReadableContent,
-    ): List<Nip01Event> {
-        val kind = Archive.kind(content)
-        val filters = when (kind) {
-            Nip01Event.KIND_REACTION -> {
-                val eventId = content.eventId?.trim()?.takeIf { it.length == 64 }
-                val address = content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() }
-                if (eventId == null && address == null) return emptyList()
-                buildList {
-                    if (eventId != null) {
-                        add(
-                            JSONObject()
-                                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-                                .put("authors", JSONArray().put(pubkeyHex))
-                                .put("#e", JSONArray().put(eventId.lowercase()))
-                                .put("limit", 20),
-                        )
-                    }
-                    if (address != null) {
-                        add(
-                            JSONObject()
-                                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-                                .put("authors", JSONArray().put(pubkeyHex))
-                                .put("#a", JSONArray().put(address))
-                                .put("limit", 20),
-                        )
-                    }
-                }
-            }
-            Nip01Event.KIND_URL_REACTION -> {
-                JSONObject()
-                    .put("kinds", JSONArray().put(Nip01Event.KIND_URL_REACTION))
-                    .put("authors", JSONArray().put(pubkeyHex))
-                    .put("#r", JSONArray().apply { Archive.urlQueryTags(content.url).forEach { put(it) } })
-                    .put("limit", 20)
-                    .let { listOf(it) }
-            }
-            else -> return emptyList()
-        }
-        val urls = relayUrls((readRelays + globalReadRelays()).distinct())
-        if (urls.isNotEmpty()) {
-            val remote = query(urls, filters)
-                .filter { event ->
-                    Archive.isArchive(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true)
-                }
-            EventCache.putAll(remote)
-        }
-        return EventCache.byKindAndAuthor(setOf(kind), pubkeyHex)
-            .filter { Archive.isArchive(it) && archiveMatches(it, kind, content) }
-            .distinctBy { it.id }
+    ): List<Nip01Event> = fetchOwnReactions(readRelays, pubkeyHex, content, Archive.kind(content)) {
+        Archive.isArchive(it) && Archive.matchesTarget(it, content)
     }
 
-    private fun archiveMatches(event: Nip01Event, kind: Int, content: ReadableContent): Boolean =
-        when (kind) {
-            Nip01Event.KIND_REACTION -> {
-                val eventId = content.eventId?.trim()?.lowercase()
-                val address = content.articleCoordinate?.trim()
-                event.tags.any { tag ->
-                    tag.size >= 2 && (
-                        (eventId != null && tag[0] == "e" && tag[1].lowercase() == eventId) ||
-                            (address != null && tag[0] == "a" && tag[1].equals(address, ignoreCase = true))
-                        )
-                }
-            }
-            Nip01Event.KIND_URL_REACTION -> {
-                val target = ArticleUrl.normalize(content.url)
-                event.tags.any {
-                    it.size >= 2 && it[0] == "r" && ArticleUrl.normalize(it[1]) == target
-                }
-            }
-            else -> false
-        }
-
-    /** The reader's own kind-7 article reactions (see [ArticleReactions]) for [content]. */
+    /** The reader's own emoji reactions (see [ArticleReactions]) for [content]. */
     fun fetchArticleReactions(
         readRelays: List<String>,
         pubkeyHex: String,
         content: ReadableContent,
+    ): List<Nip01Event> = fetchOwnReactions(readRelays, pubkeyHex, content, ArticleReactions.kind(content)) {
+        ArticleReactions.isReactionTo(it, content)
+    }
+
+    /** Kind 7 / 17 events by [pubkeyHex] that target [content], keeping those that pass [accept]. */
+    private fun fetchOwnReactions(
+        readRelays: List<String>,
+        pubkeyHex: String,
+        content: ReadableContent,
+        kind: Int?,
+        accept: (Nip01Event) -> Boolean,
     ): List<Nip01Event> {
-        val address = content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() } ?: return emptyList()
-        if (ArticleReactions.kind(content) == null) return emptyList()
+        if (kind == null) return emptyList()
+        val filters = ownReactionFilters(kind, pubkeyHex, content)
+        if (filters.isEmpty()) return emptyList()
         val urls = relayUrls((readRelays + globalReadRelays()).distinct())
         if (urls.isNotEmpty()) {
-            val filter = JSONObject()
-                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
-                .put("authors", JSONArray().put(pubkeyHex))
-                .put("#a", JSONArray().put(address))
-                .put("limit", 20)
-            val remote = query(urls, listOf(filter))
-                .filter { event ->
-                    ArticleReactions.isReactionTo(event, content) &&
-                        event.pubkey.equals(pubkeyHex, ignoreCase = true)
-                }
+            val remote = query(urls, filters)
+                .filter { event -> accept(event) && event.pubkey.equals(pubkeyHex, ignoreCase = true) }
             EventCache.putAll(remote)
         }
-        return EventCache.byKindAndAuthor(setOf(Nip01Event.KIND_REACTION), pubkeyHex)
-            .filter { ArticleReactions.isReactionTo(it, content) }
+        return EventCache.byKindAndAuthor(setOf(kind), pubkeyHex)
+            .filter(accept)
             .distinctBy { it.id }
+    }
+
+    private fun ownReactionFilters(kind: Int, pubkeyHex: String, content: ReadableContent): List<JSONObject> {
+        fun filter(tag: String, values: List<String>) = JSONObject()
+            .put("kinds", JSONArray().put(kind))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("#$tag", JSONArray().apply { values.forEach { put(it) } })
+            .put("limit", 20)
+        return when (kind) {
+            Nip01Event.KIND_REACTION -> buildList {
+                content.eventId?.trim()?.takeIf { it.length == 64 }?.let { add(filter("e", listOf(it.lowercase()))) }
+                content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() }?.let { add(filter("a", listOf(it))) }
+            }
+            Nip01Event.KIND_URL_REACTION -> listOf(filter("r", Archive.urlQueryTags(content.url)))
+            else -> emptyList()
+        }
     }
 
     fun publish(writeRelays: List<String>, event: Nip01Event): PublishResult {

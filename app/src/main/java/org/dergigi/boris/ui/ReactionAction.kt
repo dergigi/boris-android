@@ -18,7 +18,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.PendingUnsignedEvent
 import org.dergigi.boris.nostr.SignOutcome
 
-/** Signs and publishes a kind-7 article reaction, or a NIP-09 deletion that removes one. */
+/** Signs and publishes an emoji reaction (kind 7, or kind 17 for web URLs), or a NIP-09 deletion that removes one. */
 class ReactionAction(
     private val app: Application,
     private val scope: CoroutineScope,
@@ -102,8 +102,8 @@ class ReactionAction(
 
     private fun onSigned(session: Session, event: Nip01Event) {
         val reaction = pending
-        val expectedKind = if (reaction == null) Nip01Event.KIND_DELETION else Nip01Event.KIND_REACTION
-        if (event.kind != expectedKind) {
+        val kindOk = if (reaction == null) event.kind == Nip01Event.KIND_DELETION else Archive.isArchiveKind(event.kind)
+        if (!kindOk) {
             fail(app.getString(R.string.reader_reaction_failed))
             return
         }
