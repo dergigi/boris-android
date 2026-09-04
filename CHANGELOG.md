@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.31] - 2026-09-04
+
+### Fixed
+
+- Current heading under the reading progress bar is a bit larger and centered, without growing the chrome
+
 ## [1.5.30] - 2026-09-04
 
 ### Fixed
@@ -1665,7 +1671,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.30...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.31...HEAD
+[1.5.31]: https://github.com/dergigi/boris-android/releases/tag/v1.5.31
 [1.5.30]: https://github.com/dergigi/boris-android/releases/tag/v1.5.30
 [1.5.29]: https://github.com/dergigi/boris-android/releases/tag/v1.5.29
 [1.5.28]: https://github.com/dergigi/boris-android/releases/tag/v1.5.28
