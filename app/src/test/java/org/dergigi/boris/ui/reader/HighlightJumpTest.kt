@@ -45,14 +45,25 @@ class HighlightJumpTest {
     }
 
     @Test
-    fun repeatedQuoteMakesMultipleStops() {
+    fun shortRepeatedQuoteWithoutContextMakesNoStops() {
         val stops = HighlightJump.stopsInText(
             owner = Any(),
             text = "echo echo",
             highlights = listOf(PaintedHighlight("a", "echo", mine = true)),
             localTopAt = { start, _ -> start.toFloat() },
         )
-        assertEquals(listOf(0, 5), stops.map { it.start })
+        assertTrue(stops.isEmpty())
+    }
+
+    @Test
+    fun longerRepeatedQuoteStillMakesMultipleStops() {
+        val stops = HighlightJump.stopsInText(
+            owner = Any(),
+            text = "quiet reading flow then quiet reading flow",
+            highlights = listOf(PaintedHighlight("a", "quiet reading flow", mine = true)),
+            localTopAt = { start, _ -> start.toFloat() },
+        )
+        assertEquals(listOf(0, 24), stops.map { it.start })
     }
 
     @Test

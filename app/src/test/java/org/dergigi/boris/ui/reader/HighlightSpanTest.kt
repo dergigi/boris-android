@@ -6,10 +6,39 @@ import org.junit.Test
 
 class HighlightSpanTest {
     @Test
-    fun matchesEveryOccurrenceWhenContextIsMissing() {
+    fun shortAmbiguousHighlightWithoutContextMatchesNothing() {
         val mine = PaintedHighlight(id = "a", quote = "the", mine = true)
         val spans = matchHighlightSpans("the cat the hat", listOf(mine))
-        assertEquals(listOf(0 to 3, 8 to 11), spans.map { it.start to it.end })
+        assertTrue(spans.isEmpty())
+    }
+
+    @Test
+    fun uniqueShortHighlightWithoutContextStillPaints() {
+        val mine = PaintedHighlight(id = "a", quote = "cat", mine = true)
+        val spans = matchHighlightSpans("the cat sat", listOf(mine))
+        assertEquals(listOf(4 to 7), spans.map { it.start to it.end })
+    }
+
+    @Test
+    fun uniqueShortHighlightWithUnmatchedContextStillPaints() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "cat",
+            mine = true,
+            context = "The selected context lives in a different article.",
+        )
+        val spans = matchHighlightSpans("the cat sat", listOf(mine))
+        assertEquals(listOf(4 to 7), spans.map { it.start to it.end })
+    }
+
+    @Test
+    fun longerLegacyHighlightWithoutContextCanStillMatchEveryOccurrence() {
+        val mine = PaintedHighlight(id = "a", quote = "quiet reading flow", mine = true)
+        val spans = matchHighlightSpans(
+            "quiet reading flow starts here, and quiet reading flow returns later",
+            listOf(mine),
+        )
+        assertEquals(listOf(0 to 18, 36 to 54), spans.map { it.start to it.end })
         assertTrue(spans.all { it.item === mine })
     }
 
@@ -38,6 +67,21 @@ class HighlightSpanTest {
             context = "The cat sat. The cat ran.",
         )
         assertTrue(matchHighlightSpans("Other paragraph. The dog ran.", listOf(mine)).isEmpty())
+    }
+
+    @Test
+    fun unmatchedContextDoesNotPaintEveryShortOccurrence() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "sovereignty",
+            mine = true,
+            context = "The selected context lives in a different article.",
+        )
+        val spans = matchHighlightSpans(
+            "sovereignty appears here. sovereignty appears there.",
+            listOf(mine),
+        )
+        assertTrue(spans.isEmpty())
     }
 
     @Test
