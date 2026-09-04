@@ -191,6 +191,7 @@ import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.ArticleReaction
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
@@ -241,6 +242,8 @@ internal fun ArticleBody(
     focusHighlightId: String,
     loggedIn: Boolean,
     archived: Boolean,
+    reaction: ArticleReaction?,
+    canReact: Boolean,
     author: Profile?,
     eventRefs: Map<String, ResolvedEventRef>,
     settings: UserSettings,
@@ -252,6 +255,7 @@ internal fun ArticleBody(
     onOpenGallery: (List<String>, Int) -> Unit,
     onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
+    onReact: (ArticleReaction?) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
     pane: ReaderPaneState,
@@ -1048,17 +1052,21 @@ internal fun ArticleBody(
                 }
                 // No archive controls while the body is still parsing (issue #78).
                 if (loggedIn && showArticle) {
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 32.dp),
-                        contentAlignment = Alignment.Center,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ArchiveButton(
                             archived = archived,
                             closeAfterArchive = settings.archiveClosesReader,
                             onClick = { onArchive(settings.archiveClosesReader && !archived) },
                         )
+                        if (canReact) {
+                            ReactionButton(reaction = reaction, onReact = onReact)
+                        }
                     }
                 }
             }

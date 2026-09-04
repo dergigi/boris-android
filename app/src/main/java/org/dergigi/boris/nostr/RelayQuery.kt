@@ -877,6 +877,33 @@ object RelayQuery {
             else -> false
         }
 
+    /** The reader's own kind-7 article reactions (see [ArticleReactions]) for [content]. */
+    fun fetchArticleReactions(
+        readRelays: List<String>,
+        pubkeyHex: String,
+        content: ReadableContent,
+    ): List<Nip01Event> {
+        val address = content.articleCoordinate?.trim()?.takeIf { it.isNotEmpty() } ?: return emptyList()
+        if (ArticleReactions.kind(content) == null) return emptyList()
+        val urls = relayUrls((readRelays + globalReadRelays()).distinct())
+        if (urls.isNotEmpty()) {
+            val filter = JSONObject()
+                .put("kinds", JSONArray().put(Nip01Event.KIND_REACTION))
+                .put("authors", JSONArray().put(pubkeyHex))
+                .put("#a", JSONArray().put(address))
+                .put("limit", 20)
+            val remote = query(urls, listOf(filter))
+                .filter { event ->
+                    ArticleReactions.isReactionTo(event, content) &&
+                        event.pubkey.equals(pubkeyHex, ignoreCase = true)
+                }
+            EventCache.putAll(remote)
+        }
+        return EventCache.byKindAndAuthor(setOf(Nip01Event.KIND_REACTION), pubkeyHex)
+            .filter { ArticleReactions.isReactionTo(it, content) }
+            .distinctBy { it.id }
+    }
+
     fun publish(writeRelays: List<String>, event: Nip01Event): PublishResult {
         cacheEvent(event)
         val targets = reachableRelays(relayUrls(writeRelays))

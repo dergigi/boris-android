@@ -15,8 +15,10 @@ class ArticleReactionsTest {
     @Test
     fun vocabularyStartsCurated() {
         assertEquals(ArticleReaction.Slop, ArticleReaction.fromContent("🤖"))
-        assertEquals(ArticleReaction.Love, ArticleReaction.fromContent("❤️"))
+        assertEquals(ArticleReaction.Love, ArticleReaction.fromContent("🧡"))
         assertEquals(ArticleReaction.Good, ArticleReaction.fromContent("👍"))
+        assertEquals(ArticleReaction.Love, ArticleReaction.DEFAULT)
+        assertNull(ArticleReaction.fromContent("❤️"))
         assertNull(ArticleReaction.fromContent("🔥"))
     }
 
@@ -81,7 +83,7 @@ class ArticleReactionsTest {
         val json = JSONObject(raw!!)
 
         assertEquals(Nip01Event.KIND_REACTION, json.getInt("kind"))
-        assertEquals("❤️", json.getString("content"))
+        assertEquals("🧡", json.getString("content"))
         assertEquals(reader, json.getString("pubkey"))
         assertEquals(123, json.getLong("created_at"))
         assertEquals("a", json.getJSONArray("tags").getJSONArray(0).getString(0))
@@ -91,7 +93,7 @@ class ArticleReactionsTest {
     @Test
     fun currentReactionUsesLatestMatchingUserReaction() {
         val old = reaction(content = "👍", createdAt = 10)
-        val latest = reaction(content = "❤️", createdAt = 20)
+        val latest = reaction(content = "🧡", createdAt = 20)
         val otherUser = reaction(content = "🤖", createdAt = 30, pubkey = "22".repeat(32))
 
         assertEquals(

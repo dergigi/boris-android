@@ -213,6 +213,16 @@
     <string name="reader_archive_cancelled">Archive cancelled.</string>
     <string name="reader_archive_rejected">Archive rejected.</string>
     <string name="reader_archive_failed">Could not update archive.</string>
+    <string name="reader_react">React</string>
+    <string name="reader_reaction_remove">Remove reaction</string>
+    <string name="reader_reaction_love">Love it</string>
+    <string name="reader_reaction_good">Good read</string>
+    <string name="reader_reaction_slop">Slop</string>
+    <string name="reader_reacted">Reacted %1$s</string>
+    <string name="reader_reaction_removed">Reaction removed.</string>
+    <string name="reader_reaction_cancelled">Reaction cancelled.</string>
+    <string name="reader_reaction_rejected">Reaction rejected.</string>
+    <string name="reader_reaction_failed">Could not update reaction.</string>
     <string name="reader_share">Share</string>
     <string name="reader_copy">Copy</string>
     <string name="reader_open">Open</string>

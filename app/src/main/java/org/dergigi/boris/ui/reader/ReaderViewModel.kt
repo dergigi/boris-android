@@ -32,11 +32,14 @@ import org.dergigi.boris.data.RssRepository
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.nostr.Archive
+import org.dergigi.boris.nostr.ArticleReaction
+import org.dergigi.boris.nostr.ArticleReactions
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.ui.ArchiveAction
 import org.dergigi.boris.ui.LibrarySaveAction
+import org.dergigi.boris.ui.ReactionAction
 
 class ReaderViewModel(
     application: Application,
@@ -69,6 +72,12 @@ class ReaderViewModel(
 
     private val _archived = MutableStateFlow(false)
     val archived: StateFlow<Boolean> = _archived.asStateFlow()
+
+    private val _reaction = MutableStateFlow<ArticleReaction?>(null)
+    val reaction: StateFlow<ArticleReaction?> = _reaction.asStateFlow()
+
+    private val _canReact = MutableStateFlow(false)
+    val canReact: StateFlow<Boolean> = _canReact.asStateFlow()
 
     private val _author = MutableStateFlow<Profile?>(null)
     val author: StateFlow<Profile?> = _author.asStateFlow()
@@ -138,6 +147,20 @@ class ReaderViewModel(
     )
     private var archiving = false
     private var archiveIds = emptyList<String>()
+    private val reactionAction = ReactionAction(
+        app = application,
+        scope = viewModelScope,
+        onMessage = { text -> _message.value = text },
+        onReacted = { reaction, eventId ->
+            reactionIds = listOf(eventId)
+            _reaction.value = reaction
+        },
+        onRemoved = {
+            reactionIds = emptyList()
+            _reaction.value = null
+        },
+    )
+    private var reactionIds = emptyList<String>()
     init {
         load()
     }
@@ -284,6 +307,17 @@ class ReaderViewModel(
 
     fun archiveInFlight(): Boolean = archiving || archiveAction.inFlight()
 
+    /** Publishes [reaction]; `null` removes the current one. Tapping the active reaction removes it. */
+    fun react(reaction: ArticleReaction?): Intent? {
+        if (reactionAction.inFlight()) return null
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
+        return if (reaction == null || reaction == _reaction.value) {
+            if (reactionIds.isEmpty()) null else reactionAction.remove(reactionIds)
+        } else {
+            reactionAction.request(content, reaction)
+        }
+    }
+
     fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         if (saving || _inLibrary.value) return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
@@ -295,9 +329,11 @@ class ReaderViewModel(
     fun onSignerResult(resultCode: Int, data: Intent?) {
         if (librarySave.onSignerResult(resultCode, data)) return
         if (archiveAction.onSignerResult(resultCode, data)) return
+        if (reactionAction.onSignerResult(resultCode, data)) return
         readerHighlights.onSignerResult(resultCode, data)
     }
 
+    /** Loads the reader's own kind-7 state for this article: the archive mark and the emoji reaction. */
     private fun startArchiveCheck(content: ReadableContent) {
         archiveJob?.cancel()
         val session = SessionStore.load(getApplication())
@@ -306,6 +342,7 @@ class ReaderViewModel(
             resetArchive()
             return
         }
+        _canReact.value = ArticleReactions.kind(content) != null
         archiveJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 val relays = buildList {
@@ -315,9 +352,16 @@ class ReaderViewModel(
                 val events = RelayQuery.fetchArchives(relays, session.pubkeyHex, content)
                 archiveIds = events.map { it.id }
                 _archived.value = events.isNotEmpty()
+                if (_canReact.value) {
+                    val reactions = RelayQuery.fetchArticleReactions(relays, session.pubkeyHex, content)
+                    reactionIds = reactions.map { it.id }
+                    _reaction.value = ArticleReactions.currentReaction(reactions, content, session.pubkeyHex)
+                }
             } catch (_: Exception) {
                 archiveIds = emptyList()
                 _archived.value = false
+                reactionIds = emptyList()
+                _reaction.value = null
             }
         }
     }
@@ -397,6 +441,9 @@ class ReaderViewModel(
         archiveIds = emptyList()
         _archived.value = false
         archiving = false
+        reactionIds = emptyList()
+        _reaction.value = null
+        _canReact.value = false
     }
 
     private fun publishSaveState() {

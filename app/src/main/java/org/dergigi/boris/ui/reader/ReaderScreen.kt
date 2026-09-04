@@ -191,6 +191,7 @@ import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UrlExtractor
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.nostr.ArticleReaction
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Profile
@@ -257,6 +258,8 @@ fun ReaderScreen(
     val canSave by viewModel.canSave.collectAsStateWithLifecycle()
     val inLibrary by viewModel.inLibrary.collectAsStateWithLifecycle()
     val archived by viewModel.archived.collectAsStateWithLifecycle()
+    val reaction by viewModel.reaction.collectAsStateWithLifecycle()
+    val canReact by viewModel.canReact.collectAsStateWithLifecycle()
     val author by viewModel.author.collectAsStateWithLifecycle()
     val eventRefs by viewModel.eventRefs.collectAsStateWithLifecycle()
     val rssFeedSuggestion by viewModel.rssFeedSuggestion.collectAsStateWithLifecycle()
@@ -331,6 +334,8 @@ fun ReaderScreen(
         canSave = canSave,
         inLibrary = inLibrary,
         archived = archived,
+        reaction = reaction,
+        canReact = canReact,
         author = author,
         eventRefs = eventRefs,
         settings = settings,
@@ -359,6 +364,7 @@ fun ReaderScreen(
             if (intent == null && !viewModel.archiveInFlight()) closeAfterArchive = false
             intent?.let(launchSign)
         },
+        onReact = { reaction -> viewModel.react(reaction)?.let(launchSign) },
         onAddRssFeed = { feedUrl ->
             settingsViewModel.update { current ->
                 if (feedUrl in current.rssFeeds) {
@@ -388,6 +394,8 @@ fun ReaderScreenContent(
     canSave: Boolean,
     inLibrary: Boolean,
     archived: Boolean,
+    reaction: ArticleReaction?,
+    canReact: Boolean,
     author: Profile?,
     eventRefs: Map<String, ResolvedEventRef>,
     settings: UserSettings,
@@ -409,6 +417,7 @@ fun ReaderScreenContent(
     onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
+    onReact: (ArticleReaction?) -> Unit,
     onAddRssFeed: (String) -> Unit,
     onDismissRssFeed: () -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
@@ -632,6 +641,8 @@ fun ReaderScreenContent(
                     focusHighlightId = focusHighlightId,
                     loggedIn = loggedIn,
                     archived = archived,
+                    reaction = reaction,
+                    canReact = canReact,
                     author = author,
                     eventRefs = eventRefs,
                     settings = settings,
@@ -648,6 +659,7 @@ fun ReaderScreenContent(
                     onOpenGallery = onOpenGallery,
                     onHighlight = onHighlight,
                     onArchive = onArchive,
+                    onReact = onReact,
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,

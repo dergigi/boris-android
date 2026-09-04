@@ -4,12 +4,15 @@ import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.ReadableContent
 
 enum class ArticleReaction(val emoji: String) {
-    Slop("🤖"),
-    Love("❤️"),
+    Love("🧡"),
     Good("👍"),
+    Slop("🤖"),
     ;
 
     companion object {
+        /** What a plain tap on the reaction button sends. */
+        val DEFAULT = Love
+
         fun fromContent(content: String): ArticleReaction? {
             val emoji = content.trim()
             return entries.firstOrNull { it.emoji == emoji }
