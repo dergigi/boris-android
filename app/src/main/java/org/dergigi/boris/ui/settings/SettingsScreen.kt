@@ -381,8 +381,6 @@ fun SettingsScreen(
                     SettingsCategoryDetail(
                         category = category,
                         settings = settings,
-                        canReset = category.isDirty(settings, displayType),
-                        onReset = { pendingReset = category.name },
                         onUpdate = { next -> settingsViewModel.update { next } },
                         onOpenArticle = onOpenArticle,
                         onOpenTutorial = onOpenTutorial,
@@ -564,8 +562,6 @@ private fun SettingsCategoryRow(
 private fun SettingsCategoryDetail(
     category: SettingsCategory,
     settings: UserSettings,
-    canReset: Boolean,
-    onReset: () -> Unit,
     onUpdate: (UserSettings) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
@@ -618,15 +614,6 @@ private fun SettingsCategoryDetail(
                 onOpenSupport = onOpenSupport,
                 onOpenAuthorProfile = onOpenAuthorProfile,
             )
-        }
-        if (category.showsReset()) {
-            TextButton(
-                onClick = onReset,
-                enabled = canReset,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.settings_reset_defaults))
-            }
         }
     }
 }
