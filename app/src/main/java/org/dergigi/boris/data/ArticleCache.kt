@@ -14,6 +14,11 @@ import java.security.MessageDigest
 object ArticleCache {
     const val DIR_NAME = "article_cache"
 
+    data class CachedArticle(
+        val content: ReadableContent,
+        val storedAt: Long,
+    )
+
     private val lock = Any()
     private var dir: File? = null
 
@@ -59,6 +64,26 @@ object ArticleCache {
 
     fun remove(url: String) {
         fileFor(url)?.delete()
+    }
+
+    fun byAuthor(pubkeyHex: String): List<CachedArticle> {
+        val author = pubkeyHex
+            .trim()
+            .lowercase()
+            .takeIf { it.length == 64 }
+            ?: return emptyList()
+        val root = synchronized(lock) { dir } ?: return emptyList()
+        return root.listFiles()
+            ?.filter { it.isFile && it.extension == "json" }
+            .orEmpty()
+            .mapNotNull { file ->
+                val content = runCatching { decode(file.readText()) }.getOrNull()
+                    ?: return@mapNotNull null
+                val contentAuthor = content.authorPubkey?.trim()?.lowercase()
+                if (content.body.isBlank() || contentAuthor != author) return@mapNotNull null
+                CachedArticle(content, file.lastModified() / 1000)
+            }
+            .sortedByDescending { it.content.publishedAt ?: it.storedAt }
     }
 
     fun trim(context: Context) {

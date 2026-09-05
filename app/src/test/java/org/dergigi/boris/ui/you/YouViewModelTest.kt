@@ -105,14 +105,24 @@ class YouViewModelTest {
             createdAt = 10,
             bucket = org.dergigi.boris.data.BookmarkBucket.Web,
         )
+        val associated = org.dergigi.boris.data.BookmarkItem(
+            id = "c1",
+            title = "Associated",
+            url = "https://example.com/a",
+            host = "example.com",
+            imageUrl = null,
+            createdAt = 20,
+            bucket = org.dergigi.boris.data.BookmarkBucket.Web,
+        )
         val merged = mergeYouItems(
             highlights = listOf(highlight),
             writings = listOf(writing),
             publicBookmarks = listOf(public),
             webBookmarks = listOf(web),
+            associatedArticles = listOf(associated),
         )
         assertEquals(
-            listOf("w:w1", "b:p1", "h:h1", "b:w-b1"),
+            listOf("w:w1", "b:p1", "h:h1", "b:c1", "b:w-b1"),
             merged.map { it.key },
         )
     }
@@ -146,6 +156,7 @@ class YouViewModelTest {
             writings = listOf(writing),
             publicBookmarks = emptyList(),
             webBookmarks = emptyList(),
+            associatedArticles = emptyList(),
             deletedIds = setOf("gone"),
             query = "bitcoin",
         )
