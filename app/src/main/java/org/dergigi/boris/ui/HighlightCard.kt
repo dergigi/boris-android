@@ -104,6 +104,7 @@ fun HighlightQuoteText(
     modifier: Modifier = Modifier,
     context: String? = null,
     maxLines: Int = Int.MAX_VALUE,
+    eink: Boolean = false,
 ) {
     val (before, marked, after) = highlightContextParts(quote, context)
     val (beforeText, beforeLinks) = MarkdownInline.flatten(before)
@@ -118,9 +119,10 @@ fun HighlightQuoteText(
         val markEnd = length
         if (markStart < markEnd) {
             addStyle(
-                SpanStyle(
-                    background = color.copy(alpha = 0.45f),
-                    color = MaterialTheme.colorScheme.onBackground,
+                highlightQuoteMarkStyle(
+                    color = color,
+                    onBackground = MaterialTheme.colorScheme.onBackground,
+                    eink = eink,
                 ),
                 markStart,
                 markEnd,
@@ -145,6 +147,23 @@ fun HighlightQuoteText(
         modifier = modifier,
     )
 }
+
+internal fun highlightQuoteMarkStyle(
+    color: Color,
+    onBackground: Color,
+    eink: Boolean,
+): SpanStyle =
+    if (eink) {
+        SpanStyle(
+            color = onBackground,
+            textDecoration = TextDecoration.Underline,
+        )
+    } else {
+        SpanStyle(
+            background = color.copy(alpha = 0.45f),
+            color = onBackground,
+        )
+    }
 
 @Composable
 private fun HighlightCommentText(
@@ -206,6 +225,7 @@ fun HighlightCard(
     url: String? = null,
     authorPicture: String? = null,
     maxQuoteLines: Int = Int.MAX_VALUE,
+    eink: Boolean = false,
     selected: Boolean = false,
     onClick: (() -> Unit)? = null,
     menu: HighlightCardMenu? = null,
@@ -268,6 +288,7 @@ fun HighlightCard(
                     context = context,
                     color = color,
                     maxLines = maxQuoteLines,
+                    eink = eink,
                     modifier = Modifier.padding(start = 12.dp),
                 )
             }
@@ -277,6 +298,7 @@ fun HighlightCard(
                 context = context,
                 color = color,
                 maxLines = maxQuoteLines,
+                eink = eink,
             )
         }
         if (!host.isNullOrBlank()) {

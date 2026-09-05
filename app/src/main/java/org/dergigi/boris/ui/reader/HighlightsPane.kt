@@ -94,6 +94,7 @@ fun HighlightsPane(
     friendsColor: Color,
     foafColor: Color,
     otherColor: Color,
+    eink: Boolean,
     onDismiss: () -> Unit,
     onSelect: (PaintedHighlight) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
@@ -203,6 +204,7 @@ fun HighlightsPane(
                                     url = articleUrl,
                                     authorPicture = item.authorPicture,
                                     selected = item.id == selectedId,
+                                    eink = eink,
                                     onClick = { onSelect(item) },
                                     menu = menuFor(item),
                                 )

@@ -122,6 +122,7 @@ fun YouHighlights(
         about = shown?.about,
         pictureUrl = shown?.picture,
         highlightColor = highlightColor,
+        eink = look.eink,
         onRefresh = { tab -> viewModel.refresh(tab = tab) },
         loadingMore = loadingMore,
         endReached = endReached,
@@ -156,6 +157,7 @@ fun YouHighlightsContent(
     about: String?,
     pictureUrl: String?,
     highlightColor: Color,
+    eink: Boolean,
     onRefresh: (ContentTab?) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
@@ -271,6 +273,7 @@ fun YouHighlightsContent(
                                                 host = item.host,
                                                 url = item.url,
                                                 authorPicture = pictureUrl,
+                                                eink = eink,
                                                 onClick = item.url?.let { url ->
                                                     { onOpenHighlight(url, item.id, item.quote) }
                                                 },
@@ -330,6 +333,7 @@ fun YouHighlightsContent(
                                         host = item.host,
                                         url = item.url,
                                         authorPicture = pictureUrl,
+                                        eink = eink,
                                         onClick = item.url?.let { url ->
                                             { onOpenHighlight(url, item.id, item.quote) }
                                         },
