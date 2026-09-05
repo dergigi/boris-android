@@ -372,7 +372,6 @@ private fun ReadyLibrary(
                 else -> {
                     LazyColumn(
                         modifier = Modifier
-                            .widthIn(max = 720.dp)
                             .fillMaxSize()
                             .align(Alignment.TopCenter),
                         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
