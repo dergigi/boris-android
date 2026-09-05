@@ -42,6 +42,7 @@ data class YouHighlight(
     val id: String,
     val quote: String,
     val context: String? = null,
+    val comment: String? = null,
     val url: String?,
     val host: String?,
     val createdAt: Long,
@@ -61,6 +62,7 @@ internal fun YouHighlight.matchesQuery(query: String): Boolean {
     if (q.isEmpty()) return true
     return quote.contains(q, ignoreCase = true) ||
         context.orEmpty().contains(q, ignoreCase = true) ||
+        comment.orEmpty().contains(q, ignoreCase = true) ||
         host.orEmpty().contains(q, ignoreCase = true)
 }
 
@@ -476,6 +478,7 @@ class YouViewModel(
             id = event.id,
             quote = event.content.trim(),
             context = event.tagValue("context"),
+            comment = Nip84.comment(event),
             url = url,
             host = url?.let { ArticleUrl.host(it) },
             createdAt = event.createdAt,

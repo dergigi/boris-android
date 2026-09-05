@@ -77,7 +77,12 @@ class ReaderHighlights(
         create(quote)?.let(onSignIntent)
     }
 
-    fun create(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? {
+    fun create(
+        quote: String,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+        comment: String? = null,
+    ): Intent? {
         val trimmed = quote.trim()
         if (trimmed.isBlank()) {
             onMessage(app.getString(R.string.highlight_cancelled))
@@ -110,6 +115,7 @@ class ReaderHighlights(
                     content.eventId,
                     content.authorPubkey,
                     zapSplits,
+                    comment,
                 ),
                 content = trimmed,
             ),
@@ -185,6 +191,7 @@ class ReaderHighlights(
             pubkey = event.pubkey,
             createdAt = event.createdAt,
             context = event.tagValue("context"),
+            comment = Nip84.comment(event),
         )
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
@@ -224,6 +231,7 @@ class ReaderHighlights(
                 pubkey = event.pubkey,
                 createdAt = event.createdAt,
                 context = event.tagValue("context"),
+                comment = Nip84.comment(event),
                 authorName = Profile.displayName(event.pubkey, profiles[key]),
                 authorPicture = profiles[key]?.picture,
             )

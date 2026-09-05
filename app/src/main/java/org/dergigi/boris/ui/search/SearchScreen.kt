@@ -437,6 +437,7 @@ private fun SearchHighlightCard(
     HighlightCard(
         quote = hit.quote,
         context = hit.context,
+        comment = hit.comment,
         color = color,
         createdAt = hit.sortAt,
         authorName = hit.authorName,

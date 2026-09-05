@@ -1,7 +1,15 @@
 package org.dergigi.boris.data
 
 object UrlExtractor {
-    private val urlRegex = Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)
+    internal val urlRegex = Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)
+
+    internal fun urls(text: String): List<String> {
+        if (text.isBlank()) return emptyList()
+        return urlRegex.findAll(text)
+            .map { it.value.trimEnd('.', ',', ';', ')', ']', '"', '\'') }
+            .distinct()
+            .toList()
+    }
     private val hostLike = Regex(
         """^(https?://)?(www\.)?[\w.-]+\.[a-zA-Z]{2,}(/[^\s]*)?$""",
         RegexOption.IGNORE_CASE,

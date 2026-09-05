@@ -153,6 +153,88 @@ class Nip84Test {
     }
 
     @Test
+    fun tagsIncludeCommentAndMarkSourceUrl() {
+        val tags = Nip84.tags(
+            url = "https://example.com/article",
+            context = null,
+            comment = "worth keeping",
+        )
+        assertTrue(tags.contains(listOf("r", "https://example.com/article", "source")))
+        assertTrue(tags.contains(listOf("comment", "worth keeping")))
+        assertFalse(tags.contains(listOf("r", "https://example.com/article")))
+        assertEquals(listOf("alt", Nip84.ALT), tags.last())
+    }
+
+    @Test
+    fun tagsAddMentionMarkersFromComment() {
+        val npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6"
+        val hex = Nip19.npubDecode(npub)
+        val tags = Nip84.tags(
+            url = "https://example.com/article",
+            context = null,
+            comment = "see nostr:$npub and https://other.example/page",
+        )
+        assertTrue(tags.contains(listOf("p", hex, "", "mention")))
+        assertTrue(tags.contains(listOf("r", "https://other.example/page", "mention")))
+        assertTrue(tags.contains(listOf("r", "https://example.com/article", "source")))
+    }
+
+    @Test
+    fun tagsIgnoreBlankComment() {
+        val tags = Nip84.tags("https://example.com/article", null, comment = "   ")
+        assertEquals(listOf("r", "https://example.com/article"), tags[0])
+        assertFalse(tags.any { it[0] == "comment" })
+    }
+
+    @Test
+    fun articleUrlPrefersSourceAndSkipsMention() {
+        val event = Nip01Event(
+            id = "5".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(
+                listOf("r", "https://mentioned.example/", "mention"),
+                listOf("r", "https://example.com/article", "source"),
+            ),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertEquals("https://example.com/article", Nip84.articleUrl(event))
+    }
+
+    @Test
+    fun articleUrlIgnoresMentionWhenNoSource() {
+        val event = Nip01Event(
+            id = "6".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(
+                listOf("r", "https://mentioned.example/", "mention"),
+                listOf("r", "https://example.com/article"),
+            ),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertEquals("https://example.com/article", Nip84.articleUrl(event))
+    }
+
+    @Test
+    fun commentReadsNonBlankTag() {
+        val event = Nip01Event(
+            id = "7".padStart(64, '0'),
+            pubkey = "aa".repeat(32),
+            createdAt = 1,
+            kind = Nip01Event.KIND_HIGHLIGHT,
+            tags = listOf(listOf("comment", "a note")),
+            content = "quote",
+            sig = "bb".repeat(32),
+        )
+        assertEquals("a note", Nip84.comment(event))
+    }
+
+    @Test
     fun extractContextFallsBackToAWindowForSingleSentence() {
         val body = "This is only one sentence."
         val context = Nip84.extractContext("only one", body)

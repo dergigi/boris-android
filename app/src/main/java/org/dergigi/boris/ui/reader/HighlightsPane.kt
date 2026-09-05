@@ -199,6 +199,7 @@ fun HighlightsPane(
                                     createdAt = item.createdAt,
                                     authorName = name,
                                     context = item.context,
+                                    comment = item.comment,
                                     url = articleUrl,
                                     authorPicture = item.authorPicture,
                                     selected = item.id == selectedId,

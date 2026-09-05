@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Highlights can carry a comment (NIP-84 quote highlight); annotated highlights show the note above the quote
+
 ## [1.5.36] - 2026-09-05
 
 ### Added

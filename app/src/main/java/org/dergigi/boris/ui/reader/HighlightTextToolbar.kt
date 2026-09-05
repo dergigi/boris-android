@@ -34,6 +34,7 @@ fun HighlightTextToolbar(
     showHighlight: Boolean,
     onCopy: () -> Unit,
     onHighlight: () -> Unit,
+    onAnnotate: () -> Unit,
     onTtsFromHere: () -> Unit,
     onSetProgress: () -> Unit,
     onSelectAll: () -> Unit,
@@ -71,6 +72,10 @@ fun HighlightTextToolbar(
                     ToolbarAction(
                         label = stringResource(R.string.highlight_action),
                         onClick = onHighlight,
+                    )
+                    ToolbarAction(
+                        label = stringResource(R.string.highlight_annotate_action),
+                        onClick = onAnnotate,
                     )
                 }
                 ToolbarAction(

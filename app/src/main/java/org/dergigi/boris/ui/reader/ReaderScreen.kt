@@ -352,8 +352,8 @@ fun ReaderScreen(
         onOpenGallery = viewModel::openGallery,
         onCloseGallery = viewModel::closeGallery,
         onGalleryPage = viewModel::setGalleryIndex,
-        onHighlight = { quote, ownerText, ownerOffset ->
-            viewModel.highlight(quote, ownerText, ownerOffset)?.let(launchSign)
+        onHighlight = { quote, ownerText, ownerOffset, comment ->
+            viewModel.highlight(quote, ownerText, ownerOffset, comment)?.let(launchSign)
         },
         onSave = { privateBookmark ->
             viewModel.saveToLibrary(privateBookmark)?.let(launchSign)
@@ -414,7 +414,7 @@ fun ReaderScreenContent(
     onOpenGallery: (List<String>, Int) -> Unit,
     onCloseGallery: () -> Unit,
     onGalleryPage: (Int) -> Unit,
-    onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
+    onHighlight: (quote: String, ownerText: String, ownerOffset: Int, comment: String?) -> Unit,
     onSave: (privateBookmark: Boolean) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onReact: (ArticleReaction?) -> Unit,

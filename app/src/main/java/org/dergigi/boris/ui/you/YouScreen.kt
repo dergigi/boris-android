@@ -264,6 +264,7 @@ fun YouHighlightsContent(
                                             HighlightCard(
                                                 quote = item.quote,
                                                 context = item.context,
+                                                comment = item.comment,
                                                 color = highlightColor,
                                                 createdAt = item.createdAt,
                                                 authorName = displayName,
@@ -322,6 +323,7 @@ fun YouHighlightsContent(
                                     HighlightCard(
                                         quote = item.quote,
                                         context = item.context,
+                                        comment = item.comment,
                                         color = highlightColor,
                                         createdAt = item.createdAt,
                                         authorName = displayName,
