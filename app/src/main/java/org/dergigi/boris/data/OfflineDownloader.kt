@@ -50,6 +50,8 @@ object OfflineDownloader {
 
     private val _progress = MutableStateFlow<Map<OfflineShelf, OfflineProgress>>(emptyMap())
     val progress: StateFlow<Map<OfflineShelf, OfflineProgress>> = _progress.asStateFlow()
+    private val _imageProgress = MutableStateFlow(OfflineProgress())
+    val imageProgress: StateFlow<OfflineProgress> = _imageProgress.asStateFlow()
 
     fun kickoff(context: Context) {
         if (!active.compareAndSet(false, true)) return
@@ -71,6 +73,8 @@ object OfflineDownloader {
             runCatching { RelayQuery.fetchRelayList(pubkey) }.getOrNull()?.read?.let(::addAll)
         }.distinct()
         val shelves = collectShelves(pubkey, readRelays)
+        val imageUrls = LinkedHashSet<String>()
+        updateImages(imageUrls, running = false)
         _progress.value = shelves.mapValues { (_, urls) ->
             OfflineProgress(
                 total = urls.size,
@@ -87,7 +91,12 @@ object OfflineDownloader {
                 runCatching {
                     val content = repository.fetch(url)
                     if (ArticleImages.enabled()) {
-                        ArticleImages.ensure(app, ArticleImages.urlsFor(content))
+                        val images = ArticleImages.urlsFor(content)
+                        imageUrls.addAll(images)
+                        updateImages(imageUrls, running = true)
+                        ArticleImages.ensure(app, images) {
+                            updateImages(imageUrls, running = true)
+                        }
                     }
                 }
                 val added = estimatedBytes(url)
@@ -107,6 +116,7 @@ object OfflineDownloader {
                 )
             }
         }
+        updateImages(imageUrls, running = false)
         ArticleCache.trim(app)
     }
 
@@ -144,6 +154,15 @@ object OfflineDownloader {
         val current = _progress.value
         val next = transform(current[shelf] ?: OfflineProgress())
         _progress.value = current + (shelf to next)
+    }
+
+    private fun updateImages(urls: Collection<String>, running: Boolean) {
+        _imageProgress.value = OfflineProgress(
+            total = urls.size,
+            downloaded = ArticleImages.downloadedCount(urls),
+            bytes = ArticleImages.downloadedBytes(urls),
+            running = running,
+        )
     }
 
     private fun collectShelves(
