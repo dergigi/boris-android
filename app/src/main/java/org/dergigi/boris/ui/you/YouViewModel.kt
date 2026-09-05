@@ -62,6 +62,7 @@ internal fun YouHighlight.matchesQuery(query: String): Boolean {
     if (q.isEmpty()) return true
     return quote.contains(q, ignoreCase = true) ||
         context.orEmpty().contains(q, ignoreCase = true) ||
+        comment.orEmpty().contains(q, ignoreCase = true) ||
         host.orEmpty().contains(q, ignoreCase = true)
 }
 

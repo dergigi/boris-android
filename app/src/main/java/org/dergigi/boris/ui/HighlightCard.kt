@@ -4,11 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +32,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -103,12 +109,7 @@ fun HighlightQuoteText(
     val (beforeText, beforeLinks) = MarkdownInline.flatten(before)
     val (markedText, markedLinks) = MarkdownInline.flatten(marked)
     val (afterText, afterLinks) = MarkdownInline.flatten(after)
-    val linkStyle = TextLinkStyles(
-        style = SpanStyle(
-            color = MaterialTheme.colorScheme.primary,
-            textDecoration = TextDecoration.Underline,
-        ),
-    )
+    val linkStyle = markdownLinkStyle()
     val uriHandler = LocalUriHandler.current
     val annotated = buildAnnotatedString {
         append(beforeText)
@@ -126,22 +127,9 @@ fun HighlightQuoteText(
             )
         }
         append(afterText)
-        fun addLinks(links: List<MarkdownInline.Link>, offset: Int) {
-            for (link in links) {
-                addLink(
-                    LinkAnnotation.Url(
-                        url = link.url,
-                        styles = linkStyle,
-                        linkInteractionListener = { uriHandler.openUri(link.url) },
-                    ),
-                    start = offset + link.start,
-                    end = offset + link.end,
-                )
-            }
-        }
-        addLinks(beforeLinks, 0)
-        addLinks(markedLinks, beforeText.length)
-        addLinks(afterLinks, beforeText.length + markedText.length)
+        addMarkdownLinks(beforeLinks, 0, linkStyle, uriHandler::openUri)
+        addMarkdownLinks(markedLinks, beforeText.length, linkStyle, uriHandler::openUri)
+        addMarkdownLinks(afterLinks, beforeText.length + markedText.length, linkStyle, uriHandler::openUri)
     }
     Text(
         text = annotated,
@@ -159,6 +147,53 @@ fun HighlightQuoteText(
 }
 
 @Composable
+private fun HighlightCommentText(
+    comment: String,
+    modifier: Modifier = Modifier,
+) {
+    val (text, links) = MarkdownInline.flatten(comment)
+    val linkStyle = markdownLinkStyle()
+    val uriHandler = LocalUriHandler.current
+    val annotated = buildAnnotatedString {
+        append(text)
+        addMarkdownLinks(links, 0, linkStyle, uriHandler::openUri)
+    }
+    Text(
+        text = annotated,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun markdownLinkStyle(): TextLinkStyles = TextLinkStyles(
+    style = SpanStyle(
+        color = MaterialTheme.colorScheme.primary,
+        textDecoration = TextDecoration.Underline,
+    ),
+)
+
+private fun AnnotatedString.Builder.addMarkdownLinks(
+    links: List<MarkdownInline.Link>,
+    offset: Int,
+    style: TextLinkStyles,
+    onOpen: (String) -> Unit,
+) {
+    for (link in links) {
+        addLink(
+            LinkAnnotation.Url(
+                url = link.url,
+                styles = style,
+                linkInteractionListener = { onOpen(link.url) },
+            ),
+            start = offset + link.start,
+            end = offset + link.end,
+        )
+    }
+}
+
+@Composable
 fun HighlightCard(
     quote: String,
     color: Color,
@@ -166,6 +201,7 @@ fun HighlightCard(
     authorName: String,
     modifier: Modifier = Modifier,
     context: String? = null,
+    comment: String? = null,
     host: String? = null,
     url: String? = null,
     authorPicture: String? = null,
@@ -213,12 +249,36 @@ fun HighlightCard(
                 )
             }
         }
-        HighlightQuoteText(
-            quote = quote,
-            context = context,
-            color = color,
-            maxLines = maxQuoteLines,
-        )
+        val annotation = comment?.trim()?.takeIf { it.isNotBlank() }
+        if (annotation != null) {
+            HighlightCommentText(annotation)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .background(chrome),
+                )
+                HighlightQuoteText(
+                    quote = quote,
+                    context = context,
+                    color = color,
+                    maxLines = maxQuoteLines,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+        } else {
+            HighlightQuoteText(
+                quote = quote,
+                context = context,
+                color = color,
+                maxLines = maxQuoteLines,
+            )
+        }
         if (!host.isNullOrBlank()) {
             Text(
                 text = stringResource(R.string.you_highlight_source, host),

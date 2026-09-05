@@ -653,6 +653,7 @@ private fun FeedAllList(
                         HighlightCard(
                             quote = item.quote,
                             context = item.context,
+                            comment = item.comment,
                             color = levelColor(item.level),
                             createdAt = item.createdAt,
                             authorName = item.authorName,
@@ -732,6 +733,7 @@ private fun FeedHighlightList(
                         HighlightCard(
                             quote = item.quote,
                             context = item.context,
+                            comment = item.comment,
                             color = levelColor(item.level),
                             createdAt = item.createdAt,
                             authorName = item.authorName,

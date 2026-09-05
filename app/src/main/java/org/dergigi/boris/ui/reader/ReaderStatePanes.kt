@@ -222,6 +222,7 @@ internal fun OpenedHighlightPane(
         HighlightCard(
             quote = highlight.quote,
             context = highlight.context,
+            comment = highlight.comment,
             color = color,
             createdAt = highlight.createdAt,
             authorName = authorName,
