@@ -9,6 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Zap Nostr-native articles from the end of the article, next to the heart. Amounts follow the article's own zap split tags when it has them, otherwise the author gets it all
+- Wallet settings: connect a wallet over Nostr Wallet Connect (NIP-47), see its balance, and pick the default zap amount
+
 ## [1.6.0] - 2026-09-05
 
 ### Added
