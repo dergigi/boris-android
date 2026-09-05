@@ -32,6 +32,29 @@ class LinkedArticlesTest {
     }
 
     @Test
+    fun keepsNewestDuplicateUrlBeforeDeduplication() {
+        val older = note(
+            "https://example.com/blog/same https://example.com/blog/older",
+            createdAt = 10,
+        )
+        val newer = note(
+            "https://example.com/blog/same",
+            createdAt = 20,
+        )
+
+        val refs = LinkedArticles.fromNotes(listOf(older, newer))
+
+        assertEquals(
+            listOf(
+                "https://example.com/blog/same",
+                "https://example.com/blog/older",
+            ),
+            refs.map { it.url },
+        )
+        assertEquals(listOf(20L, 10L), refs.map { it.createdAt })
+    }
+
+    @Test
     fun ignoresProfilesNotesMediaAndObviousShorteners() {
         assertFalse(
             LinkedArticles.isArticleLike(
@@ -82,10 +105,10 @@ class LinkedArticlesTest {
         )
     }
 
-    private fun note(content: String): Nip01Event = Nip01Event(
+    private fun note(content: String, createdAt: Long = 42): Nip01Event = Nip01Event(
         id = "11".repeat(32),
         pubkey = "22".repeat(32),
-        createdAt = 42,
+        createdAt = createdAt,
         kind = Nip01Event.KIND_TEXT_NOTE,
         tags = emptyList(),
         content = content,

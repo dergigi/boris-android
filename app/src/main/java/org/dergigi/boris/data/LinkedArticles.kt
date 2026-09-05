@@ -17,6 +17,7 @@ object LinkedArticles {
                 urlsFromText(note.content)
                     .map { url -> LinkedArticleRef(url, note.createdAt) }
             }
+            .sortedByDescending { it.createdAt }
             .filter { seen.add(keyFor(it.url)) }
     }
 
