@@ -319,6 +319,10 @@
     <string name="settings_style_marker">Text marker style</string>
     <string name="settings_style_underline">Underline style</string>
     <string name="settings_paragraph_alignment">Paragraph Alignment</string>
+    <string name="settings_reader_margin">Reader Margin</string>
+    <string name="settings_reader_margin_compact">Compact</string>
+    <string name="settings_reader_margin_default">Default</string>
+    <string name="settings_reader_margin_comfortable">Comfortable</string>
     <string name="settings_align_left">Left aligned</string>
     <string name="settings_align_justify">Justified</string>
     <string name="settings_highlight_visibility">Default Highlight Visibility</string>
@@ -438,7 +442,7 @@
     <string name="reader_find_previous">Previous match</string>
     <string name="reader_find_next">Next match</string>
     <string name="settings_appearance_summary">Theme, display type, dark and light colors</string>
-    <string name="settings_reading_summary">Font, size, alignment, progress</string>
+    <string name="settings_reading_summary">Font, size, margins, progress</string>
     <string name="settings_tts_summary">Speed, voice, preview, follow-along</string>
     <string name="settings_media_summary">Full-width images</string>
     <string name="settings_highlights_summary">Style, colors, visibility</string>

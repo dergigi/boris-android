@@ -22,6 +22,7 @@ class UserSettingsTest {
         assertTrue(settings.defaultHighlightVisibilityFoaf)
         assertTrue(settings.defaultHighlightVisibilityNostrverse)
         assertEquals("justify", settings.paragraphAlignment)
+        assertEquals(ReaderMargin.Default, settings.readerMargin)
         assertEquals("#38bdf8", settings.linkColorDark)
         assertEquals("#3b82f6", settings.linkColorLight)
         assertEquals("system", settings.theme)
@@ -93,14 +94,29 @@ class UserSettingsTest {
     }
 
     @Test
+    fun readerMarginReadsAndFallsBack() {
+        assertEquals(
+            ReaderMargin.Comfortable,
+            UserSettings.parse("""{"readerMargin":"comfortable"}""").readerMargin,
+        )
+        assertEquals(
+            ReaderMargin.Default,
+            UserSettings.parse("""{"readerMargin":"wide"}""").readerMargin,
+        )
+        val updated = UserSettings.defaults().withString("readerMargin", "compact")
+        assertEquals(ReaderMargin.Compact, UserSettings.parse(updated.toJson()).readerMargin)
+    }
+
+    @Test
     fun parseReadsKnownKeys() {
         val settings = UserSettings.parse(
-            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","fullWidthImages":false,"openLinksInReader":false,"showReaderProgressBar":false,"showReaderProgressHeading":false}""",
+            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","readerMargin":"compact","fullWidthImages":false,"openLinksInReader":false,"showReaderProgressBar":false,"showReaderProgressHeading":false}""",
         )
         assertEquals(24, settings.fontSize)
         assertEquals("underline", settings.highlightStyle)
         assertFalse(settings.showHighlights)
         assertEquals("left", settings.paragraphAlignment)
+        assertEquals(ReaderMargin.Compact, settings.readerMargin)
         assertEquals("source-serif-4", settings.readingFont)
         assertFalse(settings.fullWidthImages)
         assertFalse(settings.openLinksInReader)

@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.DisplayTypeStore
+import org.dergigi.boris.data.ReaderMargin
 import org.dergigi.boris.data.UserSettings
 
 @Composable
@@ -86,6 +88,17 @@ fun ReadingSection(
                 )
             }
         }
+        SettingRow(stringResource(R.string.settings_reader_margin)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ReaderMargin.entries.forEach { margin ->
+                    FilterChip(
+                        selected = settings.readerMargin == margin,
+                        onClick = { onUpdate(settings.withString("readerMargin", margin.id)) },
+                        label = { Text(readerMarginLabel(margin)) },
+                    )
+                }
+            }
+        }
         if (!displayType.eink) SettingRow(stringResource(R.string.settings_link_color)) {
             ColorSwatches(
                 colors = linkColors,
@@ -115,6 +128,15 @@ fun ReadingSection(
         )
     }
 }
+
+@Composable
+private fun readerMarginLabel(margin: ReaderMargin): String = stringResource(
+    when (margin) {
+        ReaderMargin.Compact -> R.string.settings_reader_margin_compact
+        ReaderMargin.Default -> R.string.settings_reader_margin_default
+        ReaderMargin.Comfortable -> R.string.settings_reader_margin_comfortable
+    },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

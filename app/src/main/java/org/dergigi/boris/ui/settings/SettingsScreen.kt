@@ -150,6 +150,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "readingFont",
             "fontSize",
             "paragraphAlignment",
+            "readerMargin",
             "linkColorDark",
             "linkColorLight",
             "showReaderProgressBar",

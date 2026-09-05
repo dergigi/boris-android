@@ -357,6 +357,7 @@ internal fun ArticleBody(
     val family = ReadingFonts.family(settings.readingFont)
     val bodySize = settings.fontSize.sp
     val bodyLine = (settings.fontSize * 36f / 21f).sp
+    val horizontalPadding = readerHorizontalPadding(settings.readerMargin)
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
     val look = rememberDisplayLook(settings)
     val mineColor = look.mine
@@ -977,7 +978,7 @@ internal fun ArticleBody(
             modifier = Modifier
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = horizontalPadding, vertical = 8.dp)
                 .padding(bottom = bottomChromePadding),
         ) {
             if (coverUrl == null && !content.title.isNullOrBlank()) {
