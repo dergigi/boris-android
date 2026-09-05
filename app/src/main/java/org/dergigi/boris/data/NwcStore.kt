@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.dergigi.boris.nostr.NwcUri
-import org.dergigi.boris.nostr.hexToByteArray
 
 /** Wallet connection without the secret; safe to hand to UI. */
 data class NwcConnection(
@@ -49,7 +48,7 @@ object NwcStore {
     }
 
     fun save(context: Context, uri: NwcUri) {
-        val secret = uri.secretHex.hexToByteArray()
+        val secret = uri.secretBytes()
         val boxed = SecretBox.wrap(context, secret, SecretBox.WALLET_ALIAS)
         secret.fill(0)
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()

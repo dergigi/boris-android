@@ -10,6 +10,9 @@ data class NwcUri(
     val secretHex: String,
     val lud16: String?,
 ) {
+    /** Fresh copy each call; zero it after use. */
+    fun secretBytes(): ByteArray = secretHex.hexToByteArray()
+
     companion object {
         private val SCHEMES = listOf("nostr+walletconnect://", "nostr+walletconnect:", "nostrwalletconnect://")
 
