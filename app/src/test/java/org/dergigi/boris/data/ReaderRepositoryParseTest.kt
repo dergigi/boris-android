@@ -6,6 +6,10 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.ast.ASTNode
+import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.parser.MarkdownParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -136,6 +140,15 @@ class ReaderRepositoryParseTest {
             "declared purpose of helping the Big Brother to surveil the world include",
             out,
         )
+    }
+
+    @Test
+    fun noteMarkdownLeavesEncodedImageMarkupInactive() {
+        val out = repository.noteMarkdown(
+            "hello &lt;img src=&quot;https://cdn.example.com/pixel.jpg&quot;&gt;",
+        )
+        assertEquals("hello <img src=\"https://cdn.example.com/pixel.jpg\">", out)
+        assertFalse(containsMarkdownImage(out))
     }
 
     @Test
@@ -403,4 +416,13 @@ class ReaderRepositoryParseTest {
             .message("stub")
             .body(body.toResponseBody("text/html; charset=utf-8".toMediaType()))
             .build()
+
+    private fun containsMarkdownImage(markdown: String): Boolean {
+        val root = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(markdown)
+        fun walk(node: ASTNode): Boolean {
+            if (node.type == MarkdownElementTypes.IMAGE) return true
+            return node.children.any(::walk)
+        }
+        return walk(root)
+    }
 }

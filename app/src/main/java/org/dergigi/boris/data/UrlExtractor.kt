@@ -111,6 +111,7 @@ object UrlExtractor {
         val prepared = upgradeImageHttpUrls(protected)
         val embedded = urlRegex.replace(prepared) { match ->
             if (alreadyLinked(prepared, match.range.first)) return@replace match.value
+            if (insideHtmlTag(prepared, match.range.first)) return@replace match.value
             val raw = match.value.trimEnd('.', ',', ';', ')', ']', '"', '\'')
             val suffix = match.value.removePrefix(raw)
             if (isImageUrl(raw)) "![](${preferHttps(raw)})$suffix" else match.value
@@ -158,6 +159,13 @@ object UrlExtractor {
         if (urlStart == 0) return false
         val before = text[urlStart - 1]
         return before == '(' || before == '<'
+    }
+
+    private fun insideHtmlTag(text: String, urlStart: Int): Boolean {
+        val open = text.lastIndexOf('<', startIndex = urlStart)
+        if (open < 0) return false
+        val close = text.lastIndexOf('>', startIndex = urlStart)
+        return open > close && text.indexOf('>', startIndex = urlStart) >= 0
     }
 
     private val markdownImageRegex = Regex("""!\[[^\]]*]\(\s*<?([^)\s>]+)>?""")
