@@ -12,6 +12,7 @@ object OgMetaClient {
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(8, TimeUnit.SECONDS)
         .readTimeout(8, TimeUnit.SECONDS)
+        .callTimeout(20, TimeUnit.SECONDS)
         .dns(PublicDns)
         .followRedirects(false)
         .followSslRedirects(false)
