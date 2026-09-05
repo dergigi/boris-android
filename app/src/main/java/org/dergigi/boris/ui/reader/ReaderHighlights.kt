@@ -185,6 +185,7 @@ class ReaderHighlights(
             pubkey = event.pubkey,
             createdAt = event.createdAt,
             context = event.tagValue("context"),
+            comment = Nip84.comment(event),
         )
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
@@ -224,6 +225,7 @@ class ReaderHighlights(
                 pubkey = event.pubkey,
                 createdAt = event.createdAt,
                 context = event.tagValue("context"),
+                comment = Nip84.comment(event),
                 authorName = Profile.displayName(event.pubkey, profiles[key]),
                 authorPicture = profiles[key]?.picture,
             )

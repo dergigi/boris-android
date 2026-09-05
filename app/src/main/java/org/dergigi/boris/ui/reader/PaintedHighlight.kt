@@ -9,6 +9,7 @@ data class PaintedHighlight(
     val pubkey: String = "",
     val createdAt: Long = 0L,
     val context: String? = null,
+    val comment: String? = null,
     val authorName: String = "",
     val authorPicture: String? = null,
     val find: Boolean = false,

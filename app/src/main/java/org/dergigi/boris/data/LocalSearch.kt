@@ -26,6 +26,7 @@ object LocalSearch {
             val url: String?,
             val quote: String,
             val context: String?,
+            val comment: String? = null,
             val host: String?,
             val authorHex: String,
             val authorName: String,
@@ -98,7 +99,8 @@ object LocalSearch {
             val quote = event.content.trim()
             if (quote.isEmpty()) return@mapNotNull null
             val context = event.tagValue("context")
-            if (!matches(needle, quote, context)) return@mapNotNull null
+            val comment = Nip84.comment(event)
+            if (!matches(needle, quote, context, comment)) return@mapNotNull null
             val url = Nip84.articleUrl(event)
             val host = url?.let { ArticleUrl.host(it) }
             val profile = cachedProfile(event.pubkey)
@@ -113,6 +115,7 @@ object LocalSearch {
                 url = url,
                 quote = quote,
                 context = context,
+                comment = comment,
                 host = host,
                 authorHex = author,
                 authorName = Profile.displayName(event.pubkey, profile),
