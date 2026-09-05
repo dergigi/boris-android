@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.LibrarySaveKind
+import org.dergigi.boris.data.PrivateBookmarks
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
@@ -143,6 +144,7 @@ class LibrarySaveAction(
             fail(app.getString(R.string.reader_save_failed))
             return
         }
+        PrivateBookmarks.remember(session.pubkeyHex, list.content, tags)
         if (Nip51.containsTag(tags, newTag)) {
             alreadySaved()
             return
@@ -162,6 +164,8 @@ class LibrarySaveAction(
         ) { outcome ->
             when (outcome) {
                 is CryptoOutcome.Text -> {
+                    // The Library can show the new list without another decrypt prompt.
+                    PrivateBookmarks.remember(session.pubkeyHex, outcome.value, hiddenTags)
                     requestBookmarkListSign(
                         session,
                         (list ?: emptyBookmarkList(session.pubkeyHex)).tags,
