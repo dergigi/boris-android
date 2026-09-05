@@ -185,6 +185,10 @@
     <string name="auth_nstart_host">nstart.me</string>
     <string name="reader_note_by">Note by %1$s</string>
     <string name="highlight_action">Highlight</string>
+    <string name="highlight_annotate_action">Annotate</string>
+    <string name="highlight_comment_title">Add a comment</string>
+    <string name="highlight_comment_hint">Comment</string>
+    <string name="highlight_comment_publish">Publish</string>
     <string name="share_read">Read</string>
     <string name="share_save">Save</string>
     <string name="share_save_sign_in">Connect a signer to save to Boris.</string>

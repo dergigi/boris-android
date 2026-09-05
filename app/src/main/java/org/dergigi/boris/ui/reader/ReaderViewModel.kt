@@ -287,8 +287,12 @@ class ReaderViewModel(
         readerHighlights.offerExternal(quote)
     }
 
-    fun highlight(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? =
-        readerHighlights.create(quote, ownerText, ownerOffset)
+    fun highlight(
+        quote: String,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+        comment: String? = null,
+    ): Intent? = readerHighlights.create(quote, ownerText, ownerOffset, comment)
 
     fun dismissRssFeedSuggestion() {
         _rssFeedSuggestion.value = null

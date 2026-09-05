@@ -260,7 +260,7 @@ internal fun ArticleBody(
     onAddRssFeed: (String) -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
     onOpenGallery: (List<String>, Int) -> Unit,
-    onHighlight: (quote: String, ownerText: String, ownerOffset: Int) -> Unit,
+    onHighlight: (quote: String, ownerText: String, ownerOffset: Int, comment: String?) -> Unit,
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onReact: (ArticleReaction?) -> Unit,
     canDeleteHighlight: (String?) -> Boolean = { false },
@@ -444,6 +444,7 @@ internal fun ArticleBody(
         }
     }
     var selectedId by remember { mutableStateOf<String?>(null) }
+    var pendingAnnotation by remember { mutableStateOf<PendingHighlightAnnotation?>(null) }
     var pendingJumpId by remember {
         mutableStateOf(focusHighlightId.takeIf { it.isNotBlank() })
     }
@@ -1186,7 +1187,15 @@ internal fun ArticleBody(
                 val ownerText = selection.text
                 val ownerOffset = selection.range.min
                 selection.clear()
-                onHighlight(quote, ownerText, ownerOffset)
+                onHighlight(quote, ownerText, ownerOffset, null)
+            },
+            onAnnotate = {
+                pendingAnnotation = PendingHighlightAnnotation(
+                    quote = selection.selectedText,
+                    ownerText = selection.text,
+                    ownerOffset = selection.range.min,
+                )
+                selection.clear()
             },
             onTtsFromHere = ::startTtsFromSelection,
             onSetProgress = {
@@ -1209,6 +1218,16 @@ internal fun ArticleBody(
                 selection.selectAll(owner, selection.text, selection.ttsStartIndex)
             },
         )
+        pendingAnnotation?.let { pending ->
+            HighlightCommentDialog(
+                quote = pending.quote,
+                onConfirm = { comment ->
+                    pendingAnnotation = null
+                    onHighlight(pending.quote, pending.ownerText, pending.ownerOffset, comment)
+                },
+                onDismiss = { pendingAnnotation = null },
+            )
+        }
         HighlightsPane(
             open = pane.highlightsOpen,
             highlights = highlights,

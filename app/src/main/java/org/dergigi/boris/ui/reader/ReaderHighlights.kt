@@ -77,7 +77,12 @@ class ReaderHighlights(
         create(quote)?.let(onSignIntent)
     }
 
-    fun create(quote: String, ownerText: String = "", ownerOffset: Int = 0): Intent? {
+    fun create(
+        quote: String,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+        comment: String? = null,
+    ): Intent? {
         val trimmed = quote.trim()
         if (trimmed.isBlank()) {
             onMessage(app.getString(R.string.highlight_cancelled))
@@ -110,6 +115,7 @@ class ReaderHighlights(
                     content.eventId,
                     content.authorPubkey,
                     zapSplits,
+                    comment,
                 ),
                 content = trimmed,
             ),
