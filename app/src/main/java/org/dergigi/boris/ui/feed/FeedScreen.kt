@@ -641,7 +641,6 @@ private fun FeedAllList(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
-                .widthIn(max = 720.dp)
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
@@ -721,7 +720,6 @@ private fun FeedHighlightList(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
-                .widthIn(max = 720.dp)
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
@@ -780,7 +778,6 @@ private fun FeedWritingList(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
-                .widthIn(max = 720.dp)
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
@@ -820,7 +817,6 @@ private fun FeedRssList(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
-                .widthIn(max = 720.dp)
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
