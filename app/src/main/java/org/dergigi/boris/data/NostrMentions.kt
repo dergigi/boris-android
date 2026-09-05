@@ -11,10 +11,21 @@ object NostrMentions {
     private val FENCE = Regex("""(?s)(?:```|~~~)[^\n]*\n.*?(?:```|~~~)""")
     private val INLINE_CODE = Regex("""`+[^`]+`+""")
     private val bech32Body = "023456789acdefghjklmnpqrstuvwxyz"
-    private val PROFILE_MENTION = Regex(
+    internal val PROFILE_MENTION = Regex(
         """(?<![/\w])(?:nostr:(?://)?)(nprofile1[$bech32Body]+|npub1[$bech32Body]+)""",
         RegexOption.IGNORE_CASE,
     )
+
+    internal fun profilesIn(text: String): List<NprofilePointer> {
+        if (text.isBlank()) return emptyList()
+        val seen = linkedSetOf<String>()
+        val out = mutableListOf<NprofilePointer>()
+        for (match in PROFILE_MENTION.findAll(text)) {
+            val pointer = decodeProfile(match.groupValues[1].lowercase()) ?: continue
+            if (seen.add(pointer.pubkey.lowercase())) out += pointer
+        }
+        return out
+    }
 
     fun rewrite(markdown: String): String {
         val (protected, restore) = protectCode(markdown)
@@ -54,7 +65,7 @@ object NostrMentions {
         return "[$label](nostr:$encoded)"
     }
 
-    private fun decodeProfile(encoded: String): NprofilePointer? {
+    internal fun decodeProfile(encoded: String): NprofilePointer? {
         return try {
             when {
                 encoded.startsWith("nprofile1") -> Nip19.nprofileDecode(encoded)

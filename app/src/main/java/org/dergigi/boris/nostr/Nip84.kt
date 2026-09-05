@@ -1,6 +1,8 @@
 package org.dergigi.boris.nostr
 
 import org.dergigi.boris.data.NostrArticle
+import org.dergigi.boris.data.NostrMentions
+import org.dergigi.boris.data.UrlExtractor
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -8,9 +10,15 @@ object Nip84 {
     const val KIND = 9802
     const val ALT = "Highlight created by Boris Android. readwithboris.com"
 
+    fun comment(event: Nip01Event): String? =
+        event.tagValue("comment")?.takeIf { it.isNotBlank() }
+
     fun articleUrl(event: Nip01Event): String? {
-        val http = event.tags.firstOrNull { tag ->
-            tag.size >= 2 && tag[0] == "r" && tag[1].startsWith("http")
+        val rTags = event.tags.filter { it.size >= 2 && it[0] == "r" }
+        val source = rTags.firstOrNull { it.size >= 3 && it[2] == "source" }?.get(1)
+        if (source != null && source.startsWith("http")) return source
+        val http = rTags.firstOrNull { tag ->
+            tag[1].startsWith("http") && (tag.size < 3 || tag[2] != "mention")
         }?.get(1)
         if (http != null) return http
         val coordinate = event.tags.firstOrNull { tag ->
@@ -34,7 +42,9 @@ object Nip84 {
         eventId: String? = null,
         authorPubkey: String? = null,
         zapSplits: List<List<String>> = emptyList(),
+        comment: String? = null,
     ): List<List<String>> = buildList {
+        val annotation = comment?.trim()?.takeIf { it.isNotBlank() }
         if (!coordinate.isNullOrBlank()) {
             add(listOf("a", coordinate))
             if (!eventId.isNullOrBlank()) add(listOf("e", eventId))
@@ -44,11 +54,15 @@ object Nip84 {
             if (!authorPubkey.isNullOrBlank()) add(listOf("p", authorPubkey))
         }
         if (url.startsWith("http")) {
-            add(listOf("r", url))
+            add(sourceUrlTag(url, annotation != null))
         } else if (coordinate.isNullOrBlank() && eventId.isNullOrBlank()) {
-            add(listOf("r", url))
+            add(sourceUrlTag(url, annotation != null))
         }
         if (!context.isNullOrBlank()) add(listOf("context", context))
+        if (annotation != null) {
+            add(listOf("comment", annotation))
+            addAll(commentMentionTags(annotation, url))
+        }
         add(listOf("alt", ALT))
         addAll(zapSplits)
     }
@@ -63,11 +77,17 @@ object Nip84 {
         eventId: String? = null,
         authorPubkey: String? = null,
         zapSplits: List<List<String>> = emptyList(),
+        comment: String? = null,
     ): String {
         val obj = JSONObject()
             .put("kind", KIND)
             .put("content", quote)
-            .put("tags", tagsToJson(tags(url, context, coordinate, eventId, authorPubkey, zapSplits)))
+            .put(
+                "tags",
+                tagsToJson(
+                    tags(url, context, coordinate, eventId, authorPubkey, zapSplits, comment),
+                ),
+            )
             .put("created_at", createdAt)
         if (!pubkeyHex.isNullOrBlank()) {
             obj.put("pubkey", pubkeyHex)
@@ -208,6 +228,19 @@ object Nip84 {
         }
         if (last < input.length) out.add(input.substring(last))
         return out
+    }
+
+    private fun sourceUrlTag(url: String, annotated: Boolean): List<String> =
+        if (annotated) listOf("r", url, "source") else listOf("r", url)
+
+    private fun commentMentionTags(comment: String, sourceUrl: String): List<List<String>> = buildList {
+        for (profile in NostrMentions.profilesIn(comment)) {
+            add(listOf("p", profile.pubkey, profile.relays.firstOrNull().orEmpty(), "mention"))
+        }
+        for (mentioned in UrlExtractor.urls(comment)) {
+            if (mentioned == sourceUrl) continue
+            add(listOf("r", mentioned, "mention"))
+        }
     }
 
     private fun tagsToJson(tags: List<List<String>>): JSONArray {
