@@ -28,6 +28,8 @@ class UserSettings internal constructor(
     val defaultExploreScopeMine: Boolean
         get() = bool("defaultExploreScopeMine", false)
     val paragraphAlignment: String get() = string("paragraphAlignment", "justify")
+    val readerMargin: ReaderMargin
+        get() = ReaderMargin.fromId(string("readerMargin", ReaderMargin.Default.id))
     val linkColorDark: String get() = string("linkColorDark", "#38bdf8")
     val linkColorLight: String get() = string("linkColorLight", "#3b82f6")
     val theme: String
@@ -210,6 +212,7 @@ class UserSettings internal constructor(
         "nsfwWarnInReader" -> nsfwWarnInReader
         "openLinksInReader" -> openLinksInReader
         "paragraphAlignment" -> paragraphAlignment
+        "readerMargin" -> readerMargin.id
         "readingFont" -> readingFont
         "rssFeeds" -> rssFeeds
         "showHighlights" -> showHighlights
@@ -273,6 +276,7 @@ private const val DEFAULT_JSON = """{
   "hideNsfwOnHome":true,
   "rebroadcastToAllRelays":false,
   "paragraphAlignment":"justify",
+  "readerMargin":"default",
   "fullWidthImages":true,
   "showReaderProgressBar":true,
   "showReaderProgressHeading":true,
