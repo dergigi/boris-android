@@ -123,8 +123,19 @@ class ReaderRepositoryParseTest {
 
     @Test
     fun noteMarkdownEmbedsImageLinksAndKeepsLineBreaks() {
-        val out = repository.noteMarkdown("hello\nhttps://cdn.example.com/shot.jpg")
-        assertEquals("hello  \n![](https://cdn.example.com/shot.jpg)", out)
+        val out = repository.noteMarkdown("hello &#x6C;&#x20;&#x74;here\nhttps://cdn.example.com/shot.jpg")
+        assertEquals("hello l there  \n![](https://cdn.example.com/shot.jpg)", out)
+    }
+
+    @Test
+    fun articleMarkdownDecodesNumericEntities() {
+        val out = repository.articleMarkdown(
+            "declared purpose of helping the Big Brother to survei&#x6C;&#x20;&#x74;he world include",
+        )
+        assertEquals(
+            "declared purpose of helping the Big Brother to surveil the world include",
+            out,
+        )
     }
 
     @Test
