@@ -79,9 +79,10 @@ fun OfflineSection(
 ) {
     val context = LocalContext.current
     val progress by OfflineDownloader.progress.collectAsStateWithLifecycle()
+    val imageProgress by OfflineDownloader.imageProgress.collectAsStateWithLifecycle()
     var usedBytes by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) { OfflineDownloader.kickoff(context) }
-    LaunchedEffect(progress) {
+    LaunchedEffect(progress, imageProgress) {
         usedBytes = withContext(Dispatchers.IO) { CacheUsage.bytes(context) }
     }
 
@@ -114,6 +115,9 @@ fun OfflineSection(
         }
         ImagesRow(
             enabled = settings.offlineDownloadEnabled(ArticleImages.SETTINGS_KEY),
+            total = imageProgress.total,
+            downloaded = imageProgress.downloaded,
+            bytes = imageProgress.bytes,
             onToggle = { on ->
                 onUpdate(settings.withBoolean(ArticleImages.SETTINGS_KEY, on))
                 if (on) OfflineDownloader.kickoff(context)
@@ -188,31 +192,61 @@ private fun ShelfRow(
 @Composable
 private fun ImagesRow(
     enabled: Boolean,
+    total: Int,
+    downloaded: Int,
+    bytes: Long,
     onToggle: (Boolean) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val shownDownloaded = if (enabled) downloaded else 0
+    val progressLabel = if (enabled && bytes > 0L) {
+        stringResource(
+            R.string.settings_offline_progress_sized,
+            shownDownloaded,
+            total,
+            ByteSize.format(bytes),
+        )
+    } else {
+        stringResource(R.string.settings_offline_progress, shownDownloaded, total)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.alpha(if (enabled) 1f else 0.5f),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Image,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(22.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_offline_images),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = onToggle)
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.alpha(if (enabled) 1f else 0.5f),
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Image,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp),
+            LinearProgressIndicator(
+                progress = { if (total > 0 && enabled) downloaded.toFloat() / total else 0f },
+                modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                text = stringResource(R.string.settings_offline_images),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
+                text = progressLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(checked = enabled, onCheckedChange = onToggle)
     }
 }
 

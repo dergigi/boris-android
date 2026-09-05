@@ -69,16 +69,34 @@ object ArticleImages {
             .filter { it.isNotBlank() && needsFetch(it) }
             .distinct()
 
+    internal fun downloadedCount(urls: Collection<String>): Int =
+        urls.map { UrlExtractor.preferHttps(it) }
+            .distinct()
+            .count { isDownloaded(it) }
+
+    internal fun downloadedBytes(urls: Collection<String>): Long =
+        urls.map { UrlExtractor.preferHttps(it) }
+            .distinct()
+            .sumOf { url ->
+                fileFor(url)?.takeIf { it.isFile && it.length() > 0L }?.length() ?: 0L
+            }
+
     internal fun needsFetch(url: String): Boolean {
         if (!shouldConvert(url)) return false
         val file = fileFor(url) ?: return false
         return !file.isFile || file.length() <= 0L
     }
 
-    fun ensure(context: Context, urls: Collection<String>) {
+    private fun isDownloaded(url: String): Boolean {
+        val file = fileFor(url) ?: return false
+        return file.isFile && file.length() > 0L
+    }
+
+    fun ensure(context: Context, urls: Collection<String>, onProgress: (() -> Unit)? = null) {
         if (!enabled()) return
         for (url in urlsToFetch(urls)) {
             runCatching { convert(url) }
+            onProgress?.invoke()
         }
         trim(context)
     }

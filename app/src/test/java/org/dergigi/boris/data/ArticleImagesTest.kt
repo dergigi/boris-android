@@ -39,6 +39,8 @@ class ArticleImagesTest {
             dest!!.writeBytes(byteArrayOf(1, 2, 3))
             assertFalse(ArticleImages.needsFetch(url))
             assertTrue(ArticleImages.urlsToFetch(listOf(url)).isEmpty())
+            assertEquals(1, ArticleImages.downloadedCount(listOf(url)))
+            assertEquals(3L, ArticleImages.downloadedBytes(listOf(url)))
         } finally {
             dir.deleteRecursively()
         }
