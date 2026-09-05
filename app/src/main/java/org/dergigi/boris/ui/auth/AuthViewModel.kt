@@ -14,6 +14,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.PrivateBookmarks
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
@@ -123,6 +124,7 @@ class AuthViewModel(
         val remote = bunker?.remoteSignerPubkey
         val relays = bunker?.relays.orEmpty()
         SessionStore.clear(app)
+        PrivateBookmarks.clear()
         pictureJob?.cancel()
         _pictureUrl.value = null
         _profile.value = null

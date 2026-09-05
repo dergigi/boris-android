@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Decrypted private bookmarks stay unlocked for the rest of the session; leaving and returning to the Library no longer asks to decrypt again, and the list shows right after decrypting
+
 ## [1.5.37] - 2026-09-05
 
 ### Added

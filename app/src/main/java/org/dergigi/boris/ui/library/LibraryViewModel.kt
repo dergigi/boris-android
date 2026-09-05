@@ -28,10 +28,12 @@ import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
+import org.dergigi.boris.data.PrivateBookmarks
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
+import org.dergigi.boris.nostr.BookmarkRef
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.BunkerClient
 import org.dergigi.boris.nostr.Archive
@@ -79,8 +81,13 @@ class LibraryViewModel(
     private var notes: Map<String, Nip01Event> = emptyMap()
     private var linkedArticles: List<LinkedArticleRef> = emptyList()
     private var previews: Map<String, OgPreview?> = emptyMap()
-    private var hiddenTags: List<List<String>>? = null
     private var listenJob: Job? = null
+    private var pendingUnlockCiphertext: String? = null
+
+    /** Decrypted private tags for the current list, kept process-wide by [PrivateBookmarks]. */
+    private val hiddenTags: List<List<String>>?
+        get() = listEvent?.let { hiddenTagsFor(it) }
+
     private val markAsReadAction = MarkAsReadAction(
         app = application,
         scope = viewModelScope,
@@ -100,7 +107,6 @@ class LibraryViewModel(
             notes = emptyMap()
             linkedArticles = emptyList()
             previews = emptyMap()
-            hiddenTags = null
             _state.value = LibraryUiState.LoggedOut
             _refreshing.value = false
             return
@@ -154,6 +160,7 @@ class LibraryViewModel(
         val nip44 = !Nip51.isNip04(ciphertext)
         return when (session) {
             is Session.Amber -> {
+                pendingUnlockCiphertext = ciphertext
                 RemoteSignerBridge.buildDecryptIntent(
                     ciphertext = ciphertext,
                     signerPackage = session.signerPackage,
@@ -170,12 +177,14 @@ class LibraryViewModel(
     }
 
     fun onDecryptResult(resultCode: Int, data: Intent?) {
+        val ciphertext = pendingUnlockCiphertext ?: listEvent?.content
+        pendingUnlockCiphertext = null
         val plaintext = SignerResults.parsePlaintext(resultCode, data)
-        if (plaintext == null) {
+        if (plaintext == null || ciphertext == null) {
             _message.value = getApplication<Application>().getString(R.string.library_unlock_cancelled)
             return
         }
-        applyPlaintext(plaintext)
+        applyPlaintext(plaintext, ciphertext)
     }
 
     fun startListening(url: String) {
@@ -198,13 +207,16 @@ class LibraryViewModel(
         _message.value = null
     }
 
-    private fun applyPlaintext(plaintext: String) {
+    private fun applyPlaintext(plaintext: String, ciphertext: String) {
         val tags = Nip51.parseTagArray(plaintext)
-        if (tags == null) {
+        val pubkey = SessionStore.load(getApplication())?.pubkeyHex
+        if (tags == null || pubkey == null) {
             _message.value = getApplication<Application>().getString(R.string.library_unlock_failed)
             return
         }
-        hiddenTags = tags
+        PrivateBookmarks.remember(pubkey, ciphertext, tags)
+        // Show the unlocked shelf right away; previews and note bodies fill in after.
+        publish()
         viewModelScope.launch {
             try {
                 val extra = withContext(Dispatchers.IO) {
@@ -226,8 +238,6 @@ class LibraryViewModel(
     }
 
     private fun apply(loaded: Loaded) {
-        val previousListId = listEvent?.id
-        val previousHidden = hiddenTags
         listEvent = loaded.list
         webEvents = loaded.web
         lookEvents = loaded.look
@@ -236,8 +246,16 @@ class LibraryViewModel(
         notes = loaded.notes
         linkedArticles = loaded.linkedArticles
         previews = loaded.previews
-        hiddenTags = if (loaded.list?.id == previousListId) previousHidden else null
         publish()
+    }
+
+    private fun hiddenTagsFor(list: Nip01Event): List<List<String>>? =
+        PrivateBookmarks.tagsFor(list.pubkey, list.content)
+
+    /** Public refs plus any private refs already decrypted this session. */
+    private fun listRefs(list: Nip01Event?): List<BookmarkRef> {
+        if (list == null) return emptyList()
+        return Nip51.publicRefs(list) + hiddenTagsFor(list)?.let(Nip51::parseTags).orEmpty()
     }
 
     private fun publish() {
@@ -279,7 +297,7 @@ class LibraryViewModel(
                 )
             }
             when (result) {
-                is BunkerDecryptResult.Plaintext -> applyPlaintext(result.value)
+                is BunkerDecryptResult.Plaintext -> applyPlaintext(result.value, ciphertext)
                 BunkerDecryptResult.Rejected, BunkerDecryptResult.RelayTimeout -> {
                     _message.value = app.getString(R.string.library_unlock_failed)
                 }
@@ -298,7 +316,7 @@ class LibraryViewModel(
         val archive = RelayQuery.cachedArchiveReactions(pubkey)
         if (list == null && web.isEmpty() && look.isEmpty() && archive.isEmpty()) return null
         val refs = buildList {
-            if (list != null) addAll(Nip51.publicRefs(list))
+            addAll(listRefs(list))
             addAll(look.mapNotNull(Lookmarks::targetRef))
             addAll(archive.mapNotNull(Archive::targetRef))
         }
@@ -342,7 +360,7 @@ class LibraryViewModel(
         val look = RelayQuery.fetchLookmarks(session.pubkeyHex, readRelays)
         val archive = RelayQuery.fetchArchiveReactions(session.pubkeyHex, readRelays)
         val refs = buildList {
-            if (list != null) addAll(Nip51.publicRefs(list))
+            addAll(listRefs(list))
             addAll(look.mapNotNull(Lookmarks::targetRef))
             addAll(archive.mapNotNull(Archive::targetRef))
         }
@@ -364,7 +382,7 @@ class LibraryViewModel(
     }
 
     private suspend fun hydrate(
-        refs: List<org.dergigi.boris.nostr.BookmarkRef>,
+        refs: List<BookmarkRef>,
         web: List<Nip01Event>,
         includeLinkedArticles: Boolean,
     ): Hydrated = coroutineScope {
