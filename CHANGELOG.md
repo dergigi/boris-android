@@ -9,6 +9,19 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.35] - 2026-09-05
+
+### Added
+
+- Profiles show associated articles Boris has already opened
+- Library includes articles linked from bookmarked notes, on by default
+- E-ink uses a thick solid underline for your highlights, dashed for everyone else, and dotted for links
+
+### Fixed
+
+- Settings no longer repeat Reset to defaults under each section
+- OG preview fetches time out after 20 seconds
+
 ## [1.5.34] - 2026-09-05
 
 ### Added
@@ -1700,7 +1713,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.34...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.35...HEAD
+[1.5.35]: https://github.com/dergigi/boris-android/releases/tag/v1.5.35
 [1.5.34]: https://github.com/dergigi/boris-android/releases/tag/v1.5.34
 [1.5.33]: https://github.com/dergigi/boris-android/releases/tag/v1.5.33
 [1.5.32]: https://github.com/dergigi/boris-android/releases/tag/v1.5.32
