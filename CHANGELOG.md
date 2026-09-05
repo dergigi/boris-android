@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.5.36] - 2026-09-05
+
+### Added
+
+- Settings About can recommend Boris on Nostr (kind 31989)
+
 ## [1.5.35] - 2026-09-05
 
 ### Added
@@ -1713,7 +1719,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.35...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.36...HEAD
+[1.5.36]: https://github.com/dergigi/boris-android/releases/tag/v1.5.36
 [1.5.35]: https://github.com/dergigi/boris-android/releases/tag/v1.5.35
 [1.5.34]: https://github.com/dergigi/boris-android/releases/tag/v1.5.34
 [1.5.33]: https://github.com/dergigi/boris-android/releases/tag/v1.5.33
