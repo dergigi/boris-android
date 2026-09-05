@@ -1238,6 +1238,7 @@ internal fun ArticleBody(
             friendsColor = friendsColor,
             foafColor = foafColor,
             otherColor = otherColor,
+            eink = eink,
             onDismiss = { pane.closeHighlights() },
             onSelect = { item ->
                 selectedId = item.id

@@ -229,6 +229,7 @@ internal fun OpenedHighlightPane(
             host = highlight.host,
             url = highlight.articleUrl,
             authorPicture = author?.picture,
+            eink = look.eink,
             onClick = {
                 onOpenHighlight(highlight.articleUrl, highlight.id, highlight.quote)
             },

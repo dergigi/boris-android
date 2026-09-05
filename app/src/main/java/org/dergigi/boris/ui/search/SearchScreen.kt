@@ -129,6 +129,7 @@ fun SearchScreen(
                 else -> nostrverseColor
             }
         },
+        eink = look.eink,
         onOpenHit = { hit ->
             when (hit) {
                 is LocalSearch.Hit.Highlight -> {
@@ -157,6 +158,7 @@ fun SearchScreenContent(
     onClear: () -> Unit,
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
+    eink: Boolean,
     onOpenHit: (LocalSearch.Hit) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -233,6 +235,7 @@ fun SearchScreenContent(
                                     SearchHighlightCard(
                                         hit = hit,
                                         color = colorFor(hit),
+                                        eink = eink,
                                         onOpen = { onOpenHit(hit) },
                                         onOpenProfile = { onOpenProfile(hit.authorHex) },
                                     )
@@ -431,6 +434,7 @@ private fun CompactSearchField(
 private fun SearchHighlightCard(
     hit: LocalSearch.Hit.Highlight,
     color: Color,
+    eink: Boolean,
     onOpen: () -> Unit,
     onOpenProfile: () -> Unit,
 ) {
@@ -445,6 +449,7 @@ private fun SearchHighlightCard(
         url = hit.url,
         authorPicture = hit.authorPicture,
         maxQuoteLines = 8,
+        eink = eink,
         onClick = hit.url?.let { onOpen },
         menu = HighlightCardMenu(
             highlightId = hit.eventId,

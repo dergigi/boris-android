@@ -141,6 +141,7 @@ fun FeedScreen(
         foafColor = look.foaf,
         friendsColor = look.friends,
         mineColor = look.mine,
+        eink = look.eink,
         onRefresh = viewModel::refresh,
         onToggle = viewModel::toggle,
         onSelectTab = { tab = it },
@@ -190,6 +191,7 @@ fun FeedScreenContent(
     foafColor: Color,
     friendsColor: Color,
     mineColor: Color,
+    eink: Boolean,
     onRefresh: () -> Unit,
     onToggle: (FeedLevel) -> Unit,
     onSelectTab: (ContentTab) -> Unit,
@@ -370,6 +372,7 @@ fun FeedScreenContent(
                             collapsedArticles = collapsedArticles,
                             collapsedAuthors = collapsedAuthors,
                             onExpand = ::expandCollapsed,
+                            eink = eink,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -434,6 +437,7 @@ fun FeedScreenContent(
                                             onOpenHighlight = onOpenHighlight,
                                             onExpand = ::expandCollapsed,
                                             menuFor = menuFor,
+                                            eink = eink,
                                         )
                                         ContentTab.Writings -> FeedWritingList(
                                             items = state.writings.filter { item ->
@@ -520,6 +524,7 @@ private fun FeedAllPane(
     collapsedArticles: Set<String>,
     collapsedAuthors: Set<String>,
     onExpand: (FeedHighlightRow.Collapsed) -> Unit,
+    eink: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val highlights = (state as? FeedUiState.Ready)?.highlights.orEmpty()
@@ -609,6 +614,7 @@ private fun FeedAllPane(
                         actions = actions,
                         menuFor = menuFor,
                         onExpand = onExpand,
+                        eink = eink,
                     )
                 }
             }
@@ -627,6 +633,7 @@ private fun FeedAllList(
     actions: ArticleActionHandlers,
     menuFor: (FeedItem) -> HighlightCardMenu?,
     onExpand: (FeedHighlightRow.Collapsed) -> Unit,
+    eink: Boolean,
 ) {
     if (items.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -661,6 +668,7 @@ private fun FeedAllList(
                             url = item.url,
                             authorPicture = item.authorPicture,
                             maxQuoteLines = 8,
+                            eink = eink,
                             onClick = item.url?.let { url ->
                                 { onOpenHighlight(url, item.id, item.quote) }
                             },
@@ -704,6 +712,7 @@ private fun FeedHighlightList(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onExpand: (FeedHighlightRow.Collapsed) -> Unit,
     menuFor: (FeedItem) -> HighlightCardMenu? = { null },
+    eink: Boolean,
 ) {
     val rows = remember(items, collapsedArticles, collapsedAuthors) {
         FeedHighlightCollapse.rows(items, collapsedArticles, collapsedAuthors)
@@ -741,6 +750,7 @@ private fun FeedHighlightList(
                             url = item.url,
                             authorPicture = item.authorPicture,
                             maxQuoteLines = 8,
+                            eink = eink,
                             onClick = item.url?.let { url ->
                                 { onOpenHighlight(url, item.id, item.quote) }
                             },
