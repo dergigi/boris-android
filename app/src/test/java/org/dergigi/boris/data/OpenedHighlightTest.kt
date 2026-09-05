@@ -24,6 +24,19 @@ class OpenedHighlightTest {
         assertEquals("example.com", opened.host)
         assertEquals(event.pubkey, opened.authorPubkey)
         assertEquals(42L, opened.createdAt)
+        assertNull(opened.comment)
+    }
+
+    @Test
+    fun readsCommentTag() {
+        val event = highlight(
+            tags = listOf(
+                listOf("r", "https://example.com/post", "source"),
+                listOf("comment", "why this matters"),
+            ),
+        )
+        assertEquals("why this matters", openedHighlightFrom(event)!!.comment)
+        assertEquals("https://example.com/post", openedHighlightFrom(event)!!.articleUrl)
     }
 
     @Test
