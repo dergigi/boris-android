@@ -73,6 +73,57 @@ class ArticleCacheTest {
     }
 
     @Test
+    fun byAuthorFindsReadableCachedArticlesForPubkey() {
+        val author = "a".repeat(64)
+        ArticleCache.save(
+            "https://example.com/first",
+            ReadableContent(
+                url = "https://example.com/first",
+                title = "First",
+                markdown = "Readable first body.",
+                authorPubkey = author,
+                publishedAt = 20,
+            ),
+        )
+        ArticleCache.save(
+            "https://example.com/second",
+            ReadableContent(
+                url = "https://example.com/second",
+                title = "Second",
+                markdown = "Readable second body.",
+                authorPubkey = author.uppercase(),
+                publishedAt = 30,
+            ),
+        )
+        ArticleCache.save(
+            "https://example.com/other",
+            ReadableContent(
+                url = "https://example.com/other",
+                title = "Other",
+                markdown = "Readable other body.",
+                authorPubkey = "b".repeat(64),
+                publishedAt = 40,
+            ),
+        )
+        ArticleCache.save(
+            "https://example.com/blank",
+            ReadableContent(
+                url = "https://example.com/blank",
+                title = "Blank",
+                markdown = " ",
+                authorPubkey = author,
+                publishedAt = 50,
+            ),
+        )
+
+        assertEquals(
+            listOf("Second", "First"),
+            ArticleCache.byAuthor(author).map { it.content.title },
+        )
+        assertEquals(emptyList<ArticleCache.CachedArticle>(), ArticleCache.byAuthor("bad"))
+    }
+
+    @Test
     fun loadReturnsNullForBlankBody() {
         val content = ReadableContent(url = "https://example.com/blank", markdown = " ")
         ArticleCache.save(content.url, content)

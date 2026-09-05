@@ -524,10 +524,12 @@
     <string name="you_load_more">Load more</string>
     <string name="you_search_placeholder">Search…</string>
     <string name="you_writings_empty">No articles written yet.</string>
+    <string name="you_articles_empty">No associated web articles yet.</string>
     <string name="you_public_empty">No public bookmarks yet.</string>
     <string name="you_web_empty">No web bookmarks yet.</string>
     <string name="you_tab_highlights">Highlights</string>
     <string name="you_tab_writings">Writings</string>
+    <string name="you_tab_articles">Articles</string>
     <string name="you_highlight_source">— %1$s</string>
     <string name="reader_progress">%1$d%%</string>
     <string name="reader_progress_done">✓</string>

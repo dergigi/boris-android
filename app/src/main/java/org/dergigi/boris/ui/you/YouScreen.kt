@@ -197,6 +197,7 @@ fun YouHighlightsContent(
                     tab = tab,
                     onSelect = { tab = it },
                     showAll = true,
+                    showArticles = true,
                     showBookmarks = true,
                 )
             }
@@ -237,6 +238,7 @@ fun YouHighlightsContent(
                                 writings = state.writings,
                                 publicBookmarks = state.publicBookmarks,
                                 webBookmarks = state.webBookmarks,
+                                associatedArticles = state.associatedArticles,
                                 deletedIds = deletedIds,
                                 query = query,
                             )
@@ -245,7 +247,8 @@ fun YouHighlightsContent(
                                     val hasAny = state.highlights.any { it.id !in deletedIds } ||
                                         state.writings.isNotEmpty() ||
                                         state.publicBookmarks.isNotEmpty() ||
-                                        state.webBookmarks.isNotEmpty()
+                                        state.webBookmarks.isNotEmpty() ||
+                                        state.associatedArticles.isNotEmpty()
                                     if (!hasAny) {
                                         StatusMessage(
                                             text = stringResource(R.string.you_all_empty),
@@ -365,6 +368,17 @@ fun YouHighlightsContent(
                                     )
                                 }
                             }
+                        }
+                        ContentTab.Articles -> {
+                            profileBookmarkItems(
+                                items = state.associatedArticles,
+                                query = query,
+                                emptyRes = R.string.you_articles_empty,
+                                onRefresh = { onRefresh(tab) },
+                                onOpenArticle = onOpenArticle,
+                                onOpenHighlight = onOpenHighlight,
+                                actions = actions,
+                            )
                         }
                         ContentTab.Public -> {
                             profileBookmarkItems(
