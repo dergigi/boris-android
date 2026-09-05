@@ -17,11 +17,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkCatalog
 import org.dergigi.boris.data.BookmarkItem
 import org.dergigi.boris.data.BookmarkShelves
+import org.dergigi.boris.data.LinkedArticleRef
+import org.dergigi.boris.data.LinkedArticles
 import org.dergigi.boris.data.NostrArticle
+import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
 import org.dergigi.boris.data.SecretBox
@@ -73,6 +77,7 @@ class LibraryViewModel(
     private var archiveEvents: List<Nip01Event> = emptyList()
     private var articles: Map<String, Nip01Event> = emptyMap()
     private var notes: Map<String, Nip01Event> = emptyMap()
+    private var linkedArticles: List<LinkedArticleRef> = emptyList()
     private var previews: Map<String, OgPreview?> = emptyMap()
     private var hiddenTags: List<List<String>>? = null
     private var listenJob: Job? = null
@@ -93,6 +98,7 @@ class LibraryViewModel(
             archiveEvents = emptyList()
             articles = emptyMap()
             notes = emptyMap()
+            linkedArticles = emptyList()
             previews = emptyMap()
             hiddenTags = null
             _state.value = LibraryUiState.LoggedOut
@@ -202,10 +208,16 @@ class LibraryViewModel(
         viewModelScope.launch {
             try {
                 val extra = withContext(Dispatchers.IO) {
-                    hydrate(Nip51.parseTags(tags), webEvents)
+                    hydrate(
+                        refs = Nip51.parseTags(tags),
+                        web = webEvents,
+                        includeLinkedArticles = SettingsSync.settings.value.includeLinkedArticles,
+                    )
                 }
                 articles = articles + extra.articles
                 notes = notes + extra.notes
+                linkedArticles = (linkedArticles + extra.linkedArticles)
+                    .distinctBy { it.url.lowercase() }
                 previews = previews + extra.previews
             } catch (_: Exception) {
             }
@@ -222,6 +234,7 @@ class LibraryViewModel(
         archiveEvents = loaded.archive
         articles = loaded.articles
         notes = loaded.notes
+        linkedArticles = loaded.linkedArticles
         previews = loaded.previews
         hiddenTags = if (loaded.list?.id == previousListId) previousHidden else null
         publish()
@@ -235,6 +248,11 @@ class LibraryViewModel(
                 webEvents = webEvents,
                 lookEvents = lookEvents,
                 archiveEvents = archiveEvents,
+                linkedArticles = if (SettingsSync.settings.value.includeLinkedArticles) {
+                    linkedArticles
+                } else {
+                    emptyList()
+                },
                 articles = articles,
                 notes = notes,
                 previews = previews,
@@ -297,7 +315,21 @@ class LibraryViewModel(
             .distinct()
             .mapNotNull { id -> EventCache.event(id)?.let { id to it } }
             .toMap()
-        return Loaded(list, web, look, archive, cachedArticles, cachedNotes, emptyMap())
+        val linked = if (SettingsSync.settings.value.includeLinkedArticles) {
+            LinkedArticles.fromNotes(cachedNotes.values).take(LINKED_ARTICLE_LIMIT)
+        } else {
+            emptyList()
+        }
+        return Loaded(
+            list,
+            web,
+            look,
+            archive,
+            cachedArticles,
+            cachedNotes,
+            linked,
+            emptyMap(),
+        )
     }
 
     private suspend fun load(session: Session): Loaded {
@@ -314,13 +346,27 @@ class LibraryViewModel(
             addAll(look.mapNotNull(Lookmarks::targetRef))
             addAll(archive.mapNotNull(Archive::targetRef))
         }
-        val hydrated = hydrate(refs, web)
-        return Loaded(list, web, look, archive, hydrated.articles, hydrated.notes, hydrated.previews)
+        val hydrated = hydrate(
+            refs = refs,
+            web = web,
+            includeLinkedArticles = SettingsSync.settings.value.includeLinkedArticles,
+        )
+        return Loaded(
+            list,
+            web,
+            look,
+            archive,
+            hydrated.articles,
+            hydrated.notes,
+            hydrated.linkedArticles,
+            hydrated.previews,
+        )
     }
 
     private suspend fun hydrate(
         refs: List<org.dergigi.boris.nostr.BookmarkRef>,
         web: List<Nip01Event>,
+        includeLinkedArticles: Boolean,
     ): Hydrated = coroutineScope {
         val articleRefs = refs.filter { it.kind == BookmarkRefKind.Article }
             .distinctBy { it.value }
@@ -336,13 +382,6 @@ class LibraryViewModel(
             .distinct()
             .take(NOTE_LIMIT)
         val notesJob = async { RelayQuery.fetchEvents(noteIds) }
-        val httpUrls = buildList {
-            refs.filter { it.kind == BookmarkRefKind.Url }.forEach { add(it.value) }
-            web.forEach { event -> NipB0.url(event)?.let(::add) }
-        }.distinct().take(PREVIEW_LIMIT)
-        val previewJobs = httpUrls.map { url ->
-            async { url to runCatching { OgMetaClient.fetch(url) }.getOrNull() }
-        }
         val fetchedArticles = articleJobs.awaitAll()
             .mapNotNull { pair ->
                 val (coordinate, event) = pair ?: return@mapNotNull null
@@ -350,13 +389,32 @@ class LibraryViewModel(
             }
             .toMap()
         val notes = notesJob.await()
+        val linked = if (includeLinkedArticles) {
+            LinkedArticles.fromNotes(notes.values).take(LINKED_ARTICLE_LIMIT)
+        } else {
+            emptyList()
+        }
+        val baseHttpUrls = buildList {
+            refs.filter { it.kind == BookmarkRefKind.Url }.forEach { add(it.value) }
+            web.forEach { event -> NipB0.url(event)?.let(::add) }
+        }.distinct().take(PREVIEW_LIMIT)
+        val linkedHttpUrls = linked
+            .map { it.url }
+            .filter { NostrLink.parse(it) == null }
+            .distinct()
+            .take(LINKED_ARTICLE_LIMIT)
+        val previewJobs = (baseHttpUrls + linkedHttpUrls).distinct().map { url ->
+            async {
+                url to (ArticlePreview.get(url) ?: runCatching { OgMetaClient.fetch(url) }.getOrNull())
+            }
+        }
         val noteAuthors = notes.values.map { it.pubkey }.distinct()
         if (noteAuthors.isNotEmpty()) {
             runCatching {
                 RelayQuery.fetchProfiles(RelayList.FALLBACK, noteAuthors)
             }
         }
-        Hydrated(fetchedArticles, notes, previewJobs.awaitAll().toMap())
+        Hydrated(fetchedArticles, notes, linked, previewJobs.awaitAll().toMap())
     }
 
     private fun openAuthUrl(url: String) {
@@ -375,12 +433,14 @@ class LibraryViewModel(
         val archive: List<Nip01Event>,
         val articles: Map<String, Nip01Event>,
         val notes: Map<String, Nip01Event>,
+        val linkedArticles: List<LinkedArticleRef>,
         val previews: Map<String, OgPreview?>,
     )
 
     private data class Hydrated(
         val articles: Map<String, Nip01Event>,
         val notes: Map<String, Nip01Event>,
+        val linkedArticles: List<LinkedArticleRef>,
         val previews: Map<String, OgPreview?>,
     )
 
@@ -388,5 +448,6 @@ class LibraryViewModel(
         private const val ARTICLE_LIMIT = 48
         private const val NOTE_LIMIT = 48
         private const val PREVIEW_LIMIT = 20
+        private const val LINKED_ARTICLE_LIMIT = 20
     }
 }

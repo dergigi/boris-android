@@ -70,6 +70,7 @@ class UserSettings internal constructor(
             else -> BookmarkBucket.All
         }
     val defaultPrivateBookmark: Boolean get() = bool("defaultPrivateBookmark", true)
+    val includeLinkedArticles: Boolean get() = bool("includeLinkedArticles", false)
     val defaultFeedView: String get() = string("defaultFeedView", "All")
     val hideTopBarOnScroll: Boolean get() = bool("hideTopBarOnScroll", true)
     val syncReadingPosition: Boolean get() = bool("syncReadingPosition", true)
@@ -200,6 +201,7 @@ class UserSettings internal constructor(
         "highlightColorMine" -> highlightColorMine
         "highlightColorNostrverse" -> highlightColorNostrverse
         "highlightStyle" -> highlightStyle
+        "includeLinkedArticles" -> includeLinkedArticles
         "homeSectionOrder" -> homeSectionOrder
         "mostHighlightedWindow" -> mostHighlightedWindow.id
         "lightColorTheme" -> lightColorTheme
@@ -279,6 +281,7 @@ private const val DEFAULT_JSON = """{
   "autoScrollToReadingPosition":true,
   "autoMarkAsReadOnCompletion":false,
   "archiveClosesReader":true,
+  "includeLinkedArticles":false,
   "hideBookmarksWithoutCreationDate":true,
   "ttsUseSystemLanguage":false,
   "ttsDetectContentLanguage":true,
