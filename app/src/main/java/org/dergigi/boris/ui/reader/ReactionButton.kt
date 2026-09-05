@@ -76,7 +76,7 @@ internal fun ReactionButton(
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
-                    tint = ReactionOrange,
+                    tint = ButtonDefaults.outlinedButtonColors().contentColor,
                     modifier = Modifier.size(18.dp),
                 )
             }
