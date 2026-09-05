@@ -262,7 +262,7 @@ class ReaderRepository(
             ?: throw IOException("Article not found")
         val published = event.tagValue("published_at")?.toLongOrNull() ?: event.createdAt
         val image = Nip23.image(event)
-        val markdown = image?.let { ArticleCover.stripLeadingImage(event.content, it) } ?: event.content
+        val markdown = articleMarkdown(event.content, image)
         return ReadableContent(
             url = article.uri,
             title = event.tagValue("title")?.ifBlank { null },
@@ -286,7 +286,7 @@ class ReaderRepository(
             val article = identifier
                 ?.let { NostrArticle.fromCoordinate("${event.kind}:${event.pubkey}:$it", note.relays) }
             val image = Nip23.image(event)
-            val markdown = image?.let { ArticleCover.stripLeadingImage(event.content, it) } ?: event.content
+            val markdown = articleMarkdown(event.content, image)
             return ReadableContent(
                 url = article?.uri ?: note.uri,
                 title = event.tagValue("title")?.ifBlank { null },
@@ -360,7 +360,12 @@ class ReaderRepository(
         event.tags.filter { it.size >= 2 && it[0] == "zap" }
 
     internal fun noteMarkdown(content: String): String =
-        UrlExtractor.embedImageLinks(content.replace("\n", "  \n"))
+        UrlExtractor.embedImageLinks(HtmlToMarkdown.decode(content).replace("\n", "  \n"))
+
+    internal fun articleMarkdown(content: String, imageUrl: String? = null): String {
+        val body = imageUrl?.let { ArticleCover.stripLeadingImage(content, it) } ?: content
+        return HtmlToMarkdown.decode(body)
+    }
 
     internal fun parse(targetUrl: String, text: String): ReadableContent {
         val preview = OgMeta.parse(text, targetUrl)
