@@ -90,6 +90,18 @@ fun LibrarySettingsSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_library_include_linked_articles),
+            checked = settings.includeLinkedArticles,
+            onCheckedChange = { on ->
+                onUpdate(settings.withBoolean("includeLinkedArticles", on))
+            },
+        )
+        Text(
+            text = stringResource(R.string.settings_library_include_linked_articles_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

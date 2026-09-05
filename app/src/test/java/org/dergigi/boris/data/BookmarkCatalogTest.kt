@@ -262,6 +262,59 @@ class BookmarkCatalogTest {
         assertEquals("https://example.com/read", shelves.archive[1].url)
     }
 
+    @Test
+    fun linkedArticlesFromBookmarkedNotesJoinWebShelf() {
+        val linked = LinkedArticleRef("https://example.com/blog/read-this", createdAt = 9)
+        val shelves = BookmarkCatalog.build(
+            listEvent = null,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            linkedArticles = listOf(linked),
+            previews = mapOf(
+                linked.url to OgPreview(
+                    title = "Read This",
+                    imageUrl = "https://example.com/cover.jpg",
+                    siteName = "Example",
+                    description = "A worthwhile article.",
+                ),
+            ),
+        )
+
+        assertEquals(1, shelves.web.size)
+        assertEquals("Read This", shelves.web[0].title)
+        assertEquals("https://example.com/blog/read-this", shelves.web[0].url)
+        assertEquals("Example", shelves.web[0].host)
+        assertEquals(BookmarkBucket.Web, shelves.web[0].bucket)
+    }
+
+    @Test
+    fun linkedArticlesDoNotDuplicateExistingLibraryTargets() {
+        val list = event(
+            kind = Nip01Event.KIND_BOOKMARKS,
+            tags = listOf(listOf("r", "https://example.com/blog/read-this")),
+            createdAt = 10,
+        )
+        val linked = LinkedArticleRef("https://www.example.com/blog/read-this", createdAt = 9)
+        val shelves = BookmarkCatalog.build(
+            listEvent = list,
+            hiddenTags = emptyList(),
+            webEvents = emptyList(),
+            linkedArticles = listOf(linked),
+            previews = mapOf(
+                linked.url to OgPreview(
+                    title = "Read This",
+                    imageUrl = null,
+                    siteName = "Example",
+                    description = "A worthwhile article.",
+                ),
+            ),
+        )
+
+        assertEquals(1, shelves.public.size)
+        assertTrue(shelves.web.isEmpty())
+        assertEquals(1, shelves.merged().size)
+    }
+
     private fun event(
         kind: Int,
         tags: List<List<String>>,

@@ -74,7 +74,15 @@ data class BookmarkShelves(
 }
 
 private fun BookmarkItem.targetKey(): String =
-    url?.let { "url:${ArticleUrl.normalize(it)}" } ?: id
+    url?.let(::bookmarkTargetKey) ?: id
+
+private fun bookmarkTargetKey(url: String): String =
+    when (val target = NostrLink.parse(url)) {
+        is NostrTarget.Article -> "article:${target.ref.coordinate}"
+        is NostrTarget.Note -> "note:${target.eventId.lowercase()}"
+        is NostrTarget.Profile -> "profile:${target.pubkeyHex.lowercase()}"
+        null -> "url:${ArticleUrl.normalize(url)}"
+    }
 
 object BookmarkCatalog {
     fun build(
@@ -83,6 +91,7 @@ object BookmarkCatalog {
         webEvents: List<Nip01Event>,
         lookEvents: List<Nip01Event> = emptyList(),
         archiveEvents: List<Nip01Event> = emptyList(),
+        linkedArticles: List<LinkedArticleRef> = emptyList(),
         articles: Map<String, Nip01Event> = emptyMap(),
         notes: Map<String, Nip01Event> = emptyMap(),
         previews: Map<String, OgPreview?> = emptyMap(),
@@ -118,10 +127,16 @@ object BookmarkCatalog {
                 itemFromRef(ref, BookmarkBucket.Archive, event.createdAt, articles, notes, previews)
             }
             .dedupe()
+        val knownTargets = targetKeysOf(publicItems, privateItems, webItems, lookItems, archiveItems)
+        val linkedItems = linkedArticles
+            .sortedByDescending { it.createdAt }
+            .mapNotNull { ref -> itemFromLinkedArticle(ref, previews) }
+            .filterNot { item -> item.targetKey() in knownTargets }
+            .dedupeByTarget()
         return BookmarkShelves(
             private = privateItems,
             public = publicItems,
-            web = webItems,
+            web = (webItems + linkedItems).dedupeByTarget().sortedByDescending { it.createdAt },
             look = lookItems,
             archive = archiveItems,
             privateLocked = hiddenTags == null && Nip51.looksEncrypted(listEvent?.content.orEmpty()),
@@ -235,8 +250,38 @@ object BookmarkCatalog {
         )
     }
 
+    private fun itemFromLinkedArticle(
+        ref: LinkedArticleRef,
+        previews: Map<String, OgPreview?>,
+    ): BookmarkItem? {
+        val preview = previews[ref.url] ?: ArticlePreview.get(ref.url)
+        val cached = ArticleCache.load(ref.url)
+        if (!LinkedArticles.isArticleLike(ref.url, preview, cached)) return null
+        val host = ArticleUrl.host(ref.url) ?: return null
+        return BookmarkItem(
+            id = "l:${bookmarkTargetKey(ref.url)}",
+            title = cached?.title?.takeIf { it.isNotBlank() }
+                ?: preview?.title?.takeIf { it.isNotBlank() }
+                ?: host,
+            url = ref.url,
+            host = preview?.siteName?.takeIf { it.isNotBlank() } ?: host,
+            imageUrl = cached?.imageUrl ?: preview?.imageUrl,
+            createdAt = cached?.publishedAt ?: ref.createdAt,
+            bucket = BookmarkBucket.Web,
+            summary = cached?.summary ?: preview?.description,
+        )
+    }
+
     private fun List<BookmarkItem>.dedupe(): List<BookmarkItem> {
         val seen = LinkedHashSet<String>()
         return filter { seen.add(it.id) }
     }
+
+    private fun List<BookmarkItem>.dedupeByTarget(): List<BookmarkItem> {
+        val seen = LinkedHashSet<String>()
+        return filter { seen.add(it.targetKey()) }
+    }
+
+    private fun targetKeysOf(vararg groups: List<BookmarkItem>): Set<String> =
+        groups.flatMap { group -> group.map { it.targetKey() } }.toSet()
 }

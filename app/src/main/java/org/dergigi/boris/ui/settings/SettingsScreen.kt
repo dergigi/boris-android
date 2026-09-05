@@ -189,7 +189,11 @@ private val SettingsCategory.resetKeys: Set<String>
             "nsfwWarnInReader",
             "homeSectionOrder",
         )
-        SettingsCategory.Library -> setOf("defaultLibraryView", "defaultPrivateBookmark")
+        SettingsCategory.Library -> setOf(
+            "defaultLibraryView",
+            "defaultPrivateBookmark",
+            "includeLinkedArticles",
+        )
         SettingsCategory.Feed -> setOf(
             "defaultFeedView",
             "defaultExploreScopeNostrverse",

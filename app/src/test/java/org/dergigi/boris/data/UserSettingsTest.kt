@@ -38,6 +38,7 @@ class UserSettingsTest {
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
         assertTrue(settings.archiveClosesReader)
+        assertTrue(settings.includeLinkedArticles)
         assertTrue(settings.useLocalRelayAsCache)
         assertTrue(settings.hideArchivedOnHome)
         assertFalse(settings.hideCompletedOnHome)
@@ -81,6 +82,14 @@ class UserSettingsTest {
         val updated = UserSettings.defaults().withBoolean("firstTimeDismissed", true)
         assertTrue(updated.firstTimeDismissed)
         assertTrue(UserSettings.parse(updated.toJson()).firstTimeDismissed)
+    }
+
+    @Test
+    fun includeLinkedArticlesDefaultsOnAndRoundTrips() {
+        assertTrue(UserSettings.defaults().includeLinkedArticles)
+        val updated = UserSettings.defaults().withBoolean("includeLinkedArticles", false)
+        assertFalse(updated.includeLinkedArticles)
+        assertFalse(UserSettings.parse(updated.toJson()).includeLinkedArticles)
     }
 
     @Test

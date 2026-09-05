@@ -103,6 +103,8 @@ object SettingsSearch {
             R.string.settings_library_default_view_note,
             R.string.settings_library_default_save,
             R.string.settings_library_default_save_note,
+            R.string.settings_library_include_linked_articles,
+            R.string.settings_library_include_linked_articles_note,
             R.string.library_private,
             R.string.library_public,
             R.string.library_web,
