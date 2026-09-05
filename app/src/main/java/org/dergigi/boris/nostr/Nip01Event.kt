@@ -72,6 +72,7 @@ data class Nip01Event(
         const val KIND_WEB_BOOKMARK = 39701
         const val KIND_RELAY_LIST = 10002
         const val KIND_APP_DATA = 30078
+        const val KIND_APP_RECOMMENDATION = 31989
         const val KIND_RELAY_DISCOVERY = 30166
 
         fun unsignedJson(

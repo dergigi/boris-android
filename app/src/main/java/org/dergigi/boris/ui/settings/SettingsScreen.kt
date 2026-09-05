@@ -387,6 +387,7 @@ fun SettingsScreen(
                         onOpenFaq = onOpenFaq,
                         onOpenSupport = onOpenSupport,
                         onOpenAuthorProfile = onOpenAuthorProfile,
+                        onRecommendBoris = settingsViewModel::recommendBoris,
                     )
                 }
             }
@@ -568,6 +569,7 @@ private fun SettingsCategoryDetail(
     onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
+    onRecommendBoris: () -> Unit,
 ) {
     val darkTheme = settings.isDark(isSystemInDarkTheme())
     Column(
@@ -613,6 +615,7 @@ private fun SettingsCategoryDetail(
                 onOpenFaq = onOpenFaq,
                 onOpenSupport = onOpenSupport,
                 onOpenAuthorProfile = onOpenAuthorProfile,
+                onRecommendBoris = onRecommendBoris,
             )
         }
     }

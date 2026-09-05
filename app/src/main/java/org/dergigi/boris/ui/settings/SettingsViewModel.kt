@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
 import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.data.SettingsSync
@@ -19,7 +20,9 @@ import org.dergigi.boris.nostr.EventPublisher
 import org.dergigi.boris.nostr.EventSigner
 import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip78
+import org.dergigi.boris.nostr.Nip89
 import org.dergigi.boris.nostr.PendingUnsignedEvent
+import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.nostr.SignOutcome
 
 class SettingsViewModel(
@@ -75,6 +78,51 @@ class SettingsViewModel(
 
     fun onSignerResult(resultCode: Int, data: Intent?) {
         signer.onSignerResult(resultCode, data)
+    }
+
+    fun recommendBoris() {
+        val app = getApplication<Application>()
+        val session = SessionStore.load(app)
+        if (session == null) {
+            _message.value = app.getString(R.string.settings_about_recommend_sign_in)
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val existing = runCatching {
+                RelayQuery.fetchAppRecommendation(session.pubkeyHex)
+            }.getOrNull()
+            if (Nip89.alreadyRecommends(existing)) {
+                _message.value = app.getString(R.string.settings_about_recommend_already)
+                return@launch
+            }
+            val createdAt = System.currentTimeMillis() / 1000
+            withContext(Dispatchers.Main) {
+                signer.sign(
+                    session,
+                    PendingUnsignedEvent(
+                        pubkey = session.pubkeyHex,
+                        createdAt = createdAt,
+                        kind = Nip01Event.KIND_APP_RECOMMENDATION,
+                        tags = Nip89.recommendationTags(existing?.tags),
+                        content = "",
+                    ),
+                ) { outcome ->
+                    when (outcome) {
+                        is SignOutcome.Signed -> {
+                            if (outcome.event.kind != Nip01Event.KIND_APP_RECOMMENDATION) return@sign
+                            viewModelScope.launch(Dispatchers.IO) {
+                                EventPublisher.publish(session.pubkeyHex, outcome.event)
+                                _message.value = app.getString(R.string.settings_about_recommend_done)
+                            }
+                        }
+                        SignOutcome.Rejected ->
+                            _message.value = app.getString(R.string.settings_about_recommend_rejected)
+                        SignOutcome.Cancelled, SignOutcome.Failed ->
+                            _message.value = app.getString(R.string.settings_about_recommend_cancelled)
+                    }
+                }
+            }
+        }
     }
 
     private fun requestSave(next: UserSettings) {

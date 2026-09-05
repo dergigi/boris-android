@@ -48,6 +48,7 @@ fun AboutSettingsSection(
     onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
+    onRecommendBoris: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -91,6 +92,13 @@ fun AboutSettingsSection(
             icon = Icons.Filled.Favorite,
             tint = HighlightFriends,
             onClick = onOpenSupport,
+        )
+        AboutActionRow(
+            label = stringResource(R.string.settings_about_recommend),
+            subtitle = stringResource(R.string.settings_about_recommend_summary),
+            painter = painterResource(R.drawable.ic_nostr),
+            tint = linkTint,
+            onClick = onRecommendBoris,
         )
         AboutActionRow(
             label = stringResource(R.string.about_cta_bug),

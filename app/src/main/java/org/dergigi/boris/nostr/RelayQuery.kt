@@ -66,6 +66,28 @@ object RelayQuery {
         return listOfNotNull(remote, cached).maxByOrNull { it.createdAt }
     }
 
+    fun fetchAppRecommendation(pubkeyHex: String, kindD: String = Nip89.RECOMMEND_KIND): Nip01Event? {
+        val cached = EventCache.latest(Nip01Event.KIND_APP_RECOMMENDATION, pubkeyHex, kindD)
+        val relays = buildList {
+            addAll(RelayList.FALLBACK)
+            addAll(fetchRelayList(pubkeyHex).read)
+        }.distinct()
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_APP_RECOMMENDATION))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("#d", JSONArray().put(kindD))
+            .put("limit", 5)
+        val remote = query(relays, listOf(filter))
+            .filter { event ->
+                event.kind == Nip01Event.KIND_APP_RECOMMENDATION &&
+                    event.pubkey.equals(pubkeyHex, ignoreCase = true) &&
+                    event.tagValue("d") == kindD
+            }
+            .maxByOrNull { it.createdAt }
+        remote?.let { EventCache.put(it) }
+        return listOfNotNull(remote, cached).maxByOrNull { it.createdAt }
+    }
+
     fun fetchProfile(pubkeyHex: String, extraRelays: List<String> = emptyList()): Profile? {
         val cached = EventCache.latest(Nip01Event.KIND_METADATA, pubkeyHex)
         if (cached != null) {

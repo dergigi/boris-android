@@ -159,6 +159,8 @@ object SettingsSearch {
             R.string.settings_about_vision,
             R.string.settings_about_vision_summary,
             R.string.settings_about_support_summary,
+            R.string.settings_about_recommend,
+            R.string.settings_about_recommend_summary,
             R.string.settings_about_github,
             R.string.settings_about_github_issue,
             R.string.settings_about_website,
