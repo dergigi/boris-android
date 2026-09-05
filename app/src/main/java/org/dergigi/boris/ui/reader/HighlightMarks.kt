@@ -7,9 +7,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.nostr.QuoteMatch
@@ -25,8 +28,31 @@ object HighlightMarks {
     const val HighlightMarkAlpha = 0.45f
     const val FindMarkAlpha = 0.38f
 
+    val ColorStroke = 2.dp
+    val MineStroke = 2.5.dp
+    val OtherStroke = 2.dp
+    val LinkStroke = 1.dp
+
     fun highlightRects(layout: TextLayoutResult, start: Int, end: Int): List<Rect> =
         JustifiedLayout.highlightRects(layout, start, end)
+
+    fun highlightStroke(eink: Boolean, mine: Boolean): InkStroke = when {
+        !eink -> InkStroke(InkUnderline.Solid, ColorStroke)
+        mine -> InkStroke(InkUnderline.Solid, MineStroke)
+        else -> InkStroke(InkUnderline.Dashed, OtherStroke)
+    }
+}
+
+data class InkStroke(
+    val ink: InkUnderline,
+    val width: Dp,
+)
+
+/** E-ink line styles. Color/marker mode keeps a single solid underline. */
+enum class InkUnderline {
+    Solid,
+    Dashed,
+    Dotted,
 }
 
 /** One matched occurrence of a highlight's painted mark within a text block. */
@@ -215,13 +241,23 @@ fun Modifier.drawHighlightMarks(
     findColor: Color = FindMark,
     spokenColor: Color = SpokenMark,
     foafColor: Color = HighlightFoaf,
+    eink: Boolean = false,
 ): Modifier = drawBehind {
     val result = layout ?: return@drawBehind
     if (spans.isEmpty()) return@drawBehind
-    fun paint(matches: (PaintedHighlight) -> Boolean, fill: Color, asUnderline: Boolean, alpha: Float = HighlightMarks.HighlightMarkAlpha) {
+    val other = HighlightMarks.highlightStroke(eink, mine = false)
+    val mine = HighlightMarks.highlightStroke(eink, mine = true)
+    fun paint(
+        matches: (PaintedHighlight) -> Boolean,
+        fill: Color,
+        asUnderline: Boolean,
+        alpha: Float = HighlightMarks.HighlightMarkAlpha,
+        ink: InkUnderline = InkUnderline.Solid,
+        stroke: Dp = 2.dp,
+    ) {
         spans.forEach { span ->
             if (matches(span.item)) {
-                paintHighlight(result, span.start, span.end, fill, asUnderline, alpha)
+                paintHighlight(result, span.start, span.end, fill, asUnderline, alpha, ink, stroke)
             }
         }
     }
@@ -229,10 +265,57 @@ fun Modifier.drawHighlightMarks(
     paint({ it.spoken }, spokenColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
     // Find matches always use a filled selection-like mark, never underline.
     paint({ it.find }, findColor, asUnderline = false, alpha = HighlightMarks.FindMarkAlpha)
-    paint({ !it.find && !it.spoken && !it.outline && !it.mine && !it.friend && !it.foaf }, otherColor, underline)
-    paint({ !it.find && !it.spoken && !it.outline && it.foaf && !it.friend && !it.mine }, foafColor, underline)
-    paint({ !it.find && !it.spoken && !it.outline && it.friend && !it.mine }, friendsColor, underline)
-    paint({ !it.find && !it.spoken && !it.outline && it.mine }, mineColor, underline)
+    paint(
+        { !it.find && !it.spoken && !it.outline && !it.mine && !it.friend && !it.foaf },
+        otherColor,
+        underline,
+        ink = other.ink,
+        stroke = other.width,
+    )
+    paint(
+        { !it.find && !it.spoken && !it.outline && it.foaf && !it.friend && !it.mine },
+        foafColor,
+        underline,
+        ink = other.ink,
+        stroke = other.width,
+    )
+    paint(
+        { !it.find && !it.spoken && !it.outline && it.friend && !it.mine },
+        friendsColor,
+        underline,
+        ink = other.ink,
+        stroke = other.width,
+    )
+    paint(
+        { !it.find && !it.spoken && !it.outline && it.mine },
+        mineColor,
+        underline,
+        ink = mine.ink,
+        stroke = mine.width,
+    )
+}
+
+fun Modifier.drawLinkUnderlines(
+    layout: TextLayoutResult?,
+    text: AnnotatedString,
+    color: Color,
+    enabled: Boolean,
+): Modifier {
+    if (!enabled) return this
+    return drawBehind {
+        val result = layout ?: return@drawBehind
+        text.getLinkAnnotations(0, text.length).forEach { range ->
+            paintHighlight(
+                layout = result,
+                start = range.start,
+                end = range.end,
+                fill = color,
+                underline = true,
+                ink = InkUnderline.Dotted,
+                stroke = HighlightMarks.LinkStroke,
+            )
+        }
+    }
 }
 
 fun DrawScope.paintHighlight(
@@ -242,19 +325,22 @@ fun DrawScope.paintHighlight(
     fill: Color,
     underline: Boolean,
     alpha: Float = HighlightMarks.HighlightMarkAlpha,
+    ink: InkUnderline = InkUnderline.Solid,
+    stroke: Dp = 2.dp,
 ) {
     val padXPx = 5.dp.toPx()
     val padYPx = 3.dp.toPx()
     val corner = CornerRadius(3.dp.toPx())
-    val stroke = 2.dp.toPx()
+    val strokePx = stroke.toPx()
     HighlightMarks.highlightRects(layout, start, end).forEach { box ->
         if (underline) {
             drawLine(
-                color = fill.copy(alpha = 0.85f),
-                start = Offset(box.left, box.bottom - stroke / 2),
-                end = Offset(box.right, box.bottom - stroke / 2),
-                strokeWidth = stroke,
+                color = fill.copy(alpha = if (ink == InkUnderline.Solid) 0.85f else 1f),
+                start = Offset(box.left, box.bottom - strokePx / 2),
+                end = Offset(box.right, box.bottom - strokePx / 2),
+                strokeWidth = strokePx,
                 cap = StrokeCap.Round,
+                pathEffect = ink.pathEffect(strokePx),
             )
         } else {
             drawRoundRect(
@@ -265,4 +351,10 @@ fun DrawScope.paintHighlight(
             )
         }
     }
+}
+
+private fun InkUnderline.pathEffect(strokePx: Float): PathEffect? = when (this) {
+    InkUnderline.Solid -> null
+    InkUnderline.Dashed -> PathEffect.dashPathEffect(floatArrayOf(strokePx * 3.2f, strokePx * 2.2f), 0f)
+    InkUnderline.Dotted -> PathEffect.dashPathEffect(floatArrayOf(strokePx, strokePx * 1.8f), 0f)
 }

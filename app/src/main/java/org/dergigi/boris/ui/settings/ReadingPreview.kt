@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.reader.HighlightMarks
+import org.dergigi.boris.ui.reader.InkStroke
+import org.dergigi.boris.ui.reader.InkUnderline
 import org.dergigi.boris.ui.reader.paintHighlight
 import org.dergigi.boris.ui.theme.rememberDisplayLook
 
@@ -45,12 +48,16 @@ fun ReadingPreview(
     val align = if (settings.justifyParagraphs) TextAlign.Justify else TextAlign.Start
     val look = rememberDisplayLook(settings)
     val underline = look.underline
+    val eink = look.eink
     val show = settings.showHighlights
     val linkColor = look.link
     val mineColor = look.mine
     val friendsColor = look.friends
     val foafColor = look.foaf
     val nostrverseColor = look.nostrverse
+    val mineStroke = HighlightMarks.highlightStroke(eink, mine = true)
+    val otherStroke = HighlightMarks.highlightStroke(eink, mine = false)
+    val linkStroke = if (eink) InkStroke(InkUnderline.Dotted, HighlightMarks.LinkStroke) else null
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -83,6 +90,7 @@ fun ReadingPreview(
             color = mineColor,
             visible = show && settings.defaultHighlightVisibilityMine,
             underline = underline,
+            stroke = mineStroke,
             family = family,
             fontSize = bodySize,
             lineHeight = bodyLine,
@@ -94,6 +102,7 @@ fun ReadingPreview(
             color = friendsColor,
             visible = show && settings.defaultHighlightVisibilityFriends,
             underline = underline,
+            stroke = otherStroke,
             family = family,
             fontSize = bodySize,
             lineHeight = bodyLine,
@@ -105,6 +114,7 @@ fun ReadingPreview(
             color = foafColor,
             visible = show && settings.defaultHighlightVisibilityFoaf,
             underline = underline,
+            stroke = otherStroke,
             family = family,
             fontSize = bodySize,
             lineHeight = bodyLine,
@@ -116,12 +126,14 @@ fun ReadingPreview(
             color = nostrverseColor,
             visible = show && settings.defaultHighlightVisibilityNostrverse,
             underline = underline,
+            stroke = otherStroke,
             family = family,
             fontSize = bodySize,
             lineHeight = bodyLine,
             align = align,
             link = PreviewCopy.LINK,
-            linkColor = linkColor,
+            linkColor = if (eink) Color.Unspecified else linkColor,
+            linkStroke = linkStroke,
         )
     }
 }
@@ -133,15 +145,17 @@ private fun PreviewParagraph(
     color: Color,
     visible: Boolean,
     underline: Boolean,
+    stroke: InkStroke,
     family: FontFamily,
     fontSize: TextUnit,
     lineHeight: TextUnit,
     align: TextAlign,
     link: String? = null,
     linkColor: Color = Color.Unspecified,
+    linkStroke: InkStroke? = null,
 ) {
     val annotated = remember(text, link, linkColor) {
-        if (link.isNullOrBlank()) {
+        if (link.isNullOrBlank() || linkColor == Color.Unspecified) {
             buildAnnotatedString { append(text) }
         } else {
             val start = text.indexOf(link)
@@ -157,6 +171,8 @@ private fun PreviewParagraph(
         }
     }
     val quoteStart = text.indexOf(quote)
+    val linkStart = link?.let { text.indexOf(it) } ?: -1
+    val bodyInk = MaterialTheme.colorScheme.onBackground
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     Text(
         text = annotated,
@@ -165,8 +181,27 @@ private fun PreviewParagraph(
             .fillMaxWidth()
             .drawBehind {
             val result = layout ?: return@drawBehind
+            if (linkStroke != null && link != null && linkStart >= 0) {
+                paintHighlight(
+                    result,
+                    linkStart,
+                    linkStart + link.length,
+                    bodyInk,
+                    underline = true,
+                    ink = linkStroke.ink,
+                    stroke = linkStroke.width,
+                )
+            }
             if (!visible || quoteStart < 0) return@drawBehind
-            paintHighlight(result, quoteStart, quoteStart + quote.length, color, underline)
+            paintHighlight(
+                result,
+                quoteStart,
+                quoteStart + quote.length,
+                color,
+                underline,
+                ink = stroke.ink,
+                stroke = stroke.width,
+            )
         },
         style = MaterialTheme.typography.bodyLarge.copy(
             fontFamily = family,

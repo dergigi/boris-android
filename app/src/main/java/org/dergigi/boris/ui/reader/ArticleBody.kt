@@ -122,6 +122,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -146,6 +147,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -362,6 +364,7 @@ internal fun ArticleBody(
     val foafColor = look.foaf
     val otherColor = look.nostrverse
     val underline = look.underline
+    val eink = look.eink
     val linkColor = look.link
     val body = typography.bodyLarge.copy(
         fontFamily = family,
@@ -597,6 +600,7 @@ internal fun ArticleBody(
         foafColor,
         otherColor,
         underline,
+        eink,
         selection,
         navigator,
         openFromStop,
@@ -627,6 +631,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -676,6 +681,7 @@ internal fun ArticleBody(
                             foafColor,
                             otherColor,
                             underline,
+                            eink,
                             selection,
                             navigator,
                             openFromStop,
@@ -707,6 +713,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -729,6 +736,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -751,6 +759,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -773,6 +782,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -795,6 +805,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -817,6 +828,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -839,6 +851,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -861,6 +874,7 @@ internal fun ArticleBody(
                     foafColor,
                     otherColor,
                     underline,
+                    eink,
                     selection,
                     navigator,
                     openFromStop,
@@ -977,6 +991,7 @@ internal fun ArticleBody(
                     foafColor = foafColor,
                     otherColor = otherColor,
                     underline = underline,
+                    eink = eink,
                     selection = selection,
                     navigator = navigator,
                     ttsStartIndex = titleTtsIndex,
@@ -1062,7 +1077,11 @@ internal fun ArticleBody(
                                 inlineCode = body.copy(fontFamily = FontFamily.Monospace),
                                 table = typography.bodyMedium.copy(fontFamily = family, textAlign = TextAlign.Left),
                                 textLink = TextLinkStyles(
-                                    style = body.copy(color = linkColor).toSpanStyle(),
+                                    style = if (eink) {
+                                        body.copy(color = linkColor, textDecoration = TextDecoration.None).toSpanStyle()
+                                    } else {
+                                        body.copy(color = linkColor).toSpanStyle()
+                                    },
                                 ),
                             ),
                             padding = markdownPadding(
@@ -1353,6 +1372,7 @@ internal fun HighlightedArticleTitle(
     foafColor: Color,
     otherColor: Color,
     underline: Boolean,
+    eink: Boolean,
     selection: ReaderSelectionState,
     navigator: HighlightNavigator,
     ttsStartIndex: Int?,
@@ -1377,6 +1397,7 @@ internal fun HighlightedArticleTitle(
                 otherColor,
                 underline,
                 foafColor = foafColor,
+                eink = eink,
             )
             .highlightAnchors(
                 owner = titleOwner,
@@ -1413,6 +1434,7 @@ internal fun HighlightedMarkdownNode(
     foafColor: Color,
     otherColor: Color,
     underline: Boolean,
+    eink: Boolean,
     selection: ReaderSelectionState,
     navigator: HighlightNavigator,
     onHighlightTap: (HighlightStop) -> Unit,
@@ -1452,10 +1474,12 @@ internal fun HighlightedMarkdownNode(
     val textModifier = Modifier
         .fillMaxWidth()
         .then(if (isHeading) Modifier.semantics { heading() } else Modifier)
+    val linkInk = style.color.takeOrElse { MaterialTheme.colorScheme.onBackground }
     MarkdownText(
         content = styledText,
         style = style,
         modifier = textModifier
+            .drawLinkUnderlines(layout, styledText, linkInk, eink)
             .drawHighlightMarks(
                 layout,
                 spans,
@@ -1464,6 +1488,7 @@ internal fun HighlightedMarkdownNode(
                 otherColor,
                 underline,
                 foafColor = foafColor,
+                eink = eink,
             )
             .highlightAnchors(
                 owner = owner,
