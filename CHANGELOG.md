@@ -9,9 +9,16 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-05
+
+### Added
+
+- Reader can pick compact, default, or comfortable side margins
+
 ### Fixed
 
-- Decrypted private bookmarks stay unlocked for the rest of the session; leaving and returning to the Library no longer asks to decrypt again, and the list shows right after decrypting
+- Decrypted private bookmarks stay unlocked for the rest of the session; leaving and returning to the Library no longer asks to decrypt again
+- Highlight cards use underlines on e-ink instead of a marker wash
 
 ## [1.5.37] - 2026-09-05
 
@@ -1736,7 +1743,8 @@ First stable release: Android reader with Amber/bunker login, NIP-84 highlights,
 - Application ID and namespace are now `org.dergigi.boris`
 - Home URL hint shows the default Citadel21 article
 
-[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.5.37...HEAD
+[Unreleased]: https://github.com/dergigi/boris-android/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/dergigi/boris-android/releases/tag/v1.6.0
 [1.5.37]: https://github.com/dergigi/boris-android/releases/tag/v1.5.37
 [1.5.36]: https://github.com/dergigi/boris-android/releases/tag/v1.5.36
 [1.5.35]: https://github.com/dergigi/boris-android/releases/tag/v1.5.35
