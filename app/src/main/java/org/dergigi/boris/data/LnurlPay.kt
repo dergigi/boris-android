@@ -29,7 +29,7 @@ object LnurlPay {
     fun endpoint(lud16: String): String? {
         val address = LightningAddress.parse(lud16) ?: return null
         val (name, domain) = address.split("@", limit = 2)
-        return "https://$domain/.well-known/lnurlp/$name"
+        return "https://${domain.lowercase()}/.well-known/lnurlp/$name"
     }
 
     fun parseParams(json: String): LnurlPayParams? {

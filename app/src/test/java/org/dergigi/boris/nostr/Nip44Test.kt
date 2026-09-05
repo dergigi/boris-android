@@ -2,6 +2,7 @@ package org.dergigi.boris.nostr
 
 import fr.acinq.secp256k1.Secp256k1
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Nip44Test {
@@ -32,5 +33,18 @@ class Nip44Test {
             payload,
         )
         assertEquals("a", Nip44.decrypt(payload, conversationKey))
+    }
+
+    @Test
+    fun legacyNip04RoundTripsBetweenTwoKeys() {
+        val sec1 = "0000000000000000000000000000000000000000000000000000000000000001".hexToByteArray()
+        val sec2 = "0000000000000000000000000000000000000000000000000000000000000002".hexToByteArray()
+        val pub1 = Secp256k1.pubkeyCreate(sec1).copyOfRange(1, 33).toHex()
+        val pub2 = Secp256k1.pubkeyCreate(sec2).copyOfRange(1, 33).toHex()
+        val payload = Nip44.encryptLegacy("""{"method":"get_info","params":{}}""", sec1, pub2)
+        assertTrue(payload.contains("?iv="))
+        assertEquals("""{"method":"get_info","params":{}}""", Nip44.decryptLegacy(payload, sec2, pub1))
+        // The generic decrypt entry point recognises the legacy shape too.
+        assertEquals("""{"method":"get_info","params":{}}""", Nip44.decrypt(payload, sec2, pub1))
     }
 }

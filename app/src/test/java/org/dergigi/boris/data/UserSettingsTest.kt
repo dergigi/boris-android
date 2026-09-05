@@ -336,4 +336,14 @@ class UserSettingsTest {
         val updated = UserSettings.defaults().withBoolean("archiveClosesReader", false)
         assertFalse(UserSettings.parse(updated.toJson()).archiveClosesReader)
     }
+
+    @Test
+    fun defaultZapAmountDefaultsTo21AndResets() {
+        assertEquals(21, UserSettings.defaults().defaultZapAmount)
+        val updated = UserSettings.defaults().withInt("defaultZapAmount", 1000)
+        assertEquals(1000, UserSettings.parse(updated.toJson()).defaultZapAmount)
+        assertTrue(updated.hasNonDefaultValues(setOf("defaultZapAmount")))
+        assertEquals(21, updated.resetKeys(setOf("defaultZapAmount")).defaultZapAmount)
+        assertEquals(1, UserSettings.parse("""{"defaultZapAmount":0}""").defaultZapAmount)
+    }
 }
