@@ -103,8 +103,32 @@
         <item>Looking for articles…</item>
         <item>Almost there…</item>
     </string-array>
-    <string name="about_title">About Boris</string>
+    <string name="about_title">Tutorial</string>
+    <string name="features_title">Features</string>
     <string name="about_back">Back</string>
+    <string name="tutorial_intro_title">Read with Boris</string>
+    <string name="tutorial_intro_body">A quick walkthrough for saving articles, reading quietly, listening, highlighting, and finding what your friends are reading.</string>
+    <string name="tutorial_add_title">Add Something to Read</string>
+    <string name="tutorial_add_body">Save articles through Nostr bookmarks, paste or open a URL in Boris, or use Android Share and choose Boris from the app list.</string>
+    <string name="tutorial_read_title">Settle Into the Reader</string>
+    <string name="tutorial_read_body">Boris extracts the article into a quiet reading view. Adjust type, margins, colors, and use text-to-speech when listening fits better than reading.</string>
+    <string name="tutorial_highlight_title">Mark the Good Parts</string>
+    <string name="tutorial_highlight_body">Select a passage to create a Nostr highlight. Add a note if you want, then keep it for yourself or let others discover it through your relays.</string>
+    <string name="tutorial_discover_title">Follow the Trail</string>
+    <string name="tutorial_discover_body">Browse highlights from your friends, your friends of friends, and the wider Nostrverse to find articles worth your attention.</string>
+    <string name="tutorial_keep_title">Keep Your Library Close</string>
+    <string name="tutorial_keep_body">Your bookmarks, progress, highlights, and cached articles stay in your library, with offline settings for airplane mode and local-first reading.</string>
+    <string name="tutorial_cta_title">You\'re ready</string>
+    <string name="tutorial_cta_body">Open an article, make a highlight, and let Boris remember where you left off.</string>
+    <string name="tutorial_cta_start">Start reading</string>
+    <string name="tutorial_visual_share_title">Open with</string>
+    <string name="tutorial_visual_share_copy">Browser</string>
+    <string name="tutorial_visual_share_boris">Boris</string>
+    <string name="tutorial_visual_read_clean">Reader</string>
+    <string name="tutorial_visual_read_listen">Listen</string>
+    <string name="tutorial_visual_highlight">Create highlight</string>
+    <string name="tutorial_visual_library_bookmarks">Bookmarks</string>
+    <string name="tutorial_visual_library_offline">Offline</string>
     <string name="about_intro_title">Hello! I\'m Boris.</string>
     <string name="about_intro_body">I\'m a nostr-native app designed for reading and highlighting.</string>
     <string name="about_read_anywhere_title">Read Anywhere</string>
@@ -477,7 +501,7 @@
     <string name="settings_zap_splits">Zap Splits</string>
     <string name="settings_zap_summary">Shares for you, authors, and Boris</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_summary">Boris, tutorial, FAQ, support, links</string>
+    <string name="settings_about_summary">Boris, tutorial, features, FAQ, support, links</string>
     <string name="faq_title">FAQ</string>
     <string name="faq_website">Website FAQ</string>
     <string name="faq_section_basics">THE BASICS</string>
@@ -501,7 +525,9 @@
     <string name="faq_privacy_after">\u0020and publishes highlights and annotations to your relays.</string>
     <string name="settings_about_blurb">Boris is a nostr-native reader for highlighting and calm long-form reading. Free and open source.</string>
     <string name="settings_about_tutorial">Tutorial</string>
-    <string name="settings_about_tutorial_summary">Walk through what Boris can do</string>
+    <string name="settings_about_tutorial_summary">Learn the basic reading flow</string>
+    <string name="settings_about_features">Features</string>
+    <string name="settings_about_features_summary">Walk through what Boris can do</string>
     <string name="settings_about_faq">FAQ</string>
     <string name="settings_about_faq_summary">Basics, the app, and privacy</string>
     <string name="settings_about_support_summary">Thank the people who zap Boris</string>

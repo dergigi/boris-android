@@ -48,6 +48,7 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.ui.browser.BrowserScreen
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.about.AboutScreen
+import org.dergigi.boris.ui.about.AboutScreenMode
 import org.dergigi.boris.ui.about.FaqScreen
 import org.dergigi.boris.ui.account.AccountScreen
 import org.dergigi.boris.ui.auth.AuthUiState
@@ -85,6 +86,7 @@ object Routes {
     const val PROFILE = "profile/{$NPUB_ARG}"
     const val READER = "reader?url={${ReaderViewModel.URL_ARG}}&highlight={${ReaderViewModel.HIGHLIGHT_ARG}}"
     const val BROWSER = "browser?url={${ReaderViewModel.URL_ARG}}"
+    const val FEATURES = "features"
 
     fun reader(url: String, highlightId: String? = null, quote: String? = null): String {
         if (!highlightId.isNullOrBlank()) {
@@ -397,6 +399,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenFeatures = {
+                            navController.navigate(Routes.FEATURES) {
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenFaq = {
                             navController.navigate(Routes.FAQ) {
                                 launchSingleTop = true
@@ -417,6 +424,13 @@ fun BorisApp(
                 }
                 composable(Routes.ABOUT) {
                     AboutScreen(
+                        mode = AboutScreenMode.Tutorial,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(Routes.FEATURES) {
+                    AboutScreen(
+                        mode = AboutScreenMode.Features,
                         onBack = { navController.popBackStack() },
                         onOpenSupport = {
                             navController.navigate(Routes.SUPPORT) {

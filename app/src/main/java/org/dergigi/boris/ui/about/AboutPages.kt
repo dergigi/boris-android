@@ -9,10 +9,32 @@ internal data class AboutFeature(
     val paragraphs: List<Int>,
 )
 
+internal data class TutorialStep(
+    val visual: TutorialVisual,
+    @StringRes val title: Int,
+    @StringRes val body: Int,
+)
+
+internal enum class TutorialVisual {
+    Add,
+    Read,
+    Highlight,
+    Discover,
+    Keep,
+}
+
 internal sealed class AboutPage {
-    data object Intro : AboutPage()
+    data object FeatureIntro : AboutPage()
     data class Feature(val feature: AboutFeature) : AboutPage()
-    data object Cta : AboutPage()
+    data object FeatureCta : AboutPage()
+    data object TutorialIntro : AboutPage()
+    data class Tutorial(val step: TutorialStep) : AboutPage()
+    data object TutorialCta : AboutPage()
+}
+
+enum class AboutScreenMode {
+    Tutorial,
+    Features,
 }
 
 object AboutLinks {
@@ -89,8 +111,42 @@ internal val ABOUT_FEATURES = listOf(
     ),
 )
 
-internal val ABOUT_PAGES: List<AboutPage> = buildList {
-    add(AboutPage.Intro)
+internal val TUTORIAL_STEPS = listOf(
+    TutorialStep(
+        visual = TutorialVisual.Add,
+        title = R.string.tutorial_add_title,
+        body = R.string.tutorial_add_body,
+    ),
+    TutorialStep(
+        visual = TutorialVisual.Read,
+        title = R.string.tutorial_read_title,
+        body = R.string.tutorial_read_body,
+    ),
+    TutorialStep(
+        visual = TutorialVisual.Highlight,
+        title = R.string.tutorial_highlight_title,
+        body = R.string.tutorial_highlight_body,
+    ),
+    TutorialStep(
+        visual = TutorialVisual.Discover,
+        title = R.string.tutorial_discover_title,
+        body = R.string.tutorial_discover_body,
+    ),
+    TutorialStep(
+        visual = TutorialVisual.Keep,
+        title = R.string.tutorial_keep_title,
+        body = R.string.tutorial_keep_body,
+    ),
+)
+
+internal val TUTORIAL_PAGES: List<AboutPage> = buildList {
+    add(AboutPage.TutorialIntro)
+    TUTORIAL_STEPS.forEach { add(AboutPage.Tutorial(it)) }
+    add(AboutPage.TutorialCta)
+}
+
+internal val FEATURE_PAGES: List<AboutPage> = buildList {
+    add(AboutPage.FeatureIntro)
     ABOUT_FEATURES.forEach { add(AboutPage.Feature(it)) }
-    add(AboutPage.Cta)
+    add(AboutPage.FeatureCta)
 }

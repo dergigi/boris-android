@@ -18,7 +18,7 @@ class SettingsSearchTest {
         SettingsCategory.Home to listOf("Home", "Sections, filters", "Hide NSFW articles"),
         SettingsCategory.Library to listOf("Library", "Default view"),
         SettingsCategory.Airplane to listOf("Airplane mode", "Downloads, storage, local relays", "Citrine"),
-        SettingsCategory.About to listOf("About", "Boris, tutorial, FAQ, support, links"),
+        SettingsCategory.About to listOf("About", "Boris, tutorial, features, FAQ, support, links"),
     )
 
     @Test

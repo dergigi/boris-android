@@ -7,10 +7,27 @@ import org.junit.Test
 
 class AboutPagesTest {
     @Test
-    fun startsWithIntroAndEndsWithCta() {
-        assertEquals(AboutPage.Intro, ABOUT_PAGES.first())
-        assertEquals(AboutPage.Cta, ABOUT_PAGES.last())
-        assertEquals(ABOUT_FEATURES.size + 2, ABOUT_PAGES.size)
+    fun featureDeckStartsWithIntroAndEndsWithCta() {
+        assertEquals(AboutPage.FeatureIntro, FEATURE_PAGES.first())
+        assertEquals(AboutPage.FeatureCta, FEATURE_PAGES.last())
+        assertEquals(ABOUT_FEATURES.size + 2, FEATURE_PAGES.size)
+    }
+
+    @Test
+    fun tutorialDeckWalksThroughCoreFlows() {
+        assertEquals(AboutPage.TutorialIntro, TUTORIAL_PAGES.first())
+        assertEquals(AboutPage.TutorialCta, TUTORIAL_PAGES.last())
+        assertEquals(TUTORIAL_STEPS.size + 2, TUTORIAL_PAGES.size)
+        assertEquals(
+            listOf(
+                TutorialVisual.Add,
+                TutorialVisual.Read,
+                TutorialVisual.Highlight,
+                TutorialVisual.Discover,
+                TutorialVisual.Keep,
+            ),
+            TUTORIAL_STEPS.map { it.visual },
+        )
     }
 
     @Test
