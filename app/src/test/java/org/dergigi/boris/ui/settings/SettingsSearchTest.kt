@@ -46,6 +46,12 @@ class SettingsSearchTest {
     }
 
     @Test
+    fun queryMatchesFeaturesEntry() {
+        val filtered = SettingsSearch.filterGroups(groups, "features", ::textsFor)
+        assertEquals(listOf(listOf(SettingsCategory.About)), filtered)
+    }
+
+    @Test
     fun unknownQueryYieldsNoGroups() {
         assertTrue(SettingsSearch.filterGroups(groups, "zzzz", ::textsFor).isEmpty())
     }

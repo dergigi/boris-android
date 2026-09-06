@@ -113,7 +113,7 @@
     <string name="tutorial_read_title">Settle Into the Reader</string>
     <string name="tutorial_read_body">Boris extracts the article into a quiet reading view. Adjust type, margins, colors, and use text-to-speech when listening fits better than reading.</string>
     <string name="tutorial_highlight_title">Mark the Good Parts</string>
-    <string name="tutorial_highlight_body">Select a passage to create a Nostr highlight. Add a note if you want, then keep it for yourself or let others discover it through your relays.</string>
+    <string name="tutorial_highlight_body">Select a passage to create a Nostr highlight. Highlights are public by default; add a note if you want, then your relays can help others discover it.</string>
     <string name="tutorial_discover_title">Follow the Trail</string>
     <string name="tutorial_discover_body">Browse highlights from your friends, your friends of friends, and the wider Nostrverse to find articles worth your attention.</string>
     <string name="tutorial_keep_title">Keep Your Library Close</string>
