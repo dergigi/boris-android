@@ -64,6 +64,39 @@ class ReaderRepositoryParseTest {
     }
 
     @Test
+    fun bestEffortReadsEmbeddedMarkdownWhenPageHasNoArticleBody() {
+        val raw = """
+            <html><head><title>Stacker Post</title></head>
+            <body>
+              <script>
+                self.__next_f.push([1,{"markdown":"Stacker fallback text with enough words to read.\n\nSecond paragraph from embedded app state."}])
+              </script>
+            </body></html>
+        """.trimIndent()
+        val strict = repository.parse("https://stacker.news/items/1562899", raw)
+        val fallback = repository.parseBestEffort("https://stacker.news/items/1562899", raw)
+        assertNull(strict.markdown)
+        assertEquals("Stacker Post", fallback.title)
+        assertTrue(fallback.markdown!!.contains("Stacker fallback text with enough words to read."))
+        assertTrue(fallback.markdown!!.contains("Second paragraph from embedded app state."))
+    }
+
+    @Test
+    fun bestEffortReadsEmbeddedHtmlWhenPageHasNoArticleBody() {
+        val raw = """
+            <html><head><title>Stacker Post</title></head>
+            <body>
+              <script>
+                self.__next_f.push([1,{"html":"\u003cp\u003eEmbedded HTML fallback with enough words to read. This second sentence keeps the fallback above the minimum useful length.\u003c/p\u003e"}])
+              </script>
+            </body></html>
+        """.trimIndent()
+        val fallback = repository.parseBestEffort("https://stacker.news/items/1562899", raw)
+        assertEquals("Stacker Post", fallback.title)
+        assertTrue(fallback.markdown!!.contains("Embedded HTML fallback with enough words to read."))
+    }
+
+    @Test
     fun paywallTeaserYieldsNullMarkdown() {
         val teaser = "Subscribe now to keep reading this exclusive story from our newsroom."
         val raw = "<html><body><article><p>$teaser</p></article></body></html>"
@@ -159,9 +192,52 @@ class ReaderRepositoryParseTest {
             stubResponse(request, 200, "<html><body><p>Hi</p></body></html>")
         }
         val error = fetchError(client, "https://example.com/thin")
-        assertEquals("Could not find an article on this page.", error?.message)
+        assertEquals("Boris wasn't able to extract a clean article.", error?.message)
         assertEquals("No readable article in the page", (error as? ReaderFetchException)?.detail)
         assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
+    }
+
+    @Test
+    fun fetchAnywayUsesBestEffortParserForEmbeddedMarkdown() {
+        val raw = """
+            <html><head><title>Stacker Post</title></head>
+            <body>
+              <script>
+                self.__next_f.push([1,{"markdown":"Stacker fallback text with enough words to read.\n\nSecond paragraph from embedded app state."}])
+              </script>
+            </body></html>
+        """.trimIndent()
+        val client = stubClient { request -> stubResponse(request, 200, raw) }
+        val strict = fetchError(client, "https://stacker.news/items/1562899")
+        val fallback = ReaderRepository(client).fetchAnyway("https://stacker.news/items/1562899")
+        assertEquals("Boris wasn't able to extract a clean article.", strict?.message)
+        assertEquals("Stacker Post", fallback.title)
+        assertTrue(fallback.markdown!!.contains("Second paragraph from embedded app state."))
+    }
+
+    @Test
+    fun fetchAnywayKeepsCachedFinalUrlForRelativeImages() {
+        val raw = """
+            <html><head><title>Stacker Post</title></head>
+            <body>
+              <script>
+                self.__next_f.push([1,{"html":"\u003cp\u003eCached fallback content with enough words to read. This second sentence keeps the fallback above the minimum useful length.\u003c/p\u003e\u003cimg src=\"images/cover.jpg\" alt=\"cover\"\u003e"}])
+              </script>
+            </body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            stubResponse(
+                request = request,
+                code = 200,
+                body = raw,
+                finalUrl = "https://stacker.news/items/1562899",
+            )
+        }
+        val fallback = ReaderRepository(client).fetchAnyway("https://stacker.news/items/short")
+        assertEquals(
+            listOf("https://stacker.news/items/images/cover.jpg"),
+            UrlExtractor.imageUrls(fallback.body, fallback.url),
+        )
     }
 
     @Test

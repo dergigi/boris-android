@@ -71,7 +71,7 @@ class ReaderPreviewTest {
             ),
         )
         val state = readerErrorState(
-            message = "Could not find an article on this page.",
+            message = "Boris wasn't able to extract a clean article.",
             url = url,
             detail = "No readable article in the page",
         )
@@ -79,6 +79,18 @@ class ReaderPreviewTest {
         assertEquals("Cached PubMed title", state.title)
         assertEquals("https://cdn.example.com/pubmed-cover.jpg", state.imageUrl)
         assertEquals("No readable article in the page", state.detail)
+        assertEquals(false, state.canTryAnyway)
+    }
+
+    @Test
+    fun errorStateCanOfferTryAnyway() {
+        val state = readerErrorState(
+            message = "Boris wasn't able to extract a clean article.",
+            url = "https://stacker.news/items/1562899",
+            detail = "No readable article in the page",
+            canTryAnyway = true,
+        )
+        assertEquals(true, state.canTryAnyway)
     }
 
     @Test

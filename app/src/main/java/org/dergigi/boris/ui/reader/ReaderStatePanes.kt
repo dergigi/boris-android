@@ -93,6 +93,7 @@ internal fun ReaderLoadingPane(
 internal fun ReaderErrorPane(
     state: ReaderUiState.Error,
     onRetry: () -> Unit,
+    onTryAnyway: () -> Unit,
     onOpenOriginal: () -> Unit,
     onOpenWayback: () -> Unit,
     onOpenArchivePh: () -> Unit,
@@ -167,6 +168,14 @@ internal fun ReaderErrorPane(
                 modifier = Modifier.padding(top = 16.dp),
             ) {
                 Text("Try again")
+            }
+            if (state.canTryAnyway) {
+                OutlinedButton(
+                    onClick = onTryAnyway,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text(stringResource(R.string.reader_try_anyway))
+                }
             }
             if (state.url.isNotBlank()) {
                 OutlinedButton(

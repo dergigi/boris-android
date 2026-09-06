@@ -21,6 +21,7 @@ import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NwcConnection
 import org.dergigi.boris.data.NwcStore
 import org.dergigi.boris.data.NostrEventRefs
+import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.OpenedHighlight
 import org.dergigi.boris.data.ReaderFetchException
@@ -221,7 +222,9 @@ class ReaderViewModel(
     /** Bypasses the parsed-article cache and re-runs the full fetch + parse. */
     fun refresh() = load(refresh = true)
 
-    fun load(refresh: Boolean = false) {
+    fun tryAnyway() = load(bestEffort = true)
+
+    fun load(refresh: Boolean = false, bestEffort: Boolean = false) {
         if (url.isBlank()) {
             _state.value = readerErrorState("No URL to read.", url)
             readerHighlights.clear(loaded = true)
@@ -259,7 +262,9 @@ class ReaderViewModel(
             resetAuthor()
             publishSaveState()
             try {
-                val content = withContext(Dispatchers.IO) { repository.fetch(url, refresh) }
+                val content = withContext(Dispatchers.IO) {
+                    if (bestEffort) repository.fetchAnyway(url) else repository.fetch(url, refresh)
+                }
                 _state.value = ReaderUiState.Ready(content)
                 readerHighlights.tryExternal()
                 readerHighlights.startFetch(content)
@@ -303,6 +308,10 @@ class ReaderViewModel(
                     message = e.message ?: "Could not reach this page.",
                     url = url,
                     detail = (e as? ReaderFetchException)?.detail,
+                    canTryAnyway = !bestEffort &&
+                        e is ReaderFetchException &&
+                        e.message == ReaderRepository.ERROR_NO_ARTICLE &&
+                        NostrLink.parse(url) == null,
                 )
                 publishSaveState()
             }
@@ -555,6 +564,7 @@ sealed interface ReaderUiState {
         val detail: String? = null,
         val title: String? = null,
         val imageUrl: String? = null,
+        val canTryAnyway: Boolean = false,
     ) : ReaderUiState
 }
 
@@ -571,6 +581,7 @@ internal fun readerErrorState(
     message: String,
     url: String,
     detail: String? = null,
+    canTryAnyway: Boolean = false,
 ): ReaderUiState.Error {
     val preview = ArticlePreview.get(url)
     return ReaderUiState.Error(
@@ -579,5 +590,6 @@ internal fun readerErrorState(
         detail = detail,
         title = preview?.title?.let { HtmlToMarkdown.decode(it) }?.trim()?.takeIf { it.isNotEmpty() },
         imageUrl = preview?.imageUrl?.trim()?.takeIf { it.isNotEmpty() },
+        canTryAnyway = canTryAnyway,
     )
 }
