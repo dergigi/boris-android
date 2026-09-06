@@ -1,8 +1,9 @@
 package org.dergigi.boris.ui.reader
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -24,14 +27,17 @@ import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
 
 /** Square button beside [ReactionButton]; lights up orange once a zap went through this session. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun ZapButton(
     zapped: Boolean,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(8.dp)
     val label = stringResource(R.string.zap_action)
+    val haptics = LocalHapticFeedback.current
     Box(
         modifier = modifier
             .size(ButtonDefaults.MinHeight)
@@ -39,7 +45,15 @@ internal fun ZapButton(
             .background(if (zapped) ReactionOrange.copy(alpha = 0.14f) else Color.Transparent)
             .border(1.dp, if (zapped) ReactionOrange else MaterialTheme.colorScheme.outline, shape)
             .semantics { contentDescription = label }
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick?.let {
+                    {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        it()
+                    }
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

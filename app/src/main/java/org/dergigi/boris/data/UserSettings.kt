@@ -94,6 +94,7 @@ class UserSettings internal constructor(
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
     val defaultZapAmount: Int get() = int("defaultZapAmount", 21).coerceAtLeast(1)
     val defaultZapMessage: String get() = string("defaultZapMessage", DEFAULT_ZAP_MESSAGE)
+    val oneTapZaps: Boolean get() = bool("oneTapZaps", true)
     val zapPresets: List<Long>
         get() = normalizeZapPresets(stringList("zapPresets").mapNotNull { it.toLongOrNull() })
     val firstTimeDismissed: Boolean get() = bool("firstTimeDismissed", false)
@@ -238,6 +239,7 @@ class UserSettings internal constructor(
         "volumeButtonScrollPercent" -> volumeButtonScrollPercent
         "zapSplitAuthorWeight" -> zapSplitAuthorWeight
         "defaultZapAmount" -> defaultZapAmount
+        "oneTapZaps" -> oneTapZaps
         "zapPresets" -> zapPresets
         "zapSplitBorisWeight" -> zapSplitBorisWeight
         "zapSplitHighlighterWeight" -> zapSplitHighlighterWeight
@@ -298,6 +300,7 @@ private const val DEFAULT_JSON = """{
   "zapSplitAuthorWeight":50,
   "defaultZapAmount":21,
   "defaultZapMessage":"I loved reading this! 🧡",
+  "oneTapZaps":true,
   "zapPresets":["21","100","500","1000","5000","21000"],
   "useLocalRelayAsCache":true,
   "hideNsfwOnHome":true,

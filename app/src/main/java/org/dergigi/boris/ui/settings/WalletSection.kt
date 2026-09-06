@@ -70,6 +70,7 @@ fun WalletSection(
     ) {
         val current = connection
         if (current == null) ConnectWallet() else ConnectedWallet(current)
+        ZapBehavior(settings, onUpdate)
         DefaultAmount(settings, onUpdate)
         DefaultMessage(settings, onUpdate)
     }
@@ -297,6 +298,27 @@ private fun DefaultAmount(settings: UserSettings, onUpdate: (UserSettings) -> Un
         OutlinedButton(onClick = { editingPresets = true }) {
             Text(stringResource(R.string.settings_wallet_presets_edit))
         }
+    }
+}
+
+@Composable
+private fun ZapBehavior(settings: UserSettings, onUpdate: (UserSettings) -> Unit) {
+    WalletPanel {
+        Text(
+            text = stringResource(R.string.settings_wallet_zap_behavior),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_wallet_one_tap_zaps),
+            checked = settings.oneTapZaps,
+            onCheckedChange = { onUpdate(settings.withBoolean("oneTapZaps", it)) },
+        )
+        Text(
+            text = stringResource(R.string.settings_wallet_one_tap_zaps_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

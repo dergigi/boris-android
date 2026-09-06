@@ -18,6 +18,7 @@ class SettingsSearchTest {
         SettingsCategory.Home to listOf("Home", "Sections, filters", "Hide NSFW articles"),
         SettingsCategory.Library to listOf("Library", "Default view"),
         SettingsCategory.Airplane to listOf("Airplane mode", "Downloads, storage, local relays", "Citrine"),
+        SettingsCategory.Wallet to listOf("Wallet", "Nostr Wallet Connect and zaps", "One-tap zaps"),
         SettingsCategory.About to listOf("About", "Boris, tutorial, features, FAQ, support, links"),
     )
 
@@ -49,6 +50,12 @@ class SettingsSearchTest {
     fun queryMatchesFeaturesEntry() {
         val filtered = SettingsSearch.filterGroups(groups, "features", ::textsFor)
         assertEquals(listOf(listOf(SettingsCategory.About)), filtered)
+    }
+
+    @Test
+    fun queryMatchesOneTapWalletSetting() {
+        val filtered = SettingsSearch.filterGroups(listOf(listOf(SettingsCategory.Wallet)), "one-tap", ::textsFor)
+        assertEquals(listOf(listOf(SettingsCategory.Wallet)), filtered)
     }
 
     @Test
