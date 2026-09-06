@@ -160,7 +160,6 @@ fun AboutScreen(
                         onStartReading = onBack,
                         onOpenSupport = onOpenSupport,
                     )
-                    AboutPage.TutorialIntro -> TutorialIntroPage()
                     is AboutPage.Tutorial -> TutorialStepPage(item.step)
                     AboutPage.TutorialCta -> TutorialCtaPage(onStartReading = onBack)
                 }
@@ -365,37 +364,6 @@ private fun FeatureCtaPage(
                 style = MaterialTheme.typography.titleMedium,
             )
         }
-    }
-}
-
-@Composable
-private fun TutorialIntroPage() {
-    AboutPageColumn {
-        Image(
-            painter = painterResource(R.drawable.ic_boris_logo),
-            contentDescription = stringResource(R.string.about_title),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(132.dp),
-        )
-        Spacer(Modifier.height(28.dp))
-        Text(
-            text = stringResource(R.string.tutorial_intro_title),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontFamily = SourceSerif,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.tutorial_intro_body),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = FontFamily.SansSerif,
-                textAlign = TextAlign.Center,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

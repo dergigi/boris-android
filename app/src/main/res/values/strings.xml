@@ -106,8 +106,6 @@
     <string name="about_title">Tutorial</string>
     <string name="features_title">Features</string>
     <string name="about_back">Back</string>
-    <string name="tutorial_intro_title">Read with Boris</string>
-    <string name="tutorial_intro_body">A quick walkthrough for saving articles, reading quietly, listening, highlighting, and finding what your friends are reading.</string>
     <string name="tutorial_add_title">Add Something to Read</string>
     <string name="tutorial_add_body">Save articles through Nostr bookmarks, paste or open a URL in Boris, or use Android Share and choose Boris from the app list.</string>
     <string name="tutorial_read_title">Settle Into the Reader</string>

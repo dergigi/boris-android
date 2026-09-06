@@ -27,7 +27,6 @@ internal sealed class AboutPage {
     data object FeatureIntro : AboutPage()
     data class Feature(val feature: AboutFeature) : AboutPage()
     data object FeatureCta : AboutPage()
-    data object TutorialIntro : AboutPage()
     data class Tutorial(val step: TutorialStep) : AboutPage()
     data object TutorialCta : AboutPage()
 }
@@ -140,7 +139,6 @@ internal val TUTORIAL_STEPS = listOf(
 )
 
 internal val TUTORIAL_PAGES: List<AboutPage> = buildList {
-    add(AboutPage.TutorialIntro)
     TUTORIAL_STEPS.forEach { add(AboutPage.Tutorial(it)) }
     add(AboutPage.TutorialCta)
 }

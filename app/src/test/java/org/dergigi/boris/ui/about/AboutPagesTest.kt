@@ -15,9 +15,9 @@ class AboutPagesTest {
 
     @Test
     fun tutorialDeckWalksThroughCoreFlows() {
-        assertEquals(AboutPage.TutorialIntro, TUTORIAL_PAGES.first())
+        assertEquals(AboutPage.Tutorial(TUTORIAL_STEPS.first()), TUTORIAL_PAGES.first())
         assertEquals(AboutPage.TutorialCta, TUTORIAL_PAGES.last())
-        assertEquals(TUTORIAL_STEPS.size + 2, TUTORIAL_PAGES.size)
+        assertEquals(TUTORIAL_STEPS.size + 1, TUTORIAL_PAGES.size)
         assertEquals(
             listOf(
                 TutorialVisual.Add,
