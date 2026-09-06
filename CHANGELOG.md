@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-09-06
+
+### Fixed
+
+- When Boris cannot extract a clean article, Show anyway can still open the page from cached or embedded content
+
 ## [1.6.1] - 2026-09-06
 
 ### Added
