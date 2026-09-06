@@ -342,6 +342,7 @@ fun ReaderScreen(
         ZapDialog(
             progress = progress,
             defaultSats = settings.defaultZapAmount.toLong(),
+            defaultComment = settings.defaultZapMessage,
             presets = settings.zapPresets,
             onConfirm = viewModel::confirmZap,
             onDismiss = viewModel::dismissZap,

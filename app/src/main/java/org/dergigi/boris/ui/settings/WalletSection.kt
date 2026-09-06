@@ -71,6 +71,7 @@ fun WalletSection(
         val current = connection
         if (current == null) ConnectWallet() else ConnectedWallet(current)
         DefaultAmount(settings, onUpdate)
+        DefaultMessage(settings, onUpdate)
     }
 }
 
@@ -365,6 +366,35 @@ private fun ZapPresetEditorDialog(
             }
         },
     )
+}
+
+@Composable
+private fun DefaultMessage(settings: UserSettings, onUpdate: (UserSettings) -> Unit) {
+    var message by rememberSaveable(settings.defaultZapMessage) {
+        mutableStateOf(settings.defaultZapMessage)
+    }
+    WalletPanel {
+        Text(
+            text = stringResource(R.string.settings_wallet_default_message),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Text(
+            text = stringResource(R.string.settings_wallet_default_message_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedTextField(
+            value = message,
+            onValueChange = {
+                message = it
+                onUpdate(settings.withString("defaultZapMessage", it))
+            },
+            label = { Text(stringResource(R.string.settings_wallet_default_message_hint)) },
+            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 private fun UserSettings.withWalletZapPresets(values: List<Long>): UserSettings {

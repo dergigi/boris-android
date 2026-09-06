@@ -37,12 +37,13 @@ import org.dergigi.boris.ui.ZapProgress
 fun ZapDialog(
     progress: ZapProgress,
     defaultSats: Long,
+    defaultComment: String = "",
     presets: List<Long> = DEFAULT_ZAP_PRESETS,
     onConfirm: (sats: Long, comment: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var amountText by rememberSaveable { mutableStateOf(defaultSats.toString()) }
-    var comment by rememberSaveable { mutableStateOf("") }
+    var comment by rememberSaveable(defaultComment) { mutableStateOf(defaultComment) }
     val sats = amountText.filter { it.isDigit() }.toLongOrNull() ?: 0L
     val paying = progress is ZapProgress.Paying
     AlertDialog(
