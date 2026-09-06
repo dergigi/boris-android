@@ -522,6 +522,7 @@
     <string name="faq_privacy_link">NIP-84</string>
     <string name="faq_privacy_after">\u0020and publishes highlights and annotations to your relays.</string>
     <string name="settings_about_blurb">Boris is a nostr-native reader for highlighting and calm long-form reading. Free and open source.</string>
+    <string name="settings_about_learn">Learn</string>
     <string name="settings_about_tutorial">Tutorial</string>
     <string name="settings_about_tutorial_summary">Learn the basic reading flow</string>
     <string name="settings_about_features">Features</string>
@@ -539,6 +540,7 @@
     <string name="settings_about_links">Links</string>
     <string name="settings_about_vision">Vision</string>
     <string name="settings_about_vision_summary">Purple Text, Orange Highlights</string>
+    <string name="settings_about_community">Community</string>
     <string name="settings_about_github_issue">Open a GitHub issue</string>
     <string name="settings_about_website">Website</string>
     <string name="settings_about_webapp">Web app</string>

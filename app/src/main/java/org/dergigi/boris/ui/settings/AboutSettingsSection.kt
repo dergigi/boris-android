@@ -66,6 +66,7 @@ fun AboutSettingsSection(
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
+        AboutSectionTitle(stringResource(R.string.settings_about_learn))
         AboutActionRow(
             label = stringResource(R.string.settings_about_tutorial),
             subtitle = stringResource(R.string.settings_about_tutorial_summary),
@@ -93,6 +94,11 @@ fun AboutSettingsSection(
             icon = BorisIcons.Highlighter,
             tint = HighlightOther,
             onClick = { onOpenArticle(AboutLinks.VISION) },
+        )
+
+        AboutSectionTitle(
+            text = stringResource(R.string.settings_about_community),
+            modifier = Modifier.padding(top = 16.dp),
         )
         AboutActionRow(
             label = stringResource(R.string.support_title),
@@ -125,10 +131,8 @@ fun AboutSettingsSection(
             onClick = { openExternalUri(context, AboutLinks.FEATURE_REQUEST) },
         )
 
-        Text(
+        AboutSectionTitle(
             text = stringResource(R.string.settings_about_links),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
         )
         AboutActionRow(
@@ -185,6 +189,19 @@ fun AboutSettingsSection(
             modifier = Modifier.padding(top = 16.dp),
         )
     }
+}
+
+@Composable
+private fun AboutSectionTitle(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = modifier.padding(bottom = 4.dp),
+    )
 }
 
 @Composable
