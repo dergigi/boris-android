@@ -476,7 +476,7 @@ private fun TutorialIllustration(visual: TutorialVisual) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(228.dp)
+            .heightIn(min = 228.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp))
