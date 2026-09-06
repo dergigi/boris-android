@@ -9,6 +9,23 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-09-06
+
+### Added
+
+- One-tap zaps from the article button, with a long press for amount and comment
+- Default zap message in Wallet settings, pre-filled in the zap dialog
+- Media setting for where gallery images are saved
+
+### Changed
+
+- Reader margin presets now use icons, and the settings preview follows the chosen margin
+- Tutorial starts on a concrete step, Home opens Tutorial, and About settings are grouped more clearly
+
+### Fixed
+
+- Tutorial mock buttons no longer clip their labels
+
 ## [1.6.3] - 2026-09-06
 
 ### Added
