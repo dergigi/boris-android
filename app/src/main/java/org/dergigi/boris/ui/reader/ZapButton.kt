@@ -37,6 +37,7 @@ internal fun ZapButton(
 ) {
     val shape = RoundedCornerShape(8.dp)
     val label = stringResource(R.string.zap_action)
+    val longClickLabel = stringResource(R.string.zap_options)
     val haptics = LocalHapticFeedback.current
     Box(
         modifier = modifier
@@ -47,6 +48,7 @@ internal fun ZapButton(
             .semantics { contentDescription = label }
             .combinedClickable(
                 onClick = onClick,
+                onLongClickLabel = if (onLongClick == null) null else longClickLabel,
                 onLongClick = onLongClick?.let {
                     {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
