@@ -90,10 +90,13 @@ object SettingsSearch {
             R.string.settings_zap_note,
         ),
         SettingsCategory.Wallet to listOf(
+            R.string.settings_wallet_connect_title,
             R.string.settings_wallet_intro,
             R.string.settings_wallet_connect,
             R.string.settings_wallet_disconnect,
             R.string.settings_wallet_default_amount,
+            R.string.settings_wallet_presets_title,
+            R.string.settings_wallet_presets_edit,
             R.string.zap_action,
         ),
         SettingsCategory.Home to listOf(

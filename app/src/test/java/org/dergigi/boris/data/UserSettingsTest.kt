@@ -346,4 +346,17 @@ class UserSettingsTest {
         assertEquals(21, updated.resetKeys(setOf("defaultZapAmount")).defaultZapAmount)
         assertEquals(1, UserSettings.parse("""{"defaultZapAmount":0}""").defaultZapAmount)
     }
+
+    @Test
+    fun zapPresetsReadNormalizeAndReset() {
+        assertEquals(DEFAULT_ZAP_PRESETS, UserSettings.defaults().zapPresets)
+
+        val updated = UserSettings.defaults().withZapPresets(listOf(100L, 21L, 100L, 0L, 5_000L))
+        assertEquals(listOf(100L, 21L, 5_000L), UserSettings.parse(updated.toJson()).zapPresets)
+        assertTrue(updated.hasNonDefaultValues(setOf("zapPresets")))
+        assertEquals(DEFAULT_ZAP_PRESETS, updated.resetKeys(setOf("zapPresets")).zapPresets)
+
+        val invalid = UserSettings.parse("""{"zapPresets":["0","nope","-1"]}""")
+        assertEquals(DEFAULT_ZAP_PRESETS, invalid.zapPresets)
+    }
 }

@@ -27,10 +27,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.DEFAULT_ZAP_PRESETS
 import org.dergigi.boris.nostr.ZapRecipients
 import org.dergigi.boris.ui.ZapProgress
-
-internal val ZAP_PRESETS = listOf(21L, 100L, 500L, 1_000L, 5_000L, 21_000L)
 
 /** Amount, comment, and recipient breakdown; then progress and the outcome. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -38,6 +37,7 @@ internal val ZAP_PRESETS = listOf(21L, 100L, 500L, 1_000L, 5_000L, 21_000L)
 fun ZapDialog(
     progress: ZapProgress,
     defaultSats: Long,
+    presets: List<Long> = DEFAULT_ZAP_PRESETS,
     onConfirm: (sats: Long, comment: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -61,7 +61,7 @@ fun ZapDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        ZAP_PRESETS.forEach { preset ->
+                        presets.forEach { preset ->
                             FilterChip(
                                 selected = sats == preset,
                                 onClick = { amountText = preset.toString() },
