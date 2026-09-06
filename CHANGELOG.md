@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-09-06
+
 ### Added
 
 - Zap Nostr-native articles from the end of the article, next to the heart. Amounts follow the article's own zap split tags when it has them, otherwise the author gets it all
