@@ -365,6 +365,16 @@ class UserSettingsTest {
     }
 
     @Test
+    fun oneTapZapsDefaultOnAndCanBeDisabled() {
+        assertTrue(UserSettings.defaults().oneTapZaps)
+        assertFalse(UserSettings.parse("""{"oneTapZaps":false}""").oneTapZaps)
+        val updated = UserSettings.defaults().withBoolean("oneTapZaps", false)
+        assertFalse(UserSettings.parse(updated.toJson()).oneTapZaps)
+        assertTrue(updated.hasNonDefaultValues(setOf("oneTapZaps")))
+        assertTrue(updated.resetKeys(setOf("oneTapZaps")).oneTapZaps)
+    }
+
+    @Test
     fun zapPresetsReadNormalizeAndReset() {
         assertEquals(DEFAULT_ZAP_PRESETS, UserSettings.defaults().zapPresets)
 

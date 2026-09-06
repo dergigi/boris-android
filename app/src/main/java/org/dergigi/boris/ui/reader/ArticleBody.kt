@@ -266,6 +266,7 @@ internal fun ArticleBody(
     canZap: Boolean = false,
     zapped: Boolean = false,
     onZap: () -> Unit = {},
+    onZapOptions: () -> Unit = onZap,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
     pane: ReaderPaneState,
@@ -1131,7 +1132,7 @@ internal fun ArticleBody(
                             ReactionButton(reaction = reaction, onReact = onReact)
                         }
                         if (canZap) {
-                            ZapButton(zapped = zapped, onClick = onZap)
+                            ZapButton(zapped = zapped, onClick = onZap, onLongClick = onZapOptions)
                         }
                     }
                 }

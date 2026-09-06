@@ -581,6 +581,9 @@
     <string name="settings_wallet_refresh">Refresh balance</string>
     <string name="settings_wallet_disconnect">Disconnect</string>
     <string name="settings_wallet_secret_note">The connection secret stays on this device, protected by the Android Keystore. Disconnecting removes it.</string>
+    <string name="settings_wallet_zap_behavior">Zap behavior</string>
+    <string name="settings_wallet_one_tap_zaps">One-tap zaps</string>
+    <string name="settings_wallet_one_tap_zaps_note">Send the default amount immediately, without a comment.</string>
     <string name="settings_wallet_default_amount">Default zap amount</string>
     <string name="settings_wallet_default_amount_note">Preselected when you zap an article. You can change it every time.</string>
     <string name="settings_wallet_default_message">Default zap message</string>
@@ -595,6 +598,7 @@
     <string name="settings_wallet_presets_reset">Defaults</string>
     <string name="settings_wallet_presets_save">Save</string>
     <string name="zap_action">Zap</string>
+    <string name="zap_options">Zap options</string>
     <string name="zap_title">Zap this article</string>
     <string name="zap_resolving">Finding who to pay…</string>
     <string name="zap_paying">Paying %1$d of %2$d…</string>
@@ -605,6 +609,7 @@
     <string name="zap_failed_for">Could not pay: %1$s</string>
     <string name="zap_no_recipient">This article has no one to zap.</string>
     <string name="zap_no_lightning_address">None of the recipients has a lightning address.</string>
+    <string name="zap_invalid_amount">Choose a positive zap amount.</string>
     <string name="zap_no_wallet">Connect a wallet in Settings to zap articles.</string>
     <string name="zap_open_wallet_settings">Open Wallet settings</string>
     <plurals name="zap_dropped_recipients">

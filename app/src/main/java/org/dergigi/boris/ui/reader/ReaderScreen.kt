@@ -393,7 +393,18 @@ fun ReaderScreen(
         onReact = { reaction -> viewModel.react(reaction)?.let(launchSign) },
         canZap = canZap,
         zapped = zapped,
-        onZap = { if (wallet == null) walletHint = true else viewModel.startZap() },
+        onZap = {
+            if (wallet == null) {
+                walletHint = true
+            } else if (settings.oneTapZaps) {
+                viewModel.startOneTapZap(settings.defaultZapAmount.toLong())
+            } else {
+                viewModel.startZap()
+            }
+        },
+        onZapOptions = {
+            if (wallet == null) walletHint = true else viewModel.startZap()
+        },
         onAddRssFeed = { feedUrl ->
             settingsViewModel.update { current ->
                 if (feedUrl in current.rssFeeds) {
@@ -453,6 +464,7 @@ fun ReaderScreenContent(
     canZap: Boolean = false,
     zapped: Boolean = false,
     onZap: () -> Unit = {},
+    onZapOptions: () -> Unit = onZap,
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
 ) {
@@ -698,6 +710,7 @@ fun ReaderScreenContent(
                     canZap = canZap,
                     zapped = zapped,
                     onZap = onZap,
+                    onZapOptions = onZapOptions,
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,

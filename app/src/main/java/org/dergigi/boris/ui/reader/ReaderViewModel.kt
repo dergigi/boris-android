@@ -363,6 +363,12 @@ class ReaderViewModel(
         zapAction.resolve(content)
     }
 
+    /** Sends the default zap amount without asking for a comment. */
+    fun startOneTapZap(totalSats: Long) {
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
+        zapAction.payDefault(content, totalSats)
+    }
+
     fun confirmZap(totalSats: Long, comment: String) {
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
         val ready = _zap.value as? ZapProgress.Ready ?: return

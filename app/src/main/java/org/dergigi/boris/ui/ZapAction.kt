@@ -64,33 +64,71 @@ class ZapAction(
     fun resolve(content: ReadableContent) {
         job?.cancel()
         onProgress(ZapProgress.Resolving)
-        job = scope.launch(Dispatchers.IO) {
-            val targets = ZapRecipients.targets(content)
-            if (targets.isEmpty()) {
-                onProgress(ZapProgress.Failed(app.getString(R.string.zap_no_recipient)))
-                return@launch
+        job = scope.launch {
+            when (val resolved = withContext(Dispatchers.IO) { resolveRecipients(content) }) {
+                is ZapProgress.Failed -> onProgress(resolved)
+                is ZapProgress.Ready -> onProgress(resolved)
+                else -> Unit
             }
-            val profiles = try {
-                RelayQuery.fetchProfiles(RelayQuery.globalReadRelays(), targets.map { it.pubkey })
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                emptyMap()
-            }
-            val recipients = targets.mapNotNull { target ->
-                val profile = profiles[target.pubkey]
-                val lud16 = profile?.lud16 ?: return@mapNotNull null
-                ZapRecipient(target.pubkey, Profile.displayName(target.pubkey, profile), lud16, target.weight)
-            }
-            if (recipients.isEmpty()) {
-                onProgress(ZapProgress.Failed(app.getString(R.string.zap_no_lightning_address)))
-            } else {
-                onProgress(ZapProgress.Ready(recipients, targets.size - recipients.size))
+        }
+    }
+
+    fun payDefault(content: ReadableContent, totalSats: Long) {
+        if (totalSats <= 0) {
+            onProgress(ZapProgress.Failed(app.getString(R.string.zap_invalid_amount)))
+            return
+        }
+        job?.cancel()
+        onProgress(ZapProgress.Resolving)
+        job = scope.launch {
+            when (val resolved = withContext(Dispatchers.IO) { resolveRecipients(content) }) {
+                is ZapProgress.Failed -> onProgress(resolved)
+                is ZapProgress.Ready -> payResolved(content, resolved.recipients, totalSats, "")
+                else -> Unit
             }
         }
     }
 
     fun pay(content: ReadableContent, recipients: List<ZapRecipient>, totalSats: Long, comment: String) {
+        job?.cancel()
+        job = scope.launch {
+            payResolved(content, recipients, totalSats, comment)
+        }
+    }
+
+    fun onSignerResult(resultCode: Int, data: Intent?): Boolean = signer.onSignerResult(resultCode, data)
+
+    fun cancel() {
+        job?.cancel()
+        signer.cancel()
+        onProgress(null)
+    }
+
+    private suspend fun resolveRecipients(content: ReadableContent): ZapProgress {
+        val targets = ZapRecipients.targets(content)
+        if (targets.isEmpty()) return ZapProgress.Failed(app.getString(R.string.zap_no_recipient))
+        val profiles = try {
+            RelayQuery.fetchProfiles(RelayQuery.globalReadRelays(), targets.map { it.pubkey })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyMap()
+        }
+        val recipients = targets.mapNotNull { target ->
+            val profile = profiles[target.pubkey]
+            val lud16 = profile?.lud16 ?: return@mapNotNull null
+            ZapRecipient(target.pubkey, Profile.displayName(target.pubkey, profile), lud16, target.weight)
+        }
+        if (recipients.isEmpty()) return ZapProgress.Failed(app.getString(R.string.zap_no_lightning_address))
+        return ZapProgress.Ready(recipients, targets.size - recipients.size)
+    }
+
+    private suspend fun payResolved(
+        content: ReadableContent,
+        recipients: List<ZapRecipient>,
+        totalSats: Long,
+        comment: String,
+    ) {
         val session = SessionStore.load(app)
         if (session == null) {
             onProgress(ZapProgress.Failed(app.getString(R.string.share_save_sign_in)))
@@ -104,34 +142,23 @@ class ZapAction(
         }
         val shares = recipients.zip(ZapRecipients.shares(totalSats, recipients.map { it.weight }))
             .filter { it.second > 0 }
-        job?.cancel()
-        job = scope.launch {
-            val client = NwcClient(connection.walletPubkey, connection.relays, secret)
-            val relays = withContext(Dispatchers.IO) { RelayQuery.globalReadRelays() }
-            var paid = 0L
-            val failed = mutableListOf<String>()
-            try {
-                shares.forEachIndexed { index, (recipient, sats) ->
-                    onProgress(ZapProgress.Paying(index, shares.size))
-                    if (payOne(session, client, content, recipient, sats, comment, relays)) {
-                        paid += sats
-                    } else {
-                        failed += recipient.name
-                    }
+        val client = NwcClient(connection.walletPubkey, connection.relays, secret)
+        val relays = withContext(Dispatchers.IO) { RelayQuery.globalReadRelays() }
+        var paid = 0L
+        val failed = mutableListOf<String>()
+        try {
+            shares.forEachIndexed { index, (recipient, sats) ->
+                onProgress(ZapProgress.Paying(index, shares.size))
+                if (payOne(session, client, content, recipient, sats, comment, relays)) {
+                    paid += sats
+                } else {
+                    failed += recipient.name
                 }
-            } finally {
-                secret.fill(0)
             }
-            onProgress(ZapProgress.Done(paid, failed))
+        } finally {
+            secret.fill(0)
         }
-    }
-
-    fun onSignerResult(resultCode: Int, data: Intent?): Boolean = signer.onSignerResult(resultCode, data)
-
-    fun cancel() {
-        job?.cancel()
-        signer.cancel()
-        onProgress(null)
+        onProgress(ZapProgress.Done(paid, failed))
     }
 
     private suspend fun payOne(
