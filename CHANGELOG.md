@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-09-06
+
+### Fixed
+
+- A successful zap now shows a toast instead of leaving the zap dialog open
+
 ## [1.6.4] - 2026-09-06
 
 ### Added
