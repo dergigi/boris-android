@@ -192,7 +192,7 @@ class ReaderRepositoryParseTest {
             stubResponse(request, 200, "<html><body><p>Hi</p></body></html>")
         }
         val error = fetchError(client, "https://example.com/thin")
-        assertEquals("Could not find an article on this page.", error?.message)
+        assertEquals("Boris wasn't able to extract a clean article.", error?.message)
         assertEquals("No readable article in the page", (error as? ReaderFetchException)?.detail)
         assertEquals(listOf(HttpUserAgents.BORIS_UA, HttpUserAgents.BROWSER_UA), agents)
     }
@@ -210,7 +210,7 @@ class ReaderRepositoryParseTest {
         val client = stubClient { request -> stubResponse(request, 200, raw) }
         val strict = fetchError(client, "https://stacker.news/items/1562899")
         val fallback = ReaderRepository(client).fetchAnyway("https://stacker.news/items/1562899")
-        assertEquals("Could not find an article on this page.", strict?.message)
+        assertEquals("Boris wasn't able to extract a clean article.", strict?.message)
         assertEquals("Stacker Post", fallback.title)
         assertTrue(fallback.markdown!!.contains("Second paragraph from embedded app state."))
     }

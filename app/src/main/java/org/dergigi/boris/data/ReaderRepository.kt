@@ -541,7 +541,7 @@ class ReaderRepository(
 
         // D-13: the only two sentences the reader error state may show.
         internal const val ERROR_UNREACHABLE = "Could not reach this page."
-        internal const val ERROR_NO_ARTICLE = "Could not find an article on this page."
+        internal const val ERROR_NO_ARTICLE = "Boris wasn't able to extract a clean article."
 
         private const val MAX_BODY_BYTES = 2 * 1024 * 1024L
         private const val MAX_HTML_FORWARDS = 5
