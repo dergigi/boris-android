@@ -19,6 +19,7 @@ import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
 import org.dergigi.boris.data.NostrEventRefs
+import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.OpenedHighlight
 import org.dergigi.boris.data.ReaderFetchException
