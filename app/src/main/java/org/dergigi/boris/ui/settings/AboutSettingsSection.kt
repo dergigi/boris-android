@@ -45,6 +45,7 @@ fun AboutSettingsSection(
     openInBoris: Boolean,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenFeatures: () -> Unit,
     onOpenFaq: () -> Unit,
     onOpenSupport: () -> Unit,
     onOpenAuthorProfile: () -> Unit,
@@ -71,6 +72,13 @@ fun AboutSettingsSection(
             icon = Icons.AutoMirrored.Outlined.MenuBook,
             tint = linkTint,
             onClick = onOpenTutorial,
+        )
+        AboutActionRow(
+            label = stringResource(R.string.settings_about_features),
+            subtitle = stringResource(R.string.settings_about_features_summary),
+            icon = Icons.Outlined.Lightbulb,
+            tint = linkTint,
+            onClick = onOpenFeatures,
         )
         AboutActionRow(
             label = stringResource(R.string.settings_about_faq),

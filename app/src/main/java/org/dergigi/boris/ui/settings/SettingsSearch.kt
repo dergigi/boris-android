@@ -168,6 +168,8 @@ object SettingsSearch {
             R.string.settings_about_blurb,
             R.string.settings_about_tutorial,
             R.string.settings_about_tutorial_summary,
+            R.string.settings_about_features,
+            R.string.settings_about_features_summary,
             R.string.settings_about_faq,
             R.string.settings_about_faq_summary,
             R.string.settings_about_vision,
