@@ -93,6 +93,8 @@ class UserSettings internal constructor(
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
     val defaultZapAmount: Int get() = int("defaultZapAmount", 21).coerceAtLeast(1)
+    val zapPresets: List<Long>
+        get() = normalizeZapPresets(stringList("zapPresets").mapNotNull { it.toLongOrNull() })
     val firstTimeDismissed: Boolean get() = bool("firstTimeDismissed", false)
 
     fun offlineDownloadEnabled(key: String): Boolean = bool(key, true)
@@ -116,6 +118,9 @@ class UserSettings internal constructor(
 
     fun withStringList(key: String, values: List<String>): UserSettings =
         overlay(key, JsonValue.Raw(JsonMap.stringifyStrings(values)))
+
+    fun withZapPresets(values: List<Long>): UserSettings =
+        withStringList("zapPresets", normalizeZapPresets(values).map { it.toString() })
 
     fun resetKeys(keys: Set<String>): UserSettings {
         if (keys.isEmpty()) return this
@@ -231,6 +236,7 @@ class UserSettings internal constructor(
         "volumeButtonScrollPercent" -> volumeButtonScrollPercent
         "zapSplitAuthorWeight" -> zapSplitAuthorWeight
         "defaultZapAmount" -> defaultZapAmount
+        "zapPresets" -> zapPresets
         "zapSplitBorisWeight" -> zapSplitBorisWeight
         "zapSplitHighlighterWeight" -> zapSplitHighlighterWeight
         "zapSplitsEnabled" -> zapSplitsEnabled
@@ -247,6 +253,19 @@ class UserSettings internal constructor(
             return UserSettings(map)
         }
     }
+}
+
+internal val DEFAULT_ZAP_PRESETS = listOf(21L, 100L, 500L, 1_000L, 5_000L, 21_000L)
+
+private const val MAX_ZAP_PRESET = 999_999_999L
+private const val MAX_ZAP_PRESET_COUNT = 8
+
+private fun normalizeZapPresets(values: List<Long>): List<Long> {
+    val presets = values
+        .filter { it in 1..MAX_ZAP_PRESET }
+        .distinct()
+        .take(MAX_ZAP_PRESET_COUNT)
+    return presets.ifEmpty { DEFAULT_ZAP_PRESETS }
 }
 
 private const val DEFAULT_JSON = """{
@@ -275,6 +294,7 @@ private const val DEFAULT_JSON = """{
   "zapSplitBorisWeight":2.1,
   "zapSplitAuthorWeight":50,
   "defaultZapAmount":21,
+  "zapPresets":["21","100","500","1000","5000","21000"],
   "useLocalRelayAsCache":true,
   "hideNsfwOnHome":true,
   "rebroadcastToAllRelays":false,

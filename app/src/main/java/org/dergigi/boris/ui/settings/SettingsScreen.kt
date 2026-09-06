@@ -186,7 +186,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "zapSplitBorisWeight",
             "zapSplitAuthorWeight",
         )
-        SettingsCategory.Wallet -> setOf("defaultZapAmount")
+        SettingsCategory.Wallet -> setOf("defaultZapAmount", "zapPresets")
         SettingsCategory.Home -> setOf(
             "hideArchivedOnHome",
             "hideCompletedOnHome",

@@ -534,6 +534,7 @@
     <string name="settings_zap_note">Weights determine zap splits when highlighting. If the content has multiple authors, their share is divided proportionally. Web pages without a Nostr author tag skip the author share.</string>
     <string name="settings_wallet">Wallet</string>
     <string name="settings_wallet_summary">Nostr Wallet Connect and zaps</string>
+    <string name="settings_wallet_connect_title">Connect a wallet</string>
     <string name="settings_wallet_intro">Paste a Nostr Wallet Connect string from your wallet (Alby Hub, Coinos, Primal, and others) to zap articles from Boris.</string>
     <string name="settings_wallet_uri_hint">nostr+walletconnect://…</string>
     <string name="settings_wallet_connect">Connect</string>
@@ -541,6 +542,7 @@
     <string name="settings_wallet_invalid">That is not a valid Nostr Wallet Connect string.</string>
     <string name="settings_wallet_unreachable">The wallet did not answer. Check the connection string and try again.</string>
     <string name="settings_wallet_connected">Connected</string>
+    <string name="settings_wallet_connected_note">This wallet is ready for article zaps.</string>
     <string name="settings_wallet_pubkey">Wallet: %1$s</string>
     <string name="settings_wallet_relay">Relay: %1$s</string>
     <string name="settings_wallet_address">Lightning address: %1$s</string>
@@ -551,6 +553,14 @@
     <string name="settings_wallet_secret_note">The connection secret stays on this device, protected by the Android Keystore. Disconnecting removes it.</string>
     <string name="settings_wallet_default_amount">Default zap amount</string>
     <string name="settings_wallet_default_amount_note">Preselected when you zap an article. You can change it every time.</string>
+    <string name="settings_wallet_presets_edit">Edit presets</string>
+    <string name="settings_wallet_presets_title">Zap presets</string>
+    <string name="settings_wallet_presets_note">Enter preset amounts in sats, separated by commas. Use up to eight amounts.</string>
+    <string name="settings_wallet_presets_hint">21, 100, 500, 1k</string>
+    <string name="settings_wallet_presets_invalid">Add at least one valid amount.</string>
+    <string name="settings_wallet_presets_too_many">Use eight presets or fewer.</string>
+    <string name="settings_wallet_presets_reset">Defaults</string>
+    <string name="settings_wallet_presets_save">Save</string>
     <string name="zap_action">Zap</string>
     <string name="zap_title">Zap this article</string>
     <string name="zap_resolving">Finding who to pay…</string>
