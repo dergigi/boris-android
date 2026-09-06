@@ -39,6 +39,18 @@ class ReaderRepository(
         return finish(url, ready)
     }
 
+    fun fetchAnyway(url: String): ReadableContent {
+        if (NostrLink.parse(url) != null) return fetch(url, refresh = true)
+        val targetUrl = UrlExtractor.normalize(url)
+        val origin = UrlExtractor.preferHttps(targetUrl)
+        val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
+            ?: executeFromCache(originRequest(origin, HttpUserAgents.BROWSER_UA))
+        val content = cached?.let { runCatching { parseBestEffort(origin, it) }.getOrNull() }
+            ?: withCover(fetchOrigin(origin, bestEffort = true))
+        val ready = content.copy(markdown = content.markdown?.let(UrlExtractor::embedImageLinks))
+        return finish(url, ready)
+    }
+
     private fun finish(url: String, content: ReadableContent): ReadableContent {
         ArticlePreview.remember(content)
         ReadingTime.minutes(content.body)?.let { ReadingTimeStore.put(url, it) }
@@ -63,8 +75,8 @@ class ReaderRepository(
 
     // D-09: honest Boris UA first; one browser-UA retry on 401/403 or an
     // empty/thin extract. D-15: a live fail falls back to the origin cache.
-    private fun fetchOrigin(origin: String): ReadableContent {
-        val first = originAttempt(origin, HttpUserAgents.BORIS_UA)
+    private fun fetchOrigin(origin: String, bestEffort: Boolean = false): ReadableContent {
+        val first = originAttempt(origin, HttpUserAgents.BORIS_UA, bestEffort = bestEffort)
         when (first) {
             is OriginResult.Article -> return first.content
             is OriginResult.Image -> throw ReaderImageException(first.url)
@@ -72,7 +84,7 @@ class ReaderRepository(
         }
         val second = when (first) {
             is OriginResult.Blocked, is OriginResult.NoArticle ->
-                originAttempt(origin, HttpUserAgents.BROWSER_UA)
+                originAttempt(origin, HttpUserAgents.BROWSER_UA, bestEffort = bestEffort)
             else -> first
         }
         if (second is OriginResult.Article) return second.content
@@ -82,7 +94,7 @@ class ReaderRepository(
         }
         val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
             ?: throw ReaderFetchException(ERROR_UNREACHABLE, reachDetail(second, first))
-        val content = parse(origin, cached)
+        val content = if (bestEffort) parseBestEffort(origin, cached) else parse(origin, cached)
         if (content.markdown == null) throw ReaderFetchException(ERROR_NO_ARTICLE, "Cached page had no readable article")
         return content
     }
@@ -92,6 +104,7 @@ class ReaderRepository(
         userAgent: String,
         forwards: Set<String> = emptySet(),
         forwardDepth: Int = 0,
+        bestEffort: Boolean = false,
     ): OriginResult = try {
         client.newCall(originRequest(origin, userAgent)).execute().use { response ->
             when {
@@ -117,9 +130,15 @@ class ReaderRepository(
                         val currentForwards = forwards + forwardIdentity(origin) + forwardIdentity(responseUrl)
                         val key = forwardIdentity(target)
                         if (key in currentForwards) return OriginResult.Unreachable("Redirect loop")
-                        return originAttempt(target, userAgent, currentForwards, forwardDepth + 1)
+                        return originAttempt(target, userAgent, currentForwards, forwardDepth + 1, bestEffort)
                     }
-                    val content = if (text.isBlank()) null else parse(responseUrl, text)
+                    val content = if (text.isBlank()) {
+                        null
+                    } else if (bestEffort) {
+                        parseBestEffort(responseUrl, text)
+                    } else {
+                        parse(responseUrl, text)
+                    }
                     if (content?.markdown == null) {
                         OriginResult.NoArticle(
                             if (text.isBlank()) "Empty page" else "No readable article in the page",
@@ -367,7 +386,14 @@ class ReaderRepository(
         return HtmlToMarkdown.decode(body)
     }
 
-    internal fun parse(targetUrl: String, text: String): ReadableContent {
+    internal fun parse(targetUrl: String, text: String): ReadableContent =
+        parse(targetUrl, text, bestEffort = false)
+
+    internal fun parseBestEffort(targetUrl: String, text: String): ReadableContent =
+        parse(targetUrl, text, bestEffort = true).takeIf { it.markdown != null }
+            ?: throw ReaderFetchException(ERROR_NO_ARTICLE, "Best-effort parser found no usable content")
+
+    private fun parse(targetUrl: String, text: String, bestEffort: Boolean): ReadableContent {
         val preview = OgMeta.parse(text, targetUrl)
         val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
         val extracted = runCatching { ArticleExtractor.markdown(text, targetUrl) }
@@ -376,6 +402,11 @@ class ReaderRepository(
             }
         val markdown = (
             extracted
+                ?: if (bestEffort) {
+                    embeddedMarkdown(text, targetUrl)
+                } else {
+                    null
+                }
                 ?: runCatching { HtmlToMarkdown.convert(text, targetUrl) }
                     .getOrElse { e ->
                         throw ReaderFetchException(
@@ -386,7 +417,13 @@ class ReaderRepository(
                     }
             )
             .let(UrlExtractor::upgradeImageHttpUrls)
-            .takeIf { it.length >= MIN_ARTICLE_MARKDOWN_CHARS }
+            .takeIf {
+                it.length >= if (bestEffort) {
+                    MIN_BEST_EFFORT_MARKDOWN_CHARS
+                } else {
+                    MIN_ARTICLE_MARKDOWN_CHARS
+                }
+            }
         val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
         val nostrLinks = Nip21Html.parse(text)
         return ReadableContent(
@@ -402,6 +439,25 @@ class ReaderRepository(
             summary = preview.description,
         )
     }
+
+    private fun embeddedMarkdown(text: String, baseUrl: String): String? =
+        embeddedJsonString("markdown", text)
+            ?.let(HtmlToMarkdown::decode)
+            ?.trim()
+            ?.takeIf { it.length >= MIN_BEST_EFFORT_MARKDOWN_CHARS }
+            ?: embeddedJsonString("html", text)
+                ?.let { HtmlToMarkdown.convert(it, baseUrl) }
+                ?.trim()
+                ?.takeIf { it.length >= MIN_BEST_EFFORT_MARKDOWN_CHARS }
+
+    private fun embeddedJsonString(name: String, text: String): String? =
+        Regex(""""${Regex.escape(name)}"\s*:\s*"((?:\\.|[^"\\])*)"""")
+            .findAll(text)
+            .mapNotNull { match ->
+                val literal = match.groupValues.getOrNull(1) ?: return@mapNotNull null
+                (JsonMap.parseObject("""{"value":"$literal"}""")?.get("value") as? JsonValue.Str)?.value
+            }
+            .firstOrNull { it.isNotBlank() }
 
     private fun withCover(content: ReadableContent): ReadableContent {
         if (!content.imageUrl.isNullOrBlank() && !content.summary.isNullOrBlank()) return content
@@ -481,6 +537,7 @@ class ReaderRepository(
         // Converted bodies shorter than this are teasers or cookie walls, for
         // RSS items and web extracts alike; never render them as Ready.
         internal const val MIN_ARTICLE_MARKDOWN_CHARS = 500
+        internal const val MIN_BEST_EFFORT_MARKDOWN_CHARS = 80
 
         // D-13: the only two sentences the reader error state may show.
         internal const val ERROR_UNREACHABLE = "Could not reach this page."

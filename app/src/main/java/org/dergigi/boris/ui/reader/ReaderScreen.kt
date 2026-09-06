@@ -342,6 +342,7 @@ fun ReaderScreen(
         rssFeedSuggestion = rssFeedSuggestion?.takeIf { it !in settings.rssFeeds },
         onBack = onBack,
         onRetry = { viewModel.load() },
+        onTryAnyway = viewModel::tryAnyway,
         onRefresh = viewModel::refresh,
         onOpenArticle = onOpenArticle,
         onOpenHighlight = onOpenHighlight,
@@ -402,6 +403,7 @@ fun ReaderScreenContent(
     rssFeedSuggestion: String?,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onTryAnyway: () -> Unit,
     onRefresh: () -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
@@ -602,6 +604,7 @@ fun ReaderScreenContent(
                 ReaderErrorPane(
                     state = state,
                     onRetry = onRetry,
+                    onTryAnyway = onTryAnyway,
                     onOpenOriginal = ::openOriginal,
                     onOpenWayback = ::openWayback,
                     onOpenArchivePh = ::openArchivePh,

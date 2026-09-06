@@ -245,6 +245,7 @@
     <string name="reader_error_no_article">Could not find an article on this page.</string>
     <string name="reader_error_details">Details</string>
     <string name="reader_error_hide_details">Hide details</string>
+    <string name="reader_try_anyway">Try anyway</string>
     <string name="reader_share_article">Share article</string>
     <string name="reader_scroll_to_top">Scroll to top</string>
     <string name="reader_open_highlights">Highlights</string>
