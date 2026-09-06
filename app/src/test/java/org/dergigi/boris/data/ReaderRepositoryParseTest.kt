@@ -216,6 +216,31 @@ class ReaderRepositoryParseTest {
     }
 
     @Test
+    fun fetchAnywayKeepsCachedFinalUrlForRelativeImages() {
+        val raw = """
+            <html><head><title>Stacker Post</title></head>
+            <body>
+              <script>
+                self.__next_f.push([1,{"html":"\u003cp\u003eCached fallback content with enough words to read. This second sentence keeps the fallback above the minimum useful length.\u003c/p\u003e\u003cimg src=\"images/cover.jpg\" alt=\"cover\"\u003e"}])
+              </script>
+            </body></html>
+        """.trimIndent()
+        val client = stubClient { request ->
+            stubResponse(
+                request = request,
+                code = 200,
+                body = raw,
+                finalUrl = "https://stacker.news/items/1562899",
+            )
+        }
+        val fallback = ReaderRepository(client).fetchAnyway("https://stacker.news/items/short")
+        assertEquals(
+            listOf("https://stacker.news/items/images/cover.jpg"),
+            UrlExtractor.imageUrls(fallback.body, fallback.url),
+        )
+    }
+
+    @Test
     fun fetchMapsLiveFailWithoutCacheToUnreachable() {
         val client = stubClient { throw IOException("connect timed out") }
         val error = fetchError(client, "https://example.com/gone")

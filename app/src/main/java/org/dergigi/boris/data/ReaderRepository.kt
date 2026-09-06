@@ -45,7 +45,7 @@ class ReaderRepository(
         val origin = UrlExtractor.preferHttps(targetUrl)
         val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
             ?: executeFromCache(originRequest(origin, HttpUserAgents.BROWSER_UA))
-        val content = cached?.let { runCatching { parseBestEffort(origin, it) }.getOrNull() }
+        val content = cached?.let { runCatching { parseBestEffort(it.url, it.text) }.getOrNull() }
             ?: withCover(fetchOrigin(origin, bestEffort = true))
         val ready = content.copy(markdown = content.markdown?.let(UrlExtractor::embedImageLinks))
         return finish(url, ready)
@@ -64,8 +64,8 @@ class ReaderRepository(
                 if (NostrLink.parse(url) != null) return null
                 ArticleCache.load(url) ?: run {
                     val origin = UrlExtractor.preferHttps(UrlExtractor.normalize(url))
-                    val text = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA)) ?: return null
-                    runCatching { parse(origin, text) }.getOrNull()?.takeIf { it.body.isNotBlank() }
+                    val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA)) ?: return null
+                    runCatching { parse(cached.url, cached.text) }.getOrNull()?.takeIf { it.body.isNotBlank() }
                 }
             }
             ?: return null
@@ -94,7 +94,11 @@ class ReaderRepository(
         }
         val cached = executeFromCache(originRequest(origin, HttpUserAgents.BORIS_UA))
             ?: throw ReaderFetchException(ERROR_UNREACHABLE, reachDetail(second, first))
-        val content = if (bestEffort) parseBestEffort(origin, cached) else parse(origin, cached)
+        val content = if (bestEffort) {
+            parseBestEffort(cached.url, cached.text)
+        } else {
+            parse(cached.url, cached.text)
+        }
         if (content.markdown == null) throw ReaderFetchException(ERROR_NO_ARTICLE, "Cached page had no readable article")
         return content
     }
@@ -265,16 +269,25 @@ class ReaderRepository(
         return if (msg == null) name else "$name: $msg"
     }
 
-    private fun executeFromCache(request: Request): String? = try {
+    private fun executeFromCache(request: Request): CachedOrigin? = try {
         val cached = request.newBuilder()
             .cacheControl(CacheControl.FORCE_CACHE)
             .build()
         client.newCall(cached).execute().use { response ->
-            if (response.isSuccessful) response.body?.string() else null
+            if (response.isSuccessful) {
+                response.body?.string()?.let { CachedOrigin(response.request.url.toString(), it) }
+            } else {
+                null
+            }
         }
     } catch (_: IOException) {
         null
     }
+
+    private data class CachedOrigin(
+        val url: String,
+        val text: String,
+    )
 
     private fun fetchArticle(article: NostrArticleRef): ReadableContent {
         val event = RelayQuery.fetchArticle(article.pointer)
@@ -401,7 +414,7 @@ class ReaderRepository(
                 throw ReaderFetchException(ERROR_NO_ARTICLE, "Article extraction failed: ${e.message}", e)
             }
         val markdown = (
-            extracted
+            extracted?.takeIf { !bestEffort || it.length >= MIN_BEST_EFFORT_MARKDOWN_CHARS }
                 ?: if (bestEffort) {
                     embeddedMarkdown(text, targetUrl)
                 } else {
