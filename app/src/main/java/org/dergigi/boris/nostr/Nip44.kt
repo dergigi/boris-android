@@ -192,21 +192,35 @@ object Nip44 {
         return diff == 0
     }
 
-    private fun decryptLegacy(payload: String, priv32: ByteArray, pubHex: String): String {
+    /** NIP-04 (AES-256-CBC, `<base64>?iv=<base64>`); still the default for NIP-47 wallets without nip44_v2. */
+    fun encryptLegacy(plaintext: String, priv32: ByteArray, pubHex: String): String {
+        val iv = ByteArray(16)
+        SecureRandom().nextBytes(iv)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(sharedX(priv32, pubHex), "AES"), IvParameterSpec(iv))
+        val encrypted = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
+        return Base64.getEncoder().encodeToString(encrypted) + "?iv=" + Base64.getEncoder().encodeToString(iv)
+    }
+
+    internal fun decryptLegacy(payload: String, priv32: ByteArray, pubHex: String): String {
         val idx = payload.indexOf("?iv=")
         val cipherB64 = payload.substring(0, idx)
         val ivB64 = payload.substring(idx + 4)
         val cipherBytes = Base64.getDecoder().decode(cipherB64)
         val iv = Base64.getDecoder().decode(ivB64)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(sharedX(priv32, pubHex), "AES"), IvParameterSpec(iv))
+        return String(cipher.doFinal(cipherBytes), Charsets.UTF_8)
+    }
+
+    /** NIP-04 key: the x coordinate of the shared point, unhashed. */
+    private fun sharedX(priv32: ByteArray, pubHex: String): ByteArray {
         val pub = pubHex.hexToByteArray()
         val pubEnc = when (pub.size) {
             32 -> byteArrayOf(0x02) + pub
             33, 65 -> pub
             else -> error("bad pub")
         }
-        val key = Secp256k1.ecdh(priv32, pubEnc)
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
-        return String(cipher.doFinal(cipherBytes), Charsets.UTF_8)
+        return Secp256k1.pubKeyTweakMul(pubEnc, priv32).copyOfRange(1, 33)
     }
 }

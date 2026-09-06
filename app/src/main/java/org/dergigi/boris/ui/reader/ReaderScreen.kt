@@ -241,6 +241,7 @@ fun ReaderScreen(
     onOpenProfile: (String) -> Unit,
     onOpenReaderSettings: () -> Unit,
     onOpenHighlightSettings: () -> Unit = {},
+    onOpenWalletSettings: () -> Unit = {},
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit = { url, _, _ ->
         onOpenArticle(url)
     },
@@ -260,6 +261,10 @@ fun ReaderScreen(
     val archived by viewModel.archived.collectAsStateWithLifecycle()
     val reaction by viewModel.reaction.collectAsStateWithLifecycle()
     val canReact by viewModel.canReact.collectAsStateWithLifecycle()
+    val canZap by viewModel.canZap.collectAsStateWithLifecycle()
+    val zapped by viewModel.zapped.collectAsStateWithLifecycle()
+    val zap by viewModel.zap.collectAsStateWithLifecycle()
+    val wallet by viewModel.wallet.collectAsStateWithLifecycle()
     val author by viewModel.author.collectAsStateWithLifecycle()
     val eventRefs by viewModel.eventRefs.collectAsStateWithLifecycle()
     val rssFeedSuggestion by viewModel.rssFeedSuggestion.collectAsStateWithLifecycle()
@@ -323,6 +328,24 @@ fun ReaderScreen(
     val visibleHighlights = remember(highlights, deletedIds) {
         highlights.filter { it.id !in deletedIds }
     }
+    var walletHint by remember { mutableStateOf(false) }
+    if (walletHint) {
+        ZapWalletHintDialog(
+            onOpenSettings = {
+                walletHint = false
+                onOpenWalletSettings()
+            },
+            onDismiss = { walletHint = false },
+        )
+    }
+    zap?.let { progress ->
+        ZapDialog(
+            progress = progress,
+            defaultSats = settings.defaultZapAmount.toLong(),
+            onConfirm = viewModel::confirmZap,
+            onDismiss = viewModel::dismissZap,
+        )
+    }
     ReaderScreenContent(
         state = state,
         gallery = gallery,
@@ -365,6 +388,9 @@ fun ReaderScreen(
             intent?.let(launchSign)
         },
         onReact = { reaction -> viewModel.react(reaction)?.let(launchSign) },
+        canZap = canZap,
+        zapped = zapped,
+        onZap = { if (wallet == null) walletHint = true else viewModel.startZap() },
         onAddRssFeed = { feedUrl ->
             settingsViewModel.update { current ->
                 if (feedUrl in current.rssFeeds) {
@@ -420,6 +446,9 @@ fun ReaderScreenContent(
     onReact: (ArticleReaction?) -> Unit,
     onAddRssFeed: (String) -> Unit,
     onDismissRssFeed: () -> Unit,
+    canZap: Boolean = false,
+    zapped: Boolean = false,
+    onZap: () -> Unit = {},
     canDeleteHighlight: (String?) -> Boolean = { false },
     onDeleteHighlight: (String) -> Unit = {},
 ) {
@@ -661,6 +690,9 @@ fun ReaderScreenContent(
                     onHighlight = onHighlight,
                     onArchive = onArchive,
                     onReact = onReact,
+                    canZap = canZap,
+                    zapped = zapped,
+                    onZap = onZap,
                     canDeleteHighlight = canDeleteHighlight,
                     onDeleteHighlight = onDeleteHighlight,
                     scrollState = articleScrollState,

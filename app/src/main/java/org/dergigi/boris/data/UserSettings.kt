@@ -92,6 +92,7 @@ class UserSettings internal constructor(
     val zapSplitHighlighterWeight: Double get() = double("zapSplitHighlighterWeight", 50.0)
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
+    val defaultZapAmount: Int get() = int("defaultZapAmount", 21).coerceAtLeast(1)
     val firstTimeDismissed: Boolean get() = bool("firstTimeDismissed", false)
 
     fun offlineDownloadEnabled(key: String): Boolean = bool(key, true)
@@ -229,6 +230,7 @@ class UserSettings internal constructor(
         "volumeButtonScroll" -> volumeButtonScroll
         "volumeButtonScrollPercent" -> volumeButtonScrollPercent
         "zapSplitAuthorWeight" -> zapSplitAuthorWeight
+        "defaultZapAmount" -> defaultZapAmount
         "zapSplitBorisWeight" -> zapSplitBorisWeight
         "zapSplitHighlighterWeight" -> zapSplitHighlighterWeight
         "zapSplitsEnabled" -> zapSplitsEnabled
@@ -272,6 +274,7 @@ private const val DEFAULT_JSON = """{
   "zapSplitHighlighterWeight":50,
   "zapSplitBorisWeight":2.1,
   "zapSplitAuthorWeight":50,
+  "defaultZapAmount":21,
   "useLocalRelayAsCache":true,
   "hideNsfwOnHome":true,
   "rebroadcastToAllRelays":false,

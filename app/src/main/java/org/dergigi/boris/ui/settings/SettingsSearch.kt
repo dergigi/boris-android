@@ -89,6 +89,13 @@ object SettingsSearch {
             R.string.settings_zap_boris_share,
             R.string.settings_zap_note,
         ),
+        SettingsCategory.Wallet to listOf(
+            R.string.settings_wallet_intro,
+            R.string.settings_wallet_connect,
+            R.string.settings_wallet_disconnect,
+            R.string.settings_wallet_default_amount,
+            R.string.zap_action,
+        ),
         SettingsCategory.Home to listOf(
             R.string.settings_hide_archived,
             R.string.settings_hide_completed,

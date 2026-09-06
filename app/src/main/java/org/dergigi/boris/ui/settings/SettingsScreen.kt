@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CellTower
 import androidx.compose.material.icons.outlined.Clear
@@ -95,6 +96,7 @@ enum class SettingsCategory(
     Media(R.string.settings_media, R.string.settings_media_summary, SettingsTints.Look),
     Highlights(R.string.settings_highlights, R.string.settings_highlights_summary, SettingsTints.Look),
     ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, SettingsTints.Look),
+    Wallet(R.string.settings_wallet, R.string.settings_wallet_summary, SettingsTints.Look),
     Home(R.string.settings_home, R.string.settings_home_summary, SettingsTints.Places),
     Library(R.string.settings_library, R.string.settings_library_summary, SettingsTints.Places),
     Feed(R.string.feed_title, R.string.settings_feed_summary, SettingsTints.Places),
@@ -112,6 +114,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.Media -> Icons.Outlined.Image
         SettingsCategory.Highlights -> BorisIcons.Highlighter
         SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
+        SettingsCategory.Wallet -> Icons.Outlined.AccountBalanceWallet
         SettingsCategory.Home -> Icons.Outlined.Home
         SettingsCategory.Library -> Icons.Outlined.LocalLibrary
         SettingsCategory.Feed -> Icons.Outlined.RssFeed
@@ -129,6 +132,7 @@ private val CATEGORY_GROUPS = listOf(
         SettingsCategory.Media,
         SettingsCategory.Highlights,
         SettingsCategory.ZapSplits,
+        SettingsCategory.Wallet,
     ),
     listOf(
         SettingsCategory.Home,
@@ -182,6 +186,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "zapSplitBorisWeight",
             "zapSplitAuthorWeight",
         )
+        SettingsCategory.Wallet -> setOf("defaultZapAmount")
         SettingsCategory.Home -> setOf(
             "hideArchivedOnHome",
             "hideCompletedOnHome",
@@ -591,6 +596,7 @@ private fun SettingsCategoryDetail(
                 ReadingPreview(settings = settings, darkTheme = darkTheme)
             }
             SettingsCategory.ZapSplits -> ZapSplitsSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Wallet -> WalletSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Home -> HomeSettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Library -> LibrarySettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Feed -> {

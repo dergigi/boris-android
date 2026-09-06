@@ -12,14 +12,17 @@ import javax.crypto.spec.GCMParameterSpec
 
 object SecretBox {
     private const val ALIAS = "boris_bunker_wrap"
+
+    /** Separate wrap key for the NWC secret so signing out (which wipes [ALIAS]) keeps the wallet. */
+    const val WALLET_ALIAS = "boris_wallet_wrap"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val GCM_TAG_BITS = 128
 
     @Suppress("UNUSED_PARAMETER")
-    fun wrap(context: Context, plaintext: ByteArray): String {
+    fun wrap(context: Context, plaintext: ByteArray, alias: String = ALIAS): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(alias))
         val iv = cipher.iv
         val encrypted = cipher.doFinal(plaintext)
         return Base64.encodeToString(iv, Base64.NO_WRAP) +
@@ -28,14 +31,14 @@ object SecretBox {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun unwrap(context: Context, boxed: String): ByteArray? {
+    fun unwrap(context: Context, boxed: String, alias: String = ALIAS): ByteArray? {
         val parts = boxed.split(".", limit = 2)
         if (parts.size != 2) return null
         return try {
             val iv = Base64.decode(parts[0], Base64.NO_WRAP)
             val encrypted = Base64.decode(parts[1], Base64.NO_WRAP)
             val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(GCM_TAG_BITS, iv))
+            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(alias), GCMParameterSpec(GCM_TAG_BITS, iv))
             cipher.doFinal(encrypted)
         } catch (_: Exception) {
             null
@@ -43,23 +46,23 @@ object SecretBox {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun wipe(context: Context) {
+    fun wipe(context: Context, alias: String = ALIAS) {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
         keyStore.load(null)
-        if (keyStore.containsAlias(ALIAS)) {
-            keyStore.deleteEntry(ALIAS)
+        if (keyStore.containsAlias(alias)) {
+            keyStore.deleteEntry(alias)
         }
     }
 
-    private fun getOrCreateKey(): SecretKey {
+    private fun getOrCreateKey(alias: String): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
         keyStore.load(null)
-        val existing = keyStore.getEntry(ALIAS, null) as? KeyStore.SecretKeyEntry
+        val existing = keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry
         if (existing != null) return existing.secretKey
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         generator.init(
             KeyGenParameterSpec.Builder(
-                ALIAS,
+                alias,
                 KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
             )
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)

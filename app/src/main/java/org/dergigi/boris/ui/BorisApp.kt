@@ -491,6 +491,11 @@ fun BorisApp(
                                 launchSingleTop = true
                             }
                         },
+                        onOpenWalletSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Wallet)) {
+                                launchSingleTop = true
+                            }
+                        },
                         onOpenHighlight = { url, id, quote ->
                             navController.navigate(Routes.reader(url, id, quote))
                         },

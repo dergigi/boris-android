@@ -18,6 +18,8 @@ import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
+import org.dergigi.boris.data.NwcConnection
+import org.dergigi.boris.data.NwcStore
 import org.dergigi.boris.data.NostrEventRefs
 import org.dergigi.boris.data.ReadableContent
 import org.dergigi.boris.data.OpenedHighlight
@@ -37,9 +39,12 @@ import org.dergigi.boris.nostr.ArticleReactions
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.nostr.RelayList
 import org.dergigi.boris.nostr.RelayQuery
+import org.dergigi.boris.nostr.ZapRecipients
 import org.dergigi.boris.ui.ArchiveAction
 import org.dergigi.boris.ui.LibrarySaveAction
 import org.dergigi.boris.ui.ReactionAction
+import org.dergigi.boris.ui.ZapAction
+import org.dergigi.boris.ui.ZapProgress
 
 class ReaderViewModel(
     application: Application,
@@ -81,6 +86,17 @@ class ReaderViewModel(
 
     private val _author = MutableStateFlow<Profile?>(null)
     val author: StateFlow<Profile?> = _author.asStateFlow()
+
+    private val _canZap = MutableStateFlow(false)
+    val canZap: StateFlow<Boolean> = _canZap.asStateFlow()
+
+    private val _zap = MutableStateFlow<ZapProgress?>(null)
+    val zap: StateFlow<ZapProgress?> = _zap.asStateFlow()
+
+    private val _zapped = MutableStateFlow(false)
+    val zapped: StateFlow<Boolean> = _zapped.asStateFlow()
+
+    val wallet: StateFlow<NwcConnection?> = NwcStore.connection
 
     private val _rssFeedSuggestion = MutableStateFlow<String?>(null)
     val rssFeedSuggestion: StateFlow<String?> = _rssFeedSuggestion.asStateFlow()
@@ -161,7 +177,17 @@ class ReaderViewModel(
         },
     )
     private var reactionIds = emptyList<String>()
+    private val zapAction = ZapAction(
+        app = application,
+        scope = viewModelScope,
+        onSignIntent = { _signIntent.value = it },
+        onProgress = { progress ->
+            _zap.value = progress
+            if (progress is ZapProgress.Done && progress.paidSats > 0) _zapped.value = true
+        },
+    )
     init {
+        NwcStore.load(application)
         load()
     }
 
@@ -322,6 +348,23 @@ class ReaderViewModel(
         }
     }
 
+    /** Opens the zap flow: resolves recipients, then the dialog asks for amount and comment. */
+    fun startZap() {
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
+        zapAction.resolve(content)
+    }
+
+    fun confirmZap(totalSats: Long, comment: String) {
+        val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
+        val ready = _zap.value as? ZapProgress.Ready ?: return
+        zapAction.pay(content, ready.recipients, totalSats, comment)
+    }
+
+    fun dismissZap() {
+        if (_zap.value is ZapProgress.Paying) return
+        zapAction.cancel()
+    }
+
     fun saveToLibrary(privateBookmark: Boolean = true): Intent? {
         if (saving || _inLibrary.value) return null
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return null
@@ -334,6 +377,7 @@ class ReaderViewModel(
         if (librarySave.onSignerResult(resultCode, data)) return
         if (archiveAction.onSignerResult(resultCode, data)) return
         if (reactionAction.onSignerResult(resultCode, data)) return
+        if (zapAction.onSignerResult(resultCode, data)) return
         readerHighlights.onSignerResult(resultCode, data)
     }
 
@@ -342,6 +386,7 @@ class ReaderViewModel(
         archiveJob?.cancel()
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
+        _canZap.value = session != null && ZapRecipients.targets(content).isNotEmpty()
         if (session == null || Archive.kind(content) == null) {
             resetArchive()
             return
@@ -448,6 +493,9 @@ class ReaderViewModel(
         reactionIds = emptyList()
         _reaction.value = null
         _canReact.value = false
+        _canZap.value = false
+        _zapped.value = false
+        zapAction.cancel()
     }
 
     private fun publishSaveState() {
