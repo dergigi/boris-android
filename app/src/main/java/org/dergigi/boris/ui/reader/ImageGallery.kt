@@ -71,6 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArticleImages
+import org.dergigi.boris.data.ImageSaveLocationStore
 import org.dergigi.boris.data.ImageStore
 
 
@@ -108,7 +109,9 @@ fun ImageGallery(
     }
 
     fun withStorage(action: () -> Unit) {
-        if (Build.VERSION.SDK_INT >= 29 ||
+        val customLocation = ImageSaveLocationStore.load(context)
+        if (customLocation?.let { ImageSaveLocationStore.hasWritePermission(context, it) } == true ||
+            Build.VERSION.SDK_INT >= 29 ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
             PackageManager.PERMISSION_GRANTED
         ) {
@@ -126,13 +129,16 @@ fun ImageGallery(
         withStorage {
             scope.launch {
                 busy = true
-                val ok = withContext(Dispatchers.IO) {
-                    runCatching { ImageStore.save(context, currentUrl(), pagerState.currentPage) }.isSuccess
+                val savedTo = withContext(Dispatchers.IO) {
+                    runCatching {
+                        ImageStore.save(context, currentUrl(), pagerState.currentPage)
+                        ImageSaveLocationStore.displayName(ImageSaveLocationStore.load(context)) ?: "Pictures"
+                    }.getOrNull()
                 }
                 busy = false
                 Toast.makeText(
                     context,
-                    if (ok) "Saved to Pictures" else "Couldn't save this image",
+                    if (savedTo != null) "Saved to $savedTo" else "Couldn't save this image",
                     Toast.LENGTH_SHORT,
                 ).show()
             }
@@ -144,13 +150,16 @@ fun ImageGallery(
         withStorage {
             scope.launch {
                 busy = true
-                val saved = withContext(Dispatchers.IO) { ImageStore.saveAll(context, urls) }
+                val (saved, savedTo) = withContext(Dispatchers.IO) {
+                    val saved = ImageStore.saveAll(context, urls)
+                    saved to (ImageSaveLocationStore.displayName(ImageSaveLocationStore.load(context)) ?: "Pictures")
+                }
                 busy = false
                 Toast.makeText(
                     context,
                     if (saved == 0) "Couldn't save images"
-                    else if (saved == urls.size) "Saved $saved images"
-                    else "Saved $saved of ${urls.size} images",
+                    else if (saved == urls.size) "Saved $saved images to $savedTo"
+                    else "Saved $saved of ${urls.size} images to $savedTo",
                     Toast.LENGTH_SHORT,
                 ).show()
             }

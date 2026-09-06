@@ -64,6 +64,7 @@ object SettingsSearch {
         ),
         SettingsCategory.Media to listOf(
             R.string.settings_full_width_images,
+            R.string.settings_media_image_save_location,
         ),
         SettingsCategory.Highlights to listOf(
             R.string.settings_display_eink,

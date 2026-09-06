@@ -39,4 +39,10 @@ class ImageStoreTest {
     fun mimePrefersImageContentType() {
         assertEquals("image/avif", ImageStore.mimeFor("photo.jpg", "image/avif; charset=binary"))
     }
+
+    @Test
+    fun saveLocationDisplayNameUsesTreeFolder() {
+        val uri = "content://com.android.externalstorage.documents/tree/primary%3ABoris%20Images"
+        assertEquals("Boris Images", ImageSaveLocationStore.displayName(uri))
+    }
 }

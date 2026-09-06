@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import okhttp3.OkHttpClient
@@ -45,7 +46,7 @@ object ImageStore {
 
     fun save(context: Context, url: String, index: Int): Uri {
         val fetched = fetch(url, index)
-        return writeToPictures(context, fetched)
+        return writeToSaveLocation(context, fetched)
     }
 
     fun saveAll(context: Context, urls: List<String>): Int {
@@ -95,7 +96,12 @@ object ImageStore {
         )
     }
 
-    private fun writeToPictures(context: Context, image: FetchedImage): Uri {
+    private fun writeToSaveLocation(context: Context, image: FetchedImage): Uri {
+        ImageSaveLocationStore.load(context)?.let { folder ->
+            runCatching { writeToCustomFolder(context, folder, image) }
+                .onSuccess { return it }
+                .onFailure { ImageSaveLocationStore.clear(context) }
+        }
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, image.filename)
             put(MediaStore.Images.Media.MIME_TYPE, image.mime)
@@ -122,6 +128,30 @@ object ImageStore {
             return uri
         } catch (e: Exception) {
             context.contentResolver.delete(uri, null, null)
+            throw e
+        }
+    }
+
+    private fun writeToCustomFolder(context: Context, treeUri: Uri, image: FetchedImage): Uri {
+        if (!ImageSaveLocationStore.hasWritePermission(context, treeUri)) {
+            throw IOException("Image save folder permission is missing")
+        }
+        val parent = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri),
+        )
+        val uri = DocumentsContract.createDocument(
+            context.contentResolver,
+            parent,
+            image.mime,
+            image.filename,
+        ) ?: throw IOException("Could not create image in configured folder")
+        try {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(image.bytes) }
+                ?: throw IOException("Could not write image")
+            return uri
+        } catch (e: Exception) {
+            runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
             throw e
         }
     }
