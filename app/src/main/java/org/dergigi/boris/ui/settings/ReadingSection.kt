@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatAlignLeft
+import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.automirrored.outlined.ShortText
+import androidx.compose.material.icons.automirrored.outlined.Subject
 import androidx.compose.material.icons.outlined.FormatAlignJustify
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -91,10 +93,13 @@ fun ReadingSection(
         SettingRow(stringResource(R.string.settings_reader_margin)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ReaderMargin.entries.forEach { margin ->
-                    FilterChip(
+                    IconToggle(
+                        icon = readerMarginIcon(margin),
                         selected = settings.readerMargin == margin,
-                        onClick = { onUpdate(settings.withString("readerMargin", margin.id)) },
-                        label = { Text(readerMarginLabel(margin)) },
+                        contentDescription = readerMarginLabel(margin),
+                        onClick = {
+                            onUpdate(settings.withString("readerMargin", margin.id))
+                        },
                     )
                 }
             }
@@ -137,6 +142,12 @@ private fun readerMarginLabel(margin: ReaderMargin): String = stringResource(
         ReaderMargin.Comfortable -> R.string.settings_reader_margin_comfortable
     },
 )
+
+private fun readerMarginIcon(margin: ReaderMargin) = when (margin) {
+    ReaderMargin.Compact -> Icons.AutoMirrored.Outlined.Subject
+    ReaderMargin.Default -> Icons.AutoMirrored.Outlined.Notes
+    ReaderMargin.Comfortable -> Icons.AutoMirrored.Outlined.ShortText
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
