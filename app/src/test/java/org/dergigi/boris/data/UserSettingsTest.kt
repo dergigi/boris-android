@@ -51,6 +51,7 @@ class UserSettingsTest {
         assertFalse(settings.ttsUseSystemLanguage)
         assertTrue(settings.ttsDetectContentLanguage)
         assertTrue(settings.ttsFollowAlong)
+        assertEquals(DEFAULT_ZAP_MESSAGE, settings.defaultZapMessage)
         assertFalse(settings.firstTimeDismissed)
         assertTrue(settings.offlineDownloadEnabled("offlineDownloadImages"))
     }
@@ -91,6 +92,14 @@ class UserSettingsTest {
         val updated = UserSettings.defaults().withBoolean("includeLinkedArticles", false)
         assertFalse(updated.includeLinkedArticles)
         assertFalse(UserSettings.parse(updated.toJson()).includeLinkedArticles)
+    }
+
+    @Test
+    fun defaultZapMessageReadsAndRoundTrips() {
+        val custom = "Great read."
+        assertEquals(custom, UserSettings.parse("""{"defaultZapMessage":"Great read."}""").defaultZapMessage)
+        val updated = UserSettings.defaults().withString("defaultZapMessage", custom)
+        assertEquals(custom, UserSettings.parse(updated.toJson()).defaultZapMessage)
     }
 
     @Test
@@ -345,6 +354,14 @@ class UserSettingsTest {
         assertTrue(updated.hasNonDefaultValues(setOf("defaultZapAmount")))
         assertEquals(21, updated.resetKeys(setOf("defaultZapAmount")).defaultZapAmount)
         assertEquals(1, UserSettings.parse("""{"defaultZapAmount":0}""").defaultZapAmount)
+    }
+
+    @Test
+    fun defaultZapMessageDefaultsAndResets() {
+        val updated = UserSettings.defaults().withString("defaultZapMessage", "Thank you.")
+        assertEquals("Thank you.", UserSettings.parse(updated.toJson()).defaultZapMessage)
+        assertTrue(updated.hasNonDefaultValues(setOf("defaultZapMessage")))
+        assertEquals(DEFAULT_ZAP_MESSAGE, updated.resetKeys(setOf("defaultZapMessage")).defaultZapMessage)
     }
 
     @Test

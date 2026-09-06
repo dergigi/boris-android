@@ -93,6 +93,7 @@ class UserSettings internal constructor(
     val zapSplitBorisWeight: Double get() = double("zapSplitBorisWeight", 2.1)
     val zapSplitAuthorWeight: Double get() = double("zapSplitAuthorWeight", 50.0)
     val defaultZapAmount: Int get() = int("defaultZapAmount", 21).coerceAtLeast(1)
+    val defaultZapMessage: String get() = string("defaultZapMessage", DEFAULT_ZAP_MESSAGE)
     val zapPresets: List<Long>
         get() = normalizeZapPresets(stringList("zapPresets").mapNotNull { it.toLongOrNull() })
     val firstTimeDismissed: Boolean get() = bool("firstTimeDismissed", false)
@@ -198,6 +199,7 @@ class UserSettings internal constructor(
         "defaultHighlightVisibilityNostrverse" -> defaultHighlightVisibilityNostrverse
         "defaultLibraryView" -> defaultLibraryView
         "defaultPrivateBookmark" -> defaultPrivateBookmark
+        "defaultZapMessage" -> defaultZapMessage
         "fontSize" -> fontSize
         "fullWidthImages" -> fullWidthImages
         "hideArchivedOnHome" -> hideArchivedOnHome
@@ -256,6 +258,7 @@ class UserSettings internal constructor(
 }
 
 internal val DEFAULT_ZAP_PRESETS = listOf(21L, 100L, 500L, 1_000L, 5_000L, 21_000L)
+internal const val DEFAULT_ZAP_MESSAGE = "I loved reading this! 🧡"
 
 private const val MAX_ZAP_PRESET = 999_999_999L
 private const val MAX_ZAP_PRESET_COUNT = 8
@@ -294,6 +297,7 @@ private const val DEFAULT_JSON = """{
   "zapSplitBorisWeight":2.1,
   "zapSplitAuthorWeight":50,
   "defaultZapAmount":21,
+  "defaultZapMessage":"I loved reading this! 🧡",
   "zapPresets":["21","100","500","1000","5000","21000"],
   "useLocalRelayAsCache":true,
   "hideNsfwOnHome":true,
