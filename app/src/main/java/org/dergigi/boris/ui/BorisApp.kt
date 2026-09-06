@@ -273,7 +273,7 @@ fun BorisApp(
                 composable(Routes.HOME) {
                     HomeScreen(
                         onRead = { url -> openUrl(url) },
-                        onOpenAbout = {
+                        onOpenTutorial = {
                             navController.navigate(Routes.ABOUT) {
                                 launchSingleTop = true
                             }

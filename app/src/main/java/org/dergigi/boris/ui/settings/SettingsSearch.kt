@@ -166,6 +166,7 @@ object SettingsSearch {
         ),
         SettingsCategory.About to listOf(
             R.string.settings_about_blurb,
+            R.string.settings_about_learn,
             R.string.settings_about_tutorial,
             R.string.settings_about_tutorial_summary,
             R.string.settings_about_features,
@@ -174,6 +175,7 @@ object SettingsSearch {
             R.string.settings_about_faq_summary,
             R.string.settings_about_vision,
             R.string.settings_about_vision_summary,
+            R.string.settings_about_community,
             R.string.settings_about_support_summary,
             R.string.settings_about_recommend,
             R.string.settings_about_recommend_summary,

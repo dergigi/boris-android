@@ -131,7 +131,7 @@ import org.dergigi.boris.ui.theme.rememberDisplayLook
 @Composable
 fun HomeScreen(
     onRead: (String) -> Unit,
-    onOpenAbout: () -> Unit,
+    onOpenTutorial: () -> Unit,
     onOpenSupport: () -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
     onOpenLogin: () -> Unit = {},
@@ -200,7 +200,7 @@ fun HomeScreen(
                             TopBarMenuItem(
                                 label = stringResource(R.string.home_help),
                                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                onClick = onOpenAbout,
+                                onClick = onOpenTutorial,
                             ),
                             TopBarMenuItem(
                                 label = stringResource(R.string.settings_about),
@@ -261,7 +261,7 @@ fun HomeScreen(
                 onDismissFirstTime = {
                     HomeOnboardingStore.dismissFirstTimeEverywhere(context)
                 },
-                onOpenAbout = onOpenAbout,
+                onOpenTutorial = onOpenTutorial,
                 showLoginPrompt = showLoginPrompt,
                 onDismissLoginPrompt = {
                     HomeOnboardingStore.dismissLogin(context)
@@ -370,7 +370,7 @@ fun HomeScreenContent(
     sectionOrder: List<String> = HomeSections.DEFAULT,
     showFirstTime: Boolean = false,
     onDismissFirstTime: () -> Unit = {},
-    onOpenAbout: () -> Unit = {},
+    onOpenTutorial: () -> Unit = {},
     showLoginPrompt: Boolean = false,
     onDismissLoginPrompt: () -> Unit = {},
     onOpenLogin: () -> Unit = {},
@@ -395,7 +395,7 @@ fun HomeScreenContent(
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
-                        onOpenAbout = onOpenAbout,
+                        onOpenTutorial = onOpenTutorial,
                         showLoginPrompt = showLoginPrompt,
                         onDismissLoginPrompt = onDismissLoginPrompt,
                         onOpenLogin = onOpenLogin,
@@ -422,7 +422,7 @@ fun HomeScreenContent(
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
-                        onOpenAbout = onOpenAbout,
+                        onOpenTutorial = onOpenTutorial,
                         showLoginPrompt = showLoginPrompt,
                         onDismissLoginPrompt = onDismissLoginPrompt,
                         onOpenLogin = onOpenLogin,
@@ -452,7 +452,7 @@ fun HomeScreenContent(
                     HomePromptSections(
                         showFirstTime = showFirstTime,
                         onDismissFirstTime = onDismissFirstTime,
-                        onOpenAbout = onOpenAbout,
+                        onOpenTutorial = onOpenTutorial,
                         showLoginPrompt = showLoginPrompt,
                         onDismissLoginPrompt = onDismissLoginPrompt,
                         onOpenLogin = onOpenLogin,
@@ -602,7 +602,7 @@ fun HomeScreenContent(
                             HomePromptSections(
                                 showFirstTime = showFirstTime,
                                 onDismissFirstTime = onDismissFirstTime,
-                                onOpenAbout = onOpenAbout,
+                                onOpenTutorial = onOpenTutorial,
                                 showLoginPrompt = showLoginPrompt,
                                 onDismissLoginPrompt = onDismissLoginPrompt,
                                 onOpenLogin = onOpenLogin,
@@ -896,7 +896,7 @@ private const val HOME_LOADING_STATUS_MS = 2_200L
 private fun HomePromptSections(
     showFirstTime: Boolean,
     onDismissFirstTime: () -> Unit,
-    onOpenAbout: () -> Unit,
+    onOpenTutorial: () -> Unit,
     showLoginPrompt: Boolean,
     onDismissLoginPrompt: () -> Unit,
     onOpenLogin: () -> Unit,
@@ -908,7 +908,7 @@ private fun HomePromptSections(
             body = stringResource(R.string.home_first_time_body),
             cta = stringResource(R.string.home_first_time_cta),
             dismissContentDescription = stringResource(R.string.home_first_time_dismiss),
-            onCta = onOpenAbout,
+            onCta = onOpenTutorial,
             onDismiss = onDismissFirstTime,
         )
     }

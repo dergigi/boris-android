@@ -79,6 +79,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -159,7 +160,6 @@ fun AboutScreen(
                         onStartReading = onBack,
                         onOpenSupport = onOpenSupport,
                     )
-                    AboutPage.TutorialIntro -> TutorialIntroPage()
                     is AboutPage.Tutorial -> TutorialStepPage(item.step)
                     AboutPage.TutorialCta -> TutorialCtaPage(onStartReading = onBack)
                 }
@@ -368,37 +368,6 @@ private fun FeatureCtaPage(
 }
 
 @Composable
-private fun TutorialIntroPage() {
-    AboutPageColumn {
-        Image(
-            painter = painterResource(R.drawable.ic_boris_logo),
-            contentDescription = stringResource(R.string.about_title),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(132.dp),
-        )
-        Spacer(Modifier.height(28.dp))
-        Text(
-            text = stringResource(R.string.tutorial_intro_title),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontFamily = SourceSerif,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.tutorial_intro_body),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = FontFamily.SansSerif,
-                textAlign = TextAlign.Center,
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun TutorialStepPage(step: TutorialStep) {
     AboutPageColumn {
         TutorialIllustration(step.visual)
@@ -475,7 +444,7 @@ private fun TutorialIllustration(visual: TutorialVisual) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp)
+            .heightIn(min = 228.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp))
@@ -628,6 +597,7 @@ private fun MiniIconLabel(
     val tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier = modifier
+            .heightIn(min = 76.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(
                 if (selected) {
@@ -638,7 +608,7 @@ private fun MiniIconLabel(
             )
             .padding(horizontal = 10.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = icon,
@@ -646,18 +616,20 @@ private fun MiniIconLabel(
             tint = tint,
             modifier = Modifier.size(22.dp),
         )
+        Spacer(Modifier.height(6.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(lineHeight = 18.sp),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
+            maxLines = 2,
         )
     }
 }
 
 @Composable
 private fun ArticleLines(highlighted: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         repeat(4) { index ->
             val widthFraction = when (index) {
                 0 -> 0.92f
@@ -669,7 +641,7 @@ private fun ArticleLines(highlighted: Boolean) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(widthFraction)
-                    .height(if (isHighlighted) 22.dp else 10.dp)
+                    .height(if (isHighlighted) 22.dp else 9.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(
                         if (isHighlighted) {

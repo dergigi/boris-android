@@ -88,8 +88,8 @@
     <string name="home_about">About Boris</string>
     <string name="home_help">Help</string>
     <string name="home_first_time_title">First time?</string>
-    <string name="home_first_time_body">A short walk through of what Boris is and how highlighting works.</string>
-    <string name="home_first_time_cta">About Boris</string>
+    <string name="home_first_time_body">A short walkthrough for saving articles, reading quietly, listening, highlighting, and finding what your friends are reading.</string>
+    <string name="home_first_time_cta">Tutorial</string>
     <string name="home_first_time_dismiss">Dismiss welcome</string>
     <string name="home_login_title">Connect?</string>
     <string name="home_login_body">Optional. Link a Nostr account to publish highlights and discover what your friends found interesting enough to highlight.</string>
@@ -106,8 +106,6 @@
     <string name="about_title">Tutorial</string>
     <string name="features_title">Features</string>
     <string name="about_back">Back</string>
-    <string name="tutorial_intro_title">Read with Boris</string>
-    <string name="tutorial_intro_body">A quick walkthrough for saving articles, reading quietly, listening, highlighting, and finding what your friends are reading.</string>
     <string name="tutorial_add_title">Add Something to Read</string>
     <string name="tutorial_add_body">Save articles through Nostr bookmarks, paste or open a URL in Boris, or use Android Share and choose Boris from the app list.</string>
     <string name="tutorial_read_title">Settle Into the Reader</string>
@@ -524,6 +522,7 @@
     <string name="faq_privacy_link">NIP-84</string>
     <string name="faq_privacy_after">\u0020and publishes highlights and annotations to your relays.</string>
     <string name="settings_about_blurb">Boris is a nostr-native reader for highlighting and calm long-form reading. Free and open source.</string>
+    <string name="settings_about_learn">Learn</string>
     <string name="settings_about_tutorial">Tutorial</string>
     <string name="settings_about_tutorial_summary">Learn the basic reading flow</string>
     <string name="settings_about_features">Features</string>
@@ -541,6 +540,7 @@
     <string name="settings_about_links">Links</string>
     <string name="settings_about_vision">Vision</string>
     <string name="settings_about_vision_summary">Purple Text, Orange Highlights</string>
+    <string name="settings_about_community">Community</string>
     <string name="settings_about_github_issue">Open a GitHub issue</string>
     <string name="settings_about_website">Website</string>
     <string name="settings_about_webapp">Web app</string>
