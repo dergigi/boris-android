@@ -161,9 +161,6 @@ private fun RecipientList(ready: ZapProgress.Ready, sats: Long) {
 @Composable
 private fun DoneText(done: ZapProgress.Done) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (done.paidSats > 0) {
-            Text(stringResource(R.string.zap_done, formatSats(done.paidSats)))
-        }
         if (done.failed.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.zap_failed_for, done.failed.joinToString(", ")),

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.HtmlToMarkdown
 import org.dergigi.boris.data.LibrarySave
@@ -183,8 +184,12 @@ class ReaderViewModel(
         scope = viewModelScope,
         onSignIntent = { _signIntent.value = it },
         onProgress = { progress ->
-            _zap.value = progress
-            if (progress is ZapProgress.Done && progress.paidSats > 0) _zapped.value = true
+            val feedback = zapFeedbackFor(progress)
+            feedback.successSats?.let { sats ->
+                _zapped.value = true
+                _message.value = getApplication<Application>().getString(R.string.zap_done, formatSats(sats))
+            }
+            _zap.value = feedback.dialogProgress
         },
     )
     init {
