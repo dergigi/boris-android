@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-09-06
+
+### Added
+
+- About now has a real tutorial for the reading flow, with Features kept as a separate overview
+- Wallet settings can edit zap amount presets; the reader zap dialog uses those same chips
+
 ## [1.6.2] - 2026-09-06
 
 ### Fixed
