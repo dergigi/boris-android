@@ -308,7 +308,7 @@ private fun ZapPresetEditorDialog(
     var input by rememberSaveable(settings.zapPresets) {
         mutableStateOf(settings.zapPresets.joinToString(", "))
     }
-    var invalid by rememberSaveable { mutableStateOf(false) }
+    var error by rememberSaveable { mutableStateOf<Int?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_wallet_presets_title)) },
@@ -323,15 +323,11 @@ private fun ZapPresetEditorDialog(
                     value = input,
                     onValueChange = {
                         input = it
-                        invalid = false
+                        error = null
                     },
                     label = { Text(stringResource(R.string.settings_wallet_presets_hint)) },
-                    supportingText = if (invalid) {
-                        { Text(stringResource(R.string.settings_wallet_presets_invalid)) }
-                    } else {
-                        null
-                    },
-                    isError = invalid,
+                    supportingText = error?.let { { Text(stringResource(it)) } },
+                    isError = error != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -341,8 +337,9 @@ private fun ZapPresetEditorDialog(
             TextButton(
                 onClick = {
                     val presets = parseZapPresetInput(input)
-                    if (presets.isEmpty()) {
-                        invalid = true
+                    val validationError = validateZapPresets(presets)
+                    if (validationError != null) {
+                        error = validationError
                         return@TextButton
                     }
                     onUpdate(settings.withWalletZapPresets(presets))
@@ -357,7 +354,7 @@ private fun ZapPresetEditorDialog(
                 TextButton(
                     onClick = {
                         input = DEFAULT_ZAP_PRESETS.joinToString(", ")
-                        invalid = false
+                        error = null
                     },
                 ) {
                     Text(stringResource(R.string.settings_wallet_presets_reset))
@@ -376,18 +373,27 @@ private fun UserSettings.withWalletZapPresets(values: List<Long>): UserSettings 
     return next.withInt("defaultZapAmount", next.zapPresets.first().toInt())
 }
 
-private fun parseZapPresetInput(input: String): List<Long> =
+internal fun parseZapPresetInput(input: String): List<Long> =
     input
         .split(',', ' ', '\n', '\t')
         .mapNotNull { parseZapPresetToken(it.trim()) }
         .distinct()
+
+internal fun validateZapPresets(presets: List<Long>): Int? = when {
+    presets.isEmpty() -> R.string.settings_wallet_presets_invalid
+    presets.size > MAX_WALLET_ZAP_PRESETS -> R.string.settings_wallet_presets_too_many
+    else -> null
+}
 
 private fun parseZapPresetToken(token: String): Long? {
     if (token.isBlank()) return null
     val normalized = token.lowercase(Locale.US).replace("_", "")
     val multiplier = if (normalized.endsWith("k")) 1000L else 1L
     val digits = if (multiplier == 1000L) normalized.dropLast(1) else normalized
-    return digits.toLongOrNull()
-        ?.let { it * multiplier }
-        ?.takeIf { it in 1..999_999_999L }
+    val value = digits.toLongOrNull() ?: return null
+    if (value !in 1..(MAX_WALLET_ZAP_PRESET / multiplier)) return null
+    return value * multiplier
 }
+
+internal const val MAX_WALLET_ZAP_PRESETS = 8
+private const val MAX_WALLET_ZAP_PRESET = 999_999_999L

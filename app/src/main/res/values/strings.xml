@@ -558,6 +558,7 @@
     <string name="settings_wallet_presets_note">Enter preset amounts in sats, separated by commas. Use up to eight amounts.</string>
     <string name="settings_wallet_presets_hint">21, 100, 500, 1k</string>
     <string name="settings_wallet_presets_invalid">Add at least one valid amount.</string>
+    <string name="settings_wallet_presets_too_many">Use eight presets or fewer.</string>
     <string name="settings_wallet_presets_reset">Defaults</string>
     <string name="settings_wallet_presets_save">Save</string>
     <string name="zap_action">Zap</string>
