@@ -2,6 +2,7 @@ package org.dergigi.boris.ui.settings
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,11 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ReaderMargin
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.reader.HighlightMarks
 import org.dergigi.boris.ui.reader.InkStroke
 import org.dergigi.boris.ui.reader.InkUnderline
 import org.dergigi.boris.ui.reader.paintHighlight
+import org.dergigi.boris.ui.reader.readerHorizontalPadding
 import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 @Composable
@@ -74,67 +77,78 @@ fun ReadingPreview(
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = PreviewCopy.TITLE,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontFamily = family,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = (settings.fontSize * 1.5f).sp,
-                lineHeight = (settings.fontSize * 1.5f * 1.25f).sp,
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        PreviewParagraph(
-            text = PreviewCopy.P1,
-            quote = PreviewCopy.MINE,
-            color = mineColor,
-            visible = show && settings.defaultHighlightVisibilityMine,
-            underline = underline,
-            stroke = mineStroke,
-            family = family,
-            fontSize = bodySize,
-            lineHeight = bodyLine,
-            align = align,
-        )
-        PreviewParagraph(
-            text = PreviewCopy.P2,
-            quote = PreviewCopy.FRIENDS,
-            color = friendsColor,
-            visible = show && settings.defaultHighlightVisibilityFriends,
-            underline = underline,
-            stroke = otherStroke,
-            family = family,
-            fontSize = bodySize,
-            lineHeight = bodyLine,
-            align = align,
-        )
-        PreviewParagraph(
-            text = PreviewCopy.P_FOAF,
-            quote = PreviewCopy.FOAF,
-            color = foafColor,
-            visible = show && settings.defaultHighlightVisibilityFoaf,
-            underline = underline,
-            stroke = otherStroke,
-            family = family,
-            fontSize = bodySize,
-            lineHeight = bodyLine,
-            align = align,
-        )
-        PreviewParagraph(
-            text = PreviewCopy.P3,
-            quote = PreviewCopy.NOSTRVERSE,
-            color = nostrverseColor,
-            visible = show && settings.defaultHighlightVisibilityNostrverse,
-            underline = underline,
-            stroke = otherStroke,
-            family = family,
-            fontSize = bodySize,
-            lineHeight = bodyLine,
-            align = align,
-            link = PreviewCopy.LINK,
-            linkColor = if (eink) Color.Unspecified else linkColor,
-            linkStroke = linkStroke,
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = readingPreviewHorizontalPadding(settings.readerMargin)),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = PreviewCopy.TITLE,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = family,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = (settings.fontSize * 1.5f).sp,
+                        lineHeight = (settings.fontSize * 1.5f * 1.25f).sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                PreviewParagraph(
+                    text = PreviewCopy.P1,
+                    quote = PreviewCopy.MINE,
+                    color = mineColor,
+                    visible = show && settings.defaultHighlightVisibilityMine,
+                    underline = underline,
+                    stroke = mineStroke,
+                    family = family,
+                    fontSize = bodySize,
+                    lineHeight = bodyLine,
+                    align = align,
+                )
+                PreviewParagraph(
+                    text = PreviewCopy.P2,
+                    quote = PreviewCopy.FRIENDS,
+                    color = friendsColor,
+                    visible = show && settings.defaultHighlightVisibilityFriends,
+                    underline = underline,
+                    stroke = otherStroke,
+                    family = family,
+                    fontSize = bodySize,
+                    lineHeight = bodyLine,
+                    align = align,
+                )
+                PreviewParagraph(
+                    text = PreviewCopy.P_FOAF,
+                    quote = PreviewCopy.FOAF,
+                    color = foafColor,
+                    visible = show && settings.defaultHighlightVisibilityFoaf,
+                    underline = underline,
+                    stroke = otherStroke,
+                    family = family,
+                    fontSize = bodySize,
+                    lineHeight = bodyLine,
+                    align = align,
+                )
+                PreviewParagraph(
+                    text = PreviewCopy.P3,
+                    quote = PreviewCopy.NOSTRVERSE,
+                    color = nostrverseColor,
+                    visible = show && settings.defaultHighlightVisibilityNostrverse,
+                    underline = underline,
+                    stroke = otherStroke,
+                    family = family,
+                    fontSize = bodySize,
+                    lineHeight = bodyLine,
+                    align = align,
+                    link = PreviewCopy.LINK,
+                    linkColor = if (eink) Color.Unspecified else linkColor,
+                    linkStroke = linkStroke,
+                )
+            }
+        }
     }
 }
 
@@ -213,6 +227,8 @@ private fun PreviewParagraph(
         color = MaterialTheme.colorScheme.onBackground,
     )
 }
+
+internal fun readingPreviewHorizontalPadding(margin: ReaderMargin) = readerHorizontalPadding(margin)
 
 internal object PreviewCopy {
     const val TITLE = "The Quick Brown Fox"
