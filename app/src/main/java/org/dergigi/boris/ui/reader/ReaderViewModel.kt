@@ -184,14 +184,44 @@ class ReaderViewModel(
         scope = viewModelScope,
         onSignIntent = { _signIntent.value = it },
         onProgress = { progress ->
-            val feedback = zapFeedbackFor(progress)
-            feedback.successSats?.let { sats ->
-                _zapped.value = true
-                _message.value = getApplication<Application>().getString(R.string.zap_done, formatSats(sats))
+            if (backgroundZap) {
+                when (progress) {
+                    is ZapProgress.Done -> {
+                        backgroundZap = false
+                        if (progress.paidSats > 0) {
+                            _zapped.value = true
+                            _message.value = getApplication<Application>()
+                                .getString(R.string.zap_done, formatSats(progress.paidSats))
+                        } else if (progress.failed.isNotEmpty()) {
+                            _message.value = getApplication<Application>()
+                                .getString(R.string.zap_failed_for, progress.failed.joinToString(", "))
+                        }
+                        _zap.value = null
+                    }
+                    is ZapProgress.Failed -> {
+                        backgroundZap = false
+                        _message.value = progress.message
+                        _zap.value = null
+                    }
+                    null -> {
+                        backgroundZap = false
+                        _zap.value = null
+                    }
+                    else -> {
+                        _zap.value = null
+                    }
+                }
+            } else {
+                val feedback = zapFeedbackFor(progress)
+                feedback.successSats?.let { sats ->
+                    _zapped.value = true
+                    _message.value = getApplication<Application>().getString(R.string.zap_done, formatSats(sats))
+                }
+                _zap.value = feedback.dialogProgress
             }
-            _zap.value = feedback.dialogProgress
         },
     )
+    private var backgroundZap = false
     init {
         NwcStore.load(application)
         load()
@@ -371,17 +401,21 @@ class ReaderViewModel(
     /** Sends the default zap amount and message without opening the zap dialog. */
     fun startOneTapZap(totalSats: Long, comment: String) {
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
+        backgroundZap = true
         zapAction.payDefault(content, totalSats, comment)
     }
 
     fun confirmZap(totalSats: Long, comment: String) {
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
         val ready = _zap.value as? ZapProgress.Ready ?: return
+        backgroundZap = true
+        _zap.value = null
         zapAction.pay(content, ready.recipients, totalSats, comment)
     }
 
     fun dismissZap() {
         if (_zap.value is ZapProgress.Paying) return
+        backgroundZap = false
         zapAction.cancel()
     }
 
