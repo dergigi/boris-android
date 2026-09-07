@@ -23,4 +23,39 @@ object Opml {
         }
         return urls
     }
+
+    fun export(feedUrls: List<String>): String {
+        val outlines = feedUrls
+            .map { it.trim() }
+            .filter { it.startsWith("http://") || it.startsWith("https://") }
+            .distinct()
+            .joinToString(separator = "\n") { url ->
+                val title = ArticleUrl.host(url) ?: url
+                """    <outline text="${escape(title)}" title="${escape(title)}" type="rss" xmlUrl="${escape(url)}" />"""
+            }
+        return buildString {
+            appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
+            appendLine("""<opml version="2.0">""")
+            appendLine("""  <head>""")
+            appendLine("""    <title>Boris RSS feeds</title>""")
+            appendLine("""  </head>""")
+            appendLine("""  <body>""")
+            if (outlines.isNotEmpty()) appendLine(outlines)
+            appendLine("""  </body>""")
+            appendLine("""</opml>""")
+        }
+    }
+
+    private fun escape(value: String): String = buildString(value.length) {
+        value.forEach { char ->
+            when (char) {
+                '&' -> append("&amp;")
+                '<' -> append("&lt;")
+                '>' -> append("&gt;")
+                '"' -> append("&quot;")
+                '\'' -> append("&apos;")
+                else -> append(char)
+            }
+        }
+    }
 }
