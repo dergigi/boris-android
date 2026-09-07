@@ -54,6 +54,7 @@ class UserSettings internal constructor(
     val openLinksInReader: Boolean get() = bool("openLinksInReader", true)
     val showReaderProgressBar: Boolean get() = bool("showReaderProgressBar", true)
     val showReaderProgressHeading: Boolean get() = bool("showReaderProgressHeading", true)
+    val hideStatusBarInReader: Boolean get() = bool("hideStatusBarInReader", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", true)
     val hideCompletedOnHome: Boolean get() = bool("hideCompletedOnHome", false)
@@ -206,6 +207,7 @@ class UserSettings internal constructor(
         "hideArchivedOnHome" -> hideArchivedOnHome
         "hideCompletedOnHome" -> hideCompletedOnHome
         "hideNsfwOnHome" -> hideNsfwOnHome
+        "hideStatusBarInReader" -> hideStatusBarInReader
         "hideTopBarOnScroll" -> hideTopBarOnScroll
         "highlightColorFoaf" -> highlightColorFoaf
         "highlightColorFriends" -> highlightColorFriends
@@ -310,6 +312,7 @@ private const val DEFAULT_JSON = """{
   "fullWidthImages":true,
   "showReaderProgressBar":true,
   "showReaderProgressHeading":true,
+  "hideStatusBarInReader":true,
   "renderVideoLinksAsEmbeds":true,
   "syncReadingPosition":true,
   "autoScrollToReadingPosition":true,

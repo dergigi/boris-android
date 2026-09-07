@@ -159,6 +159,7 @@ private val SettingsCategory.resetKeys: Set<String>
             "linkColorLight",
             "showReaderProgressBar",
             "showReaderProgressHeading",
+            "hideStatusBarInReader",
         )
         SettingsCategory.Tts -> setOf(
             "ttsDefaultSpeed",
