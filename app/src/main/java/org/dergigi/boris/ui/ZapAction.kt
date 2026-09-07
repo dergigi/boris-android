@@ -73,7 +73,7 @@ class ZapAction(
         }
     }
 
-    fun payDefault(content: ReadableContent, totalSats: Long) {
+    fun payDefault(content: ReadableContent, totalSats: Long, comment: String) {
         if (totalSats <= 0) {
             onProgress(ZapProgress.Failed(app.getString(R.string.zap_invalid_amount)))
             return
@@ -83,7 +83,7 @@ class ZapAction(
         job = scope.launch {
             when (val resolved = withContext(Dispatchers.IO) { resolveRecipients(content) }) {
                 is ZapProgress.Failed -> onProgress(resolved)
-                is ZapProgress.Ready -> payResolved(content, resolved.recipients, totalSats, "")
+                is ZapProgress.Ready -> payResolved(content, resolved.recipients, totalSats, comment)
                 else -> Unit
             }
         }
