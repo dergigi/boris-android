@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,6 +116,7 @@ fun SearchScreen(
     SearchScreenContent(
         query = query,
         results = state.results,
+        isLoading = state.isLoading || (query.trim().length >= 2 && state.query != query.trim()),
         resultType = resultType,
         settings = settings,
         archivedKeys = actions.archivedKeys,
@@ -151,6 +153,7 @@ fun SearchScreen(
 fun SearchScreenContent(
     query: String,
     results: List<LocalSearch.Hit>,
+    isLoading: Boolean,
     resultType: SearchResultType,
     settings: UserSettings,
     archivedKeys: Set<String>,
@@ -217,6 +220,9 @@ fun SearchScreenContent(
             }
             when {
                 query.trim().length < 2 -> Unit
+                isLoading -> {
+                    SearchLoadingHint()
+                }
                 visibleResults.isEmpty() -> {
                     SearchHint(stringResource(R.string.search_empty))
                 }
@@ -458,6 +464,18 @@ private fun SearchHighlightCard(
             onViewProfile = onOpenProfile,
         ),
     )
+}
+
+@Composable
+private fun SearchLoadingHint() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+    }
 }
 
 @Composable

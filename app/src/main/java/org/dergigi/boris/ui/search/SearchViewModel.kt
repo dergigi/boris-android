@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.LocalSearch
 import org.dergigi.boris.data.SessionStore
@@ -23,6 +23,7 @@ import org.dergigi.boris.nostr.RelayQuery
 data class SearchUiState(
     val query: String = "",
     val results: List<LocalSearch.Hit> = emptyList(),
+    val isLoading: Boolean = false,
 )
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -38,11 +39,12 @@ class SearchViewModel(
         combine(_query, _relationEpoch) { query, epoch -> query to epoch }
             .debounce(220)
             .distinctUntilChanged()
-            .mapLatest { (raw, _) ->
+            .transformLatest { (raw, _) ->
                 val trimmed = raw.trim()
                 if (trimmed.length < 2) {
-                    SearchUiState(query = trimmed, results = emptyList())
+                    emit(SearchUiState(query = trimmed, results = emptyList()))
                 } else {
+                    emit(SearchUiState(query = trimmed, results = emptyList(), isLoading = true))
                     val hits = withContext(Dispatchers.Default) {
                         val sessionHex = SessionStore.load(getApplication())?.pubkeyHex?.lowercase()
                         val friends = sessionHex
@@ -59,7 +61,7 @@ class SearchViewModel(
                             foafPubkeys = foaf,
                         )
                     }
-                    SearchUiState(query = trimmed, results = hits)
+                    emit(SearchUiState(query = trimmed, results = hits))
                 }
             }
             .stateIn(
