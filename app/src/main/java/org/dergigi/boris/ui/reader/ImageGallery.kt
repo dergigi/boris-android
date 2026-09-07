@@ -97,7 +97,7 @@ private enum class GalleryBackground(
         nextLabel = "Use gray background",
     ),
     Gray(
-        color = Color(0xFF777777),
+        color = Color(0xFF666666),
         foreground = Color.White,
         nextLabel = "Use black background",
     ),
