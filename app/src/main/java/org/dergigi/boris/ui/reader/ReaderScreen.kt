@@ -397,7 +397,7 @@ fun ReaderScreen(
             if (wallet == null) {
                 walletHint = true
             } else if (settings.oneTapZaps) {
-                viewModel.startOneTapZap(settings.defaultZapAmount.toLong())
+                viewModel.startOneTapZap(settings.defaultZapAmount.toLong(), settings.defaultZapMessage)
             } else {
                 viewModel.startZap()
             }

@@ -586,11 +586,11 @@
     <string name="settings_wallet_secret_note">The connection secret stays on this device, protected by the Android Keystore. Disconnecting removes it.</string>
     <string name="settings_wallet_zap_behavior">Zap behavior</string>
     <string name="settings_wallet_one_tap_zaps">One-tap zaps</string>
-    <string name="settings_wallet_one_tap_zaps_note">Send the default amount immediately, without a comment.</string>
+    <string name="settings_wallet_one_tap_zaps_note">Send the default amount and message immediately.</string>
     <string name="settings_wallet_default_amount">Default zap amount</string>
     <string name="settings_wallet_default_amount_note">Preselected when you zap an article. You can change it every time.</string>
     <string name="settings_wallet_default_message">Default zap message</string>
-    <string name="settings_wallet_default_message_note">Pre-filled in the zap dialog. One-tap zaps still send without a comment.</string>
+    <string name="settings_wallet_default_message_note">Used for one-tap zaps and pre-filled in the zap dialog.</string>
     <string name="settings_wallet_default_message_hint">Message</string>
     <string name="settings_wallet_presets_edit">Edit presets</string>
     <string name="settings_wallet_presets_title">Zap presets</string>

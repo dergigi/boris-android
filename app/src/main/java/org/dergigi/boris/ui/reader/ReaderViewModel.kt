@@ -368,10 +368,10 @@ class ReaderViewModel(
         zapAction.resolve(content)
     }
 
-    /** Sends the default zap amount without asking for a comment. */
-    fun startOneTapZap(totalSats: Long) {
+    /** Sends the default zap amount and message without opening the zap dialog. */
+    fun startOneTapZap(totalSats: Long, comment: String) {
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
-        zapAction.payDefault(content, totalSats)
+        zapAction.payDefault(content, totalSats, comment)
     }
 
     fun confirmZap(totalSats: Long, comment: String) {
