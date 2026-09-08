@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - Liked and recently-read Explore rows skip short notes and keep long-form articles
+- Most highlighted no longer shrinks to leftovers from the other Explore rows
 
 ## [1.6.7] - 2026-09-08
 

@@ -9,6 +9,9 @@ object ExploreRows {
     /**
      * Walk [order] and keep the first row that claims each URL, then fill
      * each row back up to [limit] from leftover candidates.
+     *
+     * Most highlighted is a ranking, not another recency row, so it keeps
+     * its own list instead of inheriting whatever is left.
      */
     fun fill(
         order: List<String>,
@@ -17,9 +20,10 @@ object ExploreRows {
     ): Map<String, List<HighlightedArticle>> {
         val seen = LinkedHashSet<String>()
         return order.associateWith { id ->
+            val exclusive = id != HomeSections.MOST
             val kept = ArrayList<HighlightedArticle>(limit)
             for (item in rows[id].orEmpty()) {
-                if (!seen.add(item.url)) continue
+                if (exclusive && !seen.add(item.url)) continue
                 kept.add(item)
                 if (kept.size >= limit) break
             }
