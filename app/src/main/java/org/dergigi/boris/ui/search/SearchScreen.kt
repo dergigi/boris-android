@@ -53,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -115,22 +114,22 @@ fun SearchScreen(
     homeViewModel: HomeViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
-    val query by viewModel.query.collectAsStateWithLifecycle()
+    val submittedQuery by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val discovery by homeViewModel.highlights.collectAsStateWithLifecycle()
     val discoveryRefreshing by homeViewModel.refreshing.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val actions = rememberArticleActions()
+    var draftQuery by rememberSaveable { mutableStateOf(submittedQuery) }
     var resultType by rememberSaveable { mutableStateOf(SearchResultType.All) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshRelation()
-        if (query.trim().length < 2) homeViewModel.refresh()
+        if (submittedQuery.trim().length < 2) homeViewModel.refresh()
     }
     LaunchedEffect(initialQueryVersion, initialQuery) {
-        initialQuery
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let(viewModel::onQueryChange)
+        val incoming = initialQuery?.trim()?.takeIf { it.isNotEmpty() } ?: return@LaunchedEffect
+        draftQuery = incoming
+        viewModel.onQueryChange(incoming)
     }
     val look = rememberDisplayLook(settings)
     val mineColor = look.mine
@@ -138,10 +137,11 @@ fun SearchScreen(
     val foafColor = look.foaf
     val nostrverseColor = look.nostrverse
     SearchScreenContent(
-        query = query,
+        query = draftQuery,
+        submittedQuery = submittedQuery,
         results = state.results,
         searchRefreshing = state.isLoading ||
-            (query.trim().length >= 2 && state.query != query.trim()),
+            (submittedQuery.trim().length >= 2 && state.query != submittedQuery.trim()),
         discovery = discovery,
         discoveryRefreshing = discoveryRefreshing,
         discoverySectionOrder = HomeSections.visible(
@@ -154,8 +154,15 @@ fun SearchScreen(
         resultType = resultType,
         settings = settings,
         actions = actions,
-        onQueryChange = viewModel::onQueryChange,
-        onClear = viewModel::clear,
+        onQueryChange = { value ->
+            draftQuery = value
+            if (value.trim().isEmpty()) viewModel.clear()
+        },
+        onSubmitSearch = { viewModel.onQueryChange(draftQuery) },
+        onClear = {
+            draftQuery = ""
+            viewModel.clear()
+        },
         onSelectResultType = { resultType = it },
         colorFor = { hit ->
             when {
@@ -198,6 +205,7 @@ fun SearchScreen(
 @Composable
 fun SearchScreenContent(
     query: String,
+    submittedQuery: String = query,
     results: List<LocalSearch.Hit>,
     searchRefreshing: Boolean = false,
     discovery: HomeHighlightsState,
@@ -207,6 +215,7 @@ fun SearchScreenContent(
     settings: UserSettings,
     actions: ArticleActionHandlers,
     onQueryChange: (String) -> Unit,
+    onSubmitSearch: () -> Unit = {},
     onClear: () -> Unit,
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
@@ -222,7 +231,7 @@ fun SearchScreenContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focus = LocalFocusManager.current
+    val searching = submittedQuery.trim().length >= 2
     Scaffold(
         modifier = modifier.imePadding(),
         topBar = {
@@ -230,11 +239,7 @@ fun SearchScreenContent(
                 title = { Text(stringResource(R.string.search_title)) },
                 actions = {
                     TopBarRefreshIndicator(
-                        refreshing = if (query.trim().length < 2) {
-                            discoveryRefreshing
-                        } else {
-                            searchRefreshing
-                        },
+                        refreshing = if (searching) searchRefreshing else discoveryRefreshing,
                     )
                     ContentFilterMenu(settings = settings)
                     TopBarMoreMenu(
@@ -262,29 +267,26 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            val searchField = @Composable {
-                CompactSearchField(
-                    query = query,
-                    onQueryChange = onQueryChange,
-                    onClear = onClear,
-                    onSearch = { focus.clearFocus() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-                )
-            }
-            if (query.trim().length >= 2) {
-                searchField()
+            CompactSearchField(
+                query = query,
+                onQueryChange = onQueryChange,
+                onClear = onClear,
+                onSearch = onSubmitSearch,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+            )
+            if (searching) {
                 SearchResultFilters(
                     selected = resultType,
                     onSelect = onSelectResultType,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            val visibleResults = remember(results, query, resultType, settings, actions.archivedKeys) {
+            val visibleResults = remember(results, submittedQuery, resultType, settings, actions.archivedKeys) {
                 results
                     .filter { resultType.includes(it) }
-                    .filter { LocalSearch.hitMatches(it, query) }
+                    .filter { LocalSearch.hitMatches(it, submittedQuery) }
                     .filter { hit ->
                         searchHitVisible(
                             hit = hit,
@@ -295,9 +297,8 @@ fun SearchScreenContent(
                     .take(LocalSearch.DEFAULT_LIMIT)
             }
             when {
-                query.trim().length < 2 -> {
+                !searching -> {
                     ExploreDiscoveryContent(
-                        header = searchField,
                         highlights = discovery,
                         sectionOrder = discoverySectionOrder,
                         settings = settings,
@@ -379,7 +380,6 @@ fun SearchScreenContent(
 
 @Composable
 private fun ExploreDiscoveryContent(
-    header: @Composable () -> Unit,
     highlights: HomeHighlightsState,
     sectionOrder: List<String>,
     settings: UserSettings,
@@ -392,11 +392,11 @@ private fun ExploreDiscoveryContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
 ) {
     when (highlights) {
-        HomeHighlightsState.Loading -> ExploreDiscoveryStatus(header) { SearchLoadingHint() }
-        HomeHighlightsState.Error -> ExploreDiscoveryStatus(header) {
+        HomeHighlightsState.Loading -> ExploreDiscoveryStatus { SearchLoadingHint() }
+        HomeHighlightsState.Error -> ExploreDiscoveryStatus {
             SearchHint(stringResource(R.string.feed_error))
         }
-        HomeHighlightsState.Empty -> ExploreDiscoveryStatus(header) {
+        HomeHighlightsState.Empty -> ExploreDiscoveryStatus {
             SearchHint(stringResource(R.string.feed_empty))
         }
         is HomeHighlightsState.Ready -> {
@@ -421,7 +421,7 @@ private fun ExploreDiscoveryContent(
             val mostHighlighted = discoveryRows[HomeSections.MOST].orEmpty()
             val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
-                ExploreDiscoveryStatus(header) {
+                ExploreDiscoveryStatus {
                     SearchHint(
                         stringResource(
                             if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
@@ -442,7 +442,6 @@ private fun ExploreDiscoveryContent(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 24.dp),
             ) {
-                header()
                 Column(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
@@ -605,11 +604,9 @@ private fun ExploreDiscoveryContent(
 
 @Composable
 private fun ExploreDiscoveryStatus(
-    header: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        header()
         content()
     }
 }
