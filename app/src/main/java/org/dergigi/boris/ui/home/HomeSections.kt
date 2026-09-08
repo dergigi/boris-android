@@ -24,6 +24,14 @@ object HomeSections {
         return orderFor(saved, EXPLORE_DEFAULT)
     }
 
+    /**
+     * Prefer a dedicated Explore order. If that list is empty, reuse any
+     * discovery ids still sitting in the older Home order.
+     */
+    fun exploreOrder(exploreSaved: List<String>, homeSaved: List<String>): List<String> {
+        return exploreOrder(exploreSaved.ifEmpty { homeSaved })
+    }
+
     fun move(order: List<String>, id: String, delta: Int): List<String> {
         val from = order.indexOf(id)
         if (from < 0) return order

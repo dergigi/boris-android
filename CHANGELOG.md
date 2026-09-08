@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Explore settings for discovery section order and the most-highlighted window
+
 ## [1.6.6] - 2026-09-08
 
 ### Added

@@ -2,18 +2,9 @@ package org.dergigi.boris.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,81 +42,19 @@ fun HomeSettingsSection(
             checked = settings.nsfwWarnInReader,
             onCheckedChange = { onUpdate(settings.withBoolean("nsfwWarnInReader", it)) },
         )
-        Text(
-            text = stringResource(R.string.settings_home_sections),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+        SectionOrderList(
+            title = stringResource(R.string.settings_home_sections),
+            intro = stringResource(R.string.settings_home_sections_intro),
+            order = HomeSections.order(settings.homeSectionOrder),
+            onMove = { id, delta ->
+                onUpdate(
+                    settings.withStringList(
+                        "homeSectionOrder",
+                        HomeSections.move(HomeSections.order(settings.homeSectionOrder), id, delta),
+                    ),
+                )
+            },
+            modifier = Modifier.padding(top = 16.dp),
         )
-        Text(
-            text = stringResource(R.string.settings_home_sections_intro),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        val order = HomeSections.order(settings.homeSectionOrder)
-        order.forEachIndexed { index, id ->
-            SectionOrderRow(
-                label = sectionLabel(id),
-                canMoveUp = index > 0,
-                canMoveDown = index < order.lastIndex,
-                onMove = { delta ->
-                    onUpdate(
-                        settings.withStringList(
-                            "homeSectionOrder",
-                            HomeSections.move(order, id, delta),
-                        ),
-                    )
-                },
-            )
-        }
     }
 }
-
-@Composable
-private fun SectionOrderRow(
-    label: String,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMove: (Int) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = { onMove(-1) }, enabled = canMoveUp) {
-            Icon(
-                Icons.Filled.KeyboardArrowUp,
-                contentDescription = stringResource(R.string.settings_section_move_up),
-            )
-        }
-        IconButton(onClick = { onMove(1) }, enabled = canMoveDown) {
-            Icon(
-                Icons.Filled.KeyboardArrowDown,
-                contentDescription = stringResource(R.string.settings_section_move_down),
-            )
-        }
-    }
-}
-
-@Composable
-private fun sectionLabel(id: String): String = stringResource(
-    when (id) {
-        HomeSections.CONTINUE -> R.string.home_continue_reading
-        HomeSections.YOURS -> R.string.home_recently_highlighted_by_you
-        HomeSections.FRIENDS -> R.string.home_recently_highlighted_by_friends
-        HomeSections.FOAF -> R.string.home_recently_highlighted_by_foaf
-        HomeSections.MOST -> R.string.home_most_highlighted
-        HomeSections.SHORT -> R.string.home_short_reads
-        HomeSections.LONG -> R.string.home_long_reads
-        HomeSections.RANDOM -> R.string.home_random_articles
-        else -> R.string.home_recently_highlighted_by_others
-    },
-)

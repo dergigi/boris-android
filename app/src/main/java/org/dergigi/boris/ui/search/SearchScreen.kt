@@ -137,7 +137,10 @@ fun SearchScreen(
         isLoading = state.isLoading || (query.trim().length >= 2 && state.query != query.trim()),
         discovery = discovery,
         discoveryRefreshing = discoveryRefreshing,
-        discoverySectionOrder = HomeSections.exploreOrder(settings.homeSectionOrder),
+        discoverySectionOrder = HomeSections.exploreOrder(
+            settings.exploreSectionOrder,
+            settings.homeSectionOrder,
+        ),
         resultType = resultType,
         settings = settings,
         actions = actions,

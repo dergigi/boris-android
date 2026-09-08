@@ -48,6 +48,22 @@ class HomeSectionsTest {
     }
 
     @Test
+    fun exploreOrderPrefersDedicatedListThenFallsBackToHome() {
+        assertEquals(
+            HomeSections.EXPLORE_DEFAULT,
+            HomeSections.exploreOrder(emptyList(), emptyList()),
+        )
+        assertEquals(
+            listOf("most", "friends", "foaf", "others"),
+            HomeSections.exploreOrder(emptyList(), listOf("continue", "most", "friends")),
+        )
+        assertEquals(
+            listOf("others", "foaf", "friends", "most"),
+            HomeSections.exploreOrder(listOf("others", "foaf"), listOf("most", "friends")),
+        )
+    }
+
+    @Test
     fun moveSwapsNeighbors() {
         assertEquals(
             listOf("continue", "short", "long", "yours", "random"),

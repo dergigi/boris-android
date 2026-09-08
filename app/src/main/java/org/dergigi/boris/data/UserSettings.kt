@@ -61,6 +61,7 @@ class UserSettings internal constructor(
     val hideNsfwOnHome: Boolean get() = bool("hideNsfwOnHome", true)
     val nsfwWarnInReader: Boolean get() = bool("nsfwWarnInReader", true)
     val homeSectionOrder: List<String> get() = stringList("homeSectionOrder")
+    val exploreSectionOrder: List<String> get() = stringList("exploreSectionOrder")
     val mostHighlightedWindow: MostHighlightedWindow
         get() = MostHighlightedWindow.fromId(string("mostHighlightedWindow", MostHighlightedWindow.DEFAULT.id))
     val defaultLibraryView: BookmarkBucket
@@ -216,6 +217,7 @@ class UserSettings internal constructor(
         "highlightStyle" -> highlightStyle
         "includeLinkedArticles" -> includeLinkedArticles
         "homeSectionOrder" -> homeSectionOrder
+        "exploreSectionOrder" -> exploreSectionOrder
         "mostHighlightedWindow" -> mostHighlightedWindow.id
         "lightColorTheme" -> lightColorTheme
         "linkColorDark" -> linkColorDark
