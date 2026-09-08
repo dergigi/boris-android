@@ -76,6 +76,14 @@ object ArticleReactions {
             ?.let(ArticleReaction::fromContent)
     }
 
+    fun isLike(event: Nip01Event): Boolean {
+        if (event.kind != Nip01Event.KIND_REACTION && event.kind != Nip01Event.KIND_URL_REACTION) {
+            return false
+        }
+        val reaction = ArticleReaction.fromContent(event.content) ?: return false
+        return reaction == ArticleReaction.Love || reaction == ArticleReaction.Good
+    }
+
     fun isReactionTo(event: Nip01Event, content: ReadableContent): Boolean {
         if (event.kind != kind(content)) return false
         if (ArticleReaction.fromContent(event.content) == null) return false

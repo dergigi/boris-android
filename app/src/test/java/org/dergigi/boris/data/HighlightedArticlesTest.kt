@@ -23,6 +23,25 @@ class HighlightedArticlesTest {
         OgPreviewCache.clear()
     }
     @Test
+    fun fromReactionEventsDedupesByUrlAndKeepsNewest() {
+        val articles = HighlightedArticles.fromReactionEvents(
+            listOf(
+                reaction("https://example.com/loved", "🧡", createdAt = 30),
+                reaction("https://example.com/loved", "👍", createdAt = 10),
+                reaction("https://example.com/read", "📚", createdAt = 20),
+                reaction("https://example.com/slop", "🤖", createdAt = 40),
+            ),
+            limit = 12,
+        )
+        assertEquals(
+            listOf("https://example.com/slop", "https://example.com/loved", "https://example.com/read"),
+            articles.map { it.url },
+        )
+        assertEquals(40L, articles[0].highlightedAt)
+        assertEquals(30L, articles[1].highlightedAt)
+    }
+
+    @Test
     fun uniqueRecentKeepsNewestUrlAndDropsDuplicates() {
         val events = listOf(
             highlight("https://citadel21.com/wallet", createdAt = 30),
@@ -243,6 +262,21 @@ class HighlightedArticlesTest {
     }
 
     private fun person(byte: String): String = byte.repeat(32)
+
+    private fun reaction(
+        url: String,
+        content: String,
+        createdAt: Long,
+        pubkey: String = person("cc"),
+    ): Nip01Event = Nip01Event(
+        id = (content + createdAt.toString()).padStart(64, '0').takeLast(64),
+        pubkey = pubkey,
+        createdAt = createdAt,
+        kind = Nip01Event.KIND_URL_REACTION,
+        tags = listOf(listOf("r", url)),
+        content = content,
+        sig = "dd".repeat(32),
+    )
 
     private fun highlight(
         url: String,

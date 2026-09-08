@@ -1,7 +1,6 @@
 package org.dergigi.boris.nostr
 
 import org.dergigi.boris.data.ArticleUrl
-import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.ReadableContent
 import java.net.URL
 
@@ -14,20 +13,7 @@ object Archive {
 
     fun targetRef(event: Nip01Event): BookmarkRef? {
         if (!isArchive(event)) return null
-        if (event.kind == Nip01Event.KIND_URL_REACTION) {
-            val url = event.tags.lastOrNull { it.size >= 2 && it[0] == "r" }?.getOrNull(1)
-            if (!url.isNullOrBlank()) return BookmarkRef(BookmarkRefKind.Url, url)
-            return null
-        }
-        val address = event.tags.lastOrNull { it.size >= 2 && it[0] == "a" }?.getOrNull(1)
-        if (!address.isNullOrBlank() && NostrArticle.fromCoordinate(address) != null) {
-            return BookmarkRef(BookmarkRefKind.Article, address)
-        }
-        val eventId = event.tags.lastOrNull { it.size >= 2 && it[0] == "e" }?.getOrNull(1)?.lowercase()
-        if (eventId != null && eventId.length == 64) {
-            return BookmarkRef(BookmarkRefKind.Note, eventId)
-        }
-        return null
+        return ReactionTarget.ref(event)
     }
 
     fun isArchiveKind(kind: Int): Boolean =

@@ -250,7 +250,10 @@ fun HomeScreen(
                 hideArchived = settings.hideArchivedOnHome,
                 hideCompleted = settings.hideCompletedOnHome,
                 hideNsfw = settings.hideNsfwOnHome,
-                sectionOrder = HomeSections.order(settings.homeSectionOrder),
+                sectionOrder = HomeSections.visible(
+                    HomeSections.order(settings.homeSectionOrder),
+                    settings.homeHiddenSections,
+                ),
                 mineColor = look.mine,
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {

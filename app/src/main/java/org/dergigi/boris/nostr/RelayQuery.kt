@@ -610,6 +610,67 @@ object RelayQuery {
         return cachedRecentHighlights(limit, authors = authors)
     }
 
+    fun fetchRecentReactions(
+        readRelays: List<String>,
+        limit: Int = 80,
+        pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
+    ): List<Nip01Event> {
+        val urls = relayUrls(readRelays)
+        val keys = authorKeys(pubkeyHex, authors)
+        if (urls.isNotEmpty()) {
+            val filters = if (keys.isEmpty()) {
+                reactionFilters(limit, emptyList())
+            } else {
+                keys.chunked(AUTHOR_CHUNK).flatMap { chunk -> reactionFilters(limit, chunk) }
+            }
+            val allowed = keys.toSet()
+            val remote = query(urls, filters)
+                .filter { event -> isReactionKind(event) && (allowed.isEmpty() || event.pubkey.lowercase() in allowed) }
+            EventCache.putAll(remote)
+        }
+        return cachedRecentReactions(limit, pubkeyHex, authors)
+    }
+
+    fun cachedRecentReactions(
+        limit: Int = 80,
+        pubkeyHex: String? = null,
+        authors: Collection<String> = emptyList(),
+    ): List<Nip01Event> {
+        val allowed = authorKeys(pubkeyHex, authors).toSet()
+        return (
+            EventCache.byKind(Nip01Event.KIND_REACTION) +
+                EventCache.byKind(Nip01Event.KIND_URL_REACTION)
+            )
+            .filter { event -> allowed.isEmpty() || event.pubkey.lowercase() in allowed }
+            .sortedByDescending { it.createdAt }
+            .take(limit)
+    }
+
+    /**
+     * Outbox-routed variant of [fetchRecentReactions]: fetches each author's
+     * kind 7 and 17 reactions from their write relays.
+     */
+    fun fetchRecentReactionsByAuthors(
+        authors: Collection<String>,
+        fallbackRelays: List<String>,
+        limit: Int = 80,
+    ): List<Nip01Event> {
+        fetchRouted(
+            authors = authors,
+            fallbackRelays = fallbackRelays,
+            filterFor = { chunk -> kindFilter(Nip01Event.KIND_REACTION, limit, chunk) },
+            accept = { it.kind == Nip01Event.KIND_REACTION },
+        )
+        fetchRouted(
+            authors = authors,
+            fallbackRelays = fallbackRelays,
+            filterFor = { chunk -> kindFilter(Nip01Event.KIND_URL_REACTION, limit, chunk) },
+            accept = { it.kind == Nip01Event.KIND_URL_REACTION },
+        )
+        return cachedRecentReactions(limit * 2, authors = authors)
+    }
+
     /** Outbox-routed variant of [fetchRecentWritings]. */
     fun fetchRecentWritingsByAuthors(
         authors: Collection<String>,
@@ -966,6 +1027,14 @@ object RelayQuery {
         val active = urls.filterNot { RelayHealth.inCooldown(it) }
         return active.ifEmpty { urls }
     }
+
+    private fun reactionFilters(limit: Int, authors: List<String>): List<JSONObject> = listOf(
+        kindFilter(Nip01Event.KIND_REACTION, limit, authors),
+        kindFilter(Nip01Event.KIND_URL_REACTION, limit, authors),
+    )
+
+    private fun isReactionKind(event: Nip01Event): Boolean =
+        event.kind == Nip01Event.KIND_REACTION || event.kind == Nip01Event.KIND_URL_REACTION
 
     private fun highlightFilter(
         limit: Int,

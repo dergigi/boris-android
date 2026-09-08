@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SwapVert
+import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,6 +99,7 @@ enum class SettingsCategory(
     ZapSplits(R.string.settings_zap_splits, R.string.settings_zap_summary, SettingsTints.Look),
     Wallet(R.string.settings_wallet, R.string.settings_wallet_summary, SettingsTints.Look),
     Home(R.string.settings_home, R.string.settings_home_summary, SettingsTints.Places),
+    Explore(R.string.settings_explore, R.string.settings_explore_summary, SettingsTints.Places),
     Library(R.string.settings_library, R.string.settings_library_summary, SettingsTints.Places),
     Feed(R.string.feed_title, R.string.settings_feed_summary, SettingsTints.Places),
     Scroll(R.string.settings_scroll_behaviour, R.string.settings_scroll_summary, SettingsTints.Places),
@@ -116,6 +118,7 @@ private val SettingsCategory.icon: ImageVector
         SettingsCategory.ZapSplits -> Icons.Outlined.Bolt
         SettingsCategory.Wallet -> Icons.Outlined.AccountBalanceWallet
         SettingsCategory.Home -> Icons.Outlined.Home
+        SettingsCategory.Explore -> Icons.Outlined.TravelExplore
         SettingsCategory.Library -> Icons.Outlined.LocalLibrary
         SettingsCategory.Feed -> Icons.Outlined.RssFeed
         SettingsCategory.Scroll -> Icons.Outlined.SwapVert
@@ -136,6 +139,7 @@ private val CATEGORY_GROUPS = listOf(
     ),
     listOf(
         SettingsCategory.Home,
+        SettingsCategory.Explore,
         SettingsCategory.Library,
         SettingsCategory.Feed,
         SettingsCategory.Scroll,
@@ -194,7 +198,9 @@ private val SettingsCategory.resetKeys: Set<String>
             "hideNsfwOnHome",
             "nsfwWarnInReader",
             "homeSectionOrder",
+            "homeHiddenSections",
         )
+        SettingsCategory.Explore -> setOf("exploreSectionOrder", "exploreHiddenSections", "mostHighlightedWindow")
         SettingsCategory.Library -> setOf(
             "defaultLibraryView",
             "defaultPrivateBookmark",
@@ -602,6 +608,7 @@ private fun SettingsCategoryDetail(
             SettingsCategory.ZapSplits -> ZapSplitsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Wallet -> WalletSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Home -> HomeSettingsSection(settings = settings, onUpdate = onUpdate)
+            SettingsCategory.Explore -> ExploreSettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Library -> LibrarySettingsSection(settings = settings, onUpdate = onUpdate)
             SettingsCategory.Feed -> {
                 FeedSettingsSection(settings = settings, onUpdate = onUpdate)

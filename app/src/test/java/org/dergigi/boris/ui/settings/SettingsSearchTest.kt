@@ -7,7 +7,7 @@ import org.junit.Test
 class SettingsSearchTest {
     private val groups = listOf(
         listOf(SettingsCategory.Appearance, SettingsCategory.Reading, SettingsCategory.Tts),
-        listOf(SettingsCategory.Home, SettingsCategory.Library, SettingsCategory.Airplane),
+        listOf(SettingsCategory.Home, SettingsCategory.Explore, SettingsCategory.Library, SettingsCategory.Airplane),
         listOf(SettingsCategory.About),
     )
 
@@ -16,6 +16,7 @@ class SettingsSearchTest {
         SettingsCategory.Reading to listOf("Reading", "Font, size, alignment, weblinks", "Font Size"),
         SettingsCategory.Tts to listOf("Text-to-Speech", "Speed, voice, preview, follow-along"),
         SettingsCategory.Home to listOf("Home", "Sections, filters", "Hide NSFW articles"),
+        SettingsCategory.Explore to listOf("Explore", "Discovery sections and most highlighted", "Most highlighted"),
         SettingsCategory.Library to listOf("Library", "Default view"),
         SettingsCategory.Airplane to listOf("Airplane mode", "Downloads, storage, local relays", "Citrine"),
         SettingsCategory.Wallet to listOf("Wallet", "Nostr Wallet Connect and zaps", "One-tap zaps"),
@@ -50,6 +51,12 @@ class SettingsSearchTest {
     fun queryMatchesFeaturesEntry() {
         val filtered = SettingsSearch.filterGroups(groups, "features", ::textsFor)
         assertEquals(listOf(listOf(SettingsCategory.About)), filtered)
+    }
+
+    @Test
+    fun queryMatchesExploreSettings() {
+        val filtered = SettingsSearch.filterGroups(groups, "most highlighted", ::textsFor)
+        assertEquals(listOf(listOf(SettingsCategory.Explore)), filtered)
     }
 
     @Test

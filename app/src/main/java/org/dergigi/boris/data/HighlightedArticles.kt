@@ -5,6 +5,7 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip23
 import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.Profile
+import org.dergigi.boris.nostr.ReactionTarget
 import org.dergigi.boris.nostr.RelayQuery
 
 data class HighlightedArticle(
@@ -17,10 +18,22 @@ data class HighlightedArticle(
 
 object HighlightedArticles {
     fun fromEvents(events: List<Nip01Event>, limit: Int): List<HighlightedArticle> {
+        return fromRawUrls(events, limit) { Nip84.articleUrl(it) }
+    }
+
+    fun fromReactionEvents(events: List<Nip01Event>, limit: Int): List<HighlightedArticle> {
+        return fromRawUrls(events, limit) { ReactionTarget.url(it) }
+    }
+
+    private fun fromRawUrls(
+        events: List<Nip01Event>,
+        limit: Int,
+        rawUrl: (Nip01Event) -> String?,
+    ): List<HighlightedArticle> {
         val seen = LinkedHashSet<String>()
         val out = ArrayList<HighlightedArticle>(limit)
         for (event in events.sortedByDescending { it.createdAt }) {
-            val raw = Nip84.articleUrl(event) ?: continue
+            val raw = rawUrl(event) ?: continue
             val target = NostrLink.parse(raw)
             val url = target?.uri ?: ArticleUrl.normalize(raw)
             if (target == null && !url.startsWith("http")) continue

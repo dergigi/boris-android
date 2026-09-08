@@ -3,7 +3,9 @@ package org.dergigi.boris.nostr
 import org.dergigi.boris.data.ReadableContent
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ArticleReactionsTest {
@@ -20,6 +22,15 @@ class ArticleReactionsTest {
         assertEquals(ArticleReaction.Love, ArticleReaction.DEFAULT)
         assertNull(ArticleReaction.fromContent("❤️"))
         assertNull(ArticleReaction.fromContent("🔥"))
+    }
+
+    @Test
+    fun isLikeKeepsHeartsAndThumbsAndDropsTheRest() {
+        assertTrue(ArticleReactions.isLike(reaction("🧡", 1)))
+        assertTrue(ArticleReactions.isLike(reaction("👍", 2)))
+        assertFalse(ArticleReactions.isLike(reaction("🤖", 3)))
+        assertFalse(ArticleReactions.isLike(reaction("📚", 4)))
+        assertFalse(ArticleReactions.isLike(reaction("+", 5)))
     }
 
     @Test
