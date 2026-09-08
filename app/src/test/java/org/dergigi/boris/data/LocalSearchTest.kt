@@ -18,4 +18,19 @@ class LocalSearchTest {
         assertFalse(LocalSearch.matches("", "anything"))
         assertFalse(LocalSearch.matches("a", null, "  "))
     }
+
+    @Test
+    fun hitMatchesKeepsRefinementsAndDropsUnrelatedQueries() {
+        val bookmark = LocalSearch.Hit.Bookmark(
+            id = "bm:1",
+            title = "The Bitcoin Standard",
+            subtitle = "saifedean.com",
+            sortAt = 1,
+            url = "https://saifedean.com/tbs",
+        )
+        assertTrue(LocalSearch.hitMatches(bookmark, "bit"))
+        assertTrue(LocalSearch.hitMatches(bookmark, "bitcoin"))
+        assertFalse(LocalSearch.hitMatches(bookmark, "nostr"))
+        assertFalse(LocalSearch.hitMatches(bookmark, "b"))
+    }
 }

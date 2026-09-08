@@ -140,7 +140,8 @@ fun SearchScreen(
     SearchScreenContent(
         query = query,
         results = state.results,
-        isLoading = state.isLoading || (query.trim().length >= 2 && state.query != query.trim()),
+        searchRefreshing = state.isLoading ||
+            (query.trim().length >= 2 && state.query != query.trim()),
         discovery = discovery,
         discoveryRefreshing = discoveryRefreshing,
         discoverySectionOrder = HomeSections.visible(
@@ -198,7 +199,7 @@ fun SearchScreen(
 fun SearchScreenContent(
     query: String,
     results: List<LocalSearch.Hit>,
-    isLoading: Boolean,
+    searchRefreshing: Boolean = false,
     discovery: HomeHighlightsState,
     discoveryRefreshing: Boolean,
     discoverySectionOrder: List<String>,
@@ -228,9 +229,13 @@ fun SearchScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.search_title)) },
                 actions = {
-                    if (query.trim().length < 2) {
-                        TopBarRefreshIndicator(refreshing = discoveryRefreshing)
-                    }
+                    TopBarRefreshIndicator(
+                        refreshing = if (query.trim().length < 2) {
+                            discoveryRefreshing
+                        } else {
+                            searchRefreshing
+                        },
+                    )
                     ContentFilterMenu(settings = settings)
                     TopBarMoreMenu(
                         items = listOf(
@@ -276,9 +281,10 @@ fun SearchScreenContent(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            val visibleResults = remember(results, resultType, settings, actions.archivedKeys) {
+            val visibleResults = remember(results, query, resultType, settings, actions.archivedKeys) {
                 results
                     .filter { resultType.includes(it) }
+                    .filter { LocalSearch.hitMatches(it, query) }
                     .filter { hit ->
                         searchHitVisible(
                             hit = hit,
@@ -304,7 +310,7 @@ fun SearchScreenContent(
                         onSelectMostWindow = onSelectMostWindow,
                     )
                 }
-                isLoading -> {
+                visibleResults.isEmpty() && searchRefreshing -> {
                     SearchLoadingHint()
                 }
                 visibleResults.isEmpty() -> {
