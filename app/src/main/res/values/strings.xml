@@ -617,6 +617,7 @@
     <string name="settings_wallet_presets_reset">Defaults</string>
     <string name="settings_wallet_presets_save">Save</string>
     <string name="zap_action">Zap</string>
+    <string name="zap_processing">Zapping</string>
     <string name="zap_options">Zap options</string>
     <string name="zap_title">Zap this article</string>
     <string name="zap_resolving">Finding who to pay…</string>
