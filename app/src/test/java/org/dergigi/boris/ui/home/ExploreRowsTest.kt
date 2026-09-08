@@ -42,6 +42,21 @@ class ExploreRowsTest {
         assertEquals(setOf(HomeSections.LIKED_FRIENDS), filled.keys)
     }
 
+    @Test
+    fun fillDoesNotStarveMostHighlighted() {
+        val popular = listOf(article("a"), article("b"), article("c"), article("hot"))
+        val filled = ExploreRows.fill(
+            order = listOf(HomeSections.FRIENDS, HomeSections.MOST),
+            rows = mapOf(
+                HomeSections.FRIENDS to listOf(article("a"), article("b"), article("c")),
+                HomeSections.MOST to popular,
+            ),
+            limit = 3,
+        )
+        assertEquals(listOf("a", "b", "c"), filled.getValue(HomeSections.FRIENDS).map { it.url })
+        assertEquals(listOf("a", "b", "c"), filled.getValue(HomeSections.MOST).map { it.url })
+    }
+
     private fun article(url: String) = HighlightedArticle(
         url = url,
         host = "example.com",

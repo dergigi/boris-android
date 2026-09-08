@@ -9,6 +9,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Liked and recently-read Explore rows skip short notes and keep long-form articles
+- Most highlighted no longer shrinks to leftovers from the other Explore rows
+- Explore top bar has a menu that opens Explore settings
+- Explore search bar scrolls away with the page
+- Liked Explore rows use a heart icon
+
 ## [1.6.7] - 2026-09-08
 
 ### Added

@@ -29,7 +29,9 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -78,6 +80,8 @@ import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.home.ExploreRows
 import org.dergigi.boris.ui.home.HighlightedRow
@@ -103,6 +107,7 @@ fun SearchScreen(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
+    onOpenExploreSettings: () -> Unit = {},
     initialQuery: String? = null,
     initialQueryVersion: Int = 0,
     modifier: Modifier = Modifier,
@@ -176,6 +181,7 @@ fun SearchScreen(
         },
         onOpenProfile = onOpenProfile,
         onOpenArticle = onOpenArticle,
+        onOpenExploreSettings = onOpenExploreSettings,
         mostWindow = settings.mostHighlightedWindow,
         onSelectMostWindow = { window ->
             settingsViewModel.update {
@@ -210,6 +216,7 @@ fun SearchScreenContent(
     onOpenHit: (LocalSearch.Hit) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenExploreSettings: () -> Unit = {},
     mostWindow: MostHighlightedWindow,
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
     modifier: Modifier = Modifier,
@@ -225,6 +232,15 @@ fun SearchScreenContent(
                         TopBarRefreshIndicator(refreshing = discoveryRefreshing)
                     }
                     ContentFilterMenu(settings = settings)
+                    TopBarMoreMenu(
+                        items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.explore_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onOpenExploreSettings,
+                            ),
+                        ),
+                    )
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -241,16 +257,19 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            CompactSearchField(
-                query = query,
-                onQueryChange = onQueryChange,
-                onClear = onClear,
-                onSearch = { focus.clearFocus() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-            )
+            val searchField = @Composable {
+                CompactSearchField(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onClear = onClear,
+                    onSearch = { focus.clearFocus() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+                )
+            }
             if (query.trim().length >= 2) {
+                searchField()
                 SearchResultFilters(
                     selected = resultType,
                     onSelect = onSelectResultType,
@@ -272,6 +291,7 @@ fun SearchScreenContent(
             when {
                 query.trim().length < 2 -> {
                     ExploreDiscoveryContent(
+                        header = searchField,
                         highlights = discovery,
                         sectionOrder = discoverySectionOrder,
                         settings = settings,
@@ -353,6 +373,7 @@ fun SearchScreenContent(
 
 @Composable
 private fun ExploreDiscoveryContent(
+    header: @Composable () -> Unit,
     highlights: HomeHighlightsState,
     sectionOrder: List<String>,
     settings: UserSettings,
@@ -365,9 +386,13 @@ private fun ExploreDiscoveryContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
 ) {
     when (highlights) {
-        HomeHighlightsState.Loading -> SearchLoadingHint()
-        HomeHighlightsState.Error -> SearchHint(stringResource(R.string.feed_error))
-        HomeHighlightsState.Empty -> SearchHint(stringResource(R.string.feed_empty))
+        HomeHighlightsState.Loading -> ExploreDiscoveryStatus(header) { SearchLoadingHint() }
+        HomeHighlightsState.Error -> ExploreDiscoveryStatus(header) {
+            SearchHint(stringResource(R.string.feed_error))
+        }
+        HomeHighlightsState.Empty -> ExploreDiscoveryStatus(header) {
+            SearchHint(stringResource(R.string.feed_empty))
+        }
         is HomeHighlightsState.Ready -> {
             val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
             val archivedKeys = highlights.archivedKeys + actions.archivedKeys
@@ -390,26 +415,32 @@ private fun ExploreDiscoveryContent(
             val mostHighlighted = discoveryRows[HomeSections.MOST].orEmpty()
             val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
-                SearchHint(
-                    stringResource(
-                        if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
-                            (settings.hideArchivedOnHome && archivedKeys.isNotEmpty())
-                        ) {
-                            R.string.home_empty_filters
-                        } else {
-                            R.string.feed_empty
-                        },
-                    ),
-                )
+                ExploreDiscoveryStatus(header) {
+                    SearchHint(
+                        stringResource(
+                            if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
+                                (settings.hideArchivedOnHome && archivedKeys.isNotEmpty())
+                            ) {
+                                R.string.home_empty_filters
+                            } else {
+                                R.string.feed_empty
+                            },
+                        ),
+                    )
+                }
                 return
             }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
+                    .padding(bottom = 24.dp),
             ) {
+                header()
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
                 sectionOrder.forEach { section ->
                     when (section) {
                         HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
@@ -443,6 +474,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_friends),
                                 items = likedFriends,
                                 rowKey = "explore-liked-friends",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = friendsColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -469,6 +501,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_foaf),
                                 items = likedFoaf,
                                 rowKey = "explore-liked-foaf",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = foafColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -514,6 +547,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_others),
                                 items = likedOthers,
                                 rowKey = "explore-liked-others",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = nostrverseColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -557,8 +591,20 @@ private fun ExploreDiscoveryContent(
                         }
                     }
                 }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ExploreDiscoveryStatus(
+    header: @Composable () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        header()
+        content()
     }
 }
 

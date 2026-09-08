@@ -24,14 +24,13 @@ object ReactionTarget {
         return null
     }
 
+    /** Long-form only: NIP-23 articles and web pages, not kind 1 notes. */
     fun url(event: Nip01Event): String? {
         val target = ref(event) ?: return null
         return when (target.kind) {
             BookmarkRefKind.Article -> NostrArticle.fromCoordinate(target.value)?.uri
             BookmarkRefKind.Url -> target.value
-            BookmarkRefKind.Note -> runCatching {
-                "nostr:${Nip19.noteEncode(target.value.lowercase())}"
-            }.getOrNull()
+            BookmarkRefKind.Note -> null
         }
     }
 }

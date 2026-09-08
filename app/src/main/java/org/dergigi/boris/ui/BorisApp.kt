@@ -351,6 +351,11 @@ fun BorisApp(
                                 navController.navigate(Routes.profile(npub))
                             }
                         },
+                        onOpenExploreSettings = {
+                            navController.navigate(Routes.settings(SettingsCategory.Explore)) {
+                                launchSingleTop = true
+                            }
+                        },
                         initialQuery = pendingSearchQuery,
                         initialQueryVersion = pendingSearchQueryVersion,
                         homeViewModel = homeViewModel,
