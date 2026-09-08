@@ -353,6 +353,7 @@ fun BorisApp(
                         },
                         initialQuery = pendingSearchQuery,
                         initialQueryVersion = pendingSearchQueryVersion,
+                        homeViewModel = homeViewModel,
                     )
                 }
                 composable(Routes.YOU) {

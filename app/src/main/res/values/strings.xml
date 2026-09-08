@@ -33,8 +33,8 @@
     <string name="library_info_close">Got it</string>
     <string name="nav_feed">Feeds</string>
     <string name="feed_title">Feeds</string>
-    <string name="nav_search">Search</string>
-    <string name="search_title">Search</string>
+    <string name="nav_search">Explore</string>
+    <string name="search_title">Explore</string>
     <string name="search_placeholder">Highlights, articles, bookmarks…</string>
     <string name="search_empty">No matches.</string>
     <string name="search_clear">Clear search</string>
@@ -396,7 +396,7 @@
     <string name="settings_hide_nsfw">Hide NSFW articles</string>
     <string name="settings_nsfw_warn">Warn before opening NSFW articles</string>
     <string name="settings_home_sections">Sections</string>
-    <string name="settings_home_sections_intro">Order of sections on the Home screen. Empty sections are hidden.</string>
+    <string name="settings_home_sections_intro">Order of personal sections on the Home screen. Empty sections are hidden.</string>
     <string name="settings_section_move_up">Move up</string>
     <string name="settings_section_move_down">Move down</string>
     <string name="settings_feed_scope">Default Feeds Scope</string>

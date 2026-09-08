@@ -11,12 +11,17 @@ object HomeSections {
     const val LONG = "long"
     const val RANDOM = "random"
 
-    val DEFAULT = listOf(CONTINUE, YOURS, FRIENDS, FOAF, OTHERS, MOST, SHORT, LONG, RANDOM)
+    val DEFAULT = listOf(CONTINUE, SHORT, LONG, RANDOM, YOURS)
+    val EXPLORE_DEFAULT = listOf(FRIENDS, FOAF, OTHERS, MOST)
 
     /** Saved order sanitized: unknown ids dropped, missing ids appended in default order. */
     fun order(saved: List<String>): List<String> {
-        val known = saved.filter { it in DEFAULT }.distinct()
-        return known + DEFAULT.filterNot { it in known }
+        return orderFor(saved, DEFAULT)
+    }
+
+    /** Discovery order for sections that moved from Home to Explore. */
+    fun exploreOrder(saved: List<String>): List<String> {
+        return orderFor(saved, EXPLORE_DEFAULT)
     }
 
     fun move(order: List<String>, id: String, delta: Int): List<String> {
@@ -28,5 +33,10 @@ object HomeSections {
         out.removeAt(from)
         out.add(to, id)
         return out
+    }
+
+    private fun orderFor(saved: List<String>, default: List<String>): List<String> {
+        val known = saved.filter { it in default }.distinct()
+        return known + default.filterNot { it in known }
     }
 }

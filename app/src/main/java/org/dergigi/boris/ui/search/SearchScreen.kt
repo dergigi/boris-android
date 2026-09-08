@@ -17,10 +17,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
@@ -62,9 +64,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dergigi.boris.R
 import org.dergigi.boris.data.HomeFilters
+import org.dergigi.boris.data.HighlightedArticle
 import org.dergigi.boris.data.LocalSearch
+import org.dergigi.boris.data.MostHighlightedWindow
+import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
+import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.ContentFilterMenu
@@ -72,6 +78,13 @@ import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.TopBarRefreshIndicator
+import org.dergigi.boris.ui.home.HighlightedRow
+import org.dergigi.boris.ui.home.HomeHighlightsState
+import org.dergigi.boris.ui.home.HomeSections
+import org.dergigi.boris.ui.home.HomeViewModel
+import org.dergigi.boris.ui.home.MostHighlightedWindowMenu
+import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.rememberArticleActions
 import org.dergigi.boris.ui.theme.BorisIcons
 import org.dergigi.boris.ui.theme.rememberDisplayLook
@@ -93,14 +106,19 @@ fun SearchScreen(
     initialQueryVersion: Int = 0,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = viewModel(),
+    homeViewModel: HomeViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val discovery by homeViewModel.highlights.collectAsStateWithLifecycle()
+    val discoveryRefreshing by homeViewModel.refreshing.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val actions = rememberArticleActions()
     var resultType by rememberSaveable { mutableStateOf(SearchResultType.All) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshRelation()
+        if (query.trim().length < 2) homeViewModel.refresh()
     }
     LaunchedEffect(initialQueryVersion, initialQuery) {
         initialQuery
@@ -117,9 +135,12 @@ fun SearchScreen(
         query = query,
         results = state.results,
         isLoading = state.isLoading || (query.trim().length >= 2 && state.query != query.trim()),
+        discovery = discovery,
+        discoveryRefreshing = discoveryRefreshing,
+        discoverySectionOrder = HomeSections.exploreOrder(settings.homeSectionOrder),
         resultType = resultType,
         settings = settings,
-        archivedKeys = actions.archivedKeys,
+        actions = actions,
         onQueryChange = viewModel::onQueryChange,
         onClear = viewModel::clear,
         onSelectResultType = { resultType = it },
@@ -131,6 +152,9 @@ fun SearchScreen(
                 else -> nostrverseColor
             }
         },
+        friendsColor = friendsColor,
+        foafColor = foafColor,
+        nostrverseColor = nostrverseColor,
         eink = look.eink,
         onOpenHit = { hit ->
             when (hit) {
@@ -144,6 +168,14 @@ fun SearchScreen(
             }
         },
         onOpenProfile = onOpenProfile,
+        onOpenArticle = onOpenArticle,
+        mostWindow = settings.mostHighlightedWindow,
+        onSelectMostWindow = { window ->
+            settingsViewModel.update {
+                it.withString("mostHighlightedWindow", window.id)
+            }
+            homeViewModel.refreshMostHighlighted()
+        },
         modifier = modifier,
     )
 }
@@ -154,16 +186,25 @@ fun SearchScreenContent(
     query: String,
     results: List<LocalSearch.Hit>,
     isLoading: Boolean,
+    discovery: HomeHighlightsState,
+    discoveryRefreshing: Boolean,
+    discoverySectionOrder: List<String>,
     resultType: SearchResultType,
     settings: UserSettings,
-    archivedKeys: Set<String>,
+    actions: ArticleActionHandlers,
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
+    friendsColor: Color,
+    foafColor: Color,
+    nostrverseColor: Color,
     eink: Boolean,
     onOpenHit: (LocalSearch.Hit) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
+    onOpenArticle: (String) -> Unit,
+    mostWindow: MostHighlightedWindow,
+    onSelectMostWindow: (MostHighlightedWindow) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focus = LocalFocusManager.current
@@ -173,6 +214,9 @@ fun SearchScreenContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.search_title)) },
                 actions = {
+                    if (query.trim().length < 2) {
+                        TopBarRefreshIndicator(refreshing = discoveryRefreshing)
+                    }
                     ContentFilterMenu(settings = settings)
                 },
                 windowInsets = WindowInsets(0),
@@ -206,20 +250,33 @@ fun SearchScreenContent(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            val visibleResults = remember(results, resultType, settings, archivedKeys) {
+            val visibleResults = remember(results, resultType, settings, actions.archivedKeys) {
                 results
                     .filter { resultType.includes(it) }
                     .filter { hit ->
                         searchHitVisible(
                             hit = hit,
                             settings = settings,
-                            archivedKeys = archivedKeys,
+                            archivedKeys = actions.archivedKeys,
                         )
                     }
                     .take(LocalSearch.DEFAULT_LIMIT)
             }
             when {
-                query.trim().length < 2 -> Unit
+                query.trim().length < 2 -> {
+                    ExploreDiscoveryContent(
+                        highlights = discovery,
+                        sectionOrder = discoverySectionOrder,
+                        settings = settings,
+                        actions = actions,
+                        friendsColor = friendsColor,
+                        foafColor = foafColor,
+                        nostrverseColor = nostrverseColor,
+                        onOpenArticle = onOpenArticle,
+                        mostWindow = mostWindow,
+                        onSelectMostWindow = onSelectMostWindow,
+                    )
+                }
                 isLoading -> {
                     SearchLoadingHint()
                 }
@@ -285,6 +342,155 @@ fun SearchScreenContent(
             }
         }
     }
+}
+
+@Composable
+private fun ExploreDiscoveryContent(
+    highlights: HomeHighlightsState,
+    sectionOrder: List<String>,
+    settings: UserSettings,
+    actions: ArticleActionHandlers,
+    friendsColor: Color,
+    foafColor: Color,
+    nostrverseColor: Color,
+    onOpenArticle: (String) -> Unit,
+    mostWindow: MostHighlightedWindow,
+    onSelectMostWindow: (MostHighlightedWindow) -> Unit,
+) {
+    when (highlights) {
+        HomeHighlightsState.Loading -> SearchLoadingHint()
+        HomeHighlightsState.Error -> SearchHint(stringResource(R.string.feed_error))
+        HomeHighlightsState.Empty -> SearchHint(stringResource(R.string.feed_empty))
+        is HomeHighlightsState.Ready -> {
+            val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
+            val archivedKeys = highlights.archivedKeys + actions.archivedKeys
+            val friends = rememberDiscoveryItems(highlights.friends, archivedKeys, settings, progressVersion)
+            val foaf = rememberDiscoveryItems(highlights.foaf, archivedKeys, settings, progressVersion)
+            val others = rememberDiscoveryItems(highlights.others, archivedKeys, settings, progressVersion)
+            val mostHighlighted = rememberDiscoveryItems(
+                highlights.mostHighlighted,
+                archivedKeys,
+                settings,
+                progressVersion,
+            )
+            val empty = friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
+                mostHighlighted.isEmpty() && !highlights.hasMostPool
+            if (empty) {
+                SearchHint(
+                    stringResource(
+                        if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
+                            (settings.hideArchivedOnHome && archivedKeys.isNotEmpty())
+                        ) {
+                            R.string.home_empty_filters
+                        } else {
+                            R.string.feed_empty
+                        },
+                    ),
+                )
+                return
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(28.dp),
+            ) {
+                sectionOrder.forEach { section ->
+                    when (section) {
+                        HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_highlighted_by_friends),
+                                items = friends,
+                                rowKey = "explore-friends",
+                                tint = friendsColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.FOAF -> if (foaf.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_highlighted_by_foaf),
+                                items = foaf,
+                                rowKey = "explore-foaf",
+                                tint = foafColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.OTHERS -> if (others.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(
+                                    if (highlights.loggedIn || friends.isNotEmpty() || foaf.isNotEmpty()) {
+                                        R.string.home_recently_highlighted_by_others
+                                    } else {
+                                        R.string.home_recently_highlighted
+                                    },
+                                ),
+                                items = others,
+                                rowKey = "explore-others",
+                                tint = nostrverseColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.MOST -> if (mostHighlighted.isNotEmpty() || highlights.hasMostPool) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_most_highlighted),
+                                items = mostHighlighted,
+                                rowKey = "explore-most",
+                                tint = nostrverseColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                                emptyText = stringResource(R.string.home_most_highlighted_empty),
+                                headerTrailing = {
+                                    MostHighlightedWindowMenu(
+                                        selected = mostWindow,
+                                        onSelect = onSelectMostWindow,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun rememberDiscoveryItems(
+    items: List<HighlightedArticle>,
+    archivedKeys: Set<String>,
+    settings: UserSettings,
+    progressVersion: Int,
+): List<HighlightedArticle> = remember(
+    items,
+    archivedKeys,
+    settings.hideArchivedOnHome,
+    settings.hideCompletedOnHome,
+    settings.hideNsfwOnHome,
+    progressVersion,
+) {
+    HomeFilters.visible(
+        items,
+        archivedKeys,
+        hideArchived = settings.hideArchivedOnHome,
+        hideCompleted = settings.hideCompletedOnHome,
+        hideNsfw = settings.hideNsfwOnHome,
+    )
 }
 
 @Composable
