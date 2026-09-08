@@ -198,8 +198,9 @@ private val SettingsCategory.resetKeys: Set<String>
             "hideNsfwOnHome",
             "nsfwWarnInReader",
             "homeSectionOrder",
+            "homeHiddenSections",
         )
-        SettingsCategory.Explore -> setOf("exploreSectionOrder", "mostHighlightedWindow")
+        SettingsCategory.Explore -> setOf("exploreSectionOrder", "exploreHiddenSections", "mostHighlightedWindow")
         SettingsCategory.Library -> setOf(
             "defaultLibraryView",
             "defaultPrivateBookmark",

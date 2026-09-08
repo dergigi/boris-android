@@ -400,4 +400,21 @@ class UserSettingsTest {
         assertTrue(updated.hasNonDefaultValues(setOf("exploreSectionOrder")))
         assertTrue(updated.resetKeys(setOf("exploreSectionOrder")).exploreSectionOrder.isEmpty())
     }
+
+    @Test
+    fun hiddenSectionsReadAndReset() {
+        assertTrue(UserSettings.defaults().homeHiddenSections.isEmpty())
+        assertTrue(UserSettings.defaults().exploreHiddenSections.isEmpty())
+
+        val updated = UserSettings.defaults()
+            .withStringList("homeHiddenSections", listOf("random"))
+            .withStringList("exploreHiddenSections", listOf("foaf", "others"))
+        val parsed = UserSettings.parse(updated.toJson())
+        assertEquals(listOf("random"), parsed.homeHiddenSections)
+        assertEquals(listOf("foaf", "others"), parsed.exploreHiddenSections)
+        assertTrue(updated.hasNonDefaultValues(setOf("homeHiddenSections", "exploreHiddenSections")))
+        val reset = updated.resetKeys(setOf("homeHiddenSections", "exploreHiddenSections"))
+        assertTrue(reset.homeHiddenSections.isEmpty())
+        assertTrue(reset.exploreHiddenSections.isEmpty())
+    }
 }

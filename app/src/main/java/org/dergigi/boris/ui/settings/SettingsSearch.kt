@@ -112,6 +112,8 @@ object SettingsSearch {
             R.string.settings_nsfw_warn,
             R.string.settings_home_sections,
             R.string.settings_home_sections_intro,
+            R.string.settings_section_hide,
+            R.string.settings_section_show,
             R.string.home_continue_reading,
             R.string.home_random_articles,
             R.string.home_short_reads,
@@ -120,6 +122,8 @@ object SettingsSearch {
         SettingsCategory.Explore to listOf(
             R.string.settings_explore_sections,
             R.string.settings_explore_sections_intro,
+            R.string.settings_section_hide,
+            R.string.settings_section_show,
             R.string.settings_explore_most_window,
             R.string.home_recently_highlighted_by_friends,
             R.string.home_recently_highlighted_by_foaf,

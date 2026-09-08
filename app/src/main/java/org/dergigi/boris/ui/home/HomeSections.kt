@@ -43,6 +43,22 @@ object HomeSections {
         return out
     }
 
+    fun hidden(saved: List<String>, known: List<String>): List<String> {
+        return saved.filter { it in known }.distinct()
+    }
+
+    fun visible(order: List<String>, hidden: List<String>): List<String> {
+        if (hidden.isEmpty()) return order
+        val hiddenSet = hidden.toSet()
+        return order.filterNot { it in hiddenSet }
+    }
+
+    fun toggleHidden(hidden: List<String>, id: String, known: List<String>): List<String> {
+        if (id !in known) return hidden(hidden, known)
+        val current = hidden(hidden, known)
+        return if (id in current) current.filterNot { it == id } else current + id
+    }
+
     private fun orderFor(saved: List<String>, default: List<String>): List<String> {
         val known = saved.filter { it in default }.distinct()
         return known + default.filterNot { it in known }

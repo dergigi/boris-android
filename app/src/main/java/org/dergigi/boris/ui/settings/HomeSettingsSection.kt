@@ -46,11 +46,20 @@ fun HomeSettingsSection(
             title = stringResource(R.string.settings_home_sections),
             intro = stringResource(R.string.settings_home_sections_intro),
             order = HomeSections.order(settings.homeSectionOrder),
+            hidden = HomeSections.hidden(settings.homeHiddenSections, HomeSections.DEFAULT),
             onMove = { id, delta ->
                 onUpdate(
                     settings.withStringList(
                         "homeSectionOrder",
                         HomeSections.move(HomeSections.order(settings.homeSectionOrder), id, delta),
+                    ),
+                )
+            },
+            onToggleVisible = { id ->
+                onUpdate(
+                    settings.withStringList(
+                        "homeHiddenSections",
+                        HomeSections.toggleHidden(settings.homeHiddenSections, id, HomeSections.DEFAULT),
                     ),
                 )
             },

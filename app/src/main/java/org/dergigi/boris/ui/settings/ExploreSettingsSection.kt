@@ -33,8 +33,17 @@ fun ExploreSettingsSection(
             title = stringResource(R.string.settings_explore_sections),
             intro = stringResource(R.string.settings_explore_sections_intro),
             order = order,
+            hidden = HomeSections.hidden(settings.exploreHiddenSections, HomeSections.EXPLORE_DEFAULT),
             onMove = { id, delta ->
                 onUpdate(settings.withStringList("exploreSectionOrder", HomeSections.move(order, id, delta)))
+            },
+            onToggleVisible = { id ->
+                onUpdate(
+                    settings.withStringList(
+                        "exploreHiddenSections",
+                        HomeSections.toggleHidden(settings.exploreHiddenSections, id, HomeSections.EXPLORE_DEFAULT),
+                    ),
+                )
             },
         )
         Column(

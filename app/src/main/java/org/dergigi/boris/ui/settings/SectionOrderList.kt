@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
@@ -25,7 +28,9 @@ internal fun SectionOrderList(
     title: String,
     intro: String,
     order: List<String>,
+    hidden: List<String>,
     onMove: (id: String, delta: Int) -> Unit,
+    onToggleVisible: (id: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -46,9 +51,11 @@ internal fun SectionOrderList(
         order.forEachIndexed { index, id ->
             SectionOrderRow(
                 label = sectionLabel(id),
+                visible = id !in hidden,
                 canMoveUp = index > 0,
                 canMoveDown = index < order.lastIndex,
                 onMove = { onMove(id, it) },
+                onToggleVisible = { onToggleVisible(id) },
             )
         }
     }
@@ -57,9 +64,11 @@ internal fun SectionOrderList(
 @Composable
 private fun SectionOrderRow(
     label: String,
+    visible: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     onMove: (Int) -> Unit,
+    onToggleVisible: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -71,8 +80,18 @@ private fun SectionOrderRow(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .alpha(if (visible) 1f else 0.45f),
         )
+        IconButton(onClick = onToggleVisible) {
+            Icon(
+                imageVector = if (visible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                contentDescription = stringResource(
+                    if (visible) R.string.settings_section_hide else R.string.settings_section_show,
+                ),
+            )
+        }
         IconButton(onClick = { onMove(-1) }, enabled = canMoveUp) {
             Icon(
                 Icons.Filled.KeyboardArrowUp,

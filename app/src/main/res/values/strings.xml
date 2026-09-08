@@ -379,7 +379,7 @@
     <string name="settings_explore">Explore</string>
     <string name="settings_explore_summary">Discovery sections and most highlighted</string>
     <string name="settings_explore_sections">Sections</string>
-    <string name="settings_explore_sections_intro">Order of discovery sections on Explore. Empty sections are hidden.</string>
+    <string name="settings_explore_sections_intro">Order and visibility of discovery sections on Explore. Empty sections stay hidden.</string>
     <string name="settings_explore_most_window">Most highlighted window</string>
     <string name="settings_explore_most_window_note">Which window Explore uses for the most-highlighted row. You can still change it there.</string>
     <string name="settings_library">Library</string>
@@ -402,7 +402,9 @@
     <string name="settings_hide_nsfw">Hide NSFW articles</string>
     <string name="settings_nsfw_warn">Warn before opening NSFW articles</string>
     <string name="settings_home_sections">Sections</string>
-    <string name="settings_home_sections_intro">Order of personal sections on the Home screen. Empty sections are hidden.</string>
+    <string name="settings_home_sections_intro">Order and visibility of personal sections on the Home screen. Empty sections stay hidden.</string>
+    <string name="settings_section_hide">Hide section</string>
+    <string name="settings_section_show">Show section</string>
     <string name="settings_section_move_up">Move up</string>
     <string name="settings_section_move_down">Move down</string>
     <string name="settings_feed_scope">Default Feeds Scope</string>

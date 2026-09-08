@@ -12,6 +12,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Added
 
 - Explore settings for discovery section order and the most-highlighted window
+- Hide or show Home and Explore sections from settings
 
 ## [1.6.6] - 2026-09-08
 

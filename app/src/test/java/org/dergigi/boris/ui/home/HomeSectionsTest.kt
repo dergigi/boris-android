@@ -64,6 +64,39 @@ class HomeSectionsTest {
     }
 
     @Test
+    fun hiddenDropsUnknownIds() {
+        assertEquals(
+            listOf("random", "continue"),
+            HomeSections.hidden(listOf("bogus", "random", "friends", "continue", "random"), HomeSections.DEFAULT),
+        )
+    }
+
+    @Test
+    fun visibleFiltersHiddenIds() {
+        assertEquals(
+            listOf("continue", "long", "yours"),
+            HomeSections.visible(HomeSections.DEFAULT, listOf("short", "random", "friends")),
+        )
+        assertEquals(HomeSections.DEFAULT, HomeSections.visible(HomeSections.DEFAULT, emptyList()))
+    }
+
+    @Test
+    fun toggleHiddenAddsAndRemovesKnownIds() {
+        assertEquals(
+            listOf("random"),
+            HomeSections.toggleHidden(emptyList(), "random", HomeSections.DEFAULT),
+        )
+        assertEquals(
+            emptyList<String>(),
+            HomeSections.toggleHidden(listOf("random"), "random", HomeSections.DEFAULT),
+        )
+        assertEquals(
+            listOf("random"),
+            HomeSections.toggleHidden(listOf("random", "friends"), "bogus", HomeSections.DEFAULT),
+        )
+    }
+
+    @Test
     fun moveSwapsNeighbors() {
         assertEquals(
             listOf("continue", "short", "long", "yours", "random"),
