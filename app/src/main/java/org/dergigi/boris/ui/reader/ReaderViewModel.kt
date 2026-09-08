@@ -95,6 +95,9 @@ class ReaderViewModel(
     private val _zap = MutableStateFlow<ZapProgress?>(null)
     val zap: StateFlow<ZapProgress?> = _zap.asStateFlow()
 
+    private val _zapInFlight = MutableStateFlow(false)
+    val zapInFlight: StateFlow<Boolean> = _zapInFlight.asStateFlow()
+
     private val _zapped = MutableStateFlow(false)
     val zapped: StateFlow<Boolean> = _zapped.asStateFlow()
 
@@ -184,6 +187,7 @@ class ReaderViewModel(
         scope = viewModelScope,
         onSignIntent = { _signIntent.value = it },
         onProgress = { progress ->
+            _zapInFlight.value = progress is ZapProgress.Resolving || progress is ZapProgress.Paying
             if (backgroundZap) {
                 when (progress) {
                     is ZapProgress.Done -> {
@@ -421,6 +425,7 @@ class ReaderViewModel(
     fun dismissZap() {
         if (_zap.value is ZapProgress.Paying) return
         backgroundZap = false
+        _zapInFlight.value = false
         zapAction.cancel()
     }
 
@@ -554,6 +559,7 @@ class ReaderViewModel(
         _canReact.value = false
         _canZap.value = false
         _zapped.value = false
+        _zapInFlight.value = false
         zapAction.cancel()
     }
 

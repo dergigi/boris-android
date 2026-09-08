@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -31,22 +32,25 @@ import org.dergigi.boris.R
 @Composable
 internal fun ZapButton(
     zapped: Boolean,
+    processing: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(8.dp)
-    val label = stringResource(R.string.zap_action)
+    val label = stringResource(if (processing) R.string.zap_processing else R.string.zap_action)
     val longClickLabel = stringResource(R.string.zap_options)
     val haptics = LocalHapticFeedback.current
+    val active = zapped || processing
     Box(
         modifier = modifier
             .size(ButtonDefaults.MinHeight)
             .clip(shape)
-            .background(if (zapped) ReactionOrange.copy(alpha = 0.14f) else Color.Transparent)
-            .border(1.dp, if (zapped) ReactionOrange else MaterialTheme.colorScheme.outline, shape)
+            .background(if (active) ReactionOrange.copy(alpha = 0.14f) else Color.Transparent)
+            .border(1.dp, if (active) ReactionOrange else MaterialTheme.colorScheme.outline, shape)
             .semantics { contentDescription = label }
             .combinedClickable(
+                enabled = !processing,
                 onClick = onClick,
                 onLongClickLabel = if (onLongClick == null) null else longClickLabel,
                 onLongClick = onLongClick?.let {
@@ -58,11 +62,19 @@ internal fun ZapButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = if (zapped) Icons.Filled.Bolt else Icons.Outlined.Bolt,
-            contentDescription = null,
-            tint = if (zapped) ReactionOrange else ButtonDefaults.outlinedButtonColors().contentColor,
-            modifier = Modifier.size(20.dp),
-        )
+        if (processing) {
+            CircularProgressIndicator(
+                color = ReactionOrange,
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(18.dp),
+            )
+        } else {
+            Icon(
+                imageVector = if (zapped) Icons.Filled.Bolt else Icons.Outlined.Bolt,
+                contentDescription = null,
+                tint = if (zapped) ReactionOrange else ButtonDefaults.outlinedButtonColors().contentColor,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }

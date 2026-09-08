@@ -267,6 +267,7 @@ fun ReaderScreen(
     val reaction by viewModel.reaction.collectAsStateWithLifecycle()
     val canReact by viewModel.canReact.collectAsStateWithLifecycle()
     val canZap by viewModel.canZap.collectAsStateWithLifecycle()
+    val zapInFlight by viewModel.zapInFlight.collectAsStateWithLifecycle()
     val zapped by viewModel.zapped.collectAsStateWithLifecycle()
     val zap by viewModel.zap.collectAsStateWithLifecycle()
     val wallet by viewModel.wallet.collectAsStateWithLifecycle()
@@ -397,6 +398,7 @@ fun ReaderScreen(
         },
         onReact = { reaction -> viewModel.react(reaction)?.let(launchSign) },
         canZap = canZap,
+        zapInFlight = zapInFlight,
         zapped = zapped,
         onZap = {
             if (wallet == null) {
@@ -484,6 +486,7 @@ fun ReaderScreenContent(
     onAddRssFeed: (String) -> Unit,
     onDismissRssFeed: () -> Unit,
     canZap: Boolean = false,
+    zapInFlight: Boolean = false,
     zapped: Boolean = false,
     onZap: () -> Unit = {},
     onZapOptions: () -> Unit = onZap,
@@ -737,6 +740,7 @@ fun ReaderScreenContent(
                     onArchive = onArchive,
                     onReact = onReact,
                     canZap = canZap,
+                    zapInFlight = zapInFlight,
                     zapped = zapped,
                     onZap = onZap,
                     onZapOptions = onZapOptions,

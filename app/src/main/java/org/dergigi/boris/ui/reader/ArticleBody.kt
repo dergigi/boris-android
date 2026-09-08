@@ -264,6 +264,7 @@ internal fun ArticleBody(
     onArchive: (closeAfterSuccess: Boolean) -> Unit,
     onReact: (ArticleReaction?) -> Unit,
     canZap: Boolean = false,
+    zapInFlight: Boolean = false,
     zapped: Boolean = false,
     onZap: () -> Unit = {},
     onZapOptions: () -> Unit = onZap,
@@ -1132,7 +1133,12 @@ internal fun ArticleBody(
                             ReactionButton(reaction = reaction, onReact = onReact)
                         }
                         if (canZap) {
-                            ZapButton(zapped = zapped, onClick = onZap, onLongClick = onZapOptions)
+                            ZapButton(
+                                zapped = zapped,
+                                processing = zapInFlight,
+                                onClick = onZap,
+                                onLongClick = onZapOptions,
+                            )
                         }
                     }
                 }
