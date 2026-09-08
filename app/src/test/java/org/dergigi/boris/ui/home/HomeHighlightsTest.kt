@@ -23,6 +23,18 @@ class HomeHighlightsTest {
     }
 
     @Test
+    fun resumeReloadsOnlyWhenStaleOrForced() {
+        val now = 1_000_000L
+        val fresh = now - HomeViewModel.REFRESH_INTERVAL_MS / 2
+        val stale = now - HomeViewModel.REFRESH_INTERVAL_MS
+        assertTrue(shouldReload(null, now, inFlight = false, ready = false, force = false))
+        assertTrue(shouldReload(stale, now, inFlight = false, ready = true, force = false))
+        assertFalse(shouldReload(fresh, now, inFlight = false, ready = true, force = false))
+        assertFalse(shouldReload(stale, now, inFlight = true, ready = true, force = false))
+        assertTrue(shouldReload(fresh, now, inFlight = true, ready = true, force = true))
+    }
+
+    @Test
     fun mergePreviewKeepsCachedCoverWhenFetchHasNoImage() {
         val cached = OgPreview("Cached", "https://cdn.example/cover.png", "Example")
         val fetched = OgPreview("Fresh", null, "Example")
