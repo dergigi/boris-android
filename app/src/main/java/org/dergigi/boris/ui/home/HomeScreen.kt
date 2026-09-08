@@ -120,7 +120,6 @@ import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.auth.AuthUiState
 import org.dergigi.boris.ui.auth.AuthViewModel
 import org.dergigi.boris.ui.reader.CardReadingProgress
-import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.TopBarMenuItem
 import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.support.SupportHeart
@@ -141,7 +140,6 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
-    settingsViewModel: SettingsViewModel = viewModel(),
 ) {
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
@@ -254,9 +252,6 @@ fun HomeScreen(
                 hideNsfw = settings.hideNsfwOnHome,
                 sectionOrder = HomeSections.order(settings.homeSectionOrder),
                 mineColor = look.mine,
-                friendsColor = look.friends,
-                foafColor = look.foaf,
-                nostrverseColor = look.nostrverse,
                 showFirstTime = showFirstTime,
                 onDismissFirstTime = {
                     HomeOnboardingStore.dismissFirstTimeEverywhere(context)
@@ -278,13 +273,6 @@ fun HomeScreen(
                     viewModel.startListening(article.url)
                 },
                 onRefreshRandomArticles = viewModel::refreshRandomArticles,
-                mostWindow = settings.mostHighlightedWindow,
-                onSelectMostWindow = { window ->
-                    settingsViewModel.update {
-                        it.withString("mostHighlightedWindow", window.id)
-                    }
-                    viewModel.refreshMostHighlighted()
-                },
                 onMarkAsRead = { article ->
                     viewModel.markAsRead(article)?.let(launchSign)
                 },
@@ -356,15 +344,10 @@ fun HomeScreenContent(
     hideCompleted: Boolean = false,
     hideNsfw: Boolean = false,
     mineColor: Color,
-    friendsColor: Color,
-    foafColor: Color,
-    nostrverseColor: Color,
     onRefresh: () -> Unit,
     onRead: (String) -> Unit,
     onListen: (HighlightedArticle) -> Unit = {},
     onRefreshRandomArticles: () -> Unit = {},
-    mostWindow: MostHighlightedWindow = MostHighlightedWindow.DEFAULT,
-    onSelectMostWindow: (MostHighlightedWindow) -> Unit = {},
     onMarkAsRead: (HighlightedArticle) -> Unit = {},
     modifier: Modifier = Modifier,
     sectionOrder: List<String> = HomeSections.DEFAULT,
@@ -481,48 +464,12 @@ fun HomeScreenContent(
                         hideArchived, hideCompleted, hideNsfw,
                     )
                 }
-                val friends = remember(
-                    highlights.friends, highlights.archivedKeys,
-                    hideArchived, hideCompleted, hideNsfw, progressVersion,
-                ) {
-                    HomeFilters.visible(
-                        highlights.friends, highlights.archivedKeys,
-                        hideArchived, hideCompleted, hideNsfw,
-                    )
-                }
-                val foaf = remember(
-                    highlights.foaf, highlights.archivedKeys,
-                    hideArchived, hideCompleted, hideNsfw, progressVersion,
-                ) {
-                    HomeFilters.visible(
-                        highlights.foaf, highlights.archivedKeys,
-                        hideArchived, hideCompleted, hideNsfw,
-                    )
-                }
-                val others = remember(
-                    highlights.others, highlights.archivedKeys,
-                    hideArchived, hideCompleted, hideNsfw, progressVersion,
-                ) {
-                    HomeFilters.visible(
-                        highlights.others, highlights.archivedKeys,
-                        hideArchived, hideCompleted, hideNsfw,
-                    )
-                }
                 val continueReading = remember(
                     highlights.continueReading, highlights.archivedKeys,
                     hideArchived, hideCompleted, hideNsfw, progressVersion,
                 ) {
                     HomeFilters.visible(
                         highlights.continueReading, highlights.archivedKeys,
-                        hideArchived, hideCompleted, hideNsfw,
-                    )
-                }
-                val mostHighlighted = remember(
-                    highlights.mostHighlighted, highlights.archivedKeys,
-                    hideArchived, hideCompleted, hideNsfw, progressVersion,
-                ) {
-                    HomeFilters.visible(
-                        highlights.mostHighlighted, highlights.archivedKeys,
                         hideArchived, hideCompleted, hideNsfw,
                     )
                 }
@@ -558,9 +505,7 @@ fun HomeScreenContent(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    val empty = yours.isEmpty() && friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
-                        continueReading.isEmpty() && mostHighlighted.isEmpty() &&
-                        !highlights.hasMostPool &&
+                    val empty = yours.isEmpty() && continueReading.isEmpty() &&
                         shortReads.isEmpty() && longReads.isEmpty() &&
                         randomArticles.isEmpty()
                     if (empty && !hasPrompts) {
@@ -655,71 +600,6 @@ fun HomeScreenContent(
                                                 onRead = onRead,
                                                 onListen = onListen,
                                                 onMarkAsRead = onMarkAsRead,
-                                            )
-                                        }
-                                        HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
-                                            HighlightedRow(
-                                                title = stringResource(R.string.home_recently_highlighted_by_friends),
-                                                items = friends,
-                                                rowKey = "friends",
-                                                tint = friendsColor,
-                                                loggedIn = loggedIn,
-                                                archivedKeys = highlights.archivedKeys,
-                                                onRead = onRead,
-                                                onListen = onListen,
-                                                onMarkAsRead = onMarkAsRead,
-                                            )
-                                        }
-                                        HomeSections.FOAF -> if (foaf.isNotEmpty()) {
-                                            HighlightedRow(
-                                                title = stringResource(R.string.home_recently_highlighted_by_foaf),
-                                                items = foaf,
-                                                rowKey = "foaf",
-                                                tint = foafColor,
-                                                loggedIn = loggedIn,
-                                                archivedKeys = highlights.archivedKeys,
-                                                onRead = onRead,
-                                                onListen = onListen,
-                                                onMarkAsRead = onMarkAsRead,
-                                            )
-                                        }
-                                        HomeSections.OTHERS -> if (others.isNotEmpty()) {
-                                            HighlightedRow(
-                                                title = stringResource(
-                                                    if (loggedIn || yours.isNotEmpty() || friends.isNotEmpty() || foaf.isNotEmpty()) {
-                                                        R.string.home_recently_highlighted_by_others
-                                                    } else {
-                                                        R.string.home_recently_highlighted
-                                                    },
-                                                ),
-                                                items = others,
-                                                rowKey = "others",
-                                                tint = nostrverseColor,
-                                                loggedIn = loggedIn,
-                                                archivedKeys = highlights.archivedKeys,
-                                                onRead = onRead,
-                                                onListen = onListen,
-                                                onMarkAsRead = onMarkAsRead,
-                                            )
-                                        }
-                                        HomeSections.MOST -> if (mostHighlighted.isNotEmpty() || highlights.hasMostPool) {
-                                            HighlightedRow(
-                                                title = stringResource(R.string.home_most_highlighted),
-                                                items = mostHighlighted,
-                                                rowKey = "most",
-                                                tint = nostrverseColor,
-                                                loggedIn = loggedIn,
-                                                archivedKeys = highlights.archivedKeys,
-                                                onRead = onRead,
-                                                onListen = onListen,
-                                                onMarkAsRead = onMarkAsRead,
-                                                emptyText = stringResource(R.string.home_most_highlighted_empty),
-                                                headerTrailing = {
-                                                    MostHighlightedWindowMenu(
-                                                        selected = mostWindow,
-                                                        onSelect = onSelectMostWindow,
-                                                    )
-                                                },
                                             )
                                         }
                                         HomeSections.SHORT -> if (shortReads.isNotEmpty()) {
@@ -992,7 +872,7 @@ private fun HomePromptSection(
 }
 
 @Composable
-private fun HighlightedRow(
+internal fun HighlightedRow(
     title: String,
     items: List<HighlightedArticle>,
     rowKey: String,
@@ -1077,7 +957,7 @@ private fun HighlightedRow(
 }
 
 @Composable
-private fun MostHighlightedWindowMenu(
+internal fun MostHighlightedWindowMenu(
     selected: MostHighlightedWindow,
     onSelect: (MostHighlightedWindow) -> Unit,
 ) {

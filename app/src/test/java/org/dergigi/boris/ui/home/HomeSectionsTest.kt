@@ -12,7 +12,7 @@ class HomeSectionsTest {
     @Test
     fun orderKeepsSavedOrderAndAppendsMissing() {
         assertEquals(
-            listOf("most", "yours", "continue", "friends", "foaf", "others", "short", "long", "random"),
+            listOf("yours", "continue", "short", "long", "random"),
             HomeSections.order(listOf("most", "yours")),
         )
     }
@@ -20,7 +20,7 @@ class HomeSectionsTest {
     @Test
     fun orderDropsUnknownIds() {
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "short", "long", "random", "foaf"),
+            listOf("continue", "yours", "short", "long", "random"),
             HomeSections.order(
                 listOf("bogus", "continue", "yours", "friends", "others", "most", "short", "long", "random"),
             ),
@@ -30,23 +30,31 @@ class HomeSectionsTest {
     @Test
     fun orderAppendsNewSectionsWhenUpgradingFromOlderSavedOrder() {
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "foaf", "short", "long", "random"),
+            listOf("continue", "yours", "short", "long", "random"),
             HomeSections.order(listOf("continue", "yours", "friends", "others", "most")),
         )
         assertEquals(
-            listOf("continue", "yours", "friends", "others", "most", "random", "foaf", "short", "long"),
+            listOf("continue", "yours", "random", "short", "long"),
             HomeSections.order(listOf("continue", "yours", "friends", "others", "most", "random")),
+        )
+    }
+
+    @Test
+    fun exploreOrderKeepsDiscoverySections() {
+        assertEquals(
+            listOf("most", "friends", "foaf", "others"),
+            HomeSections.exploreOrder(listOf("continue", "most", "friends")),
         )
     }
 
     @Test
     fun moveSwapsNeighbors() {
         assertEquals(
-            listOf("yours", "continue", "friends", "foaf", "others", "most", "short", "long", "random"),
+            listOf("continue", "short", "long", "yours", "random"),
             HomeSections.move(HomeSections.DEFAULT, "yours", -1),
         )
         assertEquals(
-            listOf("continue", "yours", "friends", "foaf", "others", "most", "short", "random", "long"),
+            listOf("continue", "short", "random", "long", "yours"),
             HomeSections.move(HomeSections.DEFAULT, "random", -1),
         )
     }
@@ -54,7 +62,7 @@ class HomeSectionsTest {
     @Test
     fun moveClampsAtEdges() {
         assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "continue", -1))
-        assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "random", 1))
+        assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "yours", 1))
         assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "bogus", 1))
     }
 }
