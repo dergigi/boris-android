@@ -1,41 +1,27 @@
 package org.dergigi.boris.ui.search
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -50,15 +36,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -75,6 +54,7 @@ import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.AuthorCard
+import org.dergigi.boris.ui.SearchBarField
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
@@ -115,22 +95,22 @@ fun SearchScreen(
     homeViewModel: HomeViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel(),
 ) {
-    val query by viewModel.query.collectAsStateWithLifecycle()
+    val submittedQuery by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val discovery by homeViewModel.highlights.collectAsStateWithLifecycle()
     val discoveryRefreshing by homeViewModel.refreshing.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val actions = rememberArticleActions()
+    var draftQuery by rememberSaveable { mutableStateOf(submittedQuery) }
     var resultType by rememberSaveable { mutableStateOf(SearchResultType.All) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshRelation()
-        if (query.trim().length < 2) homeViewModel.refresh()
+        if (submittedQuery.trim().length < 2) homeViewModel.refresh()
     }
     LaunchedEffect(initialQueryVersion, initialQuery) {
-        initialQuery
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let(viewModel::onQueryChange)
+        val incoming = initialQuery?.trim()?.takeIf { it.isNotEmpty() } ?: return@LaunchedEffect
+        draftQuery = incoming
+        viewModel.onQueryChange(incoming)
     }
     val look = rememberDisplayLook(settings)
     val mineColor = look.mine
@@ -138,10 +118,11 @@ fun SearchScreen(
     val foafColor = look.foaf
     val nostrverseColor = look.nostrverse
     SearchScreenContent(
-        query = query,
+        query = draftQuery,
+        submittedQuery = submittedQuery,
         results = state.results,
         searchRefreshing = state.isLoading ||
-            (query.trim().length >= 2 && state.query != query.trim()),
+            (submittedQuery.trim().length >= 2 && state.query != submittedQuery.trim()),
         discovery = discovery,
         discoveryRefreshing = discoveryRefreshing,
         discoverySectionOrder = HomeSections.visible(
@@ -154,8 +135,11 @@ fun SearchScreen(
         resultType = resultType,
         settings = settings,
         actions = actions,
-        onQueryChange = viewModel::onQueryChange,
-        onClear = viewModel::clear,
+        onQueryChange = { value ->
+            draftQuery = value
+            if (value.trim().isEmpty()) viewModel.clear()
+        },
+        onSubmitSearch = { viewModel.onQueryChange(draftQuery) },
         onSelectResultType = { resultType = it },
         colorFor = { hit ->
             when {
@@ -198,6 +182,7 @@ fun SearchScreen(
 @Composable
 fun SearchScreenContent(
     query: String,
+    submittedQuery: String = query,
     results: List<LocalSearch.Hit>,
     searchRefreshing: Boolean = false,
     discovery: HomeHighlightsState,
@@ -207,7 +192,7 @@ fun SearchScreenContent(
     settings: UserSettings,
     actions: ArticleActionHandlers,
     onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
+    onSubmitSearch: () -> Unit = {},
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
     friendsColor: Color,
@@ -222,7 +207,7 @@ fun SearchScreenContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focus = LocalFocusManager.current
+    val searching = submittedQuery.trim().length >= 2
     Scaffold(
         modifier = modifier.imePadding(),
         topBar = {
@@ -230,11 +215,7 @@ fun SearchScreenContent(
                 title = { Text(stringResource(R.string.search_title)) },
                 actions = {
                     TopBarRefreshIndicator(
-                        refreshing = if (query.trim().length < 2) {
-                            discoveryRefreshing
-                        } else {
-                            searchRefreshing
-                        },
+                        refreshing = if (searching) searchRefreshing else discoveryRefreshing,
                     )
                     ContentFilterMenu(settings = settings)
                     TopBarMoreMenu(
@@ -262,29 +243,23 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            val searchField = @Composable {
-                CompactSearchField(
-                    query = query,
-                    onQueryChange = onQueryChange,
-                    onClear = onClear,
-                    onSearch = { focus.clearFocus() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-                )
-            }
-            if (query.trim().length >= 2) {
-                searchField()
+            SearchBarField(
+                query = query,
+                onQueryChange = onQueryChange,
+                onSearch = onSubmitSearch,
+                modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+            )
+            if (searching) {
                 SearchResultFilters(
                     selected = resultType,
                     onSelect = onSelectResultType,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            val visibleResults = remember(results, query, resultType, settings, actions.archivedKeys) {
+            val visibleResults = remember(results, submittedQuery, resultType, settings, actions.archivedKeys) {
                 results
                     .filter { resultType.includes(it) }
-                    .filter { LocalSearch.hitMatches(it, query) }
+                    .filter { LocalSearch.hitMatches(it, submittedQuery) }
                     .filter { hit ->
                         searchHitVisible(
                             hit = hit,
@@ -295,9 +270,8 @@ fun SearchScreenContent(
                     .take(LocalSearch.DEFAULT_LIMIT)
             }
             when {
-                query.trim().length < 2 -> {
+                !searching -> {
                     ExploreDiscoveryContent(
-                        header = searchField,
                         highlights = discovery,
                         sectionOrder = discoverySectionOrder,
                         settings = settings,
@@ -379,7 +353,6 @@ fun SearchScreenContent(
 
 @Composable
 private fun ExploreDiscoveryContent(
-    header: @Composable () -> Unit,
     highlights: HomeHighlightsState,
     sectionOrder: List<String>,
     settings: UserSettings,
@@ -392,11 +365,11 @@ private fun ExploreDiscoveryContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
 ) {
     when (highlights) {
-        HomeHighlightsState.Loading -> ExploreDiscoveryStatus(header) { SearchLoadingHint() }
-        HomeHighlightsState.Error -> ExploreDiscoveryStatus(header) {
+        HomeHighlightsState.Loading -> ExploreDiscoveryStatus { SearchLoadingHint() }
+        HomeHighlightsState.Error -> ExploreDiscoveryStatus {
             SearchHint(stringResource(R.string.feed_error))
         }
-        HomeHighlightsState.Empty -> ExploreDiscoveryStatus(header) {
+        HomeHighlightsState.Empty -> ExploreDiscoveryStatus {
             SearchHint(stringResource(R.string.feed_empty))
         }
         is HomeHighlightsState.Ready -> {
@@ -421,7 +394,7 @@ private fun ExploreDiscoveryContent(
             val mostHighlighted = discoveryRows[HomeSections.MOST].orEmpty()
             val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
-                ExploreDiscoveryStatus(header) {
+                ExploreDiscoveryStatus {
                     SearchHint(
                         stringResource(
                             if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
@@ -442,7 +415,6 @@ private fun ExploreDiscoveryContent(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 24.dp),
             ) {
-                header()
                 Column(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
@@ -605,11 +577,9 @@ private fun ExploreDiscoveryContent(
 
 @Composable
 private fun ExploreDiscoveryStatus(
-    header: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        header()
         content()
     }
 }
@@ -730,85 +700,6 @@ internal fun searchHitVisible(
         hideArchived = settings.hideArchivedOnHome,
         hideCompleted = settings.hideCompletedOnHome,
         hideNsfw = settings.hideNsfwOnHome,
-    )
-}
-
-@Composable
-private fun CompactSearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    onSearch: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    val borderColor = if (focused) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
-    val searchContentDescription = stringResource(R.string.search_title)
-    BasicTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier.semantics { contentDescription = searchContentDescription },
-        singleLine = true,
-        interactionSource = interactionSource,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = FontFamily.SansSerif,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(shape)
-                    .border(1.dp, borderColor, shape)
-                    .padding(start = 12.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    if (query.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.search_placeholder),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = FontFamily.SansSerif,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    innerTextField()
-                }
-                if (query.isNotEmpty()) {
-                    IconButton(
-                        onClick = onClear,
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Clear,
-                            contentDescription = stringResource(R.string.search_clear),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-            }
-        },
     )
 }
 
