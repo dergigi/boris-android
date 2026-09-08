@@ -79,6 +79,7 @@ import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
 import org.dergigi.boris.ui.TopBarRefreshIndicator
+import org.dergigi.boris.ui.home.ExploreRows
 import org.dergigi.boris.ui.home.HighlightedRow
 import org.dergigi.boris.ui.home.HomeHighlightsState
 import org.dergigi.boris.ui.home.HomeSections
@@ -370,17 +371,24 @@ private fun ExploreDiscoveryContent(
         is HomeHighlightsState.Ready -> {
             val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
             val archivedKeys = highlights.archivedKeys + actions.archivedKeys
-            val friends = rememberDiscoveryItems(highlights.friends, archivedKeys, settings, progressVersion)
-            val foaf = rememberDiscoveryItems(highlights.foaf, archivedKeys, settings, progressVersion)
-            val others = rememberDiscoveryItems(highlights.others, archivedKeys, settings, progressVersion)
-            val mostHighlighted = rememberDiscoveryItems(
-                highlights.mostHighlighted,
-                archivedKeys,
-                settings,
-                progressVersion,
+            val discoveryRows = rememberDiscoveryRows(
+                highlights = highlights,
+                sectionOrder = sectionOrder,
+                archivedKeys = archivedKeys,
+                settings = settings,
+                progressVersion = progressVersion,
             )
-            val empty = friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
-                mostHighlighted.isEmpty() && !highlights.hasMostPool
+            val friends = discoveryRows[HomeSections.FRIENDS].orEmpty()
+            val foaf = discoveryRows[HomeSections.FOAF].orEmpty()
+            val others = discoveryRows[HomeSections.OTHERS].orEmpty()
+            val likedFriends = discoveryRows[HomeSections.LIKED_FRIENDS].orEmpty()
+            val likedFoaf = discoveryRows[HomeSections.LIKED_FOAF].orEmpty()
+            val likedOthers = discoveryRows[HomeSections.LIKED_OTHERS].orEmpty()
+            val readFriends = discoveryRows[HomeSections.READ_FRIENDS].orEmpty()
+            val readFoaf = discoveryRows[HomeSections.READ_FOAF].orEmpty()
+            val readOthers = discoveryRows[HomeSections.READ_OTHERS].orEmpty()
+            val mostHighlighted = discoveryRows[HomeSections.MOST].orEmpty()
+            val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
                 SearchHint(
                     stringResource(
@@ -430,6 +438,58 @@ private fun ExploreDiscoveryContent(
                                 onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
                             )
                         }
+                        HomeSections.LIKED_FRIENDS -> if (likedFriends.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_liked_by_friends),
+                                items = likedFriends,
+                                rowKey = "explore-liked-friends",
+                                tint = friendsColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.READ_FRIENDS -> if (readFriends.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_read_by_friends),
+                                items = readFriends,
+                                rowKey = "explore-read-friends",
+                                tint = friendsColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.LIKED_FOAF -> if (likedFoaf.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_liked_by_foaf),
+                                items = likedFoaf,
+                                rowKey = "explore-liked-foaf",
+                                tint = foafColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.READ_FOAF -> if (readFoaf.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_read_by_foaf),
+                                items = readFoaf,
+                                rowKey = "explore-read-foaf",
+                                tint = foafColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
                         HomeSections.OTHERS -> if (others.isNotEmpty()) {
                             HighlightedRow(
                                 title = stringResource(
@@ -441,6 +501,32 @@ private fun ExploreDiscoveryContent(
                                 ),
                                 items = others,
                                 rowKey = "explore-others",
+                                tint = nostrverseColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.LIKED_OTHERS -> if (likedOthers.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_liked_by_others),
+                                items = likedOthers,
+                                rowKey = "explore-liked-others",
+                                tint = nostrverseColor,
+                                loggedIn = actions.loggedIn,
+                                archivedKeys = archivedKeys,
+                                onRead = onOpenArticle,
+                                onListen = { actions.onListen(it.url) },
+                                onMarkAsRead = { actions.onMarkAsRead(it.url, it.title, it.imageUrl) },
+                            )
+                        }
+                        HomeSections.READ_OTHERS -> if (readOthers.isNotEmpty()) {
+                            HighlightedRow(
+                                title = stringResource(R.string.home_recently_read_by_others),
+                                items = readOthers,
+                                rowKey = "explore-read-others",
                                 tint = nostrverseColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -477,25 +563,51 @@ private fun ExploreDiscoveryContent(
 }
 
 @Composable
-private fun rememberDiscoveryItems(
-    items: List<HighlightedArticle>,
+private fun rememberDiscoveryRows(
+    highlights: HomeHighlightsState.Ready,
+    sectionOrder: List<String>,
     archivedKeys: Set<String>,
     settings: UserSettings,
     progressVersion: Int,
-): List<HighlightedArticle> = remember(
-    items,
+): Map<String, List<HighlightedArticle>> = remember(
+    highlights.friends,
+    highlights.likedFriends,
+    highlights.readFriends,
+    highlights.foaf,
+    highlights.likedFoaf,
+    highlights.readFoaf,
+    highlights.others,
+    highlights.likedOthers,
+    highlights.readOthers,
+    highlights.mostHighlighted,
+    sectionOrder,
     archivedKeys,
     settings.hideArchivedOnHome,
     settings.hideCompletedOnHome,
     settings.hideNsfwOnHome,
     progressVersion,
 ) {
-    HomeFilters.visible(
+    fun visible(items: List<HighlightedArticle>) = HomeFilters.visible(
         items,
         archivedKeys,
         hideArchived = settings.hideArchivedOnHome,
         hideCompleted = settings.hideCompletedOnHome,
         hideNsfw = settings.hideNsfwOnHome,
+    )
+    ExploreRows.fill(
+        order = sectionOrder,
+        rows = mapOf(
+            HomeSections.FRIENDS to visible(highlights.friends),
+            HomeSections.LIKED_FRIENDS to visible(highlights.likedFriends),
+            HomeSections.READ_FRIENDS to visible(highlights.readFriends),
+            HomeSections.FOAF to visible(highlights.foaf),
+            HomeSections.LIKED_FOAF to visible(highlights.likedFoaf),
+            HomeSections.READ_FOAF to visible(highlights.readFoaf),
+            HomeSections.OTHERS to visible(highlights.others),
+            HomeSections.LIKED_OTHERS to visible(highlights.likedOthers),
+            HomeSections.READ_OTHERS to visible(highlights.readOthers),
+            HomeSections.MOST to visible(highlights.mostHighlighted),
+        ),
     )
 }
 

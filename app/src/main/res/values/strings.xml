@@ -63,8 +63,14 @@
     <string name="home_recently_highlighted">Recently highlighted</string>
     <string name="home_recently_highlighted_by_you">Recently highlighted by you</string>
     <string name="home_recently_highlighted_by_friends">Recently highlighted by friends</string>
+    <string name="home_liked_by_friends">Liked by friends</string>
+    <string name="home_recently_read_by_friends">Recently read by friends</string>
     <string name="home_recently_highlighted_by_foaf">Recently highlighted by friends of friends</string>
+    <string name="home_liked_by_foaf">Liked by friends of friends</string>
+    <string name="home_recently_read_by_foaf">Recently read by friends of friends</string>
     <string name="home_recently_highlighted_by_others">Recently highlighted by others</string>
+    <string name="home_liked_by_others">Liked by others</string>
+    <string name="home_recently_read_by_others">Recently read by others</string>
     <string name="home_search_placeholder">Search your reading…</string>
     <string name="home_clipboard_open">Open from clipboard</string>
     <string name="home_clipboard_dismiss">Dismiss</string>

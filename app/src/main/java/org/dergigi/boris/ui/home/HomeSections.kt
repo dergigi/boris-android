@@ -4,15 +4,32 @@ object HomeSections {
     const val CONTINUE = "continue"
     const val YOURS = "yours"
     const val FRIENDS = "friends"
+    const val LIKED_FRIENDS = "liked_friends"
+    const val READ_FRIENDS = "read_friends"
     const val FOAF = "foaf"
+    const val LIKED_FOAF = "liked_foaf"
+    const val READ_FOAF = "read_foaf"
     const val OTHERS = "others"
+    const val LIKED_OTHERS = "liked_others"
+    const val READ_OTHERS = "read_others"
     const val MOST = "most"
     const val SHORT = "short"
     const val LONG = "long"
     const val RANDOM = "random"
 
     val DEFAULT = listOf(CONTINUE, SHORT, LONG, RANDOM, YOURS)
-    val EXPLORE_DEFAULT = listOf(FRIENDS, FOAF, OTHERS, MOST)
+    val EXPLORE_DEFAULT = listOf(
+        FRIENDS,
+        LIKED_FRIENDS,
+        READ_FRIENDS,
+        FOAF,
+        LIKED_FOAF,
+        READ_FOAF,
+        OTHERS,
+        LIKED_OTHERS,
+        READ_OTHERS,
+        MOST,
+    )
 
     /** Saved order sanitized: unknown ids dropped, missing ids appended in default order. */
     fun order(saved: List<String>): List<String> {

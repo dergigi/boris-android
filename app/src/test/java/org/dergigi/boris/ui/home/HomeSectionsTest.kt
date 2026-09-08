@@ -42,7 +42,18 @@ class HomeSectionsTest {
     @Test
     fun exploreOrderKeepsDiscoverySections() {
         assertEquals(
-            listOf("most", "friends", "foaf", "others"),
+            listOf(
+                "most",
+                "friends",
+                "liked_friends",
+                "read_friends",
+                "foaf",
+                "liked_foaf",
+                "read_foaf",
+                "others",
+                "liked_others",
+                "read_others",
+            ),
             HomeSections.exploreOrder(listOf("continue", "most", "friends")),
         )
     }
@@ -54,11 +65,33 @@ class HomeSectionsTest {
             HomeSections.exploreOrder(emptyList(), emptyList()),
         )
         assertEquals(
-            listOf("most", "friends", "foaf", "others"),
+            listOf(
+                "most",
+                "friends",
+                "liked_friends",
+                "read_friends",
+                "foaf",
+                "liked_foaf",
+                "read_foaf",
+                "others",
+                "liked_others",
+                "read_others",
+            ),
             HomeSections.exploreOrder(emptyList(), listOf("continue", "most", "friends")),
         )
         assertEquals(
-            listOf("others", "foaf", "friends", "most"),
+            listOf(
+                "others",
+                "foaf",
+                "friends",
+                "liked_friends",
+                "read_friends",
+                "liked_foaf",
+                "read_foaf",
+                "liked_others",
+                "read_others",
+                "most",
+            ),
             HomeSections.exploreOrder(listOf("others", "foaf"), listOf("most", "friends")),
         )
     }

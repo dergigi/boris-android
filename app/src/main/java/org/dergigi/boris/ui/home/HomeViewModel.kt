@@ -34,6 +34,8 @@ import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.TimedReadKind
 import org.dergigi.boris.data.TimedReads
 import org.dergigi.boris.data.SessionStore
+import org.dergigi.boris.nostr.Archive
+import org.dergigi.boris.nostr.ArticleReactions
 import org.dergigi.boris.nostr.BookmarkRefKind
 import org.dergigi.boris.nostr.EventCache
 import org.dergigi.boris.nostr.Nip01Event
@@ -51,8 +53,14 @@ sealed interface HomeHighlightsState {
     data class Ready(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
+        val likedFriends: List<HighlightedArticle> = emptyList(),
+        val readFriends: List<HighlightedArticle> = emptyList(),
         val foaf: List<HighlightedArticle> = emptyList(),
+        val likedFoaf: List<HighlightedArticle> = emptyList(),
+        val readFoaf: List<HighlightedArticle> = emptyList(),
         val others: List<HighlightedArticle>,
+        val likedOthers: List<HighlightedArticle> = emptyList(),
+        val readOthers: List<HighlightedArticle> = emptyList(),
         val loggedIn: Boolean,
         val archivedKeys: Set<String> = emptySet(),
         val continueReading: List<HighlightedArticle> = emptyList(),
@@ -133,15 +141,29 @@ class HomeViewModel(
                             }
                         }
                         val rawYours = HighlightedArticles.hydrate(yoursDeferred.await())
-                        val rawFriends = HighlightedArticles.hydrate(friendsDeferred.await())
-                        val rawFoaf = HighlightedArticles.hydrate(foafDeferred.await())
-                        val rawOthers = HighlightedArticles.hydrate(othersDeferred.await())
+                        val friends = friendsDeferred.await()
+                        val rawFriends = HighlightedArticles.hydrate(friends.highlights)
+                        val rawLikedFriends = HighlightedArticles.hydrate(friends.likes)
+                        val rawReadFriends = HighlightedArticles.hydrate(friends.reads)
+                        val foaf = foafDeferred.await()
+                        val rawFoaf = HighlightedArticles.hydrate(foaf.highlights)
+                        val rawLikedFoaf = HighlightedArticles.hydrate(foaf.likes)
+                        val rawReadFoaf = HighlightedArticles.hydrate(foaf.reads)
+                        val others = othersDeferred.await()
+                        val rawOthers = HighlightedArticles.hydrate(others.highlights)
+                        val rawLikedOthers = HighlightedArticles.hydrate(others.likes)
+                        val rawReadOthers = HighlightedArticles.hydrate(others.reads)
                         val rawContinue = HighlightedArticles.hydrate(ContinueReading.articles(ARTICLE_LIMIT))
                         mostDeferred.await()
                         val rawMost = HighlightedArticles.hydrate(mostHighlightedRows())
                         val hasMostPool = hasMostPool()
                         archiveDeferred.await()
-                        val feedUrls = (rawYours + rawFriends + rawFoaf + rawOthers + rawContinue + rawMost)
+                        val feedUrls = (
+                            rawYours + rawFriends + rawLikedFriends + rawReadFriends +
+                                rawFoaf + rawLikedFoaf + rawReadFoaf +
+                                rawOthers + rawLikedOthers + rawReadOthers +
+                                rawContinue + rawMost
+                            )
                             .map { it.url }
                         if (pubkey != null) {
                             RelayQuery.fetchArchivesForUrls(pubkey, relays, feedUrls)
@@ -172,8 +194,14 @@ class HomeViewModel(
                         LoadedRows(
                             rawYours,
                             rawFriends,
+                            rawLikedFriends,
+                            rawReadFriends,
                             rawFoaf,
+                            rawLikedFoaf,
+                            rawReadFoaf,
                             rawOthers,
+                            rawLikedOthers,
+                            rawReadOthers,
                             keys,
                             rawContinue,
                             rawMost,
@@ -299,29 +327,12 @@ class HomeViewModel(
                 ARTICLE_LIMIT,
             )
         }
-        val friends = if (friendKeys.isEmpty()) {
-            emptyList()
-        } else {
-            HighlightedArticles.fromEvents(
-                RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = friendKeys),
-                ARTICLE_LIMIT,
-            )
-        }
+        val friends = cachedSocial(friendKeys)
         val foafKeys = graph.foaf
-        val foafAuthors = foafFetchAuthors(foafKeys)
-        val foaf = if (foafAuthors.isEmpty()) {
-            emptyList()
-        } else {
-            HighlightedArticles.fromEvents(
-                RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT, authors = foafAuthors),
-                ARTICLE_LIMIT,
-            )
+        val foaf = cachedSocial(foafFetchAuthors(foafKeys))
+        val others = cachedSocial(emptyList()) { event ->
+            isNetworkHighlight(event.pubkey, pubkey, friendKeys, foafKeys)
         }
-        val others = HighlightedArticles.fromEvents(
-            RelayQuery.cachedRecentHighlights(HIGHLIGHT_LIMIT)
-                .filter { event -> isNetworkHighlight(event.pubkey, pubkey, friendKeys, foafKeys) },
-            ARTICLE_LIMIT,
-        )
         val continueReading = ContinueReading.articles(ARTICLE_LIMIT)
         val mostHighlighted = mostHighlightedRows()
         val hasMostPool = hasMostPool()
@@ -345,7 +356,10 @@ class HomeViewModel(
             return null
         }
         val previews = (
-            yours + friends + foaf + others + continueReading + mostHighlighted +
+            yours + friends.highlights + friends.likes + friends.reads +
+                foaf.highlights + foaf.likes + foaf.reads +
+                others.highlights + others.likes + others.reads +
+                continueReading + mostHighlighted +
                 shortReads + longReads + randomArticles
             )
             .map { it.url }
@@ -353,9 +367,15 @@ class HomeViewModel(
             .associateWith { ArticlePreview.get(it) }
         return HomeHighlightsState.Ready(
             applyPreviews(yours, previews),
-            applyPreviews(friends, previews),
-            applyPreviews(foaf, previews),
-            applyPreviews(others, previews),
+            applyPreviews(friends.highlights, previews),
+            applyPreviews(friends.likes, previews),
+            applyPreviews(friends.reads, previews),
+            applyPreviews(foaf.highlights, previews),
+            applyPreviews(foaf.likes, previews),
+            applyPreviews(foaf.reads, previews),
+            applyPreviews(others.highlights, previews),
+            applyPreviews(others.likes, previews),
+            applyPreviews(others.reads, previews),
             loggedIn = pubkey != null,
             archivedKeys = archivedKeys,
             continueReading = applyPreviews(continueReading, previews),
@@ -375,7 +395,7 @@ class HomeViewModel(
     ): List<HighlightedArticle> =
         HighlightedArticles.mostHighlighted(
             EventCache.byKind(Nip01Event.KIND_HIGHLIGHT),
-            ARTICLE_LIMIT,
+            ExploreRows.CANDIDATES,
             since = window.since(),
         )
 
@@ -402,32 +422,78 @@ class HomeViewModel(
         )
     }
 
-    private fun loadFriends(relays: List<String>, friendPubkeys: Set<String>): List<HighlightedArticle> {
-        if (friendPubkeys.isEmpty()) return emptyList()
-        return HighlightedArticles.fromEvents(
-            RelayQuery.fetchRecentHighlightsByAuthors(friendPubkeys, relays, HIGHLIGHT_LIMIT),
-            ARTICLE_LIMIT,
-        )
+    private fun loadFriends(relays: List<String>, friendPubkeys: Set<String>): SocialRows {
+        if (friendPubkeys.isEmpty()) return SocialRows()
+        return fetchSocial(relays, friendPubkeys, routed = true)
     }
 
-    private fun loadFoaf(relays: List<String>, foafPubkeys: Set<String>): List<HighlightedArticle> {
+    private fun loadFoaf(relays: List<String>, foafPubkeys: Set<String>): SocialRows {
         val authors = foafFetchAuthors(foafPubkeys)
-        if (authors.isEmpty()) return emptyList()
-        return HighlightedArticles.fromEvents(
-            RelayQuery.fetchRecentHighlightsByAuthors(authors, relays, HIGHLIGHT_LIMIT),
-            ARTICLE_LIMIT,
-        )
+        if (authors.isEmpty()) return SocialRows()
+        return fetchSocial(relays, authors, routed = true)
     }
 
     private fun loadOthers(
         excludeHex: String?,
         friendPubkeys: Set<String>,
         foafPubkeys: Set<String>,
-    ): List<HighlightedArticle> {
-        val events = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
+    ): SocialRows {
+        val highlights = RelayQuery.fetchRecentHighlights(RelayQuery.globalReadRelays(), HIGHLIGHT_LIMIT)
             .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys, foafPubkeys) }
-        return HighlightedArticles.fromEvents(events, ARTICLE_LIMIT)
+        val reactions = RelayQuery.fetchRecentReactions(RelayQuery.globalReadRelays(), REACTION_LIMIT)
+            .filter { event -> isNetworkHighlight(event.pubkey, excludeHex, friendPubkeys, foafPubkeys) }
+        return socialRows(highlights, reactions)
     }
+
+    private fun cachedSocial(
+        authors: Collection<String>,
+        accept: ((Nip01Event) -> Boolean)? = null,
+    ): SocialRows {
+        if (authors.isEmpty() && accept == null) return SocialRows()
+        val keep = accept ?: { true }
+        val highlights = RelayQuery.cachedRecentHighlights(
+            HIGHLIGHT_LIMIT,
+            authors = authors,
+        ).filter(keep)
+        val reactions = RelayQuery.cachedRecentReactions(
+            REACTION_LIMIT,
+            authors = authors,
+        ).filter(keep)
+        return socialRows(highlights, reactions)
+    }
+
+    private fun fetchSocial(
+        relays: List<String>,
+        authors: Collection<String>,
+        routed: Boolean,
+    ): SocialRows {
+        val highlights = if (routed) {
+            RelayQuery.fetchRecentHighlightsByAuthors(authors, relays, HIGHLIGHT_LIMIT)
+        } else {
+            RelayQuery.fetchRecentHighlights(relays, HIGHLIGHT_LIMIT, authors = authors)
+        }
+        val reactions = if (routed) {
+            RelayQuery.fetchRecentReactionsByAuthors(authors, relays, REACTION_LIMIT)
+        } else {
+            RelayQuery.fetchRecentReactions(relays, REACTION_LIMIT, authors = authors)
+        }
+        return socialRows(highlights, reactions)
+    }
+
+    private fun socialRows(
+        highlights: List<Nip01Event>,
+        reactions: List<Nip01Event>,
+    ): SocialRows = SocialRows(
+        highlights = HighlightedArticles.fromEvents(highlights, ExploreRows.CANDIDATES),
+        likes = HighlightedArticles.fromReactionEvents(
+            reactions.filter { ArticleReactions.isLike(it) },
+            ExploreRows.CANDIDATES,
+        ),
+        reads = HighlightedArticles.fromReactionEvents(
+            reactions.filter { Archive.isArchive(it) },
+            ExploreRows.CANDIDATES,
+        ),
+    )
 
     private fun libraryHighlights(
         items: List<BookmarkItem>,
@@ -507,6 +573,14 @@ class HomeViewModel(
         HighlightedArticles.decorate(article, previews[article.url] ?: ArticlePreview.get(article.url))
     }
 
+    private data class SocialRows(
+        val highlights: List<HighlightedArticle> = emptyList(),
+        val likes: List<HighlightedArticle> = emptyList(),
+        val reads: List<HighlightedArticle> = emptyList(),
+    ) {
+        fun isEmpty(): Boolean = highlights.isEmpty() && likes.isEmpty() && reads.isEmpty()
+    }
+
     private data class LibraryHighlights(
         val shortReads: List<HighlightedArticle> = emptyList(),
         val longReads: List<HighlightedArticle> = emptyList(),
@@ -516,8 +590,14 @@ class HomeViewModel(
     private data class LoadedRows(
         val yours: List<HighlightedArticle>,
         val friends: List<HighlightedArticle>,
+        val likedFriends: List<HighlightedArticle>,
+        val readFriends: List<HighlightedArticle>,
         val foaf: List<HighlightedArticle>,
+        val likedFoaf: List<HighlightedArticle>,
+        val readFoaf: List<HighlightedArticle>,
         val others: List<HighlightedArticle>,
+        val likedOthers: List<HighlightedArticle>,
+        val readOthers: List<HighlightedArticle>,
         val archivedKeys: Set<String>,
         val continueReading: List<HighlightedArticle>,
         val mostHighlighted: List<HighlightedArticle>,
@@ -527,13 +607,18 @@ class HomeViewModel(
         val randomArticles: List<HighlightedArticle>,
     ) {
         fun isEmpty(): Boolean =
-            yours.isEmpty() && friends.isEmpty() && foaf.isEmpty() && others.isEmpty() &&
+            yours.isEmpty() && friends.isEmpty() && likedFriends.isEmpty() && readFriends.isEmpty() &&
+                foaf.isEmpty() && likedFoaf.isEmpty() && readFoaf.isEmpty() &&
+                others.isEmpty() && likedOthers.isEmpty() && readOthers.isEmpty() &&
                 continueReading.isEmpty() && mostHighlighted.isEmpty() && !hasMostPool &&
                 shortReads.isEmpty() && longReads.isEmpty() && randomArticles.isEmpty()
 
         fun urls(): List<String> =
             (
-                yours + friends + foaf + others + continueReading + mostHighlighted +
+                yours + friends + likedFriends + readFriends +
+                    foaf + likedFoaf + readFoaf +
+                    others + likedOthers + readOthers +
+                    continueReading + mostHighlighted +
                     shortReads + longReads + randomArticles
                 )
                 .map { it.url }
@@ -546,8 +631,14 @@ class HomeViewModel(
     ): HomeHighlightsState.Ready = HomeHighlightsState.Ready(
         applyPreviews(yours, previews),
         applyPreviews(friends, previews),
+        applyPreviews(likedFriends, previews),
+        applyPreviews(readFriends, previews),
         applyPreviews(foaf, previews),
+        applyPreviews(likedFoaf, previews),
+        applyPreviews(readFoaf, previews),
         applyPreviews(others, previews),
+        applyPreviews(likedOthers, previews),
+        applyPreviews(readOthers, previews),
         loggedIn = pubkey != null,
         archivedKeys = archivedKeys,
         continueReading = applyPreviews(continueReading, previews),
@@ -562,6 +653,7 @@ class HomeViewModel(
         // Raw highlight pool per row; many highlights share an article, so
         // this needs headroom above ARTICLE_LIMIT to fill a row.
         private const val HIGHLIGHT_LIMIT = 160
+        private const val REACTION_LIMIT = 400
         private const val ARTICLE_LIMIT = 21
     }
 }

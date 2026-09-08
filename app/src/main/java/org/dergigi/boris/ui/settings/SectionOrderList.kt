@@ -113,8 +113,14 @@ private fun sectionLabel(id: String): String = stringResource(
         HomeSections.CONTINUE -> R.string.home_continue_reading
         HomeSections.YOURS -> R.string.home_recently_highlighted_by_you
         HomeSections.FRIENDS -> R.string.home_recently_highlighted_by_friends
+        HomeSections.LIKED_FRIENDS -> R.string.home_liked_by_friends
+        HomeSections.READ_FRIENDS -> R.string.home_recently_read_by_friends
         HomeSections.FOAF -> R.string.home_recently_highlighted_by_foaf
+        HomeSections.LIKED_FOAF -> R.string.home_liked_by_foaf
+        HomeSections.READ_FOAF -> R.string.home_recently_read_by_foaf
         HomeSections.MOST -> R.string.home_most_highlighted
+        HomeSections.LIKED_OTHERS -> R.string.home_liked_by_others
+        HomeSections.READ_OTHERS -> R.string.home_recently_read_by_others
         HomeSections.SHORT -> R.string.home_short_reads
         HomeSections.LONG -> R.string.home_long_reads
         HomeSections.RANDOM -> R.string.home_random_articles
