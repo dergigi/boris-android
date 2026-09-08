@@ -15,6 +15,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 - Most highlighted no longer shrinks to leftovers from the other Explore rows
 - Explore top bar has a menu that opens Explore settings
 - Explore search bar scrolls away with the page
+- Liked Explore rows use a heart icon
 
 ## [1.6.7] - 2026-09-08
 

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
@@ -473,6 +474,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_friends),
                                 items = likedFriends,
                                 rowKey = "explore-liked-friends",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = friendsColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -499,6 +501,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_foaf),
                                 items = likedFoaf,
                                 rowKey = "explore-liked-foaf",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = foafColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
@@ -544,6 +547,7 @@ private fun ExploreDiscoveryContent(
                                 title = stringResource(R.string.home_liked_by_others),
                                 items = likedOthers,
                                 rowKey = "explore-liked-others",
+                                icon = Icons.Outlined.FavoriteBorder,
                                 tint = nostrverseColor,
                                 loggedIn = actions.loggedIn,
                                 archivedKeys = archivedKeys,
