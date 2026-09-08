@@ -25,6 +25,31 @@ class HtmlToMarkdownTest {
     }
 
     @Test
+    fun resolvesRelativeLinksAgainstBaseUrl() {
+        val markdown = HtmlToMarkdown.convert(
+            """<p>See <a href="/posts/a">this post</a> and <a href="#bib.bib1">1</a>.</p>""",
+            "https://example.com/articles/current",
+        )
+        assertTrue(markdown.contains("[this post](https://example.com/posts/a)"))
+        assertTrue(markdown.contains("[1](https://example.com/articles/current#bib.bib1)"))
+    }
+
+    @Test
+    fun resolvesArxivBibliographyAnchorsAgainstArticleUrl() {
+        val markdown = HtmlToMarkdown.convert(
+            """<p>Language transition [<a href="#bib.bib1">1</a>], """ +
+                """memory [<a href="#bib.bib2">2</a>].</p>""",
+            "https://arxiv.org/html/2609.03344v1",
+        )
+        assertEquals(
+            "Language transition [[1](https://arxiv.org/html/2609.03344v1#bib.bib1)], " +
+                "memory [[2](https://arxiv.org/html/2609.03344v1#bib.bib2)].",
+            markdown,
+        )
+        assertFalse(markdown.contains("(#bib."))
+    }
+
+    @Test
     fun resolvesRelativeImagesAgainstBaseUrl() {
         val markdown = HtmlToMarkdown.convert(
             """<img src="/img/a.jpg" alt="a"><img src="http://cdn.example.com/b.png">""",

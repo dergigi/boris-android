@@ -89,10 +89,11 @@ object HtmlToMarkdown {
         s = s.replace(Regex("(?is)<img[^>]*>")) { image(it.value, baseUrl) }
         s = s.replace(Regex("(?is)<a\\s[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>")) { m ->
             val text = stripTags(m.groupValues[2]).trim()
+            val href = linkHref(m.groupValues[1], baseUrl)
             when {
-                text.isEmpty() -> m.groupValues[1]
+                text.isEmpty() -> href
                 onlyMarkdownImage.matches(text) -> "\n\n$text\n\n"
-                else -> "[$text](${m.groupValues[1]})"
+                else -> "[$text]($href)"
             }
         }
         for (level in 1..6) {
@@ -186,6 +187,18 @@ object HtmlToMarkdown {
     private fun attr(tag: String, name: String): String? =
         Regex("(?i)\\b$name\\s*=\\s*[\"']([^\"']*)[\"']")
             .find(tag)?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
+
+    private fun linkHref(href: String, baseUrl: String?): String {
+        val trimmed = href.trim()
+        if (baseUrl.isNullOrBlank()) return trimmed
+        val scheme = trimmed.substringBefore(':', missingDelimiterValue = "").lowercase()
+        if (scheme.isNotEmpty() && scheme !in setOf("http", "https")) return trimmed
+        return try {
+            java.net.URI(baseUrl).resolve(trimmed).toString()
+        } catch (_: Exception) {
+            trimmed
+        }
+    }
 
     private fun stripTags(s: String): String = s.replace(Regex("<[^>]+>"), "")
 
