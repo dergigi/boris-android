@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Icon
@@ -64,6 +65,22 @@ fun RssFeedsSection(
             context.getString(R.string.settings_rss_import_none)
         } else {
             context.getString(R.string.settings_rss_import_result, new.size)
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/x-opml"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val exported = runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { output ->
+                output.write(Opml.export(feeds).toByteArray(Charsets.UTF_8))
+            } ?: error("Could not open output stream")
+        }.isSuccess
+        val message = if (exported) {
+            context.getString(R.string.settings_rss_export_result, feeds.size)
+        } else {
+            context.getString(R.string.settings_rss_export_failed)
         }
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
@@ -143,16 +160,35 @@ fun RssFeedsSection(
                 )
             }
         }
-        TextButton(onClick = { importLauncher.launch("*/*") }) {
-            Icon(
-                imageVector = Icons.Outlined.UploadFile,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                text = stringResource(R.string.settings_rss_import),
-                modifier = Modifier.padding(start = 8.dp),
-            )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = { importLauncher.launch("*/*") }) {
+                Icon(
+                    imageVector = Icons.Outlined.UploadFile,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_rss_import),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            TextButton(
+                onClick = { exportLauncher.launch("boris-feeds.opml") },
+                enabled = feeds.isNotEmpty(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.FileDownload,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_rss_export),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
         }
         Text(
             text = stringResource(R.string.settings_rss_note),
