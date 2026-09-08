@@ -401,6 +401,7 @@
     <string name="action_share">Share</string>
     <string name="action_copied">Copied.</string>
     <string name="home_settings">Home settings</string>
+    <string name="explore_settings">Explore settings</string>
     <string name="feed_settings">Feed settings</string>
     <string name="library_settings">Library settings</string>
     <string name="settings_hide_archived">Hide archived articles</string>

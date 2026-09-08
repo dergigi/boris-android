@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -78,6 +79,8 @@ import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
 import org.dergigi.boris.ui.HighlightCard
 import org.dergigi.boris.ui.HighlightCardMenu
+import org.dergigi.boris.ui.TopBarMenuItem
+import org.dergigi.boris.ui.TopBarMoreMenu
 import org.dergigi.boris.ui.TopBarRefreshIndicator
 import org.dergigi.boris.ui.home.ExploreRows
 import org.dergigi.boris.ui.home.HighlightedRow
@@ -103,6 +106,7 @@ fun SearchScreen(
     onOpenArticle: (String) -> Unit,
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
+    onOpenExploreSettings: () -> Unit = {},
     initialQuery: String? = null,
     initialQueryVersion: Int = 0,
     modifier: Modifier = Modifier,
@@ -176,6 +180,7 @@ fun SearchScreen(
         },
         onOpenProfile = onOpenProfile,
         onOpenArticle = onOpenArticle,
+        onOpenExploreSettings = onOpenExploreSettings,
         mostWindow = settings.mostHighlightedWindow,
         onSelectMostWindow = { window ->
             settingsViewModel.update {
@@ -210,6 +215,7 @@ fun SearchScreenContent(
     onOpenHit: (LocalSearch.Hit) -> Unit,
     onOpenProfile: (pubkeyHex: String) -> Unit,
     onOpenArticle: (String) -> Unit,
+    onOpenExploreSettings: () -> Unit = {},
     mostWindow: MostHighlightedWindow,
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
     modifier: Modifier = Modifier,
@@ -225,6 +231,15 @@ fun SearchScreenContent(
                         TopBarRefreshIndicator(refreshing = discoveryRefreshing)
                     }
                     ContentFilterMenu(settings = settings)
+                    TopBarMoreMenu(
+                        items = listOf(
+                            TopBarMenuItem(
+                                label = stringResource(R.string.explore_settings),
+                                icon = Icons.Outlined.Settings,
+                                onClick = onOpenExploreSettings,
+                            ),
+                        ),
+                    )
                 },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(
