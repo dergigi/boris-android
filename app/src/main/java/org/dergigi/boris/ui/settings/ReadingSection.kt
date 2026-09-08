@@ -127,6 +127,11 @@ fun ReadingSection(
             )
         }
         SettingCheckbox(
+            label = stringResource(R.string.settings_hide_status_bar_in_reader),
+            checked = settings.hideStatusBarInReader,
+            onCheckedChange = { onUpdate(settings.withBoolean("hideStatusBarInReader", it)) },
+        )
+        SettingCheckbox(
             label = stringResource(R.string.settings_open_links_in_reader),
             checked = settings.openLinksInReader,
             onCheckedChange = { onUpdate(settings.withBoolean("openLinksInReader", it)) },

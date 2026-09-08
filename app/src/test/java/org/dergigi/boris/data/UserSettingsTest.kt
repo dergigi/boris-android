@@ -36,6 +36,7 @@ class UserSettingsTest {
         assertTrue(settings.openLinksInReader)
         assertTrue(settings.showReaderProgressBar)
         assertTrue(settings.showReaderProgressHeading)
+        assertTrue(settings.hideStatusBarInReader)
         assertTrue(settings.volumeButtonScroll)
         assertEquals(90, settings.volumeButtonScrollPercent)
         assertTrue(settings.archiveClosesReader)
@@ -119,7 +120,7 @@ class UserSettingsTest {
     @Test
     fun parseReadsKnownKeys() {
         val settings = UserSettings.parse(
-            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","readerMargin":"compact","fullWidthImages":false,"openLinksInReader":false,"showReaderProgressBar":false,"showReaderProgressHeading":false}""",
+            """{"fontSize":24,"highlightStyle":"underline","showHighlights":false,"paragraphAlignment":"left","readerMargin":"compact","fullWidthImages":false,"openLinksInReader":false,"showReaderProgressBar":false,"showReaderProgressHeading":false,"hideStatusBarInReader":false}""",
         )
         assertEquals(24, settings.fontSize)
         assertEquals("underline", settings.highlightStyle)
@@ -131,6 +132,7 @@ class UserSettingsTest {
         assertFalse(settings.openLinksInReader)
         assertFalse(settings.showReaderProgressBar)
         assertFalse(settings.showReaderProgressHeading)
+        assertFalse(settings.hideStatusBarInReader)
     }
 
     @Test
@@ -172,6 +174,7 @@ class UserSettingsTest {
             "readingFont",
             "showReaderProgressBar",
             "showReaderProgressHeading",
+            "hideStatusBarInReader",
         )
         val updated = UserSettings.defaults()
             .withString("linkColorLight", "#111111")
@@ -179,6 +182,7 @@ class UserSettingsTest {
             .withString("readingFont", "inter")
             .withBoolean("showReaderProgressBar", false)
             .withBoolean("showReaderProgressHeading", false)
+            .withBoolean("hideStatusBarInReader", false)
         assertTrue(updated.hasNonDefaultValues(keys))
         val reset = updated.resetKeys(keys)
         assertEquals("#3b82f6", reset.linkColorLight)
@@ -186,6 +190,7 @@ class UserSettingsTest {
         assertEquals("source-serif-4", reset.readingFont)
         assertTrue(reset.showReaderProgressBar)
         assertTrue(reset.showReaderProgressHeading)
+        assertTrue(reset.hideStatusBarInReader)
         assertFalse(reset.hasNonDefaultValues(keys))
     }
 

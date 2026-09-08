@@ -373,6 +373,7 @@
     <string name="settings_media_image_save_location_reset">Use default image folder</string>
     <string name="settings_show_reader_progress_bar">Show reader progress bar</string>
     <string name="settings_show_reader_progress_heading">Show current section in progress bar</string>
+    <string name="settings_hide_status_bar_in_reader">Hide Android status bar while reading</string>
     <string name="settings_open_links_in_reader">Open weblinks in Boris</string>
     <string name="settings_home">Home</string>
     <string name="settings_library">Library</string>

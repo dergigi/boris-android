@@ -1,6 +1,7 @@
 package org.dergigi.boris.ui.reader
 
 import android.Manifest
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -133,6 +134,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -152,6 +154,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.mikepenz.markdown.annotator.annotatorSettings
 import com.mikepenz.markdown.annotator.buildMarkdownAnnotatedString
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
@@ -276,6 +281,7 @@ fun ReaderScreen(
     val settingsSignIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    ReaderStatusBarEffect(enabled = settings.hideStatusBarInReader)
     val imageOnly = state as? ReaderUiState.ImageOnly
     if (imageOnly != null) {
         ImageGallery(
@@ -419,6 +425,23 @@ fun ReaderScreen(
         canDeleteHighlight = menuViewModel::canDelete,
         onDeleteHighlight = menuViewModel::delete,
     )
+}
+
+@Composable
+private fun ReaderStatusBarEffect(enabled: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(enabled, view) {
+        val window = (view.context as? Activity)?.window
+        if (view.isInEditMode || window == null || !enabled) {
+            return@DisposableEffect onDispose { }
+        }
+        val controller = WindowCompat.getInsetsController(window, view)
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.statusBars())
+        onDispose {
+            controller.show(WindowInsetsCompat.Type.statusBars())
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

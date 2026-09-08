@@ -52,6 +52,7 @@ object SettingsSearch {
             R.string.settings_link_color,
             R.string.settings_show_reader_progress_bar,
             R.string.settings_show_reader_progress_heading,
+            R.string.settings_hide_status_bar_in_reader,
             R.string.settings_open_links_in_reader,
         ),
         SettingsCategory.Tts to listOf(
