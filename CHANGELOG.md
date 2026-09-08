@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.11] - 2026-09-09
+
 ### Fixed
 
 - Home and Explore no longer refetch from relays on every tab switch or return from the reader; local state updates right away and relays are checked every few minutes or on pull to refresh
