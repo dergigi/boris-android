@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.10] - 2026-09-08
+
 ### Changed
 
 - Explore search bar matches the Home search bar
