@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Liked and recently-read Explore rows skip short notes and keep long-form articles
+
 ## [1.6.7] - 2026-09-08
 
 ### Added

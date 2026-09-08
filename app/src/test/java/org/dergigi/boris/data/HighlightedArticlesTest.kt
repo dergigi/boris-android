@@ -7,6 +7,7 @@ import org.dergigi.boris.nostr.Nip01Event.Companion.KIND_LONG_FORM
 import org.dergigi.boris.nostr.Profile
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -39,6 +40,24 @@ class HighlightedArticlesTest {
         )
         assertEquals(40L, articles[0].highlightedAt)
         assertEquals(30L, articles[1].highlightedAt)
+    }
+
+    @Test
+    fun fromReactionEventsSkipsKind1Notes() {
+        val author = person("aa")
+        val noteId = "ab".repeat(32)
+        val coordinate = "30023:$author:essay"
+        val articles = HighlightedArticles.fromReactionEvents(
+            listOf(
+                kind7("🧡", 50, listOf(listOf("e", noteId), listOf("k", "1"))),
+                kind7("👍", 40, listOf(listOf("a", coordinate), listOf("p", author), listOf("k", "30023"))),
+                reaction("https://example.com/post", "🧡", createdAt = 30),
+            ),
+            limit = 12,
+        )
+        assertEquals(2, articles.size)
+        assertTrue(articles.any { it.url.startsWith("nostr:") && "note" !in it.url })
+        assertEquals("https://example.com/post", articles[1].url)
     }
 
     @Test
@@ -262,6 +281,21 @@ class HighlightedArticlesTest {
     }
 
     private fun person(byte: String): String = byte.repeat(32)
+
+    private fun kind7(
+        content: String,
+        createdAt: Long,
+        tags: List<List<String>>,
+        pubkey: String = person("cc"),
+    ): Nip01Event = Nip01Event(
+        id = (content + createdAt.toString() + "kind7").padStart(64, '0').takeLast(64),
+        pubkey = pubkey,
+        createdAt = createdAt,
+        kind = Nip01Event.KIND_REACTION,
+        tags = tags,
+        content = content,
+        sig = "dd".repeat(32),
+    )
 
     private fun reaction(
         url: String,
