@@ -256,16 +256,19 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            CompactSearchField(
-                query = query,
-                onQueryChange = onQueryChange,
-                onClear = onClear,
-                onSearch = { focus.clearFocus() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-            )
+            val searchField = @Composable {
+                CompactSearchField(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onClear = onClear,
+                    onSearch = { focus.clearFocus() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+                )
+            }
             if (query.trim().length >= 2) {
+                searchField()
                 SearchResultFilters(
                     selected = resultType,
                     onSelect = onSelectResultType,
@@ -287,6 +290,7 @@ fun SearchScreenContent(
             when {
                 query.trim().length < 2 -> {
                     ExploreDiscoveryContent(
+                        header = searchField,
                         highlights = discovery,
                         sectionOrder = discoverySectionOrder,
                         settings = settings,
@@ -368,6 +372,7 @@ fun SearchScreenContent(
 
 @Composable
 private fun ExploreDiscoveryContent(
+    header: @Composable () -> Unit,
     highlights: HomeHighlightsState,
     sectionOrder: List<String>,
     settings: UserSettings,
@@ -380,9 +385,13 @@ private fun ExploreDiscoveryContent(
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
 ) {
     when (highlights) {
-        HomeHighlightsState.Loading -> SearchLoadingHint()
-        HomeHighlightsState.Error -> SearchHint(stringResource(R.string.feed_error))
-        HomeHighlightsState.Empty -> SearchHint(stringResource(R.string.feed_empty))
+        HomeHighlightsState.Loading -> ExploreDiscoveryStatus(header) { SearchLoadingHint() }
+        HomeHighlightsState.Error -> ExploreDiscoveryStatus(header) {
+            SearchHint(stringResource(R.string.feed_error))
+        }
+        HomeHighlightsState.Empty -> ExploreDiscoveryStatus(header) {
+            SearchHint(stringResource(R.string.feed_empty))
+        }
         is HomeHighlightsState.Ready -> {
             val progressVersion by ReadingPositionStore.version.collectAsStateWithLifecycle()
             val archivedKeys = highlights.archivedKeys + actions.archivedKeys
@@ -405,26 +414,32 @@ private fun ExploreDiscoveryContent(
             val mostHighlighted = discoveryRows[HomeSections.MOST].orEmpty()
             val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
-                SearchHint(
-                    stringResource(
-                        if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
-                            (settings.hideArchivedOnHome && archivedKeys.isNotEmpty())
-                        ) {
-                            R.string.home_empty_filters
-                        } else {
-                            R.string.feed_empty
-                        },
-                    ),
-                )
+                ExploreDiscoveryStatus(header) {
+                    SearchHint(
+                        stringResource(
+                            if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
+                                (settings.hideArchivedOnHome && archivedKeys.isNotEmpty())
+                            ) {
+                                R.string.home_empty_filters
+                            } else {
+                                R.string.feed_empty
+                            },
+                        ),
+                    )
+                }
                 return
             }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(top = 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
+                    .padding(bottom = 24.dp),
             ) {
+                header()
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                ) {
                 sectionOrder.forEach { section ->
                     when (section) {
                         HomeSections.FRIENDS -> if (friends.isNotEmpty()) {
@@ -572,8 +587,20 @@ private fun ExploreDiscoveryContent(
                         }
                     }
                 }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ExploreDiscoveryStatus(
+    header: @Composable () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        header()
+        content()
     }
 }
 
