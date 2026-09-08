@@ -9,6 +9,20 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.6] - 2026-09-08
+
+### Added
+
+- Hide the status bar while reading
+- Cycle the image gallery background between black, white, and gray
+- Export RSS feeds as OPML
+
+### Fixed
+
+- Search shows a loading state instead of a brief empty result
+- One-tap zaps send the default comment along with the default amount
+- Zaps keep going in the background so the reader stays usable
+
 ## [1.6.5] - 2026-09-06
 
 ### Fixed
