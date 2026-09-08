@@ -27,6 +27,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
@@ -80,6 +81,35 @@ data class ImageGalleryState(
     val initialIndex: Int,
 )
 
+private enum class GalleryBackground(
+    val color: Color,
+    val foreground: Color,
+    val nextLabel: String,
+) {
+    Black(
+        color = Color.Black,
+        foreground = Color.White,
+        nextLabel = "Use white background",
+    ),
+    White(
+        color = Color.White,
+        foreground = Color.Black,
+        nextLabel = "Use gray background",
+    ),
+    Gray(
+        color = Color(0xFF666666),
+        foreground = Color.White,
+        nextLabel = "Use black background",
+    ),
+    ;
+
+    fun next(): GalleryBackground = when (this) {
+        Black -> White
+        White -> Gray
+        Gray -> Black
+    }
+}
+
 @Composable
 fun ImageGallery(
     state: ImageGalleryState,
@@ -95,6 +125,7 @@ fun ImageGallery(
     var zoomed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var background by remember { mutableStateOf(GalleryBackground.Black) }
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     var pendingStorageAction by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -210,7 +241,7 @@ fun ImageGallery(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(background.color)
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
@@ -252,7 +283,7 @@ fun ImageGallery(
                     Icon(
                         Icons.Filled.Close,
                         contentDescription = "Close",
-                        tint = Color.White,
+                        tint = background.foreground,
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -261,22 +292,29 @@ fun ImageGallery(
                             modifier = Modifier
                                 .padding(end = 8.dp)
                                 .size(20.dp),
-                            color = Color.White,
+                            color = background.foreground,
                             strokeWidth = 2.dp,
+                        )
+                    }
+                    IconButton(onClick = { background = background.next() }) {
+                        Icon(
+                            Icons.Filled.Contrast,
+                            contentDescription = background.nextLabel,
+                            tint = background.foreground,
                         )
                     }
                     IconButton(onClick = ::downloadCurrent, enabled = !busy) {
                         Icon(
                             Icons.Filled.Download,
                             contentDescription = "Download",
-                            tint = Color.White,
+                            tint = background.foreground,
                         )
                     }
                     IconButton(onClick = ::shareCurrent, enabled = !busy) {
                         Icon(
                             Icons.Filled.Share,
                             contentDescription = "Share",
-                            tint = Color.White,
+                            tint = background.foreground,
                         )
                     }
                     Box {
@@ -284,7 +322,7 @@ fun ImageGallery(
                             Icon(
                                 Icons.Filled.MoreVert,
                                 contentDescription = "More",
-                                tint = Color.White,
+                                tint = background.foreground,
                             )
                         }
                         DropdownMenu(
@@ -313,7 +351,7 @@ fun ImageGallery(
             if (urls.size > 1) {
                 Text(
                     text = "${pagerState.currentPage + 1} / ${urls.size}",
-                    color = Color.White,
+                    color = background.foreground,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
