@@ -37,38 +37,48 @@ class SearchViewModel(
 
     val state: StateFlow<SearchUiState> =
         combine(_query, _relationEpoch) { query, epoch -> query to epoch }
-            .debounce(220)
+            .debounce(QUERY_DEBOUNCE_MS)
             .distinctUntilChanged()
             .transformLatest { (raw, _) ->
                 val trimmed = raw.trim()
                 if (trimmed.length < 2) {
-                    emit(SearchUiState(query = trimmed, results = emptyList()))
-                } else {
-                    emit(SearchUiState(query = trimmed, results = emptyList(), isLoading = true))
-                    val hits = withContext(Dispatchers.Default) {
-                        val sessionHex = SessionStore.load(getApplication())?.pubkeyHex?.lowercase()
-                        val friends = sessionHex
-                            ?.let { RelayQuery.cachedContactPubkeys(it) }
-                            .orEmpty()
-                        val foaf = sessionHex
-                            ?.let { RelayQuery.cachedFoafPubkeys(it, friends) }
-                            .orEmpty()
-                        LocalSearch.query(
-                            raw = trimmed,
-                            limit = Int.MAX_VALUE,
-                            sessionHex = sessionHex,
-                            friendPubkeys = friends,
-                            foafPubkeys = foaf,
-                        )
-                    }
-                    emit(SearchUiState(query = trimmed, results = hits))
+                    lastHits = emptyList()
+                    emit(SearchUiState(query = trimmed))
+                    return@transformLatest
                 }
+                emit(
+                    SearchUiState(
+                        query = trimmed,
+                        results = lastHits.filter { LocalSearch.hitMatches(it, trimmed) },
+                        isLoading = true,
+                    ),
+                )
+                val hits = withContext(Dispatchers.Default) {
+                    val sessionHex = SessionStore.load(getApplication())?.pubkeyHex?.lowercase()
+                    val friends = sessionHex
+                        ?.let { RelayQuery.cachedContactPubkeys(it) }
+                        .orEmpty()
+                    val foaf = sessionHex
+                        ?.let { RelayQuery.cachedFoafPubkeys(it, friends) }
+                        .orEmpty()
+                    LocalSearch.query(
+                        raw = trimmed,
+                        limit = LocalSearch.DEFAULT_LIMIT,
+                        sessionHex = sessionHex,
+                        friendPubkeys = friends,
+                        foafPubkeys = foaf,
+                    )
+                }
+                lastHits = hits
+                emit(SearchUiState(query = trimmed, results = hits))
             }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = SearchUiState(),
             )
+
+    private var lastHits: List<LocalSearch.Hit> = emptyList()
 
     fun onQueryChange(value: String) {
         _query.value = value
@@ -81,5 +91,9 @@ class SearchViewModel(
     /** Re-resolve mine/friends against the contact cache (e.g. on resume). */
     fun refreshRelation() {
         _relationEpoch.value += 1
+    }
+
+    companion object {
+        private const val QUERY_DEBOUNCE_MS = 80L
     }
 }

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Search shows local matches immediately instead of waiting behind a spinner
+
 ## [1.6.8] - 2026-09-08
 
 ### Added

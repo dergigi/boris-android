@@ -89,6 +89,19 @@ object LocalSearch {
             .take(limit)
     }
 
+    fun hitMatches(hit: Hit, raw: String): Boolean {
+        val needle = normalize(raw)
+        if (needle.length < 2) return false
+        return when (hit) {
+            is Hit.Highlight -> matches(needle, hit.quote, hit.context, hit.comment, hit.title, hit.subtitle)
+            is Hit.Article -> matches(needle, hit.title, hit.subtitle)
+            is Hit.Bookmark -> matches(needle, hit.title, hit.subtitle, hit.url)
+            is Hit.Person ->
+                matches(needle, hit.title, hit.subtitle) ||
+                    (needle.length >= 8 && hit.pubkeyHex.contains(needle))
+        }
+    }
+
     private fun searchHighlights(
         needle: String,
         sessionHex: String?,
