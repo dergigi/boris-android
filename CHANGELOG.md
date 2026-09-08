@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Home and Explore no longer refetch from relays on every tab switch or return from the reader; local state updates right away and relays are checked every few minutes or on pull to refresh
+- Cover fetches run a few at a time and skip sites that were tried recently
+- Cached events are indexed by kind, so Home, Explore, and search scan far less
+
 ## [1.6.10] - 2026-09-08
 
 ### Changed

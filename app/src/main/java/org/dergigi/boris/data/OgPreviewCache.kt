@@ -13,6 +13,7 @@ object OgPreviewCache {
     private data class Entry(val preview: OgPreview, val storedAt: Long)
 
     private val entries = ConcurrentHashMap<String, Entry>()
+    private val attempts = ConcurrentHashMap<String, Long>()
 
     @Volatile
     private var storage: File? = null
@@ -36,8 +37,19 @@ object OgPreviewCache {
         diskExecutor.execute { runCatching { persist(file) } }
     }
 
+    /** Records a live fetch so sites without OG tags are not hit on every refresh. */
+    fun markAttempted(url: String, now: Long = System.currentTimeMillis()) {
+        attempts[url] = now
+    }
+
+    fun recentlyAttempted(url: String, now: Long = System.currentTimeMillis()): Boolean {
+        val at = attempts[url] ?: return false
+        return now - at < RETRY_AFTER_MS
+    }
+
     internal fun clear() {
         entries.clear()
+        attempts.clear()
     }
 
     private fun persist(file: File) {
@@ -74,4 +86,5 @@ object OgPreviewCache {
     }
 
     private const val MAX_ENTRIES = 500
+    private const val RETRY_AFTER_MS = 6 * 60 * 60_000L
 }

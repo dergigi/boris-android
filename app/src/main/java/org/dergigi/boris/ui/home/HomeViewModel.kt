@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ArchivedArticles
 import org.dergigi.boris.data.ArticlePreview
@@ -26,6 +28,7 @@ import org.dergigi.boris.data.NostrArticle
 import org.dergigi.boris.data.NostrLink
 import org.dergigi.boris.data.OgMetaClient
 import org.dergigi.boris.data.OgPreview
+import org.dergigi.boris.data.OgPreviewCache
 import org.dergigi.boris.data.HomeFilters
 import org.dergigi.boris.data.MostHighlightedWindow
 import org.dergigi.boris.data.RandomArticles
@@ -86,6 +89,7 @@ class HomeViewModel(
 
     private var loadJob: Job? = null
     private var listenJob: Job? = null
+    private var loadedAt: Long? = null
     private val markAsReadAction = MarkAsReadAction(
         app = application,
         scope = viewModelScope,
@@ -102,7 +106,17 @@ class HomeViewModel(
         _message.value = null
     }
 
-    fun refresh() {
+    /**
+     * Stale-while-revalidate. Resuming Home or Explore re-reads local state
+     * only; relays are hit when the last load is older than
+     * [REFRESH_INTERVAL_MS] or [force] is set (pull to refresh, retry).
+     */
+    fun refresh(force: Boolean = false) {
+        val ready = _highlights.value is HomeHighlightsState.Ready
+        if (!shouldReload(loadedAt, System.currentTimeMillis(), loadJob?.isActive == true, ready, force)) {
+            if (ready) viewModelScope.launch { refreshLocal() }
+            return
+        }
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val pubkey = SessionStore.load(getApplication())?.pubkeyHex
@@ -212,6 +226,7 @@ class HomeViewModel(
                         )
                     }
                 }
+                loadedAt = System.currentTimeMillis()
                 if (rows.isEmpty()) {
                     _highlights.value = HomeHighlightsState.Empty
                 } else {
@@ -233,6 +248,22 @@ class HomeViewModel(
                 _refreshing.value = false
             }
         }
+    }
+
+    /** Cheap local pass on resume: reading positions and archive marks change while reading. */
+    private suspend fun refreshLocal() {
+        val pubkey = SessionStore.load(getApplication())?.pubkeyHex
+        val (continueReading, archivedKeys) = withContext(Dispatchers.IO) {
+            val keys = if (pubkey == null) {
+                emptySet()
+            } else {
+                ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkey))
+            }
+            applyPreviews(ContinueReading.articles(ARTICLE_LIMIT), emptyMap()) to keys
+        }
+        val latest = _highlights.value as? HomeHighlightsState.Ready ?: return
+        if (latest.continueReading == continueReading && latest.archivedKeys == archivedKeys) return
+        _highlights.value = latest.copy(continueReading = continueReading, archivedKeys = archivedKeys)
     }
 
     fun startListening(url: String) {
@@ -555,12 +586,17 @@ class HomeViewModel(
     }
 
     private suspend fun loadPreviews(urls: List<String>): Map<String, OgPreview?> = coroutineScope {
+        val gate = Semaphore(PREVIEW_FETCH_PARALLELISM)
         urls.map { url ->
             async {
                 val cached = ArticlePreview.get(url)
                 if (NostrLink.parse(url) != null) return@async url to cached
                 if (cached?.title != null && cached.imageUrl != null) return@async url to cached
-                val fetched = runCatching { OgMetaClient.fetch(url) }.getOrNull()
+                if (OgPreviewCache.recentlyAttempted(url)) return@async url to cached
+                val fetched = gate.withPermit {
+                    OgPreviewCache.markAttempted(url)
+                    runCatching { OgMetaClient.fetch(url) }.getOrNull()
+                }
                 url to mergePreview(cached, fetched)
             }
         }.awaitAll().toMap()
@@ -655,7 +691,23 @@ class HomeViewModel(
         private const val HIGHLIGHT_LIMIT = 160
         private const val REACTION_LIMIT = 400
         private const val ARTICLE_LIMIT = 21
+        internal const val REFRESH_INTERVAL_MS = 5 * 60_000L
+        private const val PREVIEW_FETCH_PARALLELISM = 6
     }
+}
+
+/** Whether a resume should hit relays again or just re-read local state. */
+internal fun shouldReload(
+    loadedAt: Long?,
+    now: Long,
+    inFlight: Boolean,
+    ready: Boolean,
+    force: Boolean,
+): Boolean {
+    if (force) return true
+    if (inFlight) return false
+    if (!ready || loadedAt == null) return true
+    return now - loadedAt >= HomeViewModel.REFRESH_INTERVAL_MS
 }
 
 internal fun mergePreview(cached: OgPreview?, fetched: OgPreview?): OgPreview? {

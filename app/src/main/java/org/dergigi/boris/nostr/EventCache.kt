@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit
 object EventCache {
     private val byId = ConcurrentHashMap<String, Nip01Event>()
     private val newest = ConcurrentHashMap<String, Nip01Event>()
+    // kind -> (lowercase id -> event). Home, Explore and search scan by kind
+    // many times per refresh; this keeps those scans off the full id map.
+    private val kindIndex = ConcurrentHashMap<Int, ConcurrentHashMap<String, Nip01Event>>()
 
     @Volatile
     private var dir: File? = null
@@ -81,12 +84,14 @@ object EventCache {
     fun byKindAndAuthor(kinds: Set<Int>, pubkeyHex: String): List<Nip01Event> {
         awaitLoaded()
         val key = pubkeyHex.lowercase()
-        return byId.values.filter { it.kind in kinds && it.pubkey.lowercase() == key }
+        return kinds.flatMap { kind ->
+            kindIndex[kind]?.values?.filter { it.pubkey.lowercase() == key } ?: emptyList()
+        }
     }
 
     fun byKind(kind: Int): List<Nip01Event> {
         awaitLoaded()
-        return byId.values.filter { it.kind == kind }
+        return kindIndex[kind]?.values?.toList() ?: emptyList()
     }
 
     /** Removes events referenced by a NIP-09 deletion (e and a tags). */
@@ -100,7 +105,7 @@ object EventCache {
                     val id = tag[1].lowercase()
                     val existing = byId[id] ?: continue
                     if (!existing.pubkey.equals(deletion.pubkey, ignoreCase = true)) continue
-                    byId.remove(id)
+                    remove(existing)
                     newestKeyFor(existing)?.let { key -> newest.remove(key, existing) }
                     changed.add(existing.kind)
                 }
@@ -111,7 +116,7 @@ object EventCache {
                     if (!pubkey.equals(deletion.pubkey, ignoreCase = true)) continue
                     val key = newestKey(kind, pubkey, parts.getOrNull(2))
                     val existing = newest.remove(key) ?: continue
-                    byId.remove(existing.id.lowercase())
+                    remove(existing)
                     changed.add(existing.kind)
                 }
             }
@@ -122,20 +127,37 @@ object EventCache {
     internal fun clear() {
         byId.clear()
         newest.clear()
+        kindIndex.clear()
         dirtyKinds.clear()
     }
 
     private fun putInternal(event: Nip01Event): Boolean {
         val id = event.id.lowercase()
-        val key = newestKeyFor(event) ?: return byId.putIfAbsent(id, event) == null
+        val key = newestKeyFor(event)
+        if (key == null) {
+            if (byId.putIfAbsent(id, event) != null) return false
+            index(event)
+            return true
+        }
         synchronized(newest) {
             val existing = newest[key]
             if (existing != null && existing.createdAt >= event.createdAt) return false
             newest[key] = event
-            if (existing != null) byId.remove(existing.id.lowercase())
+            if (existing != null) remove(existing)
             byId[id] = event
+            index(event)
             return true
         }
+    }
+
+    private fun index(event: Nip01Event) {
+        kindIndex.getOrPut(event.kind) { ConcurrentHashMap() }[event.id.lowercase()] = event
+    }
+
+    private fun remove(event: Nip01Event) {
+        val id = event.id.lowercase()
+        byId.remove(id)
+        kindIndex[event.kind]?.remove(id)
     }
 
     private fun newestKeyFor(event: Nip01Event): String? = when {
@@ -179,8 +201,7 @@ object EventCache {
         val directory = dir ?: return
         runCatching {
             directory.mkdirs()
-            val events = byId.values.asSequence()
-                .filter { it.kind == kind }
+            val events = byKind(kind)
                 .sortedByDescending { it.createdAt }
                 .take(cap(kind))
                 .toList()

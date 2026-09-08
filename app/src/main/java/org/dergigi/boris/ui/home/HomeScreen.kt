@@ -262,7 +262,7 @@ fun HomeScreen(
                 },
                 onOpenLogin = onOpenLogin,
                 onSearch = onSearch,
-                onRefresh = viewModel::refresh,
+                onRefresh = { viewModel.refresh(force = true) },
                 onRead = onRead,
                 onListen = { article ->
                     requestTtsNotificationPermissionOnce(context) {

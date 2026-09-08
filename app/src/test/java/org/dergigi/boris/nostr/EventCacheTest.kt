@@ -67,6 +67,19 @@ class EventCacheTest {
     }
 
     @Test
+    fun byKindDropsReplacedAndDeletedEvents() {
+        val old = event(id = "meta1", kind = Nip01Event.KIND_METADATA, createdAt = 100)
+        val new = event(id = "meta2", kind = Nip01Event.KIND_METADATA, createdAt = 200)
+        val reaction = event(id = "react1", kind = Nip01Event.KIND_REACTION)
+        EventCache.putAll(listOf(old, new, reaction))
+        assertEquals(listOf(new), EventCache.byKind(Nip01Event.KIND_METADATA))
+        EventCache.applyDeletion(
+            event(id = "del9", kind = Nip01Event.KIND_DELETION, tags = listOf(listOf("e", "react1"))),
+        )
+        assertEquals(emptyList<Nip01Event>(), EventCache.byKind(Nip01Event.KIND_REACTION))
+    }
+
+    @Test
     fun byKindAndAuthorFiltersBoth() {
         val mine = event(id = "e001", kind = Nip01Event.KIND_REACTION)
         val otherKind = event(id = "e002", kind = Nip01Event.KIND_TEXT_NOTE)
