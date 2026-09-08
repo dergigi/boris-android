@@ -62,7 +62,7 @@ class HomeSectionsTest {
     @Test
     fun moveClampsAtEdges() {
         assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "continue", -1))
-        assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "random", 1))
+        assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "yours", 1))
         assertEquals(HomeSections.DEFAULT, HomeSections.move(HomeSections.DEFAULT, "bogus", 1))
     }
 }
