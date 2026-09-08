@@ -9,9 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.9] - 2026-09-08
+
 ### Fixed
 
 - Search shows local matches immediately instead of waiting behind a spinner
+- Relative and hash links in articles resolve against the article URL
+- Zap button shows a spinner while the zap is processing
 
 ## [1.6.8] - 2026-09-08
 
