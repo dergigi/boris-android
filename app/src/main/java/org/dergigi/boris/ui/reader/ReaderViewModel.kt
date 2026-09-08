@@ -190,11 +190,13 @@ class ReaderViewModel(
                         backgroundZap = false
                         if (progress.paidSats > 0) {
                             _zapped.value = true
-                            _message.value = getApplication<Application>()
-                                .getString(R.string.zap_done, formatSats(progress.paidSats))
-                        } else if (progress.failed.isNotEmpty()) {
-                            _message.value = getApplication<Application>()
+                        }
+                        _message.value = when {
+                            progress.failed.isNotEmpty() -> getApplication<Application>()
                                 .getString(R.string.zap_failed_for, progress.failed.joinToString(", "))
+                            progress.paidSats > 0 -> getApplication<Application>()
+                                .getString(R.string.zap_done, formatSats(progress.paidSats))
+                            else -> _message.value
                         }
                         _zap.value = null
                     }
@@ -394,18 +396,21 @@ class ReaderViewModel(
 
     /** Opens the zap flow: resolves recipients, then the dialog asks for amount and comment. */
     fun startZap() {
+        if (backgroundZap) return
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
         zapAction.resolve(content)
     }
 
     /** Sends the default zap amount and message without opening the zap dialog. */
     fun startOneTapZap(totalSats: Long, comment: String) {
+        if (backgroundZap) return
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
         backgroundZap = true
         zapAction.payDefault(content, totalSats, comment)
     }
 
     fun confirmZap(totalSats: Long, comment: String) {
+        if (backgroundZap) return
         val content = (_state.value as? ReaderUiState.Ready)?.content ?: return
         val ready = _zap.value as? ZapProgress.Ready ?: return
         backgroundZap = true
