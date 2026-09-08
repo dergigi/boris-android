@@ -281,7 +281,6 @@ fun ReaderScreen(
     val settingsSignIntent by settingsViewModel.signIntent.collectAsStateWithLifecycle()
     val settingsMessage by settingsViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
-    ReaderStatusBarEffect(enabled = settings.hideStatusBarInReader)
     val imageOnly = state as? ReaderUiState.ImageOnly
     if (imageOnly != null) {
         ImageGallery(
@@ -508,6 +507,13 @@ fun ReaderScreenContent(
     val hideBar = settings.hideTopBarOnScroll
     val barOffsetPx = remember { mutableFloatStateOf(0f) }
     val barHeightPx = remember { mutableIntStateOf(0) }
+    val topBarHidden by remember(hideBar, barHeightPx) {
+        derivedStateOf {
+            val height = barHeightPx.intValue.toFloat()
+            hideBar && height > 0f && barOffsetPx.floatValue <= -height + 1f
+        }
+    }
+    ReaderStatusBarEffect(enabled = settings.hideStatusBarInReader && topBarHidden)
     val hideBarConnection = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(
