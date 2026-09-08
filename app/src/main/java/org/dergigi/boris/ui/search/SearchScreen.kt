@@ -1,41 +1,27 @@
 package org.dergigi.boris.ui.search
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -50,14 +36,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -74,6 +54,7 @@ import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRow
 import org.dergigi.boris.ui.AuthorCard
+import org.dergigi.boris.ui.SearchBarField
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
@@ -159,10 +140,6 @@ fun SearchScreen(
             if (value.trim().isEmpty()) viewModel.clear()
         },
         onSubmitSearch = { viewModel.onQueryChange(draftQuery) },
-        onClear = {
-            draftQuery = ""
-            viewModel.clear()
-        },
         onSelectResultType = { resultType = it },
         colorFor = { hit ->
             when {
@@ -216,7 +193,6 @@ fun SearchScreenContent(
     actions: ArticleActionHandlers,
     onQueryChange: (String) -> Unit,
     onSubmitSearch: () -> Unit = {},
-    onClear: () -> Unit,
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
     friendsColor: Color,
@@ -267,14 +243,11 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            CompactSearchField(
+            SearchBarField(
                 query = query,
                 onQueryChange = onQueryChange,
-                onClear = onClear,
                 onSearch = onSubmitSearch,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+                modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
             )
             if (searching) {
                 SearchResultFilters(
@@ -727,85 +700,6 @@ internal fun searchHitVisible(
         hideArchived = settings.hideArchivedOnHome,
         hideCompleted = settings.hideCompletedOnHome,
         hideNsfw = settings.hideNsfwOnHome,
-    )
-}
-
-@Composable
-private fun CompactSearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    onSearch: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val focused by interactionSource.collectIsFocusedAsState()
-    val borderColor = if (focused) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline
-    }
-    val searchContentDescription = stringResource(R.string.search_title)
-    BasicTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier.semantics { contentDescription = searchContentDescription },
-        singleLine = true,
-        interactionSource = interactionSource,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = FontFamily.SansSerif,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(shape)
-                    .border(1.dp, borderColor, shape)
-                    .padding(start = 12.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    if (query.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.search_placeholder),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = FontFamily.SansSerif,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    innerTextField()
-                }
-                if (query.isNotEmpty()) {
-                    IconButton(
-                        onClick = onClear,
-                        modifier = Modifier.size(40.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Clear,
-                            contentDescription = stringResource(R.string.search_clear),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-            }
-        },
     )
 }
 

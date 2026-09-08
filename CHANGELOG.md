@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Changed
+
+- Explore search bar matches the Home search bar
+
 ### Fixed
 
 - Explore search keeps the keyboard open while typing; results update when you submit the query

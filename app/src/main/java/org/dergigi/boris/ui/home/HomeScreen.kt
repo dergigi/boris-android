@@ -30,9 +30,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
@@ -45,7 +42,6 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Timer
@@ -76,7 +72,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -88,7 +83,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -107,6 +101,7 @@ import org.dergigi.boris.data.MostHighlightedWindow
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.data.SensitiveContent
 import org.dergigi.boris.ui.NsfwBadge
+import org.dergigi.boris.ui.SearchBarField
 import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
@@ -666,67 +661,16 @@ private fun HomeSearchBar(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val focus = LocalFocusManager.current
-    val shape = RoundedCornerShape(12.dp)
-    val contentDescription = stringResource(R.string.search_title)
-
-    fun submit() {
-        val trimmed = query.trim()
-        if (trimmed.isBlank()) return
-        focus.clearFocus()
-        onSearch(trimmed)
-    }
-
-    BasicTextField(
-        value = query,
-        onValueChange = { query = it },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .semantics { this.contentDescription = contentDescription },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontFamily = FontFamily.SansSerif,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { submit() }),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(shape)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, shape)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    if (query.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.home_search_placeholder),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = FontFamily.SansSerif,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    innerTextField()
-                }
-            }
+    SearchBarField(
+        query = query,
+        onQueryChange = { query = it },
+        onSearch = {
+            val trimmed = query.trim()
+            if (trimmed.isBlank()) return@SearchBarField
+            focus.clearFocus()
+            onSearch(trimmed)
         },
+        modifier = modifier,
     )
 }
 
