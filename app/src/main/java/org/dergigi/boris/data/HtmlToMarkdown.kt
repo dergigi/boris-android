@@ -87,6 +87,16 @@ object HtmlToMarkdown {
             stash("`" + decode(it.groupValues[1]) + "`")
         }
         s = s.replace(Regex("(?is)<img[^>]*>")) { image(it.value, baseUrl) }
+        // arXiv wraps citations as "[<a href="#bib.X">N</a>]". The generic
+        // <a> rule would emit "[[N](url)]", which the reader shows as raw
+        // markdown (#201). Collapse the extra brackets first.
+        s = s.replace(
+            Regex("(?is)\\[\\s*<a\\s[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>\\s*]"),
+        ) { m ->
+            val text = stripTags(m.groupValues[2]).trim()
+            val href = linkHref(m.groupValues[1], baseUrl)
+            if (text.isEmpty()) href else "[$text]($href)"
+        }
         s = s.replace(Regex("(?is)<a\\s[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>")) { m ->
             val text = stripTags(m.groupValues[2]).trim()
             val href = linkHref(m.groupValues[1], baseUrl)
