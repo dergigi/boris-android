@@ -162,6 +162,9 @@ object RelayQuery {
     @Volatile
     private var discovered: List<String> = emptyList()
 
+    @Volatile
+    private var searchRelayCache: List<String>? = null
+
     fun fetchContactPubkeys(pubkeyHex: String): Set<String> {
         val cached = EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)
         if (cached != null) {
@@ -466,13 +469,28 @@ object RelayQuery {
     /** Opt-in NIP-50 search across public content relays. */
     fun searchNip50(raw: String, limit: Int = SEARCH_LIMIT): List<Nip01Event> {
         val filter = nip50SearchFilter(raw, limit) ?: return emptyList()
-        val urls = relayUrls(SEARCH_RELAYS)
+        val urls = relayUrls(searchRelays())
         if (urls.isEmpty()) return emptyList()
         val remote = query(urls, listOf(filter)).filter { event ->
             event.kind in SEARCH_KINDS
         }
         EventCache.putAll(remote)
         return remote
+    }
+
+    fun discoverSearchRelays(
+        seed: List<String> = SEARCH_RELAYS,
+        limit: Int = SEARCH_RELAY_LIMIT,
+    ): List<String> {
+        val since = System.currentTimeMillis() / 1000 - DISCOVERY_WINDOW_SECONDS
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_RELAY_DISCOVERY))
+            .put("#N", JSONArray().put(NIP_50.toString()))
+            .put("since", since)
+            .put("limit", 200)
+        val bootstrap = (Nip66.MONITOR_RELAYS + seed).mapNotNull { Nip66.normalize(it) }.distinct()
+        val events = query(bootstrap, listOf(filter))
+        return Nip66.selectSupportingNip(events, seed, NIP_50, limit)
     }
 
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
@@ -1121,6 +1139,17 @@ object RelayQuery {
         }
     }
 
+    private fun searchRelays(): List<String> {
+        val cached = searchRelayCache
+        if (cached != null) {
+            refreshOnce("nip66:search-relays") {
+                searchRelayCache = discoverSearchRelays()
+            }
+            return cached
+        }
+        return discoverSearchRelays().also { searchRelayCache = it }
+    }
+
     private val refreshed = ConcurrentHashMap.newKeySet<String>()
     private val refreshPool = Executors.newFixedThreadPool(2) { runnable ->
         Thread(runnable, "relay-refresh").apply { isDaemon = true }
@@ -1146,6 +1175,8 @@ object RelayQuery {
     private const val QUERY_STRAGGLER_GRACE_MS = 500L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
     private const val SEARCH_LIMIT = 80
+    private const val SEARCH_RELAY_LIMIT = 8
+    private const val NIP_50 = 50
     private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
     private const val PROFILE_CHUNK = 25
     private const val EVENT_CHUNK = 25

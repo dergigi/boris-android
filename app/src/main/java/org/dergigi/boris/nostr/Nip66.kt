@@ -32,9 +32,24 @@ object Nip66 {
         events: List<Nip01Event>,
         seed: List<String>,
         limit: Int = 12,
+    ): List<String> = select(events, seed, limit, requiredNip = null)
+
+    fun selectSupportingNip(
+        events: List<Nip01Event>,
+        seed: List<String>,
+        nip: Int,
+        limit: Int = 12,
+    ): List<String> = select(events, seed, limit, requiredNip = nip)
+
+    private fun select(
+        events: List<Nip01Event>,
+        seed: List<String>,
+        limit: Int,
+        requiredNip: Int?,
     ): List<String> {
         val ranked = events
             .filter { it.kind == KIND }
+            .filter { event -> requiredNip == null || supportsNip(event, requiredNip) }
             .mapNotNull { event ->
                 val url = normalize(dTag(event) ?: return@mapNotNull null) ?: return@mapNotNull null
                 if (!isClearnet(event)) return@mapNotNull null
@@ -77,6 +92,9 @@ object Nip66 {
 
     internal fun rttOpen(event: Nip01Event): Int? =
         event.tags.firstOrNull { it.size >= 2 && it[0] == "rtt-open" }?.get(1)?.toIntOrNull()
+
+    internal fun supportsNip(event: Nip01Event, nip: Int): Boolean =
+        event.tags.any { it.size >= 2 && it[0] == "N" && it[1].toIntOrNull() == nip }
 
     private fun isAcceptableHost(host: String): Boolean {
         if (host == "localhost" || host.endsWith(".localhost")) return false
