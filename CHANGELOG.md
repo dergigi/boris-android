@@ -12,6 +12,14 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ### Fixed
 
 - You no longer crashes when the same article is cached under more than one URL (#212)
+- Explore search scrolls with the page, and an X clears the query (#210)
+- arXiv bibliography citations render as links instead of raw `[[1](url)]` markdown (#201)
+
+### Changed
+
+- Crash report Send is a primary button (#213)
+- TTS follow-along also breaks on colons and semicolons (#214)
+- Tapping the active bottom tab scrolls that screen back to the top (#215)
 
 ## [1.6.12] - 2026-09-09
 
