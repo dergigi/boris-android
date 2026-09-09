@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.13] - 2026-09-09
+
 ### Fixed
 
 - You no longer crashes when the same article is cached under more than one URL (#212)
