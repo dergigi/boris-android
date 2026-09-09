@@ -104,6 +104,8 @@ import org.dergigi.boris.ui.NsfwBadge
 import org.dergigi.boris.ui.SearchBarField
 import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.PullToRefresh
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.ScrollToTopOnTabReselect
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleActionsMenu
 import org.dergigi.boris.ui.ContentFilterMenu
@@ -358,6 +360,8 @@ fun HomeScreenContent(
     onSearch: (String) -> Unit = {},
 ) {
     val hasPrompts = showFirstTime || showLoginPrompt
+    val scrollState = rememberScrollState()
+    ScrollToTopOnTabReselect(tab = MainTab.Home, scrollState = scrollState)
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -368,7 +372,7 @@ fun HomeScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
@@ -395,7 +399,7 @@ fun HomeScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
@@ -425,7 +429,7 @@ fun HomeScreenContent(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(top = 20.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),
                 ) {
@@ -510,7 +514,7 @@ fun HomeScreenContent(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
+                                .verticalScroll(scrollState)
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {
@@ -537,7 +541,7 @@ fun HomeScreenContent(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
+                                .verticalScroll(scrollState)
                                 .padding(top = 20.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(28.dp),
                         ) {

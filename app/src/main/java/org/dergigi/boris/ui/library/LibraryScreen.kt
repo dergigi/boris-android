@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -72,6 +73,8 @@ import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.SignerEffects
 import org.dergigi.boris.ui.PullToRefresh
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.ScrollToTopOnTabReselect
 import org.dergigi.boris.ui.ContentFilterMenu
 import org.dergigi.boris.ui.ContentTabChip
 import org.dergigi.boris.ui.FilterChipRow
@@ -332,6 +335,8 @@ private fun ReadyLibrary(
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
+            val listState = rememberLazyListState()
+            ScrollToTopOnTabReselect(tab = MainTab.Library, listState = listState)
             val archivedKeys = remember(shelves.archive) {
                 shelves.archive.mapNotNull { it.url?.let(ArchivedArticles::key) }.toSet()
             }
@@ -371,6 +376,7 @@ private fun ReadyLibrary(
                 }
                 else -> {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier
                             .fillMaxSize()
                             .align(Alignment.TopCenter),
