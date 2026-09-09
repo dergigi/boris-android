@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -59,6 +60,8 @@ import org.dergigi.boris.nostr.Nip19
 import org.dergigi.boris.nostr.Profile
 import org.dergigi.boris.ui.AuthorCard
 import org.dergigi.boris.ui.PullToRefresh
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.ScrollToTopOnTabReselect
 import org.dergigi.boris.ui.ArticleActionHandlers
 import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.bookmarkFallbackIcon
@@ -171,6 +174,8 @@ fun YouHighlightsContent(
 ) {
     var tab by rememberSaveable { mutableStateOf(ContentTab.All) }
     var query by rememberSaveable { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    ScrollToTopOnTabReselect(tab = MainTab.You, listState = listState)
     PullToRefresh(
         isRefreshing = refreshing,
         onRefresh = { onRefresh(tab) },
@@ -179,6 +184,7 @@ fun YouHighlightsContent(
             .background(MaterialTheme.colorScheme.background),
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.TopCenter),

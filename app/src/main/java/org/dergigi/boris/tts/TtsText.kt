@@ -336,11 +336,15 @@ object TtsText {
 
     private fun sentenceBoundaryEnd(text: String, punct: Int): Int? {
         val mark = text[punct]
-        if (mark != '.' && mark != '!' && mark != '?' && mark != '…') return null
+        if (mark != '.' && mark != '!' && mark != '?' && mark != '…' &&
+            mark != ':' && mark != ';'
+        ) {
+            return null
+        }
         var after = punct + 1
         while (after < text.length && text[after] in SENTENCE_CLOSERS) after++
         if (after < text.length && !text[after].isWhitespace()) return null
-        if (mark == '!' || mark == '?' || mark == '…') return after
+        if (mark == '!' || mark == '?' || mark == '…' || mark == ':' || mark == ';') return after
         val word = wordBefore(text, punct)
         if (word.length == 1 && word[0].isLetter()) return null
         if (word.isNotEmpty() && word.all { it.isDigit() }) return null

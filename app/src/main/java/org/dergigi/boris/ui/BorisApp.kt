@@ -66,6 +66,7 @@ import org.dergigi.boris.ui.settings.SettingsCategory
 import org.dergigi.boris.ui.settings.SettingsScreen
 import org.dergigi.boris.ui.shell.BorisBottomBar
 import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.TabReselect
 import org.dergigi.boris.ui.shell.TtsMiniPlayerHost
 import org.dergigi.boris.ui.support.SupportScreen
 import org.dergigi.boris.ui.you.ProfileScreen
@@ -186,6 +187,10 @@ fun BorisApp(
     var pendingSearchQueryVersion by rememberSaveable { mutableStateOf(0) }
 
     fun goToTab(tab: MainTab) {
+        if (tab == selectedTab) {
+            TabReselect.emit(tab)
+            return
+        }
         navController.navigate(tab.route) {
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true

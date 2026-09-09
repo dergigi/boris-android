@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.search
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -68,6 +70,8 @@ import org.dergigi.boris.ui.home.HighlightedRow
 import org.dergigi.boris.ui.home.HomeHighlightsState
 import org.dergigi.boris.ui.home.HomeSections
 import org.dergigi.boris.ui.home.HomeViewModel
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.ScrollToTopOnTabReselect
 import org.dergigi.boris.ui.home.MostHighlightedWindowMenu
 import org.dergigi.boris.ui.settings.SettingsViewModel
 import org.dergigi.boris.ui.rememberArticleActions
@@ -208,6 +212,13 @@ fun SearchScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val searching = submittedQuery.trim().length >= 2
+    val discoveryScroll = rememberScrollState()
+    val resultsList = rememberLazyListState()
+    ScrollToTopOnTabReselect(
+        tab = MainTab.Search,
+        listState = if (searching) resultsList else null,
+        scrollState = if (searching) null else discoveryScroll,
+    )
     Scaffold(
         modifier = modifier.imePadding(),
         topBar = {
@@ -243,19 +254,6 @@ fun SearchScreenContent(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            SearchBarField(
-                query = query,
-                onQueryChange = onQueryChange,
-                onSearch = onSubmitSearch,
-                modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
-            )
-            if (searching) {
-                SearchResultFilters(
-                    selected = resultType,
-                    onSelect = onSelectResultType,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
             val visibleResults = remember(results, submittedQuery, resultType, settings, actions.archivedKeys) {
                 results
                     .filter { resultType.includes(it) }
@@ -282,24 +280,60 @@ fun SearchScreenContent(
                         onOpenArticle = onOpenArticle,
                         mostWindow = mostWindow,
                         onSelectMostWindow = onSelectMostWindow,
+                        scrollState = discoveryScroll,
+                        searchBar = {
+                            SearchBarField(
+                                query = query,
+                                onQueryChange = onQueryChange,
+                                onSearch = onSubmitSearch,
+                                modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+                            )
+                        },
                     )
                 }
                 visibleResults.isEmpty() && searchRefreshing -> {
-                    SearchLoadingHint()
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        SearchBarField(
+                            query = query,
+                            onQueryChange = onQueryChange,
+                            onSearch = onSubmitSearch,
+                            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+                        )
+                        SearchLoadingHint()
+                    }
                 }
                 visibleResults.isEmpty() -> {
-                    SearchHint(stringResource(R.string.search_empty))
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        SearchBarField(
+                            query = query,
+                            onQueryChange = onQueryChange,
+                            onSearch = onSubmitSearch,
+                            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+                        )
+                        SearchHint(stringResource(R.string.search_empty))
+                    }
                 }
                 else -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 24.dp,
-                        ),
+                        state = resultsList,
+                        contentPadding = PaddingValues(bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        item(key = "search") {
+                            SearchBarField(
+                                query = query,
+                                onQueryChange = onQueryChange,
+                                onSearch = onSubmitSearch,
+                                modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+                            )
+                            SearchResultFilters(
+                                selected = resultType,
+                                onSelect = onSelectResultType,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                        }
                         items(visibleResults, key = { it.id }) { hit ->
+                            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                             when (hit) {
                                 is LocalSearch.Hit.Highlight -> {
                                     SearchHighlightCard(
@@ -343,6 +377,7 @@ fun SearchScreenContent(
                                     )
                                 }
                             }
+                            }
                         }
                     }
                 }
@@ -363,13 +398,20 @@ private fun ExploreDiscoveryContent(
     onOpenArticle: (String) -> Unit,
     mostWindow: MostHighlightedWindow,
     onSelectMostWindow: (MostHighlightedWindow) -> Unit,
+    scrollState: ScrollState,
+    searchBar: @Composable () -> Unit,
 ) {
     when (highlights) {
-        HomeHighlightsState.Loading -> ExploreDiscoveryStatus { SearchLoadingHint() }
+        HomeHighlightsState.Loading -> ExploreDiscoveryStatus {
+            searchBar()
+            SearchLoadingHint()
+        }
         HomeHighlightsState.Error -> ExploreDiscoveryStatus {
+            searchBar()
             SearchHint(stringResource(R.string.feed_error))
         }
         HomeHighlightsState.Empty -> ExploreDiscoveryStatus {
+            searchBar()
             SearchHint(stringResource(R.string.feed_empty))
         }
         is HomeHighlightsState.Ready -> {
@@ -395,6 +437,7 @@ private fun ExploreDiscoveryContent(
             val empty = discoveryRows.values.all { it.isEmpty() } && !highlights.hasMostPool
             if (empty) {
                 ExploreDiscoveryStatus {
+                    searchBar()
                     SearchHint(
                         stringResource(
                             if (settings.hideCompletedOnHome || settings.hideNsfwOnHome ||
@@ -412,9 +455,10 @@ private fun ExploreDiscoveryContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
                     .padding(bottom = 24.dp),
             ) {
+                searchBar()
                 Column(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(28.dp),

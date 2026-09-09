@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,6 +76,8 @@ import org.dergigi.boris.data.RssItem
 import org.dergigi.boris.data.SettingsSync
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.ArticleActionHandlers
+import org.dergigi.boris.ui.shell.MainTab
+import org.dergigi.boris.ui.shell.ScrollToTopOnTabReselect
 import org.dergigi.boris.ui.PullToRefresh
 import org.dergigi.boris.ui.ArticleRowWithMenu
 import org.dergigi.boris.ui.ContentFilterMenu
@@ -647,6 +650,7 @@ private fun FeedAllList(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            state = rememberFeedListState(),
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
@@ -729,6 +733,7 @@ private fun FeedHighlightList(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            state = rememberFeedListState(),
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
@@ -789,6 +794,7 @@ private fun FeedWritingList(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            state = rememberFeedListState(),
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
@@ -828,6 +834,7 @@ private fun FeedRssList(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            state = rememberFeedListState(),
             modifier = Modifier
                 .fillMaxSize()
                 .align(Alignment.TopCenter),
@@ -1086,4 +1093,11 @@ private fun FeedInfoRow(
             )
         }
     }
+}
+
+@Composable
+private fun rememberFeedListState(): androidx.compose.foundation.lazy.LazyListState {
+    val state = rememberLazyListState()
+    ScrollToTopOnTabReselect(tab = MainTab.Feed, listState = state)
+    return state
 }

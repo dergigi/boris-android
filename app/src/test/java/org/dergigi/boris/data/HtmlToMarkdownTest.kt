@@ -42,8 +42,8 @@ class HtmlToMarkdownTest {
             "https://arxiv.org/html/2609.03344v1",
         )
         assertEquals(
-            "Language transition [[1](https://arxiv.org/html/2609.03344v1#bib.bib1)], " +
-                "memory [[2](https://arxiv.org/html/2609.03344v1#bib.bib2)].",
+            "Language transition [1](https://arxiv.org/html/2609.03344v1#bib.bib1), " +
+                "memory [2](https://arxiv.org/html/2609.03344v1#bib.bib2).",
             markdown,
         )
         assertFalse(markdown.contains("(#bib."))
