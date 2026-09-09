@@ -129,7 +129,7 @@ internal fun mergeYouItems(
             (associatedUrl == null || associatedUrl !in visibleBookmarkUrls)
     }
         .forEach { add(YouMergedItem.Bookmark(it)) }
-}.sortedByDescending { it.sortAt }
+}.sortedByDescending { it.sortAt }.distinctBy { it.key }
 
 sealed interface YouUiState {
     data object Loading : YouUiState
@@ -453,24 +453,7 @@ class YouViewModel(
         RelayQuery.cachedRecentWritings(WRITING_LIMIT, key).mapNotNull { event -> writingFrom(event) }
 
     private fun cachedAssociatedArticles(key: String): List<BookmarkItem> =
-        ArticleCache.byAuthor(key)
-            .take(ASSOCIATED_ARTICLE_LIMIT)
-            .map { cached ->
-                val content = cached.content
-                val host = ArticleUrl.host(content.url)
-                BookmarkItem(
-                    id = "c:${ArticleUrl.normalize(content.url)}",
-                    title = content.title?.takeIf { it.isNotBlank() }
-                        ?: host
-                        ?: content.url,
-                    url = content.url,
-                    host = host,
-                    imageUrl = content.imageUrl,
-                    createdAt = content.publishedAt ?: cached.storedAt,
-                    bucket = BookmarkBucket.Web,
-                    summary = content.summary,
-                )
-            }
+        associatedArticlesFrom(ArticleCache.byAuthor(key)).take(ASSOCIATED_ARTICLE_LIMIT)
 
     private fun highlightFrom(event: Nip01Event): YouHighlight {
         val url = Nip84.articleUrl(event)
@@ -509,6 +492,26 @@ class YouViewModel(
         private const val PREVIEW_LIMIT = 20
         private const val ASSOCIATED_ARTICLE_LIMIT = 80
         private const val UNTITLED = "Untitled"
+
+        internal fun associatedArticlesFrom(
+            cached: List<ArticleCache.CachedArticle>,
+        ): List<BookmarkItem> =
+            cached.map { entry ->
+                val content = entry.content
+                val host = ArticleUrl.host(content.url)
+                BookmarkItem(
+                    id = "c:${ArticleUrl.normalize(content.url)}",
+                    title = content.title?.takeIf { it.isNotBlank() }
+                        ?: host
+                        ?: content.url,
+                    url = content.url,
+                    host = host,
+                    imageUrl = content.imageUrl,
+                    createdAt = content.publishedAt ?: entry.storedAt,
+                    bucket = BookmarkBucket.Web,
+                    summary = content.summary,
+                )
+            }.distinctBy { it.id }
 
         internal fun writingFrom(event: Nip01Event): YouWriting? {
             val identifier = Nip23.identifier(event) ?: return null

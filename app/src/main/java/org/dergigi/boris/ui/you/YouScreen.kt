@@ -423,7 +423,7 @@ private fun LazyListScope.profileBookmarkItems(
     onOpenHighlight: (url: String, highlightId: String, quote: String) -> Unit,
     actions: ArticleActionHandlers,
 ) {
-    val visible = items.filter { it.matchesQuery(query) }
+    val visible = items.filter { it.matchesQuery(query) }.distinctBy { it.id }
     if (visible.isEmpty()) {
         item(key = "empty-$emptyRes") {
             if (items.isEmpty()) {
