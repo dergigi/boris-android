@@ -35,8 +35,8 @@ android {
         applicationId = "org.dergigi.boris"
         minSdk = 26
         targetSdk = 35
-        versionCode = 213
-        versionName = "1.6.14"
+        versionCode = 214
+        versionName = "1.6.15"
         buildConfigField("String", "GIT_COMMIT", "\"${gitCommit()}\"")
     }
 

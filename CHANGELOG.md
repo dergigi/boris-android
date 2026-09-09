@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.15] - 2026-09-09
+
+### Added
+
+- Explore search can expand to relays after local results (NIP-50, #219)
+
 ## [1.6.14] - 2026-09-09
 
 ### Added
