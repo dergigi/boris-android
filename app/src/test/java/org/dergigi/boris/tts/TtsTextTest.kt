@@ -433,6 +433,18 @@ class TtsTextTest {
     }
 
     @Test
+    fun sentencesSplitOnColonsAndSemicolonsButKeepTimesAndUrlsTogether() {
+        assertEquals(
+            listOf("Note:", "this is the pause.", "One idea;", "then another."),
+            TtsText.sentences("Note: this is the pause. One idea; then another."),
+        )
+        assertEquals(
+            listOf("Meet at 12:30 tomorrow.", "See https://example.com/a:b for more."),
+            TtsText.sentences("Meet at 12:30 tomorrow. See https://example.com/a:b for more."),
+        )
+    }
+
+    @Test
     fun sentencesStillSplitEnglishAndQuestions() {
         assertEquals(
             listOf("Mr. Smith went home.", "Did he sleep?"),
