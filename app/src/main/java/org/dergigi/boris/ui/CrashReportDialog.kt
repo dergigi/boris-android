@@ -42,10 +42,12 @@ import org.dergigi.boris.data.SettingsSync
 @Composable
 fun CrashReportPrompt() {
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
+    val ready by SettingsSync.ready.collectAsStateWithLifecycle()
     var report by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         report = withContext(Dispatchers.IO) { CrashReporter.pending() }
     }
+    if (!ready) return
     val pending = report ?: return
     if (!settings.offerCrashReports) {
         LaunchedEffect(pending) { withContext(Dispatchers.IO) { CrashReporter.clear() } }
