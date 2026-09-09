@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.you
 
+import org.dergigi.boris.data.ArticleCache
 import org.dergigi.boris.nostr.Nip01Event
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -161,6 +162,66 @@ class YouViewModelTest {
             query = "bitcoin",
         )
         assertEquals(listOf("h:keep"), merged.map { it.key })
+    }
+
+    @Test
+    fun associatedArticlesDedupeByNormalizedUrl() {
+        val newer = ArticleCache.CachedArticle(
+            content = org.dergigi.boris.data.ReadableContent(
+                url = "https://dergigi.com/2026/08/28/meta-to-meza/",
+                title = "Meta to Meza",
+                publishedAt = 200,
+            ),
+            storedAt = 200,
+        )
+        val older = ArticleCache.CachedArticle(
+            content = org.dergigi.boris.data.ReadableContent(
+                url = "http://www.dergigi.com/2026/08/28/meta-to-meza",
+                title = "Older cache",
+                publishedAt = 100,
+            ),
+            storedAt = 100,
+        )
+        val other = ArticleCache.CachedArticle(
+            content = org.dergigi.boris.data.ReadableContent(
+                url = "https://dergigi.com/2026/01/01/other",
+                title = "Other",
+                publishedAt = 50,
+            ),
+            storedAt = 50,
+        )
+        val items = YouViewModel.associatedArticlesFrom(listOf(newer, older, other))
+        assertEquals(
+            listOf(
+                "c:https://dergigi.com/2026/08/28/meta-to-meza",
+                "c:https://dergigi.com/2026/01/01/other",
+            ),
+            items.map { it.id },
+        )
+        assertEquals("Meta to Meza", items.first().title)
+    }
+
+    @Test
+    fun allDropsDuplicateKeys() {
+        val first = org.dergigi.boris.data.BookmarkItem(
+            id = "c:https://dergigi.com/2026/08/28/meta-to-meza",
+            title = "Newer",
+            url = "https://dergigi.com/2026/08/28/meta-to-meza",
+            host = "dergigi.com",
+            imageUrl = null,
+            createdAt = 20,
+            bucket = org.dergigi.boris.data.BookmarkBucket.Web,
+        )
+        val duplicate = first.copy(title = "Older cache", createdAt = 10)
+        val merged = mergeYouItems(
+            highlights = emptyList(),
+            writings = emptyList(),
+            publicBookmarks = emptyList(),
+            webBookmarks = emptyList(),
+            associatedArticles = listOf(first, duplicate),
+        )
+        assertEquals(listOf("b:${first.id}"), merged.map { it.key })
+        assertEquals("Newer", (merged.single() as YouMergedItem.Bookmark).item.title)
     }
 
     @Test
