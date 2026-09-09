@@ -9,9 +9,11 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.14] - 2026-09-09
+
 ### Added
 
-- Tapping a `read.withboris.com` link opens Boris instead of the browser, once the site serves Digital Asset Links
+- Tapping a `read.withboris.com` link opens Boris instead of the browser (#218)
 
 ## [1.6.13] - 2026-09-09
 
