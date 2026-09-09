@@ -205,6 +205,7 @@ object SettingsSearch {
             R.string.settings_about_recommend_summary,
             R.string.settings_about_github,
             R.string.settings_about_github_issue,
+            R.string.settings_offer_crash_reports,
             R.string.settings_about_website,
             R.string.settings_about_webapp,
             R.string.settings_about_author,

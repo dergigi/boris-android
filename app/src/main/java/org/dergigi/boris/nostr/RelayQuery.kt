@@ -44,6 +44,18 @@ object RelayQuery {
         return RelayList.parse(events)
     }
 
+    /** NIP-17 inbox relays (kind 10050), falling back to the recipient's read relays. */
+    fun fetchDmRelays(pubkeyHex: String): List<String> {
+        val read = fetchRelayList(pubkeyHex).read
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip17.KIND_DM_RELAYS))
+            .put("authors", JSONArray().put(pubkeyHex))
+            .put("limit", 5)
+        val events = query((RelayList.FALLBACK + read).distinct(), listOf(filter))
+            .filter { it.pubkey.equals(pubkeyHex, ignoreCase = true) }
+        return Nip17.parseDmRelays(events).ifEmpty { read }
+    }
+
     fun fetchAppData(pubkeyHex: String): Nip01Event? {
         val relays = buildList {
             addAll(RelayList.FALLBACK)

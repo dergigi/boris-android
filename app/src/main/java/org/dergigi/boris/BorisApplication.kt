@@ -10,8 +10,14 @@ import coil3.request.maxBitmapSize
 import coil3.size.Size
 import okio.Path.Companion.toOkioPath
 import org.dergigi.boris.data.CacheLimit
+import org.dergigi.boris.data.CrashReporter
 
 class BorisApplication : Application(), SingletonImageLoader.Factory {
+    override fun onCreate() {
+        super.onCreate()
+        CrashReporter.install(this)
+    }
+
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
             .maxBitmapSize(Size(ARTICLE_BITMAP_MAX, ARTICLE_BITMAP_MAX))

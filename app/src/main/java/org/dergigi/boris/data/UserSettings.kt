@@ -56,6 +56,7 @@ class UserSettings internal constructor(
     val showReaderProgressHeading: Boolean get() = bool("showReaderProgressHeading", true)
     val hideStatusBarInReader: Boolean get() = bool("hideStatusBarInReader", true)
     val useLocalRelayAsCache: Boolean get() = bool("useLocalRelayAsCache", true)
+    val offerCrashReports: Boolean get() = bool("offerCrashReports", true)
     val hideArchivedOnHome: Boolean get() = bool("hideArchivedOnHome", true)
     val hideCompletedOnHome: Boolean get() = bool("hideCompletedOnHome", false)
     val hideNsfwOnHome: Boolean get() = bool("hideNsfwOnHome", true)
@@ -227,6 +228,7 @@ class UserSettings internal constructor(
         "linkColorDark" -> linkColorDark
         "linkColorLight" -> linkColorLight
         "nsfwWarnInReader" -> nsfwWarnInReader
+        "offerCrashReports" -> offerCrashReports
         "openLinksInReader" -> openLinksInReader
         "paragraphAlignment" -> paragraphAlignment
         "readerMargin" -> readerMargin.id
