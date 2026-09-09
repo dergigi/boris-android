@@ -471,7 +471,8 @@ object RelayQuery {
         val filter = nip50SearchFilter(raw, limit) ?: return emptyList()
         val urls = relayUrls(searchRelays())
         if (urls.isEmpty()) return emptyList()
-        val remote = query(urls, listOf(filter)).filter { event ->
+        val capped = limit.coerceIn(1, SEARCH_LIMIT)
+        val remote = query(urls, listOf(filter), maxEvents = capped).filter { event ->
             event.kind in SEARCH_KINDS
         }
         EventCache.putAll(remote)
@@ -1012,14 +1013,21 @@ object RelayQuery {
     internal fun rawQuery(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
         query(urls, filters)
 
-    private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
-        queryPerRelay(urls.associateWith { filters })
+    private fun query(
+        urls: List<String>,
+        filters: List<JSONObject>,
+        maxEvents: Int? = null,
+    ): List<Nip01Event> = queryPerRelay(urls.associateWith { filters }, maxEvents)
 
     /** Like [query], but each relay receives its own filter set. */
-    private fun queryPerRelay(targets: Map<String, List<JSONObject>>): List<Nip01Event> {
+    private fun queryPerRelay(
+        targets: Map<String, List<JSONObject>>,
+        maxEvents: Int? = null,
+    ): List<Nip01Event> {
         val reachable = skipCooldowns(reachableRelays(targets.keys.toList()))
         if (reachable.isEmpty()) return emptyList()
         val events = ConcurrentHashMap<String, Nip01Event>()
+        val eventsLock = Any()
         val eose = CountDownLatch(reachable.size)
         val active = mutableListOf<Pair<PooledRelay, String>>()
         for (url in reachable) {
@@ -1035,7 +1043,22 @@ object RelayQuery {
             relay.subscribe(
                 subId = subId,
                 filters = filters,
-                onEvent = { event -> events[event.id] = event },
+                onEvent = { event ->
+                    var reachedLimit = false
+                    synchronized(eventsLock) {
+                        val cap = maxEvents
+                        if (cap != null && events.size >= cap) {
+                            reachedLimit = true
+                        } else {
+                            events[event.id] = event
+                            reachedLimit = cap != null && events.size >= cap
+                        }
+                    }
+                    if (reachedLimit) {
+                        relay.unsubscribe(subId)
+                        if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
+                    }
+                },
                 onEose = {
                     if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
                 },
