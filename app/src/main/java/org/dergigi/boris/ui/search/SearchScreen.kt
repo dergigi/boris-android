@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -127,6 +130,7 @@ fun SearchScreen(
         results = state.results,
         searchRefreshing = state.isLoading ||
             (submittedQuery.trim().length >= 2 && state.query != submittedQuery.trim()),
+        relaySearch = state.relaySearch,
         discovery = discovery,
         discoveryRefreshing = discoveryRefreshing,
         discoverySectionOrder = HomeSections.visible(
@@ -144,6 +148,7 @@ fun SearchScreen(
             if (value.trim().isEmpty()) viewModel.clear()
         },
         onSubmitSearch = { viewModel.onQueryChange(draftQuery) },
+        onExpandRelaySearch = { viewModel.expandSearchToRelays() },
         onSelectResultType = { resultType = it },
         colorFor = { hit ->
             when {
@@ -189,6 +194,7 @@ fun SearchScreenContent(
     submittedQuery: String = query,
     results: List<LocalSearch.Hit>,
     searchRefreshing: Boolean = false,
+    relaySearch: RelaySearchUiState = RelaySearchUiState(),
     discovery: HomeHighlightsState,
     discoveryRefreshing: Boolean,
     discoverySectionOrder: List<String>,
@@ -197,6 +203,7 @@ fun SearchScreenContent(
     actions: ArticleActionHandlers,
     onQueryChange: (String) -> Unit,
     onSubmitSearch: () -> Unit = {},
+    onExpandRelaySearch: () -> Unit = {},
     onSelectResultType: (SearchResultType) -> Unit,
     colorFor: (LocalSearch.Hit.Highlight) -> Color,
     friendsColor: Color,
@@ -299,6 +306,10 @@ fun SearchScreenContent(
                             onSearch = onSubmitSearch,
                             modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
                         )
+                        RelaySearchNotice(
+                            relaySearch = relaySearch,
+                            onExpand = onExpandRelaySearch,
+                        )
                         SearchLoadingHint()
                     }
                 }
@@ -309,6 +320,10 @@ fun SearchScreenContent(
                             onQueryChange = onQueryChange,
                             onSearch = onSubmitSearch,
                             modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+                        )
+                        RelaySearchNotice(
+                            relaySearch = relaySearch,
+                            onExpand = onExpandRelaySearch,
                         )
                         SearchHint(stringResource(R.string.search_empty))
                     }
@@ -330,6 +345,10 @@ fun SearchScreenContent(
                                 selected = resultType,
                                 onSelect = onSelectResultType,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                            RelaySearchNotice(
+                                relaySearch = relaySearch,
+                                onExpand = onExpandRelaySearch,
                             )
                         }
                         items(visibleResults, key = { it.id }) { hit ->
@@ -381,6 +400,42 @@ fun SearchScreenContent(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RelaySearchNotice(
+    relaySearch: RelaySearchUiState,
+    onExpand: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(
+                when {
+                    relaySearch.isLoading -> R.string.search_relays_loading
+                    relaySearch.failed -> R.string.search_relays_failed
+                    relaySearch.searched -> R.string.search_relays_included
+                    else -> R.string.search_local_notice
+                },
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        if (!relaySearch.searched || relaySearch.failed) {
+            TextButton(
+                onClick = onExpand,
+                enabled = !relaySearch.isLoading,
+            ) {
+                Text(stringResource(R.string.search_expand_relays))
             }
         }
     }

@@ -7,7 +7,7 @@ import org.dergigi.boris.nostr.Nip84
 import org.dergigi.boris.nostr.NipB0
 import org.dergigi.boris.nostr.Profile
 
-/** Local-only search over EventCache. Relay NIP-50 search is backlog. */
+/** Local search over EventCache. Relay search can add events to this cache on demand. */
 object LocalSearch {
     const val DEFAULT_LIMIT = 40
 
