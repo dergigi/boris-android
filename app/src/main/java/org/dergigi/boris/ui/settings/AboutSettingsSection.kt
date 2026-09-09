@@ -33,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.openExternalUri
 import org.dergigi.boris.ui.reader.openWeblink
@@ -42,7 +43,8 @@ import org.dergigi.boris.ui.theme.HighlightOther
 
 @Composable
 fun AboutSettingsSection(
-    openInBoris: Boolean,
+    settings: UserSettings,
+    onUpdate: (UserSettings) -> Unit,
     onOpenArticle: (String) -> Unit,
     onOpenTutorial: () -> Unit,
     onOpenFeatures: () -> Unit,
@@ -55,6 +57,7 @@ fun AboutSettingsSection(
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     val linkTint = SettingsTints.About
+    val openInBoris = settings.openLinksInReader
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -121,6 +124,11 @@ fun AboutSettingsSection(
             tint = linkTint,
             trailing = Icons.AutoMirrored.Outlined.OpenInNew,
             onClick = { openExternalUri(context, AboutLinks.BUG_REPORT) },
+        )
+        SettingCheckbox(
+            label = stringResource(R.string.settings_offer_crash_reports),
+            checked = settings.offerCrashReports,
+            onCheckedChange = { onUpdate(settings.withBoolean("offerCrashReports", it)) },
         )
         AboutActionRow(
             label = stringResource(R.string.about_cta_feature),

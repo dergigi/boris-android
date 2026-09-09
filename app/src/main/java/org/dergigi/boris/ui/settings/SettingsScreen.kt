@@ -227,7 +227,7 @@ private val SettingsCategory.resetKeys: Set<String>
         SettingsCategory.Airplane ->
             setOf("useLocalRelayAsCache", ArticleImages.SETTINGS_KEY) +
                 OfflineShelf.entries.map { it.settingsKey }
-        SettingsCategory.About -> emptySet()
+        SettingsCategory.About -> setOf("offerCrashReports")
     }
 
 private val allResettableKeys = SettingsCategory.entries.flatMap { it.resetKeys }.toSet()
@@ -625,7 +625,8 @@ private fun SettingsCategoryDetail(
                 OfflineSection(settings = settings, onUpdate = onUpdate)
             }
             SettingsCategory.About -> AboutSettingsSection(
-                openInBoris = settings.openLinksInReader,
+                settings = settings,
+                onUpdate = onUpdate,
                 onOpenArticle = onOpenArticle,
                 onOpenTutorial = onOpenTutorial,
                 onOpenFeatures = onOpenFeatures,

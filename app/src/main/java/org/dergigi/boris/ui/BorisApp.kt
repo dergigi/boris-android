@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
+import org.dergigi.boris.data.CrashReporter
 import org.dergigi.boris.data.IncomingSave
 import org.dergigi.boris.data.IncomingShare
 import org.dergigi.boris.data.UrlExtractor
@@ -153,6 +154,9 @@ fun BorisApp(
         backStack?.arguments?.getString(ReaderViewModel.URL_ARG)
     } else {
         null
+    }
+    LaunchedEffect(currentRoute, currentArticleUrl) {
+        CrashReporter.onNavigate(currentRoute, currentArticleUrl)
     }
 
     fun openSpeakingArticle(url: String) {
@@ -551,6 +555,7 @@ fun BorisApp(
             }
             }
         }
+        CrashReportPrompt()
         highlightPromptQuote?.let { quote ->
             HighlightUrlDialog(
                 quote = quote,
