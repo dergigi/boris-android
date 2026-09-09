@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in crash reports: after a crash, the next launch shows what would be sent (app and Android version, device, stack trace, current article URL, recent screens) and offers to send it as an encrypted NIP-17 DM from a one-time key, copy it, or dismiss it. A toggle in Settings > About turns the prompt off (#79)
+
 ## [1.6.11] - 2026-09-09
 
 ### Fixed
