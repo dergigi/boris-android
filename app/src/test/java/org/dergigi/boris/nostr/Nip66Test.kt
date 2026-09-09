@@ -51,6 +51,22 @@ class Nip66Test {
     }
 
     @Test
+    fun selectSupportingNipKeepsOnlyRelaysAdvertisingThatNip() {
+        val selected = Nip66.selectSupportingNip(
+            listOf(
+                discovery("wss://search.example", rtt = 40, supportedNips = listOf(50)),
+                discovery("wss://plain.example", rtt = 20, supportedNips = listOf(1, 11)),
+            ),
+            seed = listOf("wss://fallback.example"),
+            nip = 50,
+            limit = 8,
+        )
+        assertEquals(listOf("wss://fallback.example", "wss://search.example"), selected)
+        assertTrue(Nip66.supportsNip(discovery("wss://search.example", 1, supportedNips = listOf(50)), 50))
+        assertFalse(Nip66.supportsNip(discovery("wss://plain.example", 1, supportedNips = listOf(1)), 50))
+    }
+
+    @Test
     fun normalizeStripsSlashAndRejectsLocalhost() {
         assertEquals("wss://relay.damus.io", Nip66.normalize("wss://relay.damus.io/"))
         assertNull(Nip66.normalize("wss://127.0.0.1"))
@@ -69,6 +85,7 @@ class Nip66Test {
         rtt: Int,
         network: String? = "clearnet",
         requirements: List<String> = listOf("!auth", "!payment"),
+        supportedNips: List<Int> = emptyList(),
     ): Nip01Event {
         val tags = mutableListOf(
             listOf("d", url),
@@ -76,6 +93,7 @@ class Nip66Test {
         )
         if (network != null) tags.add(listOf("n", network))
         requirements.forEach { tags.add(listOf("R", it)) }
+        supportedNips.forEach { tags.add(listOf("N", it.toString())) }
         return Nip01Event(
             id = url.hashCode().toUInt().toString().padStart(64, '0'),
             pubkey = "aa".repeat(32),

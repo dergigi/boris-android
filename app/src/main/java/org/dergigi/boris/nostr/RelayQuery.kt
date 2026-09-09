@@ -162,6 +162,9 @@ object RelayQuery {
     @Volatile
     private var discovered: List<String> = emptyList()
 
+    @Volatile
+    private var searchRelayCache: List<String>? = null
+
     fun fetchContactPubkeys(pubkeyHex: String): Set<String> {
         val cached = EventCache.latest(Nip01Event.KIND_CONTACTS, pubkeyHex)
         if (cached != null) {
@@ -461,6 +464,34 @@ object RelayQuery {
             .put("authors", JSONArray().put(pubkeyHex.lowercase()))
             .put("limit", 500)
         return query(urls, listOf(filter))
+    }
+
+    /** Opt-in NIP-50 search across public content relays. */
+    fun searchNip50(raw: String, limit: Int = SEARCH_LIMIT): List<Nip01Event> {
+        val filter = nip50SearchFilter(raw, limit) ?: return emptyList()
+        val urls = relayUrls(searchRelays())
+        if (urls.isEmpty()) return emptyList()
+        val capped = limit.coerceIn(1, SEARCH_LIMIT)
+        val remote = query(urls, listOf(filter), maxEvents = capped).filter { event ->
+            event.kind in SEARCH_KINDS
+        }
+        EventCache.putAll(remote)
+        return remote
+    }
+
+    fun discoverSearchRelays(
+        seed: List<String> = SEARCH_RELAYS,
+        limit: Int = SEARCH_RELAY_LIMIT,
+    ): List<String> {
+        val since = System.currentTimeMillis() / 1000 - DISCOVERY_WINDOW_SECONDS
+        val filter = JSONObject()
+            .put("kinds", JSONArray().put(Nip01Event.KIND_RELAY_DISCOVERY))
+            .put("#N", JSONArray().put(NIP_50.toString()))
+            .put("since", since)
+            .put("limit", 200)
+        val bootstrap = (Nip66.MONITOR_RELAYS + seed).mapNotNull { Nip66.normalize(it) }.distinct()
+        val events = query(bootstrap, listOf(filter))
+        return Nip66.selectSupportingNip(events, seed, NIP_50, limit)
     }
 
     fun fetchArchiveReactions(pubkeyHex: String, readRelays: List<String>): List<Nip01Event> {
@@ -982,14 +1013,21 @@ object RelayQuery {
     internal fun rawQuery(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
         query(urls, filters)
 
-    private fun query(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
-        queryPerRelay(urls.associateWith { filters })
+    private fun query(
+        urls: List<String>,
+        filters: List<JSONObject>,
+        maxEvents: Int? = null,
+    ): List<Nip01Event> = queryPerRelay(urls.associateWith { filters }, maxEvents)
 
     /** Like [query], but each relay receives its own filter set. */
-    private fun queryPerRelay(targets: Map<String, List<JSONObject>>): List<Nip01Event> {
+    private fun queryPerRelay(
+        targets: Map<String, List<JSONObject>>,
+        maxEvents: Int? = null,
+    ): List<Nip01Event> {
         val reachable = skipCooldowns(reachableRelays(targets.keys.toList()))
         if (reachable.isEmpty()) return emptyList()
         val events = ConcurrentHashMap<String, Nip01Event>()
+        val eventsLock = Any()
         val eose = CountDownLatch(reachable.size)
         val active = mutableListOf<Pair<PooledRelay, String>>()
         for (url in reachable) {
@@ -1005,7 +1043,22 @@ object RelayQuery {
             relay.subscribe(
                 subId = subId,
                 filters = filters,
-                onEvent = { event -> events[event.id] = event },
+                onEvent = { event ->
+                    var reachedLimit = false
+                    synchronized(eventsLock) {
+                        val cap = maxEvents
+                        if (cap != null && events.size >= cap) {
+                            reachedLimit = true
+                        } else {
+                            events[event.id] = event
+                            reachedLimit = cap != null && events.size >= cap
+                        }
+                    }
+                    if (reachedLimit) {
+                        relay.unsubscribe(subId)
+                        if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
+                    }
+                },
                 onEose = {
                     if (eoseSignaled.compareAndSet(false, true)) eose.countDown()
                 },
@@ -1047,6 +1100,15 @@ object RelayQuery {
 
     private fun isReactionKind(event: Nip01Event): Boolean =
         event.kind == Nip01Event.KIND_REACTION || event.kind == Nip01Event.KIND_URL_REACTION
+
+    internal fun nip50SearchFilter(raw: String, limit: Int = SEARCH_LIMIT): JSONObject? {
+        val trimmed = raw.trim().replace(Regex("\\s+"), " ")
+        if (trimmed.length < 2) return null
+        return JSONObject()
+            .put("search", trimmed)
+            .put("kinds", JSONArray().apply { SEARCH_KINDS.forEach { put(it) } })
+            .put("limit", limit.coerceIn(1, SEARCH_LIMIT))
+    }
 
     private fun highlightFilter(
         limit: Int,
@@ -1100,6 +1162,17 @@ object RelayQuery {
         }
     }
 
+    private fun searchRelays(): List<String> {
+        val cached = searchRelayCache
+        if (cached != null) {
+            refreshOnce("nip66:search-relays") {
+                searchRelayCache = discoverSearchRelays()
+            }
+            return cached
+        }
+        return discoverSearchRelays().also { searchRelayCache = it }
+    }
+
     private val refreshed = ConcurrentHashMap.newKeySet<String>()
     private val refreshPool = Executors.newFixedThreadPool(2) { runnable ->
         Thread(runnable, "relay-refresh").apply { isDaemon = true }
@@ -1109,11 +1182,24 @@ object RelayQuery {
         "wss://relay.getalby.com/v1",
         "wss://relay.zapstore.dev",
     )
+    private val SEARCH_RELAYS = listOf(
+        "wss://relay.nostr.band",
+        "wss://search.nos.today",
+    )
+    private val SEARCH_KINDS = listOf(
+        Nip01Event.KIND_METADATA,
+        Nip01Event.KIND_HIGHLIGHT,
+        Nip01Event.KIND_LONG_FORM,
+        Nip01Event.KIND_WEB_BOOKMARK,
+    )
 
     private const val QUERY_TIMEOUT_MS = 8_000L
     private const val QUERY_MAJORITY_WAIT_MS = 2_000L
     private const val QUERY_STRAGGLER_GRACE_MS = 500L
     private const val PUBLISH_TIMEOUT_MS = 8_000L
+    private const val SEARCH_LIMIT = 80
+    private const val SEARCH_RELAY_LIMIT = 8
+    private const val NIP_50 = 50
     private const val DISCOVERY_WINDOW_SECONDS = 48L * 60L * 60L
     private const val PROFILE_CHUNK = 25
     private const val EVENT_CHUNK = 25
