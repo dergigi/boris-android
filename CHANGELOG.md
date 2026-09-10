@@ -9,6 +9,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.16] - 2026-09-10
+
 ### Fixed
 
 - Reader no longer jumps or stutters when you reverse scroll direction: hiding the status bar no longer resizes the top bar and re-lays out the article (#220)
