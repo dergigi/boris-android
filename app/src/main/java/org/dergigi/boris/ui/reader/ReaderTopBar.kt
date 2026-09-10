@@ -6,7 +6,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
@@ -57,7 +62,7 @@ import org.dergigi.boris.ui.theme.rememberDisplayLook
 
 internal val ArchiveGreen = Color(0xFF22C55E)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun ReaderTopBar(
     modifier: Modifier = Modifier,
@@ -93,6 +98,10 @@ internal fun ReaderTopBar(
     val scope = rememberCoroutineScope()
     TopAppBar(
         modifier = modifier,
+        // Hiding the status bar zeroes the visible inset; keep the bar the same
+        // height either way so the article below never re-lays out mid-scroll (#220).
+        windowInsets = WindowInsets.systemBarsIgnoringVisibility
+            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
         title = {
             val title = (state as? ReaderUiState.Ready)?.content?.title
                 ?: (state as? ReaderUiState.Loading)?.title

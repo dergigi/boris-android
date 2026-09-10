@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.width
@@ -445,7 +445,7 @@ private fun ReaderStatusBarEffect(enabled: Boolean) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ReaderScreenContent(
     state: ReaderUiState,
@@ -658,7 +658,8 @@ fun ReaderScreenContent(
     ) { innerPadding ->
         val density = LocalDensity.current
         val layoutDirection = LocalLayoutDirection.current
-        val fallbackBarPx = WindowInsets.statusBars.getTop(density) + with(density) { 64.dp.roundToPx() }
+        val fallbackBarPx =
+            WindowInsets.statusBarsIgnoringVisibility.getTop(density) + with(density) { 64.dp.roundToPx() }
         val overlayBarPx = barHeightPx.intValue.takeIf { it > 0 } ?: fallbackBarPx
         val overlayBarDp = with(density) { overlayBarPx.toDp() }
         val sidePad = Modifier.padding(
