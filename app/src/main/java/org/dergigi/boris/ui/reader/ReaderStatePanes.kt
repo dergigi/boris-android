@@ -97,6 +97,8 @@ internal fun ReaderErrorPane(
     onOpenOriginal: () -> Unit,
     onOpenWayback: () -> Unit,
     onOpenArchivePh: () -> Unit,
+    webArchiveLabel: String? = null,
+    onOpenWebArchives: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var detailsOpen by remember(state.detail) { mutableStateOf(false) }
@@ -189,6 +191,9 @@ internal fun ReaderErrorPane(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.reader_open_in_browser))
+                }
+                if (webArchiveLabel != null) {
+                    TextButton(onClick = onOpenWebArchives) { Text(webArchiveLabel) }
                 }
                 if (InAppBrowser.waybackUrl(state.url) != null) {
                     TextButton(onClick = onOpenWayback) {

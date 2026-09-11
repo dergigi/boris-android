@@ -561,6 +561,19 @@ fun ReaderScreenContent(
     }
 
     val canOpenArchive = articleUrl?.let { InAppBrowser.waybackUrl(it) } != null
+    val webArchives = rememberWebArchives(articleUrl.takeIf { canOpenArchive }, loggedIn)
+    var archivePickerOpen by remember(articleUrl) { mutableStateOf(false) }
+    val webArchiveLabel = if (webArchives.isEmpty()) null else stringResource(
+        if (webArchives.all { it.naan }) R.string.reader_open_naan_archive
+        else R.string.reader_open_archived_version,
+    )
+    if (archivePickerOpen && webArchives.isNotEmpty()) {
+        WebArchivePicker(
+            receipts = webArchives,
+            onDismiss = { archivePickerOpen = false },
+            onOpenBrowser = onOpenBrowser,
+        )
+    }
 
     fun openNative() {
         val url = articleUrl ?: return
@@ -643,6 +656,8 @@ fun ReaderScreenContent(
             onOpenNative = ::openNative,
             onOpenWayback = ::openWayback,
             onOpenArchivePh = ::openArchivePh,
+            webArchiveLabel = webArchiveLabel,
+            onOpenWebArchives = { archivePickerOpen = true },
         )
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -684,6 +699,8 @@ fun ReaderScreenContent(
                     onOpenOriginal = ::openOriginal,
                     onOpenWayback = ::openWayback,
                     onOpenArchivePh = ::openArchivePh,
+                    webArchiveLabel = webArchiveLabel,
+                    onOpenWebArchives = { archivePickerOpen = true },
                     modifier = pinnedPad,
                 )
             }
