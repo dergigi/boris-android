@@ -31,6 +31,7 @@ import org.dergigi.boris.data.SessionStore
 import org.dergigi.boris.nostr.RelayQuery
 import org.dergigi.boris.tts.requestTtsNotificationPermissionOnce
 import org.dergigi.boris.tts.startListening as startArticleListening
+import java.util.concurrent.atomic.AtomicInteger
 
 fun shareArticleLink(context: Context, title: String?, url: String) {
     val shareUrl = NostrLink.parse(url)?.publicUrl ?: url
@@ -83,6 +84,7 @@ class ArticleActionsViewModel(
 
     @Volatile
     private var archivedPubkeyHex: String? = null
+    private val archiveRefreshGeneration = AtomicInteger(0)
     private var archiveRefreshJob: Job? = null
     private var listenJob: Job? = null
     private val markAsReadAction = MarkAsReadAction(
@@ -103,15 +105,22 @@ class ArticleActionsViewModel(
         _loggedIn.value = pubkeyHex != null
         if (pubkeyHex == null) {
             archivedPubkeyHex = null
+            archiveRefreshGeneration.incrementAndGet()
             archiveRefreshJob?.cancel()
             _archivedKeys.value = emptySet()
             return
         }
-        if (archivedPubkeyHex == pubkeyHex && archiveRefreshJob?.isActive == true) return
+        val samePubkey = archivedPubkeyHex == pubkeyHex
+        if (samePubkey && archiveRefreshJob?.isActive == true) return
+        if (!samePubkey) {
+            archiveRefreshJob?.cancel()
+            _archivedKeys.value = emptySet()
+        }
+        val generation = archiveRefreshGeneration.incrementAndGet()
         archivedPubkeyHex = pubkeyHex
         archiveRefreshJob = viewModelScope.launch(Dispatchers.IO) {
             val keys = loadArchivedKeys(pubkeyHex)
-            if (archivedPubkeyHex == pubkeyHex) {
+            if (archivedPubkeyHex == pubkeyHex && archiveRefreshGeneration.get() == generation) {
                 _archivedKeys.value = keys + _archivedKeys.value
             }
         }
