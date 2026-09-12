@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -77,9 +78,12 @@ class ArticleActionsViewModel(
     private val _loggedIn = MutableStateFlow(SessionStore.load(application) != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
 
-    private val _archivedKeys = MutableStateFlow(loadArchivedKeys())
+    private val _archivedKeys = MutableStateFlow(emptySet<String>())
     val archivedKeys: StateFlow<Set<String>> = _archivedKeys.asStateFlow()
 
+    @Volatile
+    private var archivedPubkeyHex: String? = null
+    private var archiveRefreshJob: Job? = null
     private var listenJob: Job? = null
     private val markAsReadAction = MarkAsReadAction(
         app = application,
@@ -90,9 +94,27 @@ class ArticleActionsViewModel(
         },
     )
 
+    init {
+        refreshSession()
+    }
+
     fun refreshSession() {
-        _loggedIn.value = SessionStore.load(getApplication()) != null
-        _archivedKeys.value = loadArchivedKeys() + _archivedKeys.value
+        val pubkeyHex = SessionStore.load(getApplication())?.pubkeyHex
+        _loggedIn.value = pubkeyHex != null
+        if (pubkeyHex == null) {
+            archivedPubkeyHex = null
+            archiveRefreshJob?.cancel()
+            _archivedKeys.value = emptySet()
+            return
+        }
+        if (archivedPubkeyHex == pubkeyHex && archiveRefreshJob?.isActive == true) return
+        archivedPubkeyHex = pubkeyHex
+        archiveRefreshJob = viewModelScope.launch(Dispatchers.IO) {
+            val keys = loadArchivedKeys(pubkeyHex)
+            if (archivedPubkeyHex == pubkeyHex) {
+                _archivedKeys.value = keys + _archivedKeys.value
+            }
+        }
     }
 
     fun startListening(url: String) {
@@ -113,10 +135,8 @@ class ArticleActionsViewModel(
         _message.value = null
     }
 
-    private fun loadArchivedKeys(): Set<String> {
-        val hex = SessionStore.load(getApplication())?.pubkeyHex ?: return emptySet()
-        return ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(hex))
-    }
+    private fun loadArchivedKeys(pubkeyHex: String): Set<String> =
+        ArchivedArticles.keys(RelayQuery.cachedArchiveReactions(pubkeyHex))
 }
 
 @Composable
