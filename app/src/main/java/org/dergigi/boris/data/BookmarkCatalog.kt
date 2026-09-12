@@ -95,6 +95,7 @@ object BookmarkCatalog {
         articles: Map<String, Nip01Event> = emptyMap(),
         notes: Map<String, Nip01Event> = emptyMap(),
         previews: Map<String, OgPreview?> = emptyMap(),
+        localItems: List<BookmarkItem> = emptyList(),
     ): BookmarkShelves {
         val listUpdatedAt = listEvent?.createdAt ?: 0L
         val publicItems = listEvent
@@ -128,15 +129,17 @@ object BookmarkCatalog {
             }
             .dedupe()
         val knownTargets = targetKeysOf(publicItems, privateItems, webItems, lookItems, archiveItems)
+        val imported = localItems.filterNot { it.targetKey() in knownTargets }
+        val importedTargets = imported.mapTo(hashSetOf()) { it.targetKey() }
         val linkedItems = linkedArticles
             .sortedByDescending { it.createdAt }
             .mapNotNull { ref -> itemFromLinkedArticle(ref, previews) }
-            .filterNot { item -> item.targetKey() in knownTargets }
+            .filterNot { item -> item.targetKey() in knownTargets || item.targetKey() in importedTargets }
             .dedupeByTarget()
         return BookmarkShelves(
             private = privateItems,
             public = publicItems,
-            web = (webItems + linkedItems).dedupeByTarget().sortedByDescending { it.createdAt },
+            web = (webItems + imported + linkedItems).dedupeByTarget().sortedByDescending { it.createdAt },
             look = lookItems,
             archive = archiveItems,
             privateLocked = hiddenTags == null && Nip51.looksEncrypted(listEvent?.content.orEmpty()),

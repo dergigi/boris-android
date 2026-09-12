@@ -17,6 +17,7 @@ class ReaderRepository(
     private val client: OkHttpClient = defaultClient,
 ) {
     fun fetch(url: String, refresh: Boolean = false): ReadableContent {
+        if (!refresh) ImportedArticles.load(url)?.let { return finish(url, it) }
         var parsedFromWeb = false
         val content = when (val target = NostrLink.parse(url)) {
             is NostrTarget.Article -> fetchArticle(target.ref)
@@ -59,6 +60,7 @@ class ReaderRepository(
     }
 
     fun peekCached(url: String): ReadableContent? {
+        ImportedArticles.load(url)?.let { return it }
         val content = rssContent(url)?.takeIf { it.body.isNotBlank() }
             ?: run {
                 if (NostrLink.parse(url) != null) return null

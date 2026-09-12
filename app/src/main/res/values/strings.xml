@@ -706,4 +706,18 @@
     <string name="tts_lang_de">German</string>
     <string name="tts_lang_ja">Japanese</string>
     <string name="tts_lang_ru">Russian</string>
+    <string name="readwise_import_title">Import from Readwise Reader</string>
+    <string name="readwise_import_intro">In Reader, open your account profile and choose Export Library as CSV. Select that file here to download article text into the Web shelf. Copies stay on this device and are available offline; images may still need a connection. Internet access is needed during import. Highlights, tags, PDFs and EPUBs are not imported.</string>
+    <string name="readwise_export_help">How to export from Reader</string>
+    <string name="readwise_choose_csv">Choose library CSV</string>
+    <string name="readwise_preview">%1$d article rows found · %2$d unsupported rows skipped</string>
+    <string name="readwise_start">Import articles</string>
+    <string name="readwise_retry">Run again (skip saved articles)</string>
+    <string name="readwise_stopped">Import stopped. Completed copies are kept.</string>
+    <string name="readwise_stop">Stop import</string>
+    <string name="readwise_progress">Checked %1$d of %2$d · %3$d imported · %4$d duplicates · %5$d failed</string>
+    <string name="readwise_failed_hint">These articles could not be downloaded or saved (showing up to 10). Check your connection and run the import again to retry.</string>
+    <string name="readwise_local_count">%1$d imported articles saved on this device</string>
+    <string name="readwise_remove">Remove imported copies</string>
+    <string name="readwise_remove_note">Remove all device-local imported articles from the library and their saved text? Your Nostr bookmarks will be kept.</string>
 </resources>

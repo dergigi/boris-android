@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Import article URLs and titles from a Readwise Reader library CSV in Settings → Library, with duplicate detection and device-local text for offline reading (#225)
+
 ## [1.6.16] - 2026-09-10
 
 ### Fixed

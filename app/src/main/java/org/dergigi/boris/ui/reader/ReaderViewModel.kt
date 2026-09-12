@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.reader
 
+import org.dergigi.boris.data.ImportedArticles
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
@@ -575,8 +576,8 @@ class ReaderViewModel(
         membershipJob?.cancel()
         val session = SessionStore.load(getApplication())
         _loggedIn.value = session != null
-        if (session == null) {
-            _inLibrary.value = false
+        if (session == null || ImportedArticles.contains(content.url)) {
+            _inLibrary.value = ImportedArticles.contains(content.url)
             publishSaveState()
             return
         }
