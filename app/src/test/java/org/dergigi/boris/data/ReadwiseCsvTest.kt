@@ -8,7 +8,7 @@ class ReadwiseCsvTest {
     fun handlesBomCrLfQuotedCommasQuotesNewlinesAndUnicode() {
         val csv = "\uFEFFTitle,URL,Category\r\n\"Hello, \"\"世界\"\"\nnext\",https://example.com/a,article\r\n"
         val result = ReadwiseCsv.parse(csv.reader())
-        assertEquals(listOf(ReadwiseArticle("https://example.com/a", "Hello, \"世界\"\nnext")), result.articles)
+        assertEquals(listOf(ImportArticle("https://example.com/a", "Hello, \"世界\"\nnext")), result.articles)
         assertEquals(0, result.skipped)
     }
 
@@ -36,7 +36,7 @@ class ReadwiseCsvTest {
     @Test
     fun acceptsUrlOnlyExportAndBlankLines() {
         val result = ReadwiseCsv.parse("url\n\nhttps://example.com\n".reader())
-        assertEquals(listOf(ReadwiseArticle("https://example.com", null)), result.articles)
+        assertEquals(listOf(ImportArticle("https://example.com", null)), result.articles)
     }
 
     @Test

@@ -6,16 +6,16 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 
-class ReadwiseImportTest {
-    private val a = ReadwiseArticle("https://example.com/a", "Exported title")
-    private val b = ReadwiseArticle("https://example.com/b", null)
+class ArticleImportTest {
+    private val a = ImportArticle("https://example.com/a", "Exported title")
+    private val b = ImportArticle("https://example.com/b", null)
 
     @Test
     fun skipsKnownAndRepeatedUrlsAndPreservesSourceAndTitle() = runBlocking {
         val saved = mutableListOf<ReadableContent>()
         val fetched = mutableListOf<String>()
-        val result = ReadwiseImport.run(
-            ReadwiseExport(listOf(a, a.copy(url = a.url + "#part"), b), 2),
+        val result = ArticleImport.run(
+            ArticleExport(listOf(a, a.copy(url = a.url + "#part"), b), 2),
             setOf("http://www.example.com/b/"),
             fetch = { fetched += it; ReadableContent("https://redirect.example/new", "Fetched", markdown = "Text") },
             save = { saved += it; true }, onProgress = {},
@@ -31,8 +31,8 @@ class ReadwiseImportTest {
 
     @Test
     fun failedDownloadsAndWritesAreNotCountedAndOtherArticlesContinue() = runBlocking {
-        val c = ReadwiseArticle("https://example.com/c", null)
-        val result = ReadwiseImport.run(ReadwiseExport(listOf(a, b, c), 0), emptySet(),
+        val c = ImportArticle("https://example.com/c", null)
+        val result = ArticleImport.run(ArticleExport(listOf(a, b, c), 0), emptySet(),
             fetch = { if (it == a.url) throw IOException("offline") else ReadableContent(it, markdown = "body") },
             save = { if (it.url == b.url) throw IOException("disk full") else true }, onProgress = {})
         assertEquals(listOf(a, b), result.failed)
@@ -43,7 +43,7 @@ class ReadwiseImportTest {
     @Test
     fun emptyBodiesAreFailuresAndFetchedTitleIsFallback() = runBlocking {
         val saved = mutableListOf<ReadableContent>()
-        val result = ReadwiseImport.run(ReadwiseExport(listOf(a, b), 0), emptySet(),
+        val result = ArticleImport.run(ArticleExport(listOf(a, b), 0), emptySet(),
             fetch = { ReadableContent(it, "Fetched title", markdown = if (it == a.url) "" else "Body") },
             save = { saved += it; true }, onProgress = {})
         assertEquals(listOf(a), result.failed)
@@ -54,7 +54,7 @@ class ReadwiseImportTest {
     fun cancellationIsNotSwallowedAsAnArticleFailure() {
         assertThrows(CancellationException::class.java) {
             runBlocking {
-                ReadwiseImport.run(ReadwiseExport(listOf(a, b), 0), emptySet(),
+                ArticleImport.run(ArticleExport(listOf(a, b), 0), emptySet(),
                     fetch = { throw CancellationException() }, save = { fail("Should not save"); true }, onProgress = {})
             }
         }

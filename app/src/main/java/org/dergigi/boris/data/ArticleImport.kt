@@ -8,16 +8,16 @@ import org.dergigi.boris.nostr.Nip01Event
 import org.dergigi.boris.nostr.Nip51
 import org.dergigi.boris.nostr.RelayQuery
 
-data class ReadwiseImportProgress(
+data class ArticleImportProgress(
     val processed: Int = 0,
     val total: Int = 0,
     val imported: Int = 0,
     val duplicates: Int = 0,
     val skipped: Int = 0,
-    val failed: List<ReadwiseArticle> = emptyList(),
+    val failed: List<ImportArticle> = emptyList(),
 )
 
-object ReadwiseImport {
+object ArticleImport {
     /** Use the library already on this device, including unlocked private bookmarks. */
     fun knownUrls(pubkey: String?): Set<String> {
         val local = ImportedArticles.items().mapNotNull { it.url }
@@ -37,14 +37,14 @@ object ReadwiseImport {
     }
 
     suspend fun run(
-        export: ReadwiseExport,
+        export: ArticleExport,
         knownUrls: Set<String>,
         fetch: (String) -> ReadableContent,
         save: (ReadableContent) -> Boolean,
-        onProgress: (ReadwiseImportProgress) -> Unit,
-    ): ReadwiseImportProgress {
+        onProgress: (ArticleImportProgress) -> Unit,
+    ): ArticleImportProgress {
         val seen = knownUrls.mapTo(hashSetOf(), ArticleUrl::normalize)
-        var progress = ReadwiseImportProgress(total = export.articles.size, skipped = export.skipped)
+        var progress = ArticleImportProgress(total = export.articles.size, skipped = export.skipped)
         onProgress(progress)
         for (article in export.articles) {
             currentCoroutineContext().ensureActive()

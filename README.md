@@ -67,6 +67,14 @@ Import requires internet access. Successfully imported text survives restarts an
 
 The first version imports web articles from CSV, without a Readwise API token. It does not import highlights, tags, PDFs, EPUBs, or Reader's full-content ZIP export, and it does not publish imported copies to Nostr. **Remove imported copies** in the same settings section removes these local library entries and their saved text.
 
+## Import from Pocket
+
+Open **Settings → Library → Import from Pocket** and select a Pocket CSV export you already saved. If it is inside a ZIP, extract the CSV first. The first version targets the CSV export described in [Pocket's export documentation](https://support.mozilla.org/en-US/kb/exporting-your-pocket-list); legacy HTML exports are not supported.
+
+Pocket and Readwise share the same import preview, progress, retry, duplicate detection, and device-local storage. Article URLs and titles are preserved, and successfully downloaded text is available offline in the Web shelf. Pocket rows from Saves, Archive, and Favorites are all imported as saved articles; status, tags, and highlights are not transferred. Import needs internet access to retrieve readable text from the original websites; unavailable pages are reported as failures. Images may need a connection.
+
+Duplicate checks include prior imports from either service and the library already loaded on this device. **Remove imported copies** removes local copies from both services, while keeping Nostr bookmarks.
+
 ## Contributing
 
 Boris is free and open source and always will be. Fork it, change it, send a pull request, or just use it.

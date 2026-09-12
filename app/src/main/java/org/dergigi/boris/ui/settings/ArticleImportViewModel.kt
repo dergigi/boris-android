@@ -13,39 +13,48 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.ImportedArticles
 import org.dergigi.boris.data.ReaderRepository
+import org.dergigi.boris.data.PocketCsv
 import org.dergigi.boris.data.ReadwiseCsv
-import org.dergigi.boris.data.ReadwiseExport
-import org.dergigi.boris.data.ReadwiseImport
-import org.dergigi.boris.data.ReadwiseImportProgress
+import org.dergigi.boris.data.ArticleExport
+import org.dergigi.boris.data.ArticleImport
+import org.dergigi.boris.data.ArticleImportProgress
 import org.dergigi.boris.data.SessionStore
 
-data class ReadwiseImportUiState(
+enum class ArticleImportSource { Readwise, Pocket }
+
+data class ArticleImportUiState(
+    val source: ArticleImportSource? = null,
     val busy: Boolean = false,
-    val preview: ReadwiseExport? = null,
-    val progress: ReadwiseImportProgress? = null,
+    val preview: ArticleExport? = null,
+    val progress: ArticleImportProgress? = null,
     val error: String? = null,
 )
 
-class ReadwiseImportViewModel(application: Application) : AndroidViewModel(application) {
-    private val _state = MutableStateFlow(ReadwiseImportUiState())
+class ArticleImportViewModel(application: Application) : AndroidViewModel(application) {
+    private val _state = MutableStateFlow(ArticleImportUiState())
     val state = _state.asStateFlow()
     private var job: Job? = null
 
-    fun choose(uri: Uri) {
+    fun choose(uri: Uri, source: ArticleImportSource) {
         if (_state.value.busy) return
-        _state.value = ReadwiseImportUiState(busy = true)
+        _state.value = ArticleImportUiState(source = source, busy = true)
         job = viewModelScope.launch {
             try {
                 val export = withContext(Dispatchers.IO) {
                     getApplication<Application>().contentResolver.openInputStream(uri)?.use {
-                        it.reader(Charsets.UTF_8).use(ReadwiseCsv::parse)
+                        it.reader(Charsets.UTF_8).use { reader ->
+                            when (source) {
+                                ArticleImportSource.Readwise -> ReadwiseCsv.parse(reader)
+                                ArticleImportSource.Pocket -> PocketCsv.parse(reader)
+                            }
+                        }
                     } ?: error("Could not open the selected file.")
                 }
-                _state.value = ReadwiseImportUiState(preview = export)
+                _state.value = ArticleImportUiState(source = source, preview = export)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
-                _state.value = ReadwiseImportUiState(error = e.message ?: "Could not read the CSV.")
+                _state.value = ArticleImportUiState(source = source, error = e.message ?: "Could not read the CSV.")
             } finally {
                 _state.value = _state.value.copy(busy = false)
             }
@@ -60,9 +69,9 @@ class ReadwiseImportViewModel(application: Application) : AndroidViewModel(appli
             try {
                 withContext(Dispatchers.IO) {
                     val pubkey = SessionStore.load(getApplication())?.pubkeyHex
-                    val known = ReadwiseImport.knownUrls(pubkey)
+                    val known = ArticleImport.knownUrls(pubkey)
                     val repository = ReaderRepository()
-                    ReadwiseImport.run(export, known, fetch = { repository.fetch(it) }, save = ImportedArticles::add) {
+                    ArticleImport.run(export, known, fetch = { repository.fetch(it) }, save = ImportedArticles::add) {
                         _state.value = _state.value.copy(progress = it)
                     }
                 }
@@ -80,15 +89,15 @@ class ReadwiseImportViewModel(application: Application) : AndroidViewModel(appli
 
     fun clearImported() {
         if (_state.value.busy) return
-        _state.value = ReadwiseImportUiState(busy = true)
+        _state.value = ArticleImportUiState(busy = true)
         job = viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) { ImportedArticles.clear() }
-                _state.value = ReadwiseImportUiState()
+                _state.value = ArticleImportUiState()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
-                _state.value = ReadwiseImportUiState(error = e.message ?: "Could not remove imported articles.")
+                _state.value = ArticleImportUiState(error = e.message ?: "Could not remove imported articles.")
             } finally {
                 _state.value = _state.value.copy(busy = false)
             }
