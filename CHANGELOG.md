@@ -9,11 +9,20 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.17] - 2026-09-13
+
 ### Added
 
 - Import Pocket CSV exports through the shared article import flow in Settings → Library (#226)
 - Import article URLs and titles from a Readwise Reader library CSV in Settings → Library, with duplicate detection and device-local text for offline reading (#225)
 - Reader discovers existing naan archives and offers dated copies and mirrors in the Open menu and error screen (#83)
+
+### Fixed
+
+- Markdown emphasis no longer sticks to the previous word or swallows the space after italics (#233)
+- Sidebar highlights are listed in article order (#234)
+- Find in page has a clear button (#232)
+- Switching tabs stays responsive while archive marks load in the background (#223)
 
 ## [1.6.16] - 2026-09-10
 
