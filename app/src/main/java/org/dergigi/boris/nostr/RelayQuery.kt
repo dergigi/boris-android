@@ -1010,8 +1010,11 @@ object RelayQuery {
         return PublishResult(remoteOk = remoteOk.get(), localOk = localOk.get())
     }
 
-    internal fun rawQuery(urls: List<String>, filters: List<JSONObject>): List<Nip01Event> =
-        query(urls, filters)
+    internal fun rawQuery(
+        urls: List<String>,
+        filters: List<JSONObject>,
+        maxEvents: Int? = null,
+    ): List<Nip01Event> = query(urls, filters, maxEvents)
 
     private fun query(
         urls: List<String>,
