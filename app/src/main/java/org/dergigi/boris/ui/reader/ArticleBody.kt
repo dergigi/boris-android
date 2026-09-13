@@ -1269,7 +1269,7 @@ internal fun ArticleBody(
             articleUrl = content.url,
             articleTexts = listOfNotNull(
                 content.title?.takeIf { it.isNotBlank() },
-                content.body,
+                markdownBody ?: content.body,
             ),
             topPadding = paneTopPadding,
             menuFor = { item ->

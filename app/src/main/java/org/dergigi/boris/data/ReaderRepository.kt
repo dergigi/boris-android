@@ -394,11 +394,13 @@ class ReaderRepository(
         event.tags.filter { it.size >= 2 && it[0] == "zap" }
 
     internal fun noteMarkdown(content: String): String =
-        UrlExtractor.embedImageLinks(HtmlToMarkdown.decode(content).replace("\n", "  \n"))
+        UrlExtractor.embedImageLinks(
+            MarkdownSpacing.normalize(HtmlToMarkdown.decode(content)).replace("\n", "  \n"),
+        )
 
     internal fun articleMarkdown(content: String, imageUrl: String? = null): String {
         val body = imageUrl?.let { ArticleCover.stripLeadingImage(content, it) } ?: content
-        return HtmlToMarkdown.decode(body)
+        return MarkdownSpacing.normalize(HtmlToMarkdown.decode(body))
     }
 
     internal fun parse(targetUrl: String, text: String): ReadableContent =
@@ -458,6 +460,7 @@ class ReaderRepository(
     private fun embeddedMarkdown(text: String, baseUrl: String): String? =
         embeddedJsonString("markdown", text)
             ?.let(HtmlToMarkdown::decode)
+            ?.let(MarkdownSpacing::normalize)
             ?.trim()
             ?.takeIf { it.length >= MIN_BEST_EFFORT_MARKDOWN_CHARS }
             ?: embeddedJsonString("html", text)

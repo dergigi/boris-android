@@ -15,6 +15,14 @@ class HtmlToMarkdownTest {
     }
 
     @Test
+    fun normalizesEmphasisSpacing() {
+        val markdown = HtmlToMarkdown.convert(
+            "<p>Headlines like <em>“Bitcoin reaches a new all-time high” </em>are enough...</p>",
+        )
+        assertEquals("Headlines like *“Bitcoin reaches a new all-time high”* are enough...", markdown)
+    }
+
+    @Test
     fun convertsLinksAndImages() {
         val markdown = HtmlToMarkdown.convert(
             """<p>See <a href="https://example.com/a">this post</a>.</p>""" +

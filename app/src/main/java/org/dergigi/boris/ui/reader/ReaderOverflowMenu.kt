@@ -78,6 +78,8 @@ internal fun ReaderOverflowMenu(
     onOpenNative: () -> Unit,
     onOpenWayback: () -> Unit,
     onOpenArchivePh: () -> Unit,
+    webArchiveLabel: String? = null,
+    onOpenWebArchives: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     var menuOpen by remember { mutableStateOf(false) }
@@ -316,6 +318,16 @@ internal fun ReaderOverflowMenu(
                             onClick = {
                                 dismissMenu()
                                 onOpenNative()
+                            },
+                        )
+                    }
+                    if (webArchiveLabel != null) {
+                        DropdownMenuItem(
+                            text = { Text(webArchiveLabel) },
+                            leadingIcon = { Icon(Icons.Outlined.History, contentDescription = null) },
+                            onClick = {
+                                dismissMenu()
+                                onOpenWebArchives()
                             },
                         )
                     }
