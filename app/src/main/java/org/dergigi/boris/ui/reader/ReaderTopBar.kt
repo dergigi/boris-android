@@ -93,6 +93,8 @@ internal fun ReaderTopBar(
     onOpenNative: () -> Unit,
     onOpenWayback: () -> Unit,
     onOpenArchivePh: () -> Unit,
+    webArchiveLabel: String? = null,
+    onOpenWebArchives: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -199,6 +201,8 @@ internal fun ReaderTopBar(
                     onOpenNative = onOpenNative,
                     onOpenWayback = onOpenWayback,
                     onOpenArchivePh = onOpenArchivePh,
+                    webArchiveLabel = webArchiveLabel,
+                    onOpenWebArchives = onOpenWebArchives,
                 )
             }
         },

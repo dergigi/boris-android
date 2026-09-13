@@ -706,4 +706,9 @@
     <string name="tts_lang_de">German</string>
     <string name="tts_lang_ja">Japanese</string>
     <string name="tts_lang_ru">Russian</string>
+    <string name="reader_open_archived_version">Open archived version</string>
+    <string name="reader_open_naan_archive">Open archived version · naan</string>
+    <string name="reader_archived_versions">Archived versions</string>
+    <string name="reader_archive_mirrors_hint">Choose a copy to open. If it is unavailable, return here and try another mirror.</string>
+    <string name="reader_archive_copy">Copy %1$d · %2$s</string>
 </resources>

@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Added
+
+- Reader discovers existing naan archives and offers dated copies and mirrors in the Open menu and error screen (#83)
+
 ## [1.6.16] - 2026-09-10
 
 ### Fixed
