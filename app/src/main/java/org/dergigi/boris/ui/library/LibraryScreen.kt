@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.library
 
+import org.dergigi.boris.data.SessionStore
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -418,7 +419,7 @@ private fun BookmarkRow(
         imageFallbackIcon = bookmarkFallbackIcon(item),
         byline = item.host,
         url = item.url,
-        loggedIn = true,
+        loggedIn = SessionStore.load(LocalContext.current) != null,
         archived = archived,
         onClick = { item.open(onOpenArticle, onOpenHighlight) },
         onListen = onListen,

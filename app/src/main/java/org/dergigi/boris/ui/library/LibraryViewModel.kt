@@ -14,9 +14,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.ImportedArticles
 import org.dergigi.boris.data.ArticlePreview
 import org.dergigi.boris.data.BookmarkBucket
 import org.dergigi.boris.data.BookmarkCatalog
@@ -95,6 +97,14 @@ class LibraryViewModel(
         onArchived = { _, _, _ -> refresh() },
     )
 
+    init {
+        viewModelScope.launch {
+            ImportedArticles.version.drop(1).collect {
+                if (SessionStore.load(getApplication()) == null) refresh() else publish()
+            }
+        }
+    }
+
     fun refresh() {
         val session = SessionStore.load(getApplication())
         if (session == null) {
@@ -107,7 +117,8 @@ class LibraryViewModel(
             notes = emptyMap()
             linkedArticles = emptyList()
             previews = emptyMap()
-            _state.value = LibraryUiState.LoggedOut
+            if (ImportedArticles.items().isEmpty()) _state.value = LibraryUiState.LoggedOut
+            else publish()
             _refreshing.value = false
             return
         }
@@ -262,6 +273,7 @@ class LibraryViewModel(
         _state.value = LibraryUiState.Ready(
             BookmarkCatalog.build(
                 listEvent = listEvent,
+                localItems = ImportedArticles.items(),
                 hiddenTags = hiddenTags,
                 webEvents = webEvents,
                 lookEvents = lookEvents,
@@ -314,7 +326,7 @@ class LibraryViewModel(
         val web = RelayQuery.cachedWebBookmarks(pubkey)
         val look = RelayQuery.cachedLookmarks(pubkey)
         val archive = RelayQuery.cachedArchiveReactions(pubkey)
-        if (list == null && web.isEmpty() && look.isEmpty() && archive.isEmpty()) return null
+        if (list == null && web.isEmpty() && look.isEmpty() && archive.isEmpty() && ImportedArticles.items().isEmpty()) return null
         val refs = buildList {
             addAll(listRefs(list))
             addAll(look.mapNotNull(Lookmarks::targetRef))

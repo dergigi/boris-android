@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.home
 
+import org.dergigi.boris.data.ImportedArticles
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
@@ -554,6 +555,7 @@ class HomeViewModel(
     /** Public + web library shelves (private stays locked until Library unlocks it). */
     private fun libraryItems(pubkeyHex: String, relays: List<String>) =
         BookmarkCatalog.build(
+            localItems = ImportedArticles.items(),
             listEvent = RelayQuery.fetchBookmarkList(pubkeyHex, relays),
             hiddenTags = null,
             webEvents = RelayQuery.fetchWebBookmarks(pubkeyHex, relays),
@@ -564,6 +566,7 @@ class HomeViewModel(
 
     private fun cachedLibraryItems(pubkeyHex: String) =
         BookmarkCatalog.build(
+            localItems = ImportedArticles.items(),
             listEvent = EventCache.latest(Nip01Event.KIND_BOOKMARKS, pubkeyHex),
             hiddenTags = null,
             webEvents = RelayQuery.cachedWebBookmarks(pubkeyHex),

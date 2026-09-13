@@ -1,5 +1,6 @@
 package org.dergigi.boris
 
+import org.dergigi.boris.data.ImportedArticles
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
         OfflineStore.init(File(filesDir, "offline_downloads.json"))
         ArticleImages.init(File(filesDir, ArticleImages.DIR_NAME))
         ArticleCache.init(File(filesDir, ArticleCache.DIR_NAME))
+        ImportedArticles.init(File(filesDir, ImportedArticles.DIR_NAME))
         RelayHealth.init(File(filesDir, "relay_health.json"))
         HintedRelays.init(File(filesDir, "hinted_relays.json"))
         ReadingPositionStore.init(File(filesDir, "reading_positions.json"))

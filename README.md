@@ -57,6 +57,16 @@ Settings, highlight colors, airplane mode, About.
   <img src="screenshots/settings-4.png" width="180" alt="About" />
 </p>
 
+## Import from Readwise Reader
+
+In Reader's account profile, choose **Export Library as CSV** ([export instructions](https://docs.readwise.io/reader/docs/faqs/exporting)). In Boris, open **Settings → Library → Import from Readwise Reader**, choose the CSV, then tap **Import articles**.
+
+Boris downloads readable article text and saves device-local copies in the **Web** shelf. Source URLs and exported titles are preserved. Existing URLs in the library already loaded on this device and repeated CSV rows are skipped, using Boris's usual URL matching. If private bookmarks are locked, unlock them in Library first. Refresh Library before importing to include your latest synced bookmarks in the duplicate check.
+
+Import requires internet access. Successfully imported text survives restarts and cache eviction; images may still need a connection. Failed downloads are reported and can be retried by running the import again. Completed copies are kept if you stop the import or leave Settings. After an app restart, select the same CSV again to continue, skipping completed copies.
+
+The first version imports web articles from CSV, without a Readwise API token. It does not import highlights, tags, PDFs, EPUBs, or Reader's full-content ZIP export, and it does not publish imported copies to Nostr. **Remove imported copies** in the same settings section removes these local library entries and their saved text.
+
 ## Contributing
 
 Boris is free and open source and always will be. Fork it, change it, send a pull request, or just use it.
