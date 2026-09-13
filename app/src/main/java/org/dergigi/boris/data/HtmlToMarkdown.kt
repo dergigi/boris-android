@@ -170,7 +170,7 @@ object HtmlToMarkdown {
         stash.forEachIndexed { i, text ->
             s = s.replace("\u0000$i\u0000", text)
         }
-        val body = s.replace(Regex("\\n{3,}"), "\n\n").trim()
+        val body = MarkdownSpacing.normalize(s.replace(Regex("\\n{3,}"), "\n\n").trim())
         val author = byline(html)
         return if (author == null || body.isEmpty()) body else "*$author*\n\n$body"
     }
