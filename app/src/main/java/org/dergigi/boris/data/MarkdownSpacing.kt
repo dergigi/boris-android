@@ -41,7 +41,7 @@ object MarkdownSpacing {
     }
 
     private val OPENING_ATTACHED_TO_PREVIOUS_WORD =
-        Regex("""(?<=[\p{L}\p{N}”"'’)])\*\s+(?=\S[^\*\n]{0,120}\*)""")
+        Regex("""(?<=[\p{L}\p{N}”"'’)])(?<!\*)\*(?!\*)\s+(?=\S[^\*\n]{0,120}(?<!\*)\*(?!\*))""")
     private val TRAILING_SPACE_BEFORE_CLOSING_MARKER =
-        Regex("""\*([^\*\n]{1,120}?\S)\s+\*(?=\S)""")
+        Regex("""(?<!\*)\*(?!\*)([^\*\n]{1,120}?\S)\s+(?<!\*)\*(?!\*)(?=\S)""")
 }

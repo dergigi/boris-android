@@ -21,6 +21,14 @@ class MarkdownSpacingTest {
     }
 
     @Test
+    fun leavesAdjacentBoldAndItalicMarkupAlone() {
+        assertEquals(
+            "First **bold** and *italic*.",
+            MarkdownSpacing.normalize("First **bold** and *italic*."),
+        )
+    }
+
+    @Test
     fun leavesCodeFencesAlone() {
         val markdown = "Before\n\n```\nhappens* in silico*\n```\n\nAfter"
         assertEquals(markdown, MarkdownSpacing.normalize(markdown))
