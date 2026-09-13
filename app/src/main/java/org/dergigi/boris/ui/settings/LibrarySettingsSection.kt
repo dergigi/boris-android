@@ -38,7 +38,7 @@ fun LibrarySettingsSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ReadwiseImportSection()
+        ArticleImportSection()
         Text(
             text = stringResource(R.string.settings_library_default_view),
             style = MaterialTheme.typography.titleMedium,

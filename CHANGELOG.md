@@ -11,6 +11,7 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ### Added
 
+- Import Pocket CSV exports through the shared article import flow in Settings → Library (#226)
 - Import article URLs and titles from a Readwise Reader library CSV in Settings → Library, with duplicate detection and device-local text for offline reading (#225)
 - Reader discovers existing naan archives and offers dated copies and mirrors in the Open menu and error screen (#83)
 

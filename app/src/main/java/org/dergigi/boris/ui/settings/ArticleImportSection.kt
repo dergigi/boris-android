@@ -23,14 +23,17 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ImportedArticles
 
 @Composable
-internal fun ReadwiseImportSection(viewModel: ReadwiseImportViewModel = viewModel()) {
+internal fun ArticleImportSection(viewModel: ArticleImportViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val version by ImportedArticles.version.collectAsStateWithLifecycle()
     val count = remember(version) { ImportedArticles.items().size }
     val uriHandler = LocalUriHandler.current
     var confirmClear by remember { mutableStateOf(false) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let(viewModel::choose)
+    val readerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { viewModel.choose(it, ArticleImportSource.Readwise) }
+    }
+    val pocketLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { viewModel.choose(it, ArticleImportSource.Pocket) }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.readwise_import_title), style = MaterialTheme.typography.titleMedium)
@@ -38,50 +41,61 @@ internal fun ReadwiseImportSection(viewModel: ReadwiseImportViewModel = viewMode
         TextButton(onClick = { uriHandler.openUri("https://docs.readwise.io/reader/docs/faqs/exporting") }) {
             Text(stringResource(R.string.readwise_export_help))
         }
-        TextButton(enabled = !state.busy, onClick = { launcher.launch(arrayOf("*/*")) }) {
+        TextButton(enabled = !state.busy, onClick = { readerLauncher.launch(arrayOf("*/*")) }) {
             Text(stringResource(R.string.readwise_choose_csv))
         }
+        Text(stringResource(R.string.pocket_import_title), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.pocket_import_intro), style = MaterialTheme.typography.bodySmall)
+        TextButton(enabled = !state.busy, onClick = { pocketLauncher.launch(arrayOf("*/*")) }) {
+            Text(stringResource(R.string.pocket_choose_csv))
+        }
+        state.source?.let { source ->
+            Text(stringResource(
+                if (source == ArticleImportSource.Pocket) R.string.pocket_selected
+                else R.string.readwise_selected,
+            ))
+        }
         state.preview?.let { export ->
-            Text(stringResource(R.string.readwise_preview, export.articles.size, export.skipped))
+            Text(stringResource(R.string.article_import_preview, export.articles.size, export.skipped))
             if (!state.busy && export.articles.isNotEmpty()) {
                 TextButton(onClick = viewModel::start) {
-                    Text(stringResource(if (state.progress == null) R.string.readwise_start else R.string.readwise_retry))
+                    Text(stringResource(if (state.progress == null) R.string.article_import_start else R.string.article_import_retry))
                 }
             }
         }
         if (state.busy) {
             LinearProgressIndicator()
-            TextButton(onClick = viewModel::stop) { Text(stringResource(R.string.readwise_stop)) }
+            TextButton(onClick = viewModel::stop) { Text(stringResource(R.string.article_import_stop)) }
         }
         state.progress?.let { progress ->
             Text(stringResource(
-                R.string.readwise_progress, progress.processed, progress.total,
+                R.string.article_import_progress, progress.processed, progress.total,
                 progress.imported, progress.duplicates, progress.failed.size,
             ))
             if (!state.busy && progress.processed < progress.total) {
-                Text(stringResource(R.string.readwise_stopped))
+                Text(stringResource(R.string.article_import_stopped))
             }
             if (!state.busy && progress.failed.isNotEmpty()) {
-                Text(stringResource(R.string.readwise_failed_hint))
+                Text(stringResource(R.string.article_import_failed_hint))
                 progress.failed.take(10).forEach { Text(it.title ?: it.url, style = MaterialTheme.typography.bodySmall) }
             }
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (count > 0) {
-            Text(stringResource(R.string.readwise_local_count, count))
+            Text(stringResource(R.string.article_import_local_count, count))
             TextButton(enabled = !state.busy, onClick = { confirmClear = true }) {
-                Text(stringResource(R.string.readwise_remove))
+                Text(stringResource(R.string.article_import_remove))
             }
         }
     }
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text(stringResource(R.string.readwise_remove)) },
-            text = { Text(stringResource(R.string.readwise_remove_note)) },
+            title = { Text(stringResource(R.string.article_import_remove)) },
+            text = { Text(stringResource(R.string.article_import_remove_note)) },
             confirmButton = {
                 TextButton(onClick = { confirmClear = false; viewModel.clearImported() }) {
-                    Text(stringResource(R.string.readwise_remove))
+                    Text(stringResource(R.string.article_import_remove))
                 }
             },
             dismissButton = {
