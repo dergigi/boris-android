@@ -83,10 +83,22 @@ class HighlightJumpTest {
         val only = listOf(PaintedHighlight("a", "x", mine = true))
         assertEquals(only, HighlightJump.inDocumentOrder(only, listOf("hello")))
         val none = listOf(
-            PaintedHighlight("a", "zzz", mine = true),
-            PaintedHighlight("b", "yyy", mine = false),
+            PaintedHighlight("a", "zzz", mine = true, createdAt = 20),
+            PaintedHighlight("b", "yyy", mine = false, createdAt = 1),
         )
         assertEquals(none, HighlightJump.inDocumentOrder(none, listOf("hello")))
+    }
+
+    @Test
+    fun inDocumentOrderKeepsLoadedOrderForUnmatchedFallback() {
+        val unmatchedNewest = PaintedHighlight("unmatched-newest", "missing one", mine = true, createdAt = 30)
+        val matched = PaintedHighlight("matched", "middle quote", mine = true, createdAt = 20)
+        val unmatchedOldest = PaintedHighlight("unmatched-oldest", "missing two", mine = true, createdAt = 1)
+        val ordered = HighlightJump.inDocumentOrder(
+            listOf(unmatchedNewest, matched, unmatchedOldest),
+            listOf("start middle quote end"),
+        )
+        assertEquals(listOf("matched", "unmatched-newest", "unmatched-oldest"), ordered.map { it.id })
     }
 
     @Test

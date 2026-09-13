@@ -78,6 +78,7 @@ object HighlightJump {
         texts: List<String>,
     ): List<PaintedHighlight> {
         if (highlights.size <= 1) return highlights
+        val originalIndex = highlights.withIndex().associate { it.value.id to it.index }
         val rank = HashMap<String, Int>(highlights.size)
         var offset = 0
         for (text in texts) {
@@ -91,7 +92,7 @@ object HighlightJump {
         if (rank.isEmpty()) return highlights
         return highlights.sortedWith(
             compareBy<PaintedHighlight> { rank[it.id] ?: Int.MAX_VALUE }
-                .thenBy { it.createdAt },
+                .thenBy { originalIndex[it.id] ?: Int.MAX_VALUE },
         )
     }
 
