@@ -17,7 +17,7 @@ class SettingsSearchTest {
         SettingsCategory.Tts to listOf("Text-to-Speech", "Speed, voice, preview, follow-along"),
         SettingsCategory.Home to listOf("Home", "Sections, filters", "Hide NSFW articles"),
         SettingsCategory.Explore to listOf("Explore", "Discovery sections and most highlighted", "Most highlighted"),
-        SettingsCategory.Library to listOf("Library", "Default view"),
+        SettingsCategory.Library to listOf("Library", "Default view", "Imports"),
         SettingsCategory.Airplane to listOf("Airplane mode", "Downloads, storage, local relays", "Citrine"),
         SettingsCategory.Wallet to listOf("Wallet", "Nostr Wallet Connect and zaps", "One-tap zaps"),
         SettingsCategory.About to listOf("About", "Boris, tutorial, features, FAQ, support, links"),
@@ -57,6 +57,12 @@ class SettingsSearchTest {
     fun queryMatchesExploreSettings() {
         val filtered = SettingsSearch.filterGroups(groups, "most highlighted", ::textsFor)
         assertEquals(listOf(listOf(SettingsCategory.Explore)), filtered)
+    }
+
+    @Test
+    fun queryMatchesLibraryImports() {
+        val filtered = SettingsSearch.filterGroups(groups, "import", ::textsFor)
+        assertEquals(listOf(listOf(SettingsCategory.Library)), filtered)
     }
 
     @Test

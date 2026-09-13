@@ -706,7 +706,13 @@
     <string name="tts_lang_de">German</string>
     <string name="tts_lang_ja">Japanese</string>
     <string name="tts_lang_ru">Russian</string>
+    <string name="article_import_title">Imports</string>
+    <string name="article_import_summary">Bring in saved articles from CSV exports when you need to migrate a library.</string>
+    <string name="article_import_summary_with_count">%1$d imported articles saved locally. Open import options to manage them.</string>
+    <string name="article_import_show_options">Show import options</string>
+    <string name="article_import_hide_options">Hide import options</string>
     <string name="readwise_import_title">Import from Readwise Reader</string>
+    <string name="readwise_import_summary">Use a Reader library CSV. Boris saves readable article text locally in Web.</string>
     <string name="readwise_import_intro">In Reader, open your account profile and choose Export Library as CSV. Select that file here to download article text into the Web shelf. Copies stay on this device and are available offline; images may still need a connection. Internet access is needed during import. Highlights, tags, PDFs and EPUBs are not imported.</string>
     <string name="readwise_export_help">How to export from Reader</string>
     <string name="readwise_choose_csv">Choose library CSV</string>
@@ -721,6 +727,7 @@
     <string name="article_import_remove">Remove imported copies</string>
     <string name="article_import_remove_note">Remove all Pocket and Readwise imports from this device’s library and their saved text? Your Nostr bookmarks will be kept.</string>
     <string name="pocket_import_title">Import from Pocket</string>
+    <string name="pocket_import_summary">Use a Pocket CSV export. ZIP exports need to be extracted first.</string>
     <string name="pocket_import_intro">Choose a Pocket CSV export you saved before Pocket closed. If your export is a ZIP, extract the CSV first. Boris downloads article text into the Web shelf for offline reading on this device. Images may need a connection. Tags, highlights, favorites and archive status are not transferred; all rows are treated as saved articles.</string>
     <string name="pocket_choose_csv">Choose Pocket CSV</string>
     <string name="pocket_selected">Selected export: Pocket</string>
