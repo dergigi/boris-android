@@ -9,6 +9,13 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.20] - 2026-09-15
+
+### Fixed
+
+- Relays use less memory: incoming frames are capped, sockets close when heap is tight, and hex encoding no longer allocates a string per byte (#260, #262)
+- Opening an RSS or Atom feed URL no longer tries to render it as an article (#261)
+
 ## [1.6.19] - 2026-09-14
 
 ### Added
