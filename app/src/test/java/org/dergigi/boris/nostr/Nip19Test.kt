@@ -161,4 +161,18 @@ class Nip19Test {
     fun nprofileDecodeRejectsSecretKeyHrp() {
         Nip19.nprofileDecode("nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5")
     }
+
+    @Test
+    fun toHexEncodesLowercaseBytesWithoutFormatter() {
+        val bytes = byteArrayOf(0x00, 0x01, 0x0f, 0x10, 0x7f, 0x80.toByte(), 0xff.toByte())
+
+        assertEquals("00010f107f80ff", bytes.toHex())
+    }
+
+    @Test
+    fun toHexRoundTripsWithHexDecoder() {
+        val bytes = ByteArray(256) { it.toByte() }
+
+        assertEquals(bytes.toList(), bytes.toHex().hexToByteArray().toList())
+    }
 }
