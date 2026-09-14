@@ -37,6 +37,7 @@ import org.dergigi.boris.R
 import org.dergigi.boris.data.ReadingPositionStore
 import org.dergigi.boris.ui.ArticleCopyMenuItems
 import org.dergigi.boris.ui.hasAlternateCopyLinks
+import org.dergigi.boris.ui.theme.BorisIcons
 
 internal enum class ReaderOverflowPage { Root, Copy, Open }
 
@@ -178,6 +179,21 @@ internal fun ReaderOverflowMenu(
                             onClick = {
                                 dismissMenu()
                                 pane.openFind()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.reader_open_highlights)) },
+                            leadingIcon = {
+                                Icon(
+                                    BorisIcons.Highlighter,
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                dismissMenu()
+                                pane.closeOutline()
+                                pane.closeFind()
+                                pane.openHighlights()
                             },
                         )
                         if (galleryUrls.isNotEmpty()) {
