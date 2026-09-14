@@ -28,6 +28,7 @@ data class Nip01Event(
     }
 
     fun verify(): Boolean {
+        if (estimatedSerializedCharCount(pubkey, tags, content) > MAX_VERIFY_SERIALIZED_CHARS) return false
         val serialized = serializeForId(pubkey, createdAt, kind, tags, content)
         val computed = sha256(serialized.toByteArray(Charsets.UTF_8)).toHex()
         if (computed != id) return false
@@ -78,6 +79,7 @@ data class Nip01Event(
         const val KIND_APP_DATA = 30078
         const val KIND_APP_RECOMMENDATION = 31989
         const val KIND_RELAY_DISCOVERY = 30166
+        internal const val MAX_VERIFY_SERIALIZED_CHARS = 1_000_000L
 
         fun unsignedJson(
             kind: Int,
@@ -189,6 +191,19 @@ data class Nip01Event(
             append(']')
         }
 
+        internal fun estimatedSerializedCharCount(
+            pubkey: String,
+            tags: List<List<String>>,
+            content: String,
+        ): Long {
+            var total = 16 + escapedCharCount(pubkey) + escapedCharCount(content)
+            for (tag in tags) {
+                total += 2
+                for (value in tag) total += 3 + escapedCharCount(value)
+            }
+            return total
+        }
+
         private fun tagsToJson(tags: List<List<String>>): JSONArray {
             val out = JSONArray()
             for (tag in tags) {
@@ -212,6 +227,17 @@ data class Nip01Event(
                     else -> append(c)
                 }
             }
+        }
+
+        private fun escapedCharCount(value: String): Long {
+            var count = 0L
+            for (c in value) {
+                count += when (c) {
+                    '\\', '"', '\b', '\u000c', '\n', '\r', '\t' -> 2L
+                    else -> 1L
+                }
+            }
+            return count
         }
 
         private fun sha256(data: ByteArray): ByteArray =
