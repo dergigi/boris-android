@@ -475,6 +475,7 @@
     <string name="reader_settings">Reader settings</string>
     <string name="reader_open_native">Open in native app</string>
     <string name="reader_add_rss">+ RSS</string>
+    <string name="reader_rss_subscribed">RSS</string>
     <string name="reader_rss_confirm_title">Add RSS feed?</string>
     <string name="reader_rss_confirm_body">Add %1$s to your RSS feeds?</string>
     <string name="reader_rss_confirm_add">Add feed</string>

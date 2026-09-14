@@ -370,7 +370,7 @@ fun ReaderScreen(
         author = author,
         eventRefs = eventRefs,
         settings = settings,
-        rssFeedSuggestion = rssFeedSuggestion?.takeIf { it !in settings.rssFeeds },
+        rssFeedSuggestion = rssFeedSuggestion,
         onBack = onBack,
         onRetry = { viewModel.load() },
         onTryAnyway = viewModel::tryAnyway,
@@ -420,7 +420,6 @@ fun ReaderScreen(
                     current.withStringList("rssFeeds", current.rssFeeds + feedUrl)
                 }
             }
-            viewModel.dismissRssFeedSuggestion()
         },
         onDismissRssFeed = viewModel::dismissRssFeedSuggestion,
         canDeleteHighlight = menuViewModel::canDelete,

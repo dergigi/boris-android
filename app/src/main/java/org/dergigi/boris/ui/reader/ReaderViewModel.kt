@@ -539,9 +539,7 @@ class ReaderViewModel(
         _rssFeedSuggestion.value = null
         rssFeedJob = viewModelScope.launch(Dispatchers.IO) {
             val feedUrl = RssRepository.discoverRootFeed(content.url) ?: return@launch
-            if (feedUrl !in SettingsSync.settings.value.rssFeeds) {
-                _rssFeedSuggestion.value = feedUrl
-            }
+            _rssFeedSuggestion.value = feedUrl
         }
     }
 
