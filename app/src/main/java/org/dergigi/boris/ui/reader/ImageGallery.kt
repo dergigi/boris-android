@@ -115,6 +115,7 @@ fun ImageGallery(
     state: ImageGalleryState,
     onDismiss: () -> Unit,
     onPageChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val urls = state.urls
     if (urls.isEmpty()) return
@@ -239,7 +240,7 @@ fun ImageGallery(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(background.color)
             .focusRequester(focusRequester)

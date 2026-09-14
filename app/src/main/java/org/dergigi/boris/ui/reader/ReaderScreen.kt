@@ -795,6 +795,7 @@ fun ReaderScreenContent(
             state = open,
             onDismiss = onCloseGallery,
             onPageChange = onGalleryPage,
+            modifier = Modifier.zIndex(2f),
         )
     }
     }
