@@ -9,6 +9,25 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.19] - 2026-09-14
+
+### Added
+
+- Settings → About can send a feature suggestion as a private DM (#229)
+- Gallery overflow can copy the visible image URL (#248)
+- Reader overflow can open the highlights pane (#243)
+
+### Fixed
+
+- Highlights pane filter icon stays readable on light surfaces (#244)
+- Image gallery draws above the reader top bar so download and share stay tappable (#247)
+- Reader hides a summary that just repeats the opening paragraph (#242)
+- Relay shutdown no longer crashes if a subscription closes at the same time (#240)
+- Oversized relay events are dropped before they can OOM the app (#246)
+- Explore search placeholder no longer says the search is limited to your library (#230)
+- Article descriptions can be selected and highlighted like body text (#231)
+- Reader RSS chip stays visible after you subscribe, as a checked state (#245)
+
 ## [1.6.18] - 2026-09-14
 
 ### Changed
