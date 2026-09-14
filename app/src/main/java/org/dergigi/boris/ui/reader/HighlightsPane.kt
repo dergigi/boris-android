@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -234,6 +235,7 @@ private fun HighlightsPaneHeader(
     onOpenHighlightSettings: () -> Unit,
     onToggleMarks: () -> Unit,
 ) {
+    val mineIconTint = readableMineHighlightIconTint(mineColor)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -276,7 +278,7 @@ private fun HighlightsPaneHeader(
                 FilterIcon(
                     icon = Icons.Outlined.Person,
                     on = filter.mine,
-                    tint = mineColor,
+                    tint = mineIconTint,
                     contentDescription = stringResource(R.string.feed_scope_mine),
                     onClick = onToggleMine,
                 )
@@ -296,6 +298,16 @@ private fun HighlightsPaneHeader(
                 contentDescription = stringResource(R.string.reader_highlights_settings),
             )
         }
+    }
+}
+
+@Composable
+private fun readableMineHighlightIconTint(mineColor: Color): Color {
+    val surface = MaterialTheme.colorScheme.surface
+    return if (surface.luminance() > 0.5f && mineColor.luminance() > 0.55f) {
+        Color(0xFF7A5A00)
+    } else {
+        mineColor
     }
 }
 
