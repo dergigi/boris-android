@@ -1,5 +1,6 @@
 package org.dergigi.boris.ui.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,10 +19,20 @@ import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,7 +43,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.dergigi.boris.R
+import org.dergigi.boris.data.FeatureSuggestion
 import org.dergigi.boris.data.UserSettings
 import org.dergigi.boris.ui.about.AboutLinks
 import org.dergigi.boris.ui.openExternalUri
@@ -58,6 +73,7 @@ fun AboutSettingsSection(
     val context = LocalContext.current
     val linkTint = SettingsTints.About
     val openInBoris = settings.openLinksInReader
+    var showFeatureSuggestion by remember { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -132,11 +148,10 @@ fun AboutSettingsSection(
         )
         AboutActionRow(
             label = stringResource(R.string.about_cta_feature),
-            subtitle = stringResource(R.string.settings_about_github_issue),
+            subtitle = stringResource(R.string.settings_about_feature_dm_summary),
             icon = Icons.Outlined.Lightbulb,
             tint = linkTint,
-            trailing = Icons.AutoMirrored.Outlined.OpenInNew,
-            onClick = { openExternalUri(context, AboutLinks.FEATURE_REQUEST) },
+            onClick = { showFeatureSuggestion = true },
         )
 
         AboutSectionTitle(
@@ -197,6 +212,92 @@ fun AboutSettingsSection(
             modifier = Modifier.padding(top = 16.dp),
         )
     }
+    if (showFeatureSuggestion) {
+        FeatureSuggestionDialog(onDismiss = { showFeatureSuggestion = false })
+    }
+}
+
+@Composable
+private fun FeatureSuggestionDialog(
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var suggestion by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    val trimmed = suggestion.trim()
+    AlertDialog(
+        onDismissRequest = { if (!sending) onDismiss() },
+        title = { Text(stringResource(R.string.feature_suggestion_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.feature_suggestion_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = suggestion,
+                    onValueChange = {
+                        suggestion = it
+                        failed = false
+                    },
+                    label = { Text(stringResource(R.string.feature_suggestion_label)) },
+                    minLines = 4,
+                    maxLines = 8,
+                    enabled = !sending,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (failed) {
+                    Text(
+                        text = stringResource(R.string.feature_suggestion_failed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = trimmed.isNotBlank() && !sending,
+                onClick = {
+                    sending = true
+                    failed = false
+                    scope.launch {
+                        val ok = withContext(Dispatchers.IO) {
+                            runCatching { FeatureSuggestion.send(trimmed) }.getOrDefault(false)
+                        }
+                        sending = false
+                        if (ok) {
+                            Toast.makeText(
+                                context,
+                                R.string.feature_suggestion_sent,
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                            onDismiss()
+                        } else {
+                            failed = true
+                        }
+                    }
+                },
+            ) {
+                if (sending) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp).padding(2.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(stringResource(R.string.feature_suggestion_send))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !sending, onClick = onDismiss) {
+                Text(stringResource(R.string.settings_reset_cancel))
+            }
+        },
+    )
 }
 
 @Composable
