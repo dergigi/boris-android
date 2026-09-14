@@ -125,6 +125,14 @@ class PooledRelay internal constructor(
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
+                    if (shouldDropIncomingMessage(text)) {
+                        runCatching { webSocket.close(1009, "relay message too large") }
+                        return
+                    }
+                    if (heapHeadroomLow()) {
+                        runCatching { webSocket.close(1011, "low heap") }
+                        return
+                    }
                     route(text)
                 }
 
@@ -194,8 +202,10 @@ class PooledRelay internal constructor(
 object RelayPool {
     internal const val RECONNECT_COOLDOWN_MS = 10_000L
     private const val IDLE_CLOSE_MS = 60_000L
-    private const val MAX_PERSISTENT = 15
-    private const val MAX_EPHEMERAL = 25
+    private const val MAX_PERSISTENT = 8
+    private const val MAX_EPHEMERAL = 12
+    internal const val MAX_INCOMING_MESSAGE_CHARS = 1_250_000
+    internal const val MIN_HEAP_HEADROOM_BYTES = 8L * 1024L * 1024L
 
     private val relays = ConcurrentHashMap<String, PooledRelay>()
 
@@ -244,4 +254,23 @@ object RelayPool {
                 .forEach { relays.remove(it.url)?.close() }
         }
     }
+}
+
+internal fun shouldDropIncomingMessage(text: String): Boolean =
+    text.length > RelayPool.MAX_INCOMING_MESSAGE_CHARS
+
+internal fun heapHeadroomLow(runtime: Runtime = Runtime.getRuntime()): Boolean =
+    heapHeadroomLow(
+        maxMemory = runtime.maxMemory(),
+        totalMemory = runtime.totalMemory(),
+        freeMemory = runtime.freeMemory(),
+    )
+
+internal fun heapHeadroomLow(
+    maxMemory: Long,
+    totalMemory: Long,
+    freeMemory: Long,
+): Boolean {
+    val used = totalMemory - freeMemory
+    return maxMemory - used < RelayPool.MIN_HEAP_HEADROOM_BYTES
 }
