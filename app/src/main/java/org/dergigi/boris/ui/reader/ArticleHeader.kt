@@ -362,6 +362,7 @@ internal fun ArticleMetaRow(
     highlightsColor: Color,
     published: String?,
     rssFeedUrl: String?,
+    rssSubscribed: Boolean = false,
     onDomainClick: (() -> Unit)? = null,
     onRssClick: (() -> Unit)? = null,
     onHighlightsClick: (() -> Unit)? = null,
@@ -396,9 +397,13 @@ internal fun ArticleMetaRow(
         }
         if (rssFeedUrl != null) {
             MetaChip(
-                text = stringResource(R.string.reader_add_rss),
-                icon = Icons.Outlined.RssFeed,
-                accent = MaterialTheme.colorScheme.primary,
+                text = if (rssSubscribed) {
+                    stringResource(R.string.reader_rss_subscribed)
+                } else {
+                    stringResource(R.string.reader_add_rss)
+                },
+                icon = if (rssSubscribed) Icons.Filled.CheckCircle else Icons.Outlined.RssFeed,
+                accent = if (rssSubscribed) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
                 onClick = onRssClick,
             )
         }

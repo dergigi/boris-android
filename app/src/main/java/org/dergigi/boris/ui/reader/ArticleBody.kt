@@ -1041,8 +1041,11 @@ internal fun ArticleBody(
                     highlightsColor = highlightPillColor(highlights, mineColor, friendsColor, foafColor, otherColor),
                     published = published,
                     rssFeedUrl = rssFeedSuggestion,
+                    rssSubscribed = rssFeedSuggestion in settings.rssFeeds,
                     onDomainClick = rootUrl?.let { root -> { defaultUriHandler.openUri(root) } },
-                    onRssClick = rssFeedSuggestion?.let { feed -> { onAddRssFeed(feed) } },
+                    onRssClick = rssFeedSuggestion
+                        ?.takeUnless { it in settings.rssFeeds }
+                        ?.let { feed -> { onAddRssFeed(feed) } },
                     onHighlightsClick = {
                         openHighlightsPane()
                     },
