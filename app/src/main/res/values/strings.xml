@@ -571,7 +571,14 @@
     <string name="settings_about_vision_summary">Purple Text, Orange Highlights</string>
     <string name="settings_about_community">Community</string>
     <string name="settings_about_github_issue">Open a GitHub issue</string>
+    <string name="settings_about_feature_dm_summary">Send a private suggestion to Boris</string>
     <string name="settings_offer_crash_reports">Offer to send crash reports after a crash</string>
+    <string name="feature_suggestion_title">Suggest a feature</string>
+    <string name="feature_suggestion_body">Send a private NIP-17 DM to Boris. Your suggestion includes basic app and device info so it is easier to follow up.</string>
+    <string name="feature_suggestion_label">Feature idea</string>
+    <string name="feature_suggestion_send">Send</string>
+    <string name="feature_suggestion_sent">Feature suggestion sent. Thank you!</string>
+    <string name="feature_suggestion_failed">Could not reach any relay. Try again later.</string>
     <string name="crash_report_title">Boris crashed last time</string>
     <string name="crash_report_body">Send this report to help fix the bug? It goes as an encrypted Nostr DM (NIP-17) from a one-time key, so it is not linked to your account. Nothing is sent unless you tap Send.</string>
     <string name="crash_report_send">Send</string>
