@@ -965,8 +965,9 @@ internal fun ArticleBody(
             Spacer(Modifier.height(with(LocalDensity.current) { topScrollInsetPx.toDp() }))
         }
         val coverUrl = content.imageUrl?.takeIf { it.isNotBlank() }
-        val overlaySummary = content.summary?.takeIf { it.isNotBlank() && it.length <= 150 }
-        val belowSummary = content.summary?.takeIf { it.isNotBlank() && it.length > 150 }
+        val displaySummary = content.displaySummary
+        val overlaySummary = displaySummary?.takeIf { it.isNotBlank() && it.length <= 150 }
+        val belowSummary = displaySummary?.takeIf { it.isNotBlank() && it.length > 150 }
         if (coverUrl != null) {
             ArticleHero(
                 imageUrl = coverUrl,
@@ -1005,9 +1006,9 @@ internal fun ArticleBody(
                     onHighlightTap = openFromStop,
                 )
             }
-            if (coverUrl == null && !content.summary.isNullOrBlank()) {
+            if (coverUrl == null && !displaySummary.isNullOrBlank()) {
                 HighlightedArticleChromeText(
-                    text = content.summary,
+                    text = displaySummary,
                     style = typography.titleMedium.copy(
                         fontFamily = family,
                         fontWeight = FontWeight.Normal,
