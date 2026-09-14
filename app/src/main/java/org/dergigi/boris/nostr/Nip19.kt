@@ -271,7 +271,17 @@ object Nip19 {
     }
 }
 
-internal fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+private val hexDigits = "0123456789abcdef".toCharArray()
+
+internal fun ByteArray.toHex(): String {
+    val out = CharArray(size * 2)
+    for (i in indices) {
+        val value = this[i].toInt() and 0xff
+        out[i * 2] = hexDigits[value ushr 4]
+        out[i * 2 + 1] = hexDigits[value and 0x0f]
+    }
+    return String(out)
+}
 
 internal fun String.hexToByteArray(): ByteArray {
     require(length % 2 == 0) { "Odd hex length" }
