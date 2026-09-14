@@ -1006,7 +1006,7 @@ internal fun ArticleBody(
                 )
             }
             if (coverUrl == null && !content.summary.isNullOrBlank()) {
-                Text(
+                HighlightedArticleChromeText(
                     text = content.summary,
                     style = typography.titleMedium.copy(
                         fontFamily = family,
@@ -1014,10 +1014,22 @@ internal fun ArticleBody(
                     ),
                     color = colors.onBackground.copy(alpha = 0.75f),
                     modifier = Modifier.padding(bottom = 16.dp),
+                    painted = painted,
+                    spoken = spokenMark,
+                    mineColor = mineColor,
+                    friendsColor = friendsColor,
+                    foafColor = foafColor,
+                    otherColor = otherColor,
+                    underline = underline,
+                    eink = eink,
+                    selection = selection,
+                    navigator = navigator,
+                    ttsStartIndex = null,
+                    onHighlightTap = openFromStop,
                 )
             }
             if (belowSummary != null) {
-                Text(
+                HighlightedArticleChromeText(
                     text = belowSummary,
                     style = typography.titleMedium.copy(
                         fontFamily = family,
@@ -1025,6 +1037,18 @@ internal fun ArticleBody(
                     ),
                     color = colors.onBackground.copy(alpha = 0.75f),
                     modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                    painted = painted,
+                    spoken = spokenMark,
+                    mineColor = mineColor,
+                    friendsColor = friendsColor,
+                    foafColor = foafColor,
+                    otherColor = otherColor,
+                    underline = underline,
+                    eink = eink,
+                    selection = selection,
+                    navigator = navigator,
+                    ttsStartIndex = null,
+                    onHighlightTap = openFromStop,
                 )
             }
                 val authorPubkey = content.authorPubkey?.trim()?.takeIf { it.length == 64 }
@@ -1412,20 +1436,59 @@ internal fun HighlightedArticleTitle(
     ttsStartIndex: Int?,
     onHighlightTap: (HighlightStop) -> Unit,
 ) {
-    var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
-    var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    val titleOwner = remember { Any() }
-    val titleSpans = rememberHighlightMarks(title, painted, spoken, ttsStartIndex)
-    Text(
+    HighlightedArticleChromeText(
         text = title,
+        painted = painted,
+        spoken = spoken,
         style = style,
         color = color,
-        onTextLayout = { titleLayout = it },
         modifier = Modifier
-            .padding(top = 8.dp, bottom = 12.dp)
+            .padding(top = 8.dp, bottom = 12.dp),
+        mineColor = mineColor,
+        friendsColor = friendsColor,
+        foafColor = foafColor,
+        otherColor = otherColor,
+        underline = underline,
+        eink = eink,
+        selection = selection,
+        navigator = navigator,
+        ttsStartIndex = ttsStartIndex,
+        onHighlightTap = onHighlightTap,
+    )
+}
+
+@Composable
+internal fun HighlightedArticleChromeText(
+    text: String,
+    painted: List<PaintedHighlight>,
+    spoken: SpokenMarkState,
+    style: TextStyle,
+    color: Color,
+    modifier: Modifier,
+    mineColor: Color,
+    friendsColor: Color,
+    foafColor: Color,
+    otherColor: Color,
+    underline: Boolean,
+    eink: Boolean,
+    selection: ReaderSelectionState,
+    navigator: HighlightNavigator,
+    ttsStartIndex: Int?,
+    onHighlightTap: (HighlightStop) -> Unit,
+) {
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val owner = remember { Any() }
+    val spans = rememberHighlightMarks(text, painted, spoken, ttsStartIndex)
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        onTextLayout = { layout = it },
+        modifier = modifier
             .drawHighlightMarks(
-                titleLayout,
-                titleSpans,
+                layout,
+                spans,
                 mineColor,
                 friendsColor,
                 otherColor,
@@ -1434,23 +1497,23 @@ internal fun HighlightedArticleTitle(
                 eink = eink,
             )
             .highlightAnchors(
-                owner = titleOwner,
-                spans = titleSpans,
-                layout = titleLayout,
-                coordinates = titleCoords,
+                owner = owner,
+                spans = spans,
+                layout = layout,
+                coordinates = coords,
                 navigator = navigator,
             )
             .readerSelectable(
-                owner = titleOwner,
-                text = title,
-                layout = titleLayout,
-                coordinates = titleCoords,
+                owner = owner,
+                text = text,
+                layout = layout,
+                coordinates = coords,
                 state = selection,
-                onCoordinates = { titleCoords = it },
+                onCoordinates = { coords = it },
                 ttsStartIndex = ttsStartIndex,
                 onTap = { offset ->
-                    val laid = titleLayout ?: return@readerSelectable false
-                    val stop = navigator.hit(titleOwner, laid, offset) ?: return@readerSelectable false
+                    val laid = layout ?: return@readerSelectable false
+                    val stop = navigator.hit(owner, laid, offset) ?: return@readerSelectable false
                     onHighlightTap(stop)
                     true
                 },
