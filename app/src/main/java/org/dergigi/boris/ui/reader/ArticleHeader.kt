@@ -273,6 +273,9 @@ internal fun ArticleHero(
     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var titleCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val titleOwner = remember { Any() }
+    var summaryLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var summaryCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val summaryOwner = remember { Any() }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -334,6 +337,23 @@ internal fun ArticleHero(
                 )
             }
             if (!summary.isNullOrBlank()) {
+                val selectableModifier = if (selection == null) {
+                    Modifier
+                } else {
+                    Modifier.readerSelectable(
+                        owner = summaryOwner,
+                        text = summary,
+                        layout = summaryLayout,
+                        coordinates = summaryCoords,
+                        state = selection,
+                        onCoordinates = { summaryCoords = it },
+                        ttsStartIndex = null,
+                        onTap = {
+                            onClick()
+                            true
+                        },
+                    )
+                }
                 Text(
                     text = summary,
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -343,6 +363,8 @@ internal fun ArticleHero(
                     color = Color.White.copy(alpha = 0.9f),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { summaryLayout = it },
+                    modifier = selectableModifier,
                 )
             }
         }
