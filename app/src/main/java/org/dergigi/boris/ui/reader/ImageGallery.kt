@@ -62,7 +62,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
@@ -71,6 +74,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dergigi.boris.R
 import org.dergigi.boris.data.ArticleImages
 import org.dergigi.boris.data.ImageSaveLocationStore
 import org.dergigi.boris.data.ImageStore
@@ -123,6 +127,7 @@ fun ImageGallery(
     val startPage = state.initialIndex.coerceIn(0, urls.lastIndex)
     val pagerState = rememberPagerState(initialPage = startPage, pageCount = { urls.size })
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     var zoomed by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
@@ -155,6 +160,11 @@ fun ImageGallery(
     }
 
     fun currentUrl(): String = urls[pagerState.currentPage]
+
+    fun copyCurrentUrl() {
+        clipboard.setText(AnnotatedString(currentUrl()))
+        Toast.makeText(context, R.string.action_copied, Toast.LENGTH_SHORT).show()
+    }
 
     fun downloadCurrent() {
         if (busy) return
@@ -336,6 +346,13 @@ fun ImageGallery(
                                 onClick = {
                                     menuOpen = false
                                     downloadAll()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.gallery_copy_image_url)) },
+                                onClick = {
+                                    menuOpen = false
+                                    copyCurrentUrl()
                                 },
                             )
                             DropdownMenuItem(
