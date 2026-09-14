@@ -137,9 +137,13 @@ object SettingsSearch {
             R.string.home_most_highlighted,
         ),
         SettingsCategory.Library to listOf(
+            R.string.article_import_title,
+            R.string.article_import_summary,
             R.string.pocket_import_title,
+            R.string.pocket_import_summary,
             R.string.pocket_import_intro,
             R.string.readwise_import_title,
+            R.string.readwise_import_summary,
             R.string.readwise_import_intro,
             R.string.settings_library_default_view,
             R.string.settings_library_default_view_note,
