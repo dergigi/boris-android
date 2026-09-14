@@ -173,12 +173,16 @@ class PooledRelay internal constructor(
     }
 
     private fun failAll() {
-        for (subId in subs.keys.toList()) {
-            subs.remove(subId)?.onEose()
+        val eoseCallbacks = mutableListOf<() -> Unit>()
+        subs.forEach { (subId, sub) ->
+            if (subs.remove(subId, sub)) eoseCallbacks += sub.onEose
         }
-        for (eventId in publishes.keys.toList()) {
-            publishes.remove(eventId)?.invoke(false)
+        val publishCallbacks = mutableListOf<(Boolean) -> Unit>()
+        publishes.forEach { (eventId, callback) ->
+            if (publishes.remove(eventId, callback)) publishCallbacks += callback
         }
+        eoseCallbacks.forEach { it() }
+        publishCallbacks.forEach { it(false) }
     }
 }
 
