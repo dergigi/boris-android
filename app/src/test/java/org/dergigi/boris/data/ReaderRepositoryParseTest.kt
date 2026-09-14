@@ -450,6 +450,39 @@ class ReaderRepositoryParseTest {
         )
     }
 
+    @Test
+    fun fetchRejectsFeedXmlBeforeArticleRendering() {
+        val feed = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <rss version="2.0">
+              <channel>
+                <title>Feed</title>
+                <item>
+                  <title>Post</title>
+                  <link>https://example.com/post</link>
+                  <description>${longBody}</description>
+                </item>
+              </channel>
+            </rss>
+        """.trimIndent()
+        val client = stubClient { request ->
+            stubResponse(request, 200, feed, contentType = "application/rss+xml; charset=utf-8")
+        }
+
+        val error = fetchError(client, "https://example.com/feed/")
+
+        assertEquals("Boris wasn't able to extract a clean article.", error?.message)
+        assertEquals("Feed URLs cannot be opened as reader articles", (error as? ReaderFetchException)?.detail)
+    }
+
+    @Test
+    fun rejectsOversizedRenderedMarkdown() {
+        val body = "The article paragraph carries the real story. ".repeat(7000)
+        val raw = "<html><head><title>Huge</title></head><body><article><p>$body</p></article></body></html>"
+
+        assertNull(repository.parse("https://example.com/huge", raw).markdown)
+    }
+
     private fun fetchError(client: OkHttpClient, url: String): IOException? = try {
         ReaderRepository(client).fetch(url)
         null
@@ -484,13 +517,14 @@ class ReaderRepositoryParseTest {
         code: Int,
         body: String,
         finalUrl: String? = null,
+        contentType: String = "text/html; charset=utf-8",
     ): Response =
         Response.Builder()
             .request(finalUrl?.let { request.newBuilder().url(it).build() } ?: request)
             .protocol(Protocol.HTTP_1_1)
             .code(code)
             .message("stub")
-            .body(body.toResponseBody("text/html; charset=utf-8".toMediaType()))
+            .body(body.toResponseBody(contentType.toMediaType()))
             .build()
 
     private fun containsMarkdownImage(markdown: String): Boolean {

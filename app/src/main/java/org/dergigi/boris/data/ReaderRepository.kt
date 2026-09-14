@@ -129,6 +129,9 @@ class ReaderRepository(
                 else -> {
                     val text = readCapped(response)
                     val responseUrl = response.request.url.toString()
+                    if (looksLikeFeedXml(text)) {
+                        return OriginResult.NoArticle("Feed URLs cannot be opened as reader articles")
+                    }
                     htmlForwardTarget(responseUrl, text)?.let { target ->
                         if (forwardDepth >= MAX_HTML_FORWARDS) {
                             return OriginResult.Unreachable("Too many redirects")
@@ -380,10 +383,11 @@ class ReaderRepository(
         val markdown = HtmlToMarkdown.convert(html)
         if (markdown.length < MIN_ARTICLE_MARKDOWN_CHARS) return null
         val body = item.imageUrl?.let { ArticleCover.stripLeadingImage(markdown, it) } ?: markdown
+        val safeBody = UrlExtractor.upgradeImageHttpUrls(body).takeIf(::isSafeReaderMarkdown) ?: return null
         return ReadableContent(
             url = item.link,
             title = item.title,
-            markdown = UrlExtractor.upgradeImageHttpUrls(body),
+            markdown = safeBody,
             publishedAt = item.publishedAt.takeIf { it > 0 },
             imageUrl = item.imageUrl?.let(UrlExtractor::preferHttps),
             summary = item.summary,
@@ -411,6 +415,9 @@ class ReaderRepository(
             ?: throw ReaderFetchException(ERROR_NO_ARTICLE, "Best-effort parser found no usable content")
 
     private fun parse(targetUrl: String, text: String, bestEffort: Boolean): ReadableContent {
+        if (looksLikeFeedXml(text)) {
+            throw ReaderFetchException(ERROR_NO_ARTICLE, "Feed URLs cannot be opened as reader articles")
+        }
         val preview = OgMeta.parse(text, targetUrl)
         val title = htmlTitleRegex.find(text)?.groupValues?.getOrNull(1)?.trim()
         val extracted = runCatching { ArticleExtractor.markdown(text, targetUrl) }
@@ -441,6 +448,7 @@ class ReaderRepository(
                     MIN_ARTICLE_MARKDOWN_CHARS
                 }
             }
+            ?.takeIf(::isSafeReaderMarkdown)
         val cover = preview.imageUrl?.let(UrlExtractor::preferHttps)
         val nostrLinks = Nip21Html.parse(text)
         return ReadableContent(
@@ -562,7 +570,18 @@ class ReaderRepository(
         internal const val ERROR_NO_ARTICLE = "Boris wasn't able to extract a clean article."
 
         private const val MAX_BODY_BYTES = 2 * 1024 * 1024L
+        internal const val MAX_RENDERED_MARKDOWN_CHARS = 250_000
         private const val MAX_HTML_FORWARDS = 5
+
+        internal fun looksLikeFeedXml(text: String): Boolean {
+            val trimmed = text.trimStart().take(256).lowercase()
+            return trimmed.startsWith("<rss") ||
+                trimmed.startsWith("<?xml") && Regex("""<\s*(rss|feed)\b""").containsMatchIn(trimmed) ||
+                trimmed.startsWith("<feed")
+        }
+
+        internal fun isSafeReaderMarkdown(markdown: String): Boolean =
+            markdown.length <= MAX_RENDERED_MARKDOWN_CHARS
 
         private val htmlTitleRegex = Regex(
             """<title[^>]*>(.*?)</title>""",
