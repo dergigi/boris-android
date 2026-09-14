@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.18] - 2026-09-14
+
+### Changed
+
+- Library settings keep the usual options first and tuck Readwise/Pocket import behind a compact Imports row (#238)
+
 ## [1.6.17] - 2026-09-13
 
 ### Added
