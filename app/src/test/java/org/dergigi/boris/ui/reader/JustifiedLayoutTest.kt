@@ -15,8 +15,8 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 400f,
-            spacesOnLine = 4,
-            spacesBefore = 2,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 2,
             atLineStart = false,
             atLineEnd = false,
         )
@@ -34,8 +34,8 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 0f,
-            spacesOnLine = 4,
-            spacesBefore = 0,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 0,
             atLineStart = true,
             atLineEnd = false,
         )
@@ -48,8 +48,8 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 800f,
-            spacesOnLine = 4,
-            spacesBefore = 4,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 4,
             atLineStart = false,
             atLineEnd = true,
         )
@@ -68,12 +68,41 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 400f,
-            spacesOnLine = 4,
-            spacesBefore = 2,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 2,
             atLineStart = false,
             atLineEnd = false,
         )
         assertEquals(400f, x, 0.01f)
+    }
+
+    @Test
+    fun stretchUnitsIncludeCjkGapsAndSpaces() {
+        val spaced = "中文 https://example.com"
+        val adjacent = "中文https://example.com"
+
+        assertEquals(2, JustifiedLayout.stretchUnitCount(spaced, 0, spaced.length))
+        assertEquals(2, JustifiedLayout.stretchUnitCount(adjacent, 0, adjacent.length))
+    }
+
+    @Test
+    fun visualXDistributesJustificationAcrossCjkGaps() {
+        val x = JustifiedLayout.visualX(
+            offset = 2,
+            lineStart = 0,
+            lineEnd = 7,
+            lineLeft = 0f,
+            lineRight = 700f,
+            naturalLeft = 0f,
+            naturalRight = 500f,
+            naturalX = 200f,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 2,
+            atLineStart = false,
+            atLineEnd = false,
+        )
+
+        assertEquals(300f, x, 0.01f)
     }
 
     @Test
