@@ -4,7 +4,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextAlign
-import java.lang.Character.UnicodeBlock
 import kotlin.math.max
 
 /**
@@ -43,6 +42,7 @@ internal object JustifiedLayout {
         val lineStart = layout.getLineStart(line)
         val lineEnd = layout.getLineEnd(line, visibleEnd = true)
         val clamped = offset.coerceIn(lineStart, lineEnd)
+        val stretchUnitsOnLine = stretchUnitCount(layout, lineStart, lineEnd)
         return visualX(
             offset = clamped,
             lineStart = lineStart,
@@ -52,7 +52,7 @@ internal object JustifiedLayout {
             naturalLeft = naturalCursor(layout, lineStart, line),
             naturalRight = naturalCursor(layout, lineEnd, line),
             naturalX = naturalCursor(layout, clamped, line),
-            stretchUnitsOnLine = stretchUnitCount(layout, lineStart, lineEnd),
+            stretchUnitsOnLine = stretchUnitsOnLine,
             stretchUnitsBefore = stretchUnitCount(layout, lineStart, clamped),
             atLineStart = clamped <= lineStart,
             atLineEnd = clamped >= lineEnd,
@@ -74,9 +74,9 @@ internal object JustifiedLayout {
         atLineEnd: Boolean,
     ): Float {
         if (atLineStart || offset <= lineStart) return lineLeft
-        if (atLineEnd || offset >= lineEnd) return lineRight
         val extra = (lineRight - lineLeft) - (naturalRight - naturalLeft)
         if (extra <= 0.5f || stretchUnitsOnLine <= 0) return naturalX
+        if (atLineEnd || offset >= lineEnd) return lineRight
         val shift = extra * (stretchUnitsBefore.toFloat() / stretchUnitsOnLine.toFloat())
         return naturalX + shift
     }
@@ -137,11 +137,7 @@ internal object JustifiedLayout {
         val to = end.coerceIn(from, text.length)
         var n = 0
         for (i in from until to) {
-            if (text[i] == ' ') {
-                n++
-            } else if (isCjkJustificationGap(text, i, to)) {
-                n++
-            }
+            if (text[i] == ' ') n++
         }
         return n
     }
@@ -149,30 +145,5 @@ internal object JustifiedLayout {
     private fun stretchUnitCount(layout: TextLayoutResult, start: Int, end: Int): Int {
         val text = layout.layoutInput.text
         return stretchUnitCount(text.text, start, end)
-    }
-
-    private fun isCjkJustificationGap(text: String, index: Int, end: Int): Boolean {
-        if (index >= end - 1) return false
-        val left = text[index]
-        val right = text[index + 1]
-        if (left.isWhitespace() || right.isWhitespace()) return false
-        return left.isCjk() || right.isCjk()
-    }
-
-    private fun Char.isCjk(): Boolean {
-        return when (UnicodeBlock.of(this)) {
-            UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
-            UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
-            UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,
-            UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
-            UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
-            UnicodeBlock.HIRAGANA,
-            UnicodeBlock.KATAKANA,
-            UnicodeBlock.KATAKANA_PHONETIC_EXTENSIONS,
-            UnicodeBlock.HANGUL_SYLLABLES,
-            UnicodeBlock.HANGUL_JAMO,
-            UnicodeBlock.HANGUL_COMPATIBILITY_JAMO -> true
-            else -> false
-        }
     }
 }

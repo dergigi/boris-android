@@ -58,6 +58,26 @@ class JustifiedLayoutTest {
     }
 
     @Test
+    fun visualXUsesNaturalEndWhenLineHasNoStretchUnits() {
+        val x = JustifiedLayout.visualX(
+            offset = 12,
+            lineStart = 0,
+            lineEnd = 12,
+            lineLeft = 0f,
+            lineRight = 1000f,
+            naturalLeft = 0f,
+            naturalRight = 760f,
+            naturalX = 760f,
+            stretchUnitsOnLine = 0,
+            stretchUnitsBefore = 0,
+            atLineStart = false,
+            atLineEnd = true,
+        )
+
+        assertEquals(760f, x, 0.01f)
+    }
+
+    @Test
     fun visualXLeavesLeftAlignedLinesAlone() {
         val x = JustifiedLayout.visualX(
             offset = 8,
@@ -77,32 +97,12 @@ class JustifiedLayoutTest {
     }
 
     @Test
-    fun stretchUnitsIncludeCjkGapsAndSpaces() {
+    fun stretchUnitsCountSpacesOnly() {
         val spaced = "中文 https://example.com"
         val adjacent = "中文https://example.com"
 
-        assertEquals(2, JustifiedLayout.stretchUnitCount(spaced, 0, spaced.length))
-        assertEquals(2, JustifiedLayout.stretchUnitCount(adjacent, 0, adjacent.length))
-    }
-
-    @Test
-    fun visualXDistributesJustificationAcrossCjkGaps() {
-        val x = JustifiedLayout.visualX(
-            offset = 2,
-            lineStart = 0,
-            lineEnd = 7,
-            lineLeft = 0f,
-            lineRight = 700f,
-            naturalLeft = 0f,
-            naturalRight = 500f,
-            naturalX = 200f,
-            stretchUnitsOnLine = 4,
-            stretchUnitsBefore = 2,
-            atLineStart = false,
-            atLineEnd = false,
-        )
-
-        assertEquals(300f, x, 0.01f)
+        assertEquals(1, JustifiedLayout.stretchUnitCount(spaced, 0, spaced.length))
+        assertEquals(0, JustifiedLayout.stretchUnitCount(adjacent, 0, adjacent.length))
     }
 
     @Test
