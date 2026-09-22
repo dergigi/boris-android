@@ -42,6 +42,7 @@ internal object JustifiedLayout {
         val lineStart = layout.getLineStart(line)
         val lineEnd = layout.getLineEnd(line, visibleEnd = true)
         val clamped = offset.coerceIn(lineStart, lineEnd)
+        val stretchUnitsOnLine = stretchUnitCount(layout, lineStart, lineEnd)
         return visualX(
             offset = clamped,
             lineStart = lineStart,
@@ -51,8 +52,8 @@ internal object JustifiedLayout {
             naturalLeft = naturalCursor(layout, lineStart, line),
             naturalRight = naturalCursor(layout, lineEnd, line),
             naturalX = naturalCursor(layout, clamped, line),
-            spacesOnLine = spaceCount(layout, lineStart, lineEnd),
-            spacesBefore = spaceCount(layout, lineStart, clamped),
+            stretchUnitsOnLine = stretchUnitsOnLine,
+            stretchUnitsBefore = stretchUnitCount(layout, lineStart, clamped),
             atLineStart = clamped <= lineStart,
             atLineEnd = clamped >= lineEnd,
         )
@@ -67,16 +68,16 @@ internal object JustifiedLayout {
         naturalLeft: Float,
         naturalRight: Float,
         naturalX: Float,
-        spacesOnLine: Int,
-        spacesBefore: Int,
+        stretchUnitsOnLine: Int,
+        stretchUnitsBefore: Int,
         atLineStart: Boolean,
         atLineEnd: Boolean,
     ): Float {
         if (atLineStart || offset <= lineStart) return lineLeft
-        if (atLineEnd || offset >= lineEnd) return lineRight
         val extra = (lineRight - lineLeft) - (naturalRight - naturalLeft)
-        if (extra <= 0.5f || spacesOnLine <= 0) return naturalX
-        val shift = extra * (spacesBefore.toFloat() / spacesOnLine.toFloat())
+        if (extra <= 0.5f || stretchUnitsOnLine <= 0) return naturalX
+        if (atLineEnd || offset >= lineEnd) return lineRight
+        val shift = extra * (stretchUnitsBefore.toFloat() / stretchUnitsOnLine.toFloat())
         return naturalX + shift
     }
 
@@ -131,14 +132,18 @@ internal object JustifiedLayout {
         }
     }
 
-    private fun spaceCount(layout: TextLayoutResult, start: Int, end: Int): Int {
-        val text = layout.layoutInput.text
-        val from = start.coerceAtLeast(0)
-        val to = end.coerceAtMost(text.length)
+    internal fun stretchUnitCount(text: String, start: Int, end: Int): Int {
+        val from = start.coerceIn(0, text.length)
+        val to = end.coerceIn(from, text.length)
         var n = 0
         for (i in from until to) {
             if (text[i] == ' ') n++
         }
         return n
+    }
+
+    private fun stretchUnitCount(layout: TextLayoutResult, start: Int, end: Int): Int {
+        val text = layout.layoutInput.text
+        return stretchUnitCount(text.text, start, end)
     }
 }

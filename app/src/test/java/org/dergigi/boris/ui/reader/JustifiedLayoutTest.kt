@@ -15,8 +15,8 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 400f,
-            spacesOnLine = 4,
-            spacesBefore = 2,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 2,
             atLineStart = false,
             atLineEnd = false,
         )
@@ -34,8 +34,8 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 0f,
-            spacesOnLine = 4,
-            spacesBefore = 0,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 0,
             atLineStart = true,
             atLineEnd = false,
         )
@@ -48,13 +48,33 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 800f,
-            spacesOnLine = 4,
-            spacesBefore = 4,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 4,
             atLineStart = false,
             atLineEnd = true,
         )
         assertEquals(12f, left, 0.01f)
         assertEquals(1000f, right, 0.01f)
+    }
+
+    @Test
+    fun visualXUsesNaturalEndWhenLineHasNoStretchUnits() {
+        val x = JustifiedLayout.visualX(
+            offset = 12,
+            lineStart = 0,
+            lineEnd = 12,
+            lineLeft = 0f,
+            lineRight = 1000f,
+            naturalLeft = 0f,
+            naturalRight = 760f,
+            naturalX = 760f,
+            stretchUnitsOnLine = 0,
+            stretchUnitsBefore = 0,
+            atLineStart = false,
+            atLineEnd = true,
+        )
+
+        assertEquals(760f, x, 0.01f)
     }
 
     @Test
@@ -68,12 +88,21 @@ class JustifiedLayoutTest {
             naturalLeft = 0f,
             naturalRight = 800f,
             naturalX = 400f,
-            spacesOnLine = 4,
-            spacesBefore = 2,
+            stretchUnitsOnLine = 4,
+            stretchUnitsBefore = 2,
             atLineStart = false,
             atLineEnd = false,
         )
         assertEquals(400f, x, 0.01f)
+    }
+
+    @Test
+    fun stretchUnitsCountSpacesOnly() {
+        val spaced = "中文 https://example.com"
+        val adjacent = "中文https://example.com"
+
+        assertEquals(1, JustifiedLayout.stretchUnitCount(spaced, 0, spaced.length))
+        assertEquals(0, JustifiedLayout.stretchUnitCount(adjacent, 0, adjacent.length))
     }
 
     @Test
