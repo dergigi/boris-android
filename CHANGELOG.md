@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.21] - 2026-09-23
+
+### Fixed
+
+- Selection handles stay aligned with text at the ends of justified lines, including CJK text with inline URLs (#266, #267)
+
 ## [1.6.20] - 2026-09-15
 
 ### Fixed
