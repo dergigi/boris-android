@@ -71,6 +71,19 @@ class FeedViewModelTest {
     }
 
     @Test
+    fun writingFromSkipsOversizedDTag() {
+        assertNull(
+            FeedViewModel.writingFrom(
+                event = article(d = "x".repeat(256), title = "Too long"),
+                profile = null,
+                sessionHex = null,
+                friends = emptySet(),
+                nowSeconds = 1_610_582_400L,
+            ),
+        )
+    }
+
+    @Test
     fun writingFromSkipsFarFuturePublishDates() {
         assertNull(
             FeedViewModel.writingFrom(

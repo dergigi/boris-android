@@ -52,4 +52,18 @@ class NostrArticleTest {
     fun fromCoordinateRejectsNonHexPubkey() {
         assertNull(NostrArticle.fromCoordinate("30023:${"z".repeat(64)}:my-article"))
     }
+
+    @Test
+    fun fromCoordinateRejectsOversizedIdentifier() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:${"x".repeat(256)}"
+        assertNull(NostrArticle.fromCoordinate(coordinate))
+    }
+
+    @Test
+    fun fromCoordinateRejectsOversizedRelayHint() {
+        val coordinate =
+            "30023:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:my-article"
+        assertNull(NostrArticle.fromCoordinate(coordinate, relays = listOf("wss://${"x".repeat(256)}")))
+    }
 }
