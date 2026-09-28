@@ -38,7 +38,12 @@ object NostrArticle {
         val identifier = parts[2]
         if (identifier.isEmpty()) return null
         val pointer = NaddrPointer(identifier, pubkey, kind, relays)
-        return NostrArticleRef(Nip19.naddrEncode(pointer), pointer)
+        val naddr = try {
+            Nip19.naddrEncode(pointer)
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
+        return NostrArticleRef(naddr, pointer)
     }
 
     private val naddrRegex = Regex(
