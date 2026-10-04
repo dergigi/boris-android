@@ -9,6 +9,12 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+## [1.6.23] - 2026-10-04
+
+### Fixed
+
+- Contents pane uses compact UI typography and keeps each heading on one line, truncating long headings with an ellipsis
+
 ## [1.6.22] - 2026-09-28
 
 ### Fixed
