@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.dergigi.boris.R
@@ -136,7 +138,11 @@ private fun OutlineHeadingRow(
     val indent = ((item.level - 1).coerceAtLeast(0) * 12).dp
     Text(
         text = item.title,
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.titleMedium,
+        textAlign = TextAlign.Start,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
         color = if (selected) {
             MaterialTheme.colorScheme.primary
         } else {
