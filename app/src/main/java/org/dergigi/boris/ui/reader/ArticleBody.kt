@@ -400,8 +400,8 @@ internal fun ArticleBody(
     }
     fun startTtsFromSelection() {
         val selected = selection.selectedText
-        val ownerText = selection.text
-        val ownerOffset = selection.range.min
+        val ownerText = selection.anchorText
+        val ownerOffset = selection.anchorOffset
         val explicitStartIndex = selection.ttsStartIndex
         if (selected.isBlank()) return
         selection.clear()
@@ -1226,16 +1226,16 @@ internal fun ArticleBody(
             },
             onHighlight = {
                 val quote = selection.selectedText
-                val ownerText = selection.text
-                val ownerOffset = selection.range.min
+                val ownerText = selection.anchorText
+                val ownerOffset = selection.anchorOffset
                 selection.clear()
                 onHighlight(quote, ownerText, ownerOffset, null)
             },
             onAnnotate = {
                 pendingAnnotation = PendingHighlightAnnotation(
                     quote = selection.selectedText,
-                    ownerText = selection.text,
-                    ownerOffset = selection.range.min,
+                    ownerText = selection.anchorText,
+                    ownerOffset = selection.anchorOffset,
                 )
                 selection.clear()
             },

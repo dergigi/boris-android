@@ -271,4 +271,22 @@ class Nip84Test {
             Nip84.locateSelection(body, "cat", ownerText = owner, ownerOffset = second),
         )
     }
+
+    @Test
+    fun locateSelectionMatchesRenderedTextAcrossListMarkers() {
+        val body = "The opening paragraph tail\n\n- First list item keeps going\n- Second list item keeps going"
+        val quote = "paragraph tail\nFirst list item keeps going\nSecond list"
+
+        assertEquals(12, Nip84.locateSelection(body, quote))
+    }
+
+    @Test
+    fun locateSelectionPrefersRenderedMatchNearSelectedStart() {
+        val first = "- repeated item\n- second item"
+        val body = "$first\n\nIntro text.\n\n- repeated item\n- second item"
+        val quote = "repeated item\nsecond item"
+        val preferred = body.lastIndexOf("repeated item")
+
+        assertEquals(preferred, Nip84.locateSelection(body, quote, selectedStart = preferred))
+    }
 }

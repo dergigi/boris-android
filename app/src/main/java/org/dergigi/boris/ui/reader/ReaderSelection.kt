@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 import kotlin.math.max
 
 @Stable
@@ -57,59 +60,139 @@ class ReaderSelectionState {
     var ttsStartIndex by mutableStateOf<Int?>(null)
         private set
 
+    private var selectedRanges by mutableStateOf<Map<Any, TextRange>>(emptyMap())
+    private var blocks = linkedMapOf<Any, SelectableBlock>()
+    private var anchorOwner: Any? = null
     private var frozenMin = 0
     private var frozenMax = 0
+    private var startOwner: Any? = null
+    private var endOwner: Any? = null
+    private var loupeOwner: Any? = null
 
     val toolbarReady: Boolean
         get() = hasSelection && (toolbarRect.width > 1f || toolbarRect.height > 1f)
     val selectedText: String
         get() {
             if (!hasSelection) return ""
+            val parts = selectedPieces()
+            if (parts.isNotEmpty()) return parts.joinToString("\n")
             val a = range.min.coerceIn(0, text.length)
             val b = range.max.coerceIn(0, text.length)
             return if (b > a) text.substring(a, b) else ""
         }
+    val anchorText: String
+        get() = startOwner?.let(::blockText).orEmpty().ifBlank { text }
+    val anchorOffset: Int
+        get() = startOwner?.let { selectedRanges[it]?.min } ?: range.min
 
-    fun owns(id: Any): Boolean = owner === id && hasSelection
+    fun owns(id: Any): Boolean = hasSelection && selectedRanges.containsKey(id)
+
+    fun rangeFor(id: Any): TextRange? = selectedRanges[id]
+
+    fun handleOffset(id: Any, start: Boolean): Int? {
+        val current = selectedRanges[id] ?: return null
+        return when {
+            start && startOwner === id -> current.min
+            !start && endOwner === id -> current.max
+            else -> null
+        }
+    }
+
+    fun showsLoupe(id: Any): Boolean =
+        hasSelection && loupeOwner === id && loupeCenter != Offset.Unspecified
+
+    fun updateBlock(
+        id: Any,
+        value: String,
+        layout: TextLayoutResult?,
+        coordinates: LayoutCoordinates?,
+        ttsIndex: Int?,
+    ) {
+        if (layout == null || coordinates == null || !coordinates.isAttached) return
+        blocks[id] = SelectableBlock(id, value, layout, coordinates, ttsIndex)
+    }
+
+    fun unregister(id: Any) {
+        blocks.remove(id)
+        if (owner === id || selectedRanges.containsKey(id)) clear()
+    }
 
     fun begin(id: Any, value: String, word: TextRange, ttsIndex: Int? = null) {
         owner = id
+        anchorOwner = id
         text = value
         range = word
         ttsStartIndex = ttsIndex
         frozenMin = word.min
         frozenMax = word.max
+        startOwner = id
+        endOwner = id
+        selectedRanges = if (word.min != word.max) mapOf(id to word) else emptyMap()
         toolbarRect = Rect.Zero
         loupeCenter = Offset.Unspecified
+        loupeOwner = null
         hasSelection = word.min != word.max
     }
 
     fun extendTo(offset: Int) {
-        if (owner == null) return
-        val clamped = offset.coerceIn(0, text.length)
-        range = when {
-            clamped <= frozenMin -> TextRange(clamped, frozenMax)
-            clamped >= frozenMax -> TextRange(frozenMin, clamped)
-            else -> TextRange(frozenMin, frozenMax)
+        val id = anchorOwner ?: owner ?: return
+        extendTo(id, offset)
+    }
+
+    fun extendTo(id: Any, offset: Int) {
+        val anchor = anchorOwner ?: owner ?: return
+        val clamped = offset.coerceIn(0, blockText(id).length)
+        if (id === anchor) {
+            val next = when {
+                clamped <= frozenMin -> TextRange(clamped, frozenMax)
+                clamped >= frozenMax -> TextRange(frozenMin, clamped)
+                else -> TextRange(frozenMin, frozenMax)
+            }
+            applySingleRange(anchor, next)
+            return
+        }
+        if (comesBefore(id, anchor)) {
+            applyRangeBetween(id, clamped, anchor, frozenMax)
+        } else {
+            applyRangeBetween(anchor, frozenMin, id, clamped)
         }
     }
 
     fun moveBound(movingMin: Boolean, offset: Int) {
+        val id = if (movingMin) startOwner else endOwner
+        if (id != null) moveBound(movingMin, id, offset)
+    }
+
+    fun moveBound(movingMin: Boolean, id: Any, offset: Int) {
         if (owner == null) return
-        val clamped = offset.coerceIn(0, text.length)
-        range = if (movingMin) TextRange(clamped, range.max) else TextRange(range.min, clamped)
+        val currentStartOwner = startOwner ?: return
+        val currentEndOwner = endOwner ?: return
+        val currentStart = selectedRanges[currentStartOwner]?.min ?: return
+        val currentEnd = selectedRanges[currentEndOwner]?.max ?: return
+        val clamped = offset.coerceIn(0, blockText(id).length)
+        if (movingMin) {
+            applyRangeBetween(id, clamped, currentEndOwner, currentEnd)
+        } else {
+            applyRangeBetween(currentStartOwner, currentStart, id, clamped)
+        }
     }
 
     fun selectAll(id: Any, value: String, ttsIndex: Int? = null) {
+        val actual = blockText(id).ifBlank { value }
         owner = id
-        text = value
-        range = TextRange(0, value.length)
+        anchorOwner = id
+        text = actual
+        range = TextRange(0, actual.length)
         ttsStartIndex = ttsIndex
         frozenMin = 0
-        frozenMax = value.length
+        frozenMax = actual.length
+        startOwner = id
+        endOwner = id
+        selectedRanges = if (actual.isNotEmpty()) mapOf(id to TextRange(0, actual.length)) else emptyMap()
         toolbarRect = Rect.Zero
         loupeCenter = Offset.Unspecified
-        hasSelection = value.isNotEmpty()
+        loupeOwner = null
+        hasSelection = actual.isNotEmpty()
     }
 
     fun hideToolbar() {
@@ -118,35 +201,178 @@ class ReaderSelectionState {
 
     fun showLoupe(center: Offset) {
         loupeCenter = center
+        loupeOwner = owner
+    }
+
+    fun showLoupe(id: Any, center: Offset) {
+        loupeCenter = center
+        loupeOwner = id
     }
 
     fun hideLoupe() {
         loupeCenter = Offset.Unspecified
+        loupeOwner = null
     }
 
     fun clear() {
         owner = null
+        anchorOwner = null
         text = ""
         range = TextRange.Zero
         ttsStartIndex = null
+        selectedRanges = emptyMap()
+        startOwner = null
+        endOwner = null
         toolbarRect = Rect.Zero
         loupeCenter = Offset.Unspecified
+        loupeOwner = null
         hasSelection = false
     }
 
     fun updateToolbar(layout: TextLayoutResult, coords: LayoutCoordinates) {
+        val id = selectedRanges.entries.firstOrNull { it.value == range }?.key
+        if (id != null) {
+            updateToolbar(id, layout, coords)
+            return
+        }
+        updateToolbar()
+    }
+
+    fun updateToolbar() {
+        val id = endOwner ?: startOwner ?: return
+        val block = blocks[id] ?: return
+        updateToolbar(id, block.layout, block.coordinates)
+    }
+
+    private fun updateToolbar(id: Any, layout: TextLayoutResult, coords: LayoutCoordinates) {
         if (!hasSelection) {
             toolbarRect = Rect.Zero
             return
         }
         if (!coords.isAttached) return
-        val boxes = HighlightMarks.highlightRects(layout, range.min, range.max)
+        val current = selectedRanges[id] ?: return
+        val boxes = HighlightMarks.highlightRects(layout, current.min, current.max)
         val box = boxes.firstOrNull() ?: return
         val topLeft = coords.localToWindow(Offset(box.left, box.top))
         val bottomRight = coords.localToWindow(Offset(box.right, box.bottom))
         toolbarRect = Rect(topLeft, bottomRight)
     }
+
+    fun targetAtWindow(position: Offset): ReaderSelectionTarget? {
+        val ordered = orderedBlocks()
+        if (ordered.isEmpty()) return null
+        val containing = ordered.firstOrNull { block ->
+            val local = block.coordinates.windowToLocal(position)
+            local.y >= -BLOCK_EDGE_SLOP && local.y <= block.layout.size.height + BLOCK_EDGE_SLOP
+        }
+        val block = containing ?: ordered.minBy { block ->
+            val local = block.coordinates.windowToLocal(position)
+            when {
+                local.y < 0f -> abs(local.y)
+                local.y > block.layout.size.height -> abs(local.y - block.layout.size.height)
+                else -> 0f
+            }
+        }
+        val local = block.coordinates.windowToLocal(position)
+        val offset = JustifiedLayout.offsetAt(block.layout, local)
+        return ReaderSelectionTarget(block.owner, offset, block.layout)
+    }
+
+    private fun applySingleRange(id: Any, next: TextRange) {
+        val block = blocks[id]
+        owner = owner ?: id
+        startOwner = id
+        endOwner = id
+        selectedRanges = if (next.min != next.max) mapOf(id to next) else emptyMap()
+        range = next
+        text = block?.text ?: text
+        hasSelection = next.min != next.max
+        if (!hasSelection) toolbarRect = Rect.Zero
+    }
+
+    private fun applyRangeBetween(firstOwner: Any, firstOffset: Int, lastOwner: Any, lastOffset: Int) {
+        val ordered = orderedBlocks()
+        val firstIndex = ordered.indexOfFirst { it.owner === firstOwner }
+        val lastIndex = ordered.indexOfFirst { it.owner === lastOwner }
+        if (firstIndex < 0 || lastIndex < 0) {
+            if (firstOwner === lastOwner) applySingleRange(firstOwner, TextRange(firstOffset, lastOffset))
+            return
+        }
+        val startIndex = minOf(firstIndex, lastIndex)
+        val endIndex = maxOf(firstIndex, lastIndex)
+        val sameBlock = firstIndex == lastIndex
+        val startOffset = when {
+            sameBlock -> minOf(firstOffset, lastOffset)
+            firstIndex <= lastIndex -> firstOffset
+            else -> lastOffset
+        }
+        val endOffset = when {
+            sameBlock -> maxOf(firstOffset, lastOffset)
+            firstIndex <= lastIndex -> lastOffset
+            else -> firstOffset
+        }
+        val next = linkedMapOf<Any, TextRange>()
+        for (index in startIndex..endIndex) {
+            val block = ordered[index]
+            val from = if (index == startIndex) startOffset.coerceIn(0, block.text.length) else 0
+            val to = if (index == endIndex) endOffset.coerceIn(0, block.text.length) else block.text.length
+            if (to > from) next[block.owner] = TextRange(from, to)
+        }
+        startOwner = ordered[startIndex].owner
+        endOwner = ordered[endIndex].owner
+        selectedRanges = next
+        val pieces = selectedPieces()
+        text = if (next.size == 1) {
+            val only = next.keys.first()
+            blockText(only)
+        } else {
+            pieces.joinToString("\n")
+        }
+        range = if (next.size == 1) next.values.first() else TextRange(0, text.length)
+        ttsStartIndex = ordered[startIndex].ttsStartIndex
+        hasSelection = next.isNotEmpty()
+        if (!hasSelection) toolbarRect = Rect.Zero
+    }
+
+    private fun selectedPieces(): List<String> =
+        orderedBlocks().mapNotNull { block ->
+            val current = selectedRanges[block.owner] ?: return@mapNotNull null
+            val start = current.min.coerceIn(0, block.text.length)
+            val end = current.max.coerceIn(0, block.text.length)
+            block.text.substring(start, end).takeIf { it.isNotBlank() }
+        }
+
+    private fun orderedBlocks(): List<SelectableBlock> =
+        blocks.values
+            .filter { it.coordinates.isAttached }
+            .sortedWith(
+                compareBy<SelectableBlock> { it.coordinates.localToWindow(Offset.Zero).y }
+                    .thenBy { it.coordinates.localToWindow(Offset.Zero).x },
+            )
+
+    private fun comesBefore(left: Any, right: Any): Boolean {
+        val ordered = orderedBlocks()
+        val a = ordered.indexOfFirst { it.owner === left }
+        val b = ordered.indexOfFirst { it.owner === right }
+        return a >= 0 && b >= 0 && a < b
+    }
+
+    private fun blockText(id: Any): String = blocks[id]?.text ?: if (owner === id) text else ""
 }
+
+data class ReaderSelectionTarget(
+    val owner: Any,
+    val offset: Int,
+    val layout: TextLayoutResult,
+)
+
+private data class SelectableBlock(
+    val owner: Any,
+    val text: String,
+    val layout: TextLayoutResult,
+    val coordinates: LayoutCoordinates,
+    val ttsStartIndex: Int?,
+)
 
 @Composable
 fun SelectionBackHandler(state: ReaderSelectionState) {
@@ -179,15 +405,23 @@ fun Modifier.readerSelectable(
     val minWindowY = statusTop + with(density) { (TOP_BAR_CLEARANCE + LOUPE_HEIGHT / 2).toPx() }
     val liftPx = with(density) { LOUPE_LIFT.toPx() }
 
+    SideEffect {
+        state.updateBlock(owner, textRef.value, layoutRef.value, coordsRef.value, ttsStartIndexRef.value)
+    }
+    DisposableEffect(owner) {
+        onDispose { state.unregister(owner) }
+    }
+
     onGloballyPositioned { coords ->
         onCoordinates(coords)
+        state.updateBlock(owner, textRef.value, layoutRef.value, coords, ttsStartIndexRef.value)
         val current = layoutRef.value
         if (state.owns(owner) && state.toolbarReady && current != null) {
-            state.updateToolbar(current, coords)
+            state.updateToolbar()
         }
     }
         .then(
-            if (state.owns(owner)) {
+            if (state.showsLoupe(owner)) {
                 Modifier.magnifier(
                     sourceCenter = { state.loupeCenter },
                     magnifierCenter = {
@@ -215,12 +449,13 @@ fun Modifier.readerSelectable(
         )
         .drawWithContent {
             val current = layoutRef.value
-            if (state.owns(owner) && current != null) {
-                drawSelection(current, state.range, colors.backgroundColor)
+            val selectedRange = state.rangeFor(owner)
+            if (selectedRange != null && current != null) {
+                drawSelection(current, selectedRange, colors.backgroundColor)
             }
             drawContent()
             if (state.owns(owner) && current != null) {
-                drawHandles(current, state.range, colors.handleColor)
+                drawHandles(current, owner, state, colors.handleColor)
             }
         }
         .pointerInput(owner) {
@@ -271,15 +506,21 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
     val currentLayout = layout() ?: return
 
     if (state.owns(owner)) {
-        val startHandle = handleCenter(currentLayout, state.range.min, start = true)
-        val endHandle = handleCenter(currentLayout, state.range.max, start = false)
-        val movingMin = (down.position - startHandle).getDistance() <= handleSlop
-        val movingMax = (down.position - endHandle).getDistance() <= handleSlop
+        val startHandle = state.handleOffset(owner, start = true)
+            ?.let { handleCenter(currentLayout, it, start = true) }
+        val endHandle = state.handleOffset(owner, start = false)
+            ?.let { handleCenter(currentLayout, it, start = false) }
+        val movingMin = startHandle != null && (down.position - startHandle).getDistance() <= handleSlop
+        val movingMax = endHandle != null && (down.position - endHandle).getDistance() <= handleSlop
         if (movingMin || movingMax) {
             down.consume()
             state.hideToolbar()
-            val bound = if (movingMin) state.range.min else state.range.max
-            state.showLoupe(loupeSource(currentLayout, bound))
+            val bound = if (movingMin) {
+                state.handleOffset(owner, start = true) ?: 0
+            } else {
+                state.handleOffset(owner, start = false) ?: 0
+            }
+            state.showLoupe(owner, loupeSource(currentLayout, bound))
             dragSelectionBound(down.id, movingMin, state, layout, coordinates, pass)
             return
         }
@@ -309,16 +550,24 @@ private suspend fun AwaitPointerEventScope.handleReaderGesture(
         val coords = coordinates()
         if (coords != null && onLongPress(change.position, coords)) return
         state.begin(owner, text(), laid.getWordBoundary(index), ttsStartIndex())
-        state.showLoupe(loupeSource(laid, index))
+        state.showLoupe(owner, loupeSource(laid, index))
         while (true) {
             val event = awaitPointerEvent(pass)
             val drag = event.changes.firstOrNull { it.id == down.id } ?: break
             if (!drag.pressed) break
             drag.consume()
             val next = layout() ?: break
-            val nextOffset = JustifiedLayout.offsetAt(next, drag.position)
-            state.extendTo(nextOffset)
-            state.showLoupe(loupeSource(next, nextOffset))
+            val target = coordinates()
+                ?.localToWindow(drag.position)
+                ?.let(state::targetAtWindow)
+            if (target != null) {
+                state.extendTo(target.owner, target.offset)
+                state.showLoupe(target.owner, loupeSource(target.layout, target.offset))
+            } else {
+                val nextOffset = JustifiedLayout.offsetAt(next, drag.position)
+                state.extendTo(nextOffset)
+                state.showLoupe(owner, loupeSource(next, nextOffset))
+            }
         }
         showToolbar(state, layout, coordinates)
         return
@@ -348,9 +597,22 @@ private suspend fun AwaitPointerEventScope.dragSelectionBound(
         if (!change.pressed) break
         change.consume()
         val current = layout() ?: break
-        val offset = JustifiedLayout.offsetAt(current, change.position)
-        state.moveBound(movingMin, offset)
-        state.showLoupe(loupeSource(current, if (movingMin) state.range.min else state.range.max))
+        val target = coordinates()
+            ?.localToWindow(change.position)
+            ?.let(state::targetAtWindow)
+        if (target != null) {
+            state.moveBound(movingMin, target.owner, target.offset)
+            val offset = if (movingMin) {
+                state.handleOffset(target.owner, start = true) ?: target.offset
+            } else {
+                state.handleOffset(target.owner, start = false) ?: target.offset
+            }
+            state.showLoupe(target.owner, loupeSource(target.layout, offset))
+        } else {
+            val offset = JustifiedLayout.offsetAt(current, change.position)
+            state.moveBound(movingMin, offset)
+            state.showLoupe(loupeSource(current, if (movingMin) state.range.min else state.range.max))
+        }
     }
     showToolbar(state, layout, coordinates)
 }
@@ -361,9 +623,7 @@ private fun showToolbar(
     coordinates: () -> LayoutCoordinates?,
 ) {
     state.hideLoupe()
-    val laid = layout() ?: return
-    val coords = coordinates() ?: return
-    state.updateToolbar(laid, coords)
+    state.updateToolbar()
 }
 
 private fun DrawScope.drawSelection(
@@ -383,13 +643,16 @@ private fun DrawScope.drawSelection(
 
 private fun DrawScope.drawHandles(
     layout: TextLayoutResult,
-    range: TextRange,
+    owner: Any,
+    state: ReaderSelectionState,
     color: Color,
 ) {
-    if (range.min == range.max) return
+    val start = state.handleOffset(owner, start = true)
+    val end = state.handleOffset(owner, start = false)
+    if (start == null && end == null) return
     val radius = 6.dp.toPx()
-    drawCircle(color, radius, handleCenter(layout, range.min, start = true))
-    drawCircle(color, radius, handleCenter(layout, range.max, start = false))
+    if (start != null) drawCircle(color, radius, handleCenter(layout, start, start = true))
+    if (end != null) drawCircle(color, radius, handleCenter(layout, end, start = false))
 }
 
 private fun handleCenter(layout: TextLayoutResult, offset: Int, start: Boolean): Offset {
@@ -428,4 +691,5 @@ private val LOUPE_WIDTH = 140.dp
 private val LOUPE_HEIGHT = 48.dp
 private val LOUPE_LIFT = 72.dp
 private val TOP_BAR_CLEARANCE = 56.dp
+private const val BLOCK_EDGE_SLOP = 24f
 private const val LOUPE_ZOOM = 1.75f

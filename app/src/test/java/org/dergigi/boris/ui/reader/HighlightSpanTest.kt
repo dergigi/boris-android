@@ -98,6 +98,49 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun multiBlockQuotePaintsWholeMiddleListItem() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "starts in the paragraph above\nFirst list item keeps going\nSecond list item keeps going",
+            mine = true,
+            context = "starts in the paragraph above\n- First list item keeps going\n- Second list item keeps going",
+        )
+        val spans = matchHighlightSpans("First list item keeps going", listOf(mine))
+
+        assertEquals(listOf(0 to 27), spans.map { it.start to it.end })
+    }
+
+    @Test
+    fun multiBlockQuotePaintsPartialStartAndEndBlocks() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "paragraph tail\nFirst list item keeps going\nSecond list",
+            mine = true,
+            context = "The opening paragraph tail\n\n- First list item keeps going\n- Second list item keeps going",
+        )
+
+        assertEquals(
+            listOf(12 to 26),
+            matchHighlightSpans("The opening paragraph tail", listOf(mine)).map { it.start to it.end },
+        )
+        assertEquals(
+            listOf(0 to 11),
+            matchHighlightSpans("Second list item keeps going", listOf(mine)).map { it.start to it.end },
+        )
+    }
+
+    @Test
+    fun multiBlockQuoteWithoutContextDoesNotPaintFragments() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "paragraph tail\nFirst list item keeps going\nSecond list",
+            mine = true,
+        )
+
+        assertTrue(matchHighlightSpans("First list item keeps going", listOf(mine)).isEmpty())
+    }
+
+    @Test
     fun spokenSpansIgnoreBlankSentence() {
         assertTrue(matchSpokenSpans("hello there", null, null).isEmpty())
         assertTrue(matchSpokenSpans("hello there", "   ", null).isEmpty())

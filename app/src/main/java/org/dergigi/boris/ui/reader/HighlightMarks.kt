@@ -150,14 +150,70 @@ private fun anchoredQuoteSpans(displayed: String, item: PaintedHighlight): List<
 private fun fallbackQuoteSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
     if (item.quote.isBlank()) return emptyList()
     val matches = quoteOccurrences(displayed, item)
+    if (matches.isEmpty()) return renderedFragmentSpans(displayed, item)
     if (isShortAmbiguousHighlight(item.quote) && matches.size > 1) return emptyList()
     return matches
+}
+
+private fun renderedFragmentSpans(displayed: String, item: PaintedHighlight): List<HighlightSpan> {
+    val context = item.context?.takeIf { it.isNotBlank() } ?: return emptyList()
+    val mark = highlightMark(item.quote, item.context)
+    if (mark.isBlank()) return emptyList()
+    val displayedNorm = QuoteMatch.normalizeWhitespace(displayed)
+    val markNorm = QuoteMatch.normalizeWhitespace(mark)
+    val contextNorm = normalizeRenderedMarkdown(context)
+    if (displayedNorm.length < MIN_FRAGMENT_MATCH || markNorm.length < MIN_FRAGMENT_MATCH) {
+        return emptyList()
+    }
+    val displayKey = if (item.ignoreCase) displayedNorm.lowercase() else displayedNorm
+    val markKey = if (item.ignoreCase) markNorm.lowercase() else markNorm
+    val contextKey = if (item.ignoreCase) contextNorm.lowercase() else contextNorm
+    if (displayKey == markKey) return emptyList()
+
+    markKey.indexOf(displayKey).takeIf { it >= 0 }?.let {
+        if (contextKey.indexOf(displayKey) < 0) return emptyList()
+        return listOf(HighlightSpan(item, 0, displayed.length))
+    }
+
+    longestEdgeOverlap(displayKey, markKey, atStart = true)?.let { range ->
+        val fragment = displayKey.substring(range.first, range.last + 1)
+        if (contextKey.indexOf(fragment) < 0) return emptyList()
+        return QuoteMatch.mapNormalizedRange(displayed, range.first, range.last + 1)
+            ?.let { listOf(HighlightSpan(item, it.first, it.last + 1)) }
+            ?: emptyList()
+    }
+    longestEdgeOverlap(displayKey, markKey, atStart = false)?.let { range ->
+        val fragment = displayKey.substring(range.first, range.last + 1)
+        if (contextKey.indexOf(fragment) < 0) return emptyList()
+        return QuoteMatch.mapNormalizedRange(displayed, range.first, range.last + 1)
+            ?.let { listOf(HighlightSpan(item, it.first, it.last + 1)) }
+            ?: emptyList()
+    }
+    return emptyList()
+}
+
+private fun longestEdgeOverlap(displayed: String, quote: String, atStart: Boolean): IntRange? {
+    val indices = if (atStart) displayed.indices else displayed.indices.reversed()
+    for (index in indices) {
+        val range = if (atStart) index until displayed.length else 0..index
+        val fragment = displayed.substring(range.first, range.last + 1)
+        if (fragment.length < MIN_FRAGMENT_MATCH) continue
+        val matches = if (atStart) quote.startsWith(fragment) else quote.endsWith(fragment)
+        if (matches) return range
+    }
+    return null
 }
 
 private fun isShortAmbiguousHighlight(quote: String): Boolean {
     val words = quote.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
     return words.size <= 2 && words.sumOf { it.length } <= 24
 }
+
+private fun normalizeRenderedMarkdown(value: String): String =
+    QuoteMatch.normalizeWhitespace(value.replace(MARKDOWN_LIST_MARKER, ""))
+
+private const val MIN_FRAGMENT_MATCH = 10
+private val MARKDOWN_LIST_MARKER = Regex("""(?m)^\s*(?:[-+*]|\d+[.)])\s+""")
 
 /** Prefer the quote nearest the middle of [context] when it appears more than once. */
 internal fun preferredQuoteRange(context: String, mark: String, ignoreCase: Boolean): IntRange? {

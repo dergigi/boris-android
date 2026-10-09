@@ -138,10 +138,67 @@ object Nip84 {
                     .coerceIn(0, (articleContent.length - selectedText.length).coerceAtLeast(0))
             }
         }
+        locateRenderedSelection(articleContent, selectedText, selectedStart)?.let { return it }
         val hits = QuoteMatch.occurrences(articleContent, selectedText)
         if (hits.isEmpty()) return null
         if (selectedStart == null) return hits[0].first
         return hits.minBy { kotlin.math.abs(it.first - selectedStart) }.first
+    }
+
+    private fun locateRenderedSelection(
+        articleContent: String,
+        selectedText: String,
+        selectedStart: Int?,
+    ): Int? {
+        val rendered = renderedMarkdownIndex(articleContent)
+        val quote = QuoteMatch.normalizeWhitespace(selectedText)
+        if (rendered.text.isEmpty() || quote.isEmpty()) return null
+        val matches = mutableListOf<Int>()
+        var from = 0
+        while (true) {
+            val at = rendered.text.indexOf(quote, from)
+            if (at < 0) break
+            rendered.sourceOffsets.getOrNull(at)?.let(matches::add)
+            from = at + quote.length
+        }
+        if (matches.isEmpty()) return null
+        return selectedStart?.let { preferred ->
+            matches.minBy { kotlin.math.abs(it - preferred) }
+        } ?: matches.first()
+    }
+
+    private fun renderedMarkdownIndex(markdown: String): RenderedMarkdownIndex {
+        val text = StringBuilder()
+        val offsets = mutableListOf<Int>()
+        var lineStart = 0
+        markdown.splitToSequence('\n').forEach { line ->
+            var skipUntil = 0
+            val marker = MARKDOWN_LIST_MARKER.find(line)
+            if (marker != null) skipUntil = marker.range.last + 1
+            line.forEachIndexed { index, char ->
+                if (index < skipUntil) return@forEachIndexed
+                val sourceOffset = lineStart + index
+                if (char.isWhitespace()) {
+                    appendRenderedSpace(text, offsets, sourceOffset)
+                } else {
+                    text.append(char)
+                    offsets.add(sourceOffset)
+                }
+            }
+            appendRenderedSpace(text, offsets, lineStart + line.length)
+            lineStart += line.length + 1
+        }
+        while (text.isNotEmpty() && text.last() == ' ') {
+            text.deleteAt(text.lastIndex)
+            offsets.removeAt(offsets.lastIndex)
+        }
+        return RenderedMarkdownIndex(text.toString(), offsets)
+    }
+
+    private fun appendRenderedSpace(text: StringBuilder, offsets: MutableList<Int>, sourceOffset: Int) {
+        if (text.isEmpty() || text.last() == ' ') return
+        text.append(' ')
+        offsets.add(sourceOffset)
     }
 
     private fun sentenceWindow(articleContent: String, selectedIndex: Int, selectedText: String): String? {
@@ -253,3 +310,10 @@ object Nip84 {
         return out
     }
 }
+
+private data class RenderedMarkdownIndex(
+    val text: String,
+    val sourceOffsets: List<Int>,
+)
+
+private val MARKDOWN_LIST_MARKER = Regex("""^\s*(?:[-+*]|\d+[.)])\s+""")
