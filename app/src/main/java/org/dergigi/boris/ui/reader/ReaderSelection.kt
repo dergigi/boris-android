@@ -263,7 +263,7 @@ class ReaderSelectionState {
         if (ordered.isEmpty()) return null
         val containing = ordered.firstOrNull { block ->
             val local = block.coordinates.windowToLocal(position)
-            local.y >= -BLOCK_EDGE_SLOP && local.y <= block.layout.size.height + BLOCK_EDGE_SLOP
+            local.y >= 0f && local.y <= block.layout.size.height
         }
         val block = containing ?: ordered.minBy { block ->
             val local = block.coordinates.windowToLocal(position)
@@ -286,6 +286,7 @@ class ReaderSelectionState {
         selectedRanges = if (next.min != next.max) mapOf(id to next) else emptyMap()
         range = next
         text = block?.text ?: text
+        if (block != null) ttsStartIndex = block.ttsStartIndex
         hasSelection = next.min != next.max
         if (!hasSelection) toolbarRect = Rect.Zero
     }
@@ -691,5 +692,4 @@ private val LOUPE_WIDTH = 140.dp
 private val LOUPE_HEIGHT = 48.dp
 private val LOUPE_LIFT = 72.dp
 private val TOP_BAR_CLEARANCE = 56.dp
-private const val BLOCK_EDGE_SLOP = 24f
 private const val LOUPE_ZOOM = 1.75f
