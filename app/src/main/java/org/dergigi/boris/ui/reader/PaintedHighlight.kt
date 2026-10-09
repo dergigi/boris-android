@@ -16,4 +16,6 @@ data class PaintedHighlight(
     val ignoreCase: Boolean = false,
     val spoken: Boolean = false,
     val outline: Boolean = false,
+    val sourceStart: Int? = null,
+    val sourceEnd: Int? = null,
 )

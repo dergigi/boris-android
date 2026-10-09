@@ -114,13 +114,21 @@ object Nip84 {
         selectedStart: Int? = null,
         ownerText: String = "",
         ownerOffset: Int = 0,
-    ): Int? {
+    ): Int? = locateSelectionRange(articleContent, selectedText, selectedStart, ownerText, ownerOffset)?.first
+
+    fun locateSelectionRange(
+        articleContent: String,
+        selectedText: String,
+        selectedStart: Int? = null,
+        ownerText: String = "",
+        ownerOffset: Int = 0,
+    ): IntRange? {
         if (selectedStart != null &&
             selectedStart >= 0 &&
             selectedStart + selectedText.length <= articleContent.length &&
             articleContent.regionMatches(selectedStart, selectedText, 0, selectedText.length)
         ) {
-            return selectedStart
+            return selectedStart until selectedStart + selectedText.length
         }
         if (ownerText.isNotBlank()) {
             val owners = QuoteMatch.occurrences(articleContent, ownerText)
@@ -130,18 +138,44 @@ object Nip84 {
                     at + selectedText.length <= articleContent.length &&
                     articleContent.regionMatches(at, selectedText, 0, selectedText.length)
                 ) {
-                    return at
+                    return at until at + selectedText.length
                 }
             }
             if (owners.size == 1 && ownerOffset >= 0) {
-                return (owners[0].first + ownerOffset)
+                val at = (owners[0].first + ownerOffset)
                     .coerceIn(0, (articleContent.length - selectedText.length).coerceAtLeast(0))
+                return at until at + selectedText.length
             }
         }
+        locateRenderedSelectionRange(articleContent, selectedText, selectedStart)?.let { return it }
         val hits = QuoteMatch.occurrences(articleContent, selectedText)
         if (hits.isEmpty()) return null
-        if (selectedStart == null) return hits[0].first
-        return hits.minBy { kotlin.math.abs(it.first - selectedStart) }.first
+        val hit = if (selectedStart == null) hits[0] else hits.minBy { kotlin.math.abs(it.first - selectedStart) }
+        return hit.first..hit.last
+    }
+
+    private fun locateRenderedSelectionRange(
+        articleContent: String,
+        selectedText: String,
+        selectedStart: Int?,
+    ): IntRange? {
+        val rendered = RenderedMarkdown.index(articleContent)
+        val quote = QuoteMatch.normalizeWhitespace(selectedText)
+        if (rendered.text.isEmpty() || quote.isEmpty()) return null
+        val matches = mutableListOf<IntRange>()
+        var from = 0
+        while (true) {
+            val at = rendered.text.indexOf(quote, from)
+            if (at < 0) break
+            val start = rendered.sourceOffsets.getOrNull(at)
+            val end = rendered.sourceOffsets.getOrNull(at + quote.length - 1)?.plus(1)
+            if (start != null && end != null && end > start) matches.add(start until end)
+            from = at + 1
+        }
+        if (matches.isEmpty()) return null
+        return selectedStart?.let { preferred ->
+            matches.minBy { kotlin.math.abs(it.first - preferred) }
+        } ?: matches.first()
     }
 
     private fun sentenceWindow(articleContent: String, selectedIndex: Int, selectedText: String): String? {

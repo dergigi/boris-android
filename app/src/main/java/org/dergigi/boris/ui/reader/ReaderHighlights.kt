@@ -144,7 +144,7 @@ class ReaderHighlights(
                 val cachedGraph = SocialGraphs.cached(session?.pubkeyHex)
                 val cached = cachedHighlightsFor(content)
                 if (cached.isNotEmpty()) {
-                    paint(cached, session?.pubkeyHex, cachedGraph.friends, cachedGraph.foaf)
+                    paint(cached, session?.pubkeyHex, cachedGraph.friends, cachedGraph.foaf, content)
                 }
                 val live = SocialGraphs.fetch(session?.pubkeyHex)
                 val relays = OutboxRouter.authorTargets(
@@ -166,11 +166,11 @@ class ReaderHighlights(
                         RelayQuery.fetchHighlights(relays, content.url)
                     }
                 }
-                paint(events, session?.pubkeyHex, contacts, foafKeys)
+                paint(events, session?.pubkeyHex, contacts, foafKeys, content)
                 val authors = events.map { it.pubkey }.distinct()
                 if (authors.isNotEmpty()) {
                     RelayQuery.fetchProfiles(relays, authors)
-                    paint(events, session?.pubkeyHex, contacts, foafKeys)
+                    paint(events, session?.pubkeyHex, contacts, foafKeys, content)
                 }
             } catch (_: Exception) {
             } finally {
@@ -184,6 +184,7 @@ class ReaderHighlights(
         val settings = SettingsSync.settings.value
         val visibleSettings = settings.withOwnHighlightsVisible()
         if (visibleSettings !== settings) SettingsSync.apply(visibleSettings)
+        val range = highlightRange(event)
         val painted = PaintedHighlight(
             id = event.id,
             quote = event.content,
@@ -192,6 +193,8 @@ class ReaderHighlights(
             createdAt = event.createdAt,
             context = event.tagValue("context"),
             comment = Nip84.comment(event),
+            sourceStart = range?.first,
+            sourceEnd = range?.last?.plus(1),
         )
         if (_highlights.value.none { it.id == event.id }) {
             _highlights.value = _highlights.value + painted
@@ -215,6 +218,7 @@ class ReaderHighlights(
         pubkeyHex: String?,
         friends: Set<String>,
         foaf: Set<String> = emptySet(),
+        content: ReadableContent? = currentContent(),
     ) {
         val profiles = RelayQuery.cachedProfiles(events.map { it.pubkey })
         _highlightCount.value = events.size
@@ -222,6 +226,7 @@ class ReaderHighlights(
             val mine = pubkeyHex != null && event.pubkey.equals(pubkeyHex, ignoreCase = true)
             val key = event.pubkey.lowercase()
             val friend = !mine && key in friends
+            val range = highlightRange(event, content)
             PaintedHighlight(
                 id = event.id,
                 quote = event.content,
@@ -234,9 +239,14 @@ class ReaderHighlights(
                 comment = Nip84.comment(event),
                 authorName = Profile.displayName(event.pubkey, profiles[key]),
                 authorPicture = profiles[key]?.picture,
+                sourceStart = range?.first,
+                sourceEnd = range?.last?.plus(1),
             )
         }
     }
+
+    private fun highlightRange(event: Nip01Event, content: ReadableContent? = currentContent()): IntRange? =
+        content?.body?.let { body -> Nip84.locateSelectionRange(body, event.content) }
 
     private fun primeOwnHighlights(relays: List<String>, pubkeyHex: String) {
         val now = System.currentTimeMillis()

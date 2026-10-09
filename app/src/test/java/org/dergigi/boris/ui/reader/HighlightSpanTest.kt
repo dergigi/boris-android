@@ -98,6 +98,88 @@ class HighlightSpanTest {
     }
 
     @Test
+    fun multiBlockQuotePaintsWholeMiddleListItem() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "starts in the paragraph above\nFirst list item keeps going\nSecond list item keeps going",
+            mine = true,
+            context = "starts in the paragraph above\n- First list item keeps going\n- Second list item keeps going",
+        )
+        val spans = matchHighlightSpans("First list item keeps going", listOf(mine))
+
+        assertEquals(listOf(0 to 27), spans.map { it.start to it.end })
+    }
+
+    @Test
+    fun multiBlockQuotePaintsPartialStartAndEndBlocks() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "paragraph tail\nFirst list item keeps going\nSecond list",
+            mine = true,
+            context = "The opening paragraph tail\n\n- First list item keeps going\n- Second list item keeps going",
+        )
+
+        assertEquals(
+            listOf(12 to 26),
+            matchHighlightSpans("The opening paragraph tail", listOf(mine)).map { it.start to it.end },
+        )
+        assertEquals(
+            listOf(0 to 11),
+            matchHighlightSpans("Second list item keeps going", listOf(mine)).map { it.start to it.end },
+        )
+    }
+
+    @Test
+    fun multiBlockQuotePaintsRenderedInlineMarkdownContext() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "Intro here\nFirst bold item keeps going",
+            mine = true,
+            context = "**Intro** here\n\n- First **bold** item keeps going",
+        )
+
+        assertEquals(
+            listOf(0 to 27),
+            matchHighlightSpans("First bold item keeps going", listOf(mine)).map { it.start to it.end },
+        )
+    }
+
+    @Test
+    fun multiBlockQuoteUsesSourceRangeForRepeatedShortItems() {
+        val first = 10
+        val second = 40
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "One\nTwo",
+            mine = true,
+            context = "- One\n- Two",
+            sourceStart = second,
+            sourceEnd = second + 9,
+        )
+
+        assertTrue(
+            matchHighlightSpans("One", listOf(mine), displayedSourceStart = first, displayedSourceEnd = first + 3)
+                .isEmpty(),
+        )
+        assertEquals(
+            listOf(0 to 3),
+            matchHighlightSpans("One", listOf(mine), displayedSourceStart = second, displayedSourceEnd = second + 3)
+                .map { it.start to it.end },
+        )
+    }
+
+    @Test
+    fun multiBlockQuoteWithoutContextDoesNotPaintFragments() {
+        val mine = PaintedHighlight(
+            id = "a",
+            quote = "paragraph tail\nFirst list item keeps going\nSecond list",
+            mine = true,
+        )
+
+        assertTrue(matchHighlightSpans("First list item keeps going", listOf(mine)).isEmpty())
+    }
+
+    @Test
     fun spokenSpansIgnoreBlankSentence() {
         assertTrue(matchSpokenSpans("hello there", null, null).isEmpty())
         assertTrue(matchSpokenSpans("hello there", "   ", null).isEmpty())

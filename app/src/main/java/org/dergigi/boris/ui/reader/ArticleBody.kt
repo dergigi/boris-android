@@ -400,8 +400,8 @@ internal fun ArticleBody(
     }
     fun startTtsFromSelection() {
         val selected = selection.selectedText
-        val ownerText = selection.text
-        val ownerOffset = selection.range.min
+        val ownerText = selection.anchorText
+        val ownerOffset = selection.anchorOffset
         val explicitStartIndex = selection.ttsStartIndex
         if (selected.isBlank()) return
         selection.clear()
@@ -1226,16 +1226,16 @@ internal fun ArticleBody(
             },
             onHighlight = {
                 val quote = selection.selectedText
-                val ownerText = selection.text
-                val ownerOffset = selection.range.min
+                val ownerText = selection.anchorText
+                val ownerOffset = selection.anchorOffset
                 selection.clear()
                 onHighlight(quote, ownerText, ownerOffset, null)
             },
             onAnnotate = {
                 pendingAnnotation = PendingHighlightAnnotation(
                     quote = selection.selectedText,
-                    ownerText = selection.text,
-                    ownerOffset = selection.range.min,
+                    ownerText = selection.anchorText,
+                    ownerOffset = selection.anchorOffset,
                 )
                 selection.clear()
             },
@@ -1399,9 +1399,11 @@ internal fun rememberHighlightMarks(
     painted: List<PaintedHighlight>,
     spoken: SpokenMarkState,
     ttsStartIndex: Int?,
+    sourceStart: Int? = null,
+    sourceEnd: Int? = null,
 ): List<HighlightSpan> {
-    val base = remember(displayed, painted) {
-        matchHighlightSpans(displayed, painted)
+    val base = remember(displayed, painted, sourceStart, sourceEnd) {
+        matchHighlightSpans(displayed, painted, sourceStart, sourceEnd)
     }
     // Derived, not remembered on spoken.* keys: reading those states directly
     // here subscribed every node in the article, so each TTS sentence tick
@@ -1562,7 +1564,9 @@ internal fun HighlightedMarkdownNode(
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val owner = remember { Any() }
     // NIP-84/find match once per (text, highlights). Spoken rematches alone.
-    val marks = rememberHighlightMarks(styledText.text, highlights, spoken, ttsStartIndex)
+    val sourceStart = textNode.startOffset
+    val sourceEnd = textNode.endOffset
+    val marks = rememberHighlightMarks(styledText.text, highlights, spoken, ttsStartIndex, sourceStart, sourceEnd)
     val outlineId = remember(outlineItems, outlineStartOffset, styledText.text) {
         outlineStartOffset?.let { ArticleOutline.idForHeading(outlineItems, it, styledText.text) }
     }
