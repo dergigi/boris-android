@@ -1,5 +1,6 @@
 package org.dergigi.boris.nostr
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -10,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.dergigi.boris.data.SecretBox
 import org.dergigi.boris.data.Session
-import org.json.JSONObject
 
 sealed class SignOutcome {
     data class Signed(val event: Nip01Event) : SignOutcome()
@@ -37,22 +37,36 @@ class EventSigner(
     private val onSignIntent: (Intent) -> Unit,
 ) {
     private var pending: Pending? = null
+    private val backgroundRequest = BackgroundSignerRequest(scope)
+
+    // Amber requests complete asynchronously. Only onSignIntent launches a fallback;
+    // the nullable return is retained for callers that also support other request APIs.
 
     fun sign(
         session: Session,
         unsigned: PendingUnsignedEvent,
         onResult: (SignOutcome) -> Unit,
     ): Intent? {
+        backgroundRequest.cancel()
+        pending = null
         return when (session) {
             is Session.Amber -> {
-                pending = Pending.Sign(unsigned, session.pubkeyHex, onResult)
-                val intent = RemoteSignerBridge.buildSignEventIntent(
-                    unsigned.toUnsignedJson(includePubkey = true),
-                    session.signerPackage,
-                    session.pubkeyHex,
+                val request = Pending.Sign(unsigned, session.pubkeyHex, onResult)
+                val json = unsigned.toUnsignedJson(includePubkey = true)
+                backgroundRequest.start(
+                    query = {
+                        RemoteSignerBridge.queryProvider(app, "SIGN_EVENT", json, session.signerPackage, session.pubkeyHex)
+                    },
+                    onNeedsApproval = {
+                        pending = request
+                        onSignIntent(RemoteSignerBridge.buildSignEventIntent(json, session.signerPackage, session.pubkeyHex))
+                    },
+                    onResult = { response ->
+                        pending = null
+                        onResult(providerSignOutcome(response, session.pubkeyHex, unsigned))
+                    },
                 )
-                onSignIntent(intent)
-                intent
+                null
             }
             is Session.Bunker -> {
                 pending = null
@@ -71,18 +85,30 @@ class EventSigner(
         nip44: Boolean,
         onResult: (CryptoOutcome) -> Unit,
     ): Intent? {
+        backgroundRequest.cancel()
+        pending = null
         return when (session) {
             is Session.Amber -> {
-                pending = Pending.Crypto(onResult)
-                val intent = RemoteSignerBridge.buildDecryptIntent(
-                    ciphertext = ciphertext,
-                    signerPackage = session.signerPackage,
-                    currentUserHex = session.pubkeyHex,
-                    peerPubkeyHex = peerPubkeyHex,
-                    nip44 = nip44,
+                val request = Pending.Crypto(onResult)
+                backgroundRequest.start(
+                    query = {
+                        RemoteSignerBridge.queryProvider(
+                            app, if (nip44) "NIP44_DECRYPT" else "NIP04_DECRYPT", ciphertext,
+                            session.signerPackage, session.pubkeyHex, peerPubkeyHex,
+                        )
+                    },
+                    onNeedsApproval = {
+                        pending = request
+                        onSignIntent(RemoteSignerBridge.buildDecryptIntent(
+                            ciphertext, session.signerPackage, session.pubkeyHex, peerPubkeyHex, nip44,
+                        ))
+                    },
+                    onResult = { response ->
+                        pending = null
+                        onResult(providerCryptoOutcome(response))
+                    },
                 )
-                onSignIntent(intent)
-                intent
+                null
             }
             is Session.Bunker -> {
                 pending = null
@@ -102,17 +128,29 @@ class EventSigner(
         peerPubkeyHex: String,
         onResult: (CryptoOutcome) -> Unit,
     ): Intent? {
+        backgroundRequest.cancel()
+        pending = null
         return when (session) {
             is Session.Amber -> {
-                pending = Pending.Crypto(onResult)
-                val intent = RemoteSignerBridge.buildEncryptIntent(
-                    plaintext = plaintext,
-                    signerPackage = session.signerPackage,
-                    currentUserHex = session.pubkeyHex,
-                    peerPubkeyHex = peerPubkeyHex,
+                val request = Pending.Crypto(onResult)
+                backgroundRequest.start(
+                    query = {
+                        RemoteSignerBridge.queryProvider(
+                            app, "NIP44_ENCRYPT", plaintext, session.signerPackage, session.pubkeyHex, peerPubkeyHex,
+                        )
+                    },
+                    onNeedsApproval = {
+                        pending = request
+                        onSignIntent(RemoteSignerBridge.buildEncryptIntent(
+                            plaintext, session.signerPackage, session.pubkeyHex, peerPubkeyHex,
+                        ))
+                    },
+                    onResult = { response ->
+                        pending = null
+                        onResult(providerCryptoOutcome(response))
+                    },
                 )
-                onSignIntent(intent)
-                intent
+                null
             }
             is Session.Bunker -> {
                 pending = null
@@ -127,6 +165,7 @@ class EventSigner(
     /** Returns true when a pending Amber request consumed the result. */
     fun onSignerResult(resultCode: Int, data: Intent?): Boolean {
         val current = pending ?: return false
+        backgroundRequest.cancel()
         pending = null
         when (current) {
             is Pending.Sign -> {
@@ -159,6 +198,7 @@ class EventSigner(
     }
 
     fun cancel() {
+        backgroundRequest.cancel()
         pending = null
     }
 
@@ -175,6 +215,31 @@ class EventSigner(
     }
 
     companion object {
+        internal fun providerSignOutcome(
+            response: SignerProviderResult,
+            sessionHex: String,
+            unsigned: PendingUnsignedEvent,
+        ): SignOutcome = when (response) {
+            SignerProviderResult.Rejected -> SignOutcome.Rejected
+            is SignerProviderResult.Value -> {
+                when (val parsed = SignerResults.parseSignedEvent(
+                    resultCode = Activity.RESULT_OK, rejected = false,
+                    eventJson = response.event, resultJson = response.result,
+                    sessionHex = sessionHex, pending = unsigned,
+                )) {
+                    is SignerResult.Signed -> SignOutcome.Signed(parsed.event)
+                    else -> SignOutcome.Failed
+                }
+            }
+            else -> SignOutcome.Failed
+        }
+
+        internal fun providerCryptoOutcome(response: SignerProviderResult): CryptoOutcome = when (response) {
+            SignerProviderResult.Rejected -> CryptoOutcome.Rejected
+            is SignerProviderResult.Value -> response.result?.let(CryptoOutcome::Text) ?: CryptoOutcome.Failed
+            else -> CryptoOutcome.Failed
+        }
+
         /** Amber content-provider or bunker RPC. Never pops signer UI. */
         fun signSilently(
             context: Context,
@@ -183,13 +248,11 @@ class EventSigner(
         ): Nip01Event? {
             val event = when (session) {
                 is Session.Amber -> {
-                    val signed = RemoteSignerBridge.signEventSilently(
-                        context,
-                        unsigned.toUnsignedJson(includePubkey = true),
-                        session.signerPackage,
-                        session.pubkeyHex,
-                    ) ?: return null
-                    runCatching { Nip01Event.parse(JSONObject(signed)) }.getOrNull()
+                    val response = RemoteSignerBridge.queryProvider(
+                        context, "SIGN_EVENT", unsigned.toUnsignedJson(includePubkey = true),
+                        session.signerPackage, session.pubkeyHex,
+                    )
+                    (providerSignOutcome(response, session.pubkeyHex, unsigned) as? SignOutcome.Signed)?.event
                 }
                 is Session.Bunker -> {
                     val outcome = signWithBunker(

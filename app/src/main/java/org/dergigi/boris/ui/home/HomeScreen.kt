@@ -141,6 +141,7 @@ fun HomeScreen(
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
     val settingsReady by SettingsSync.ready.collectAsStateWithLifecycle()
@@ -148,6 +149,8 @@ fun HomeScreen(
     val loggedIn = authState is AuthUiState.LoggedIn
     val context = LocalContext.current
     val launchSign = SignerEffects(
+        signIntent = signIntent,
+        onConsumeSignIntent = viewModel::consumeSignIntent,
         message = message,
         onConsumeMessage = viewModel::consumeMessage,
         onSignerResult = viewModel::onSignerResult,

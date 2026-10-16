@@ -23,6 +23,7 @@ class ReactionAction(
     private val app: Application,
     private val scope: CoroutineScope,
     private val onMessage: (String) -> Unit,
+    private val onSignIntent: (Intent) -> Unit,
     private val onReacted: (reaction: ArticleReaction, eventId: String) -> Unit,
     private val onRemoved: () -> Unit,
 ) {
@@ -31,7 +32,7 @@ class ReactionAction(
     private val signer = EventSigner(
         app = app,
         scope = scope,
-        onSignIntent = {},
+        onSignIntent = onSignIntent,
     )
 
     fun inFlight(): Boolean = busy

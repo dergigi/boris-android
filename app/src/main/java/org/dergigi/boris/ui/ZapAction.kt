@@ -58,7 +58,7 @@ class ZapAction(
     private val onSignIntent: (Intent) -> Unit,
     private val onProgress: (ZapProgress?) -> Unit,
 ) {
-    private val signer = EventSigner(app = app, scope = scope, onSignIntent = {})
+    private val signer = EventSigner(app = app, scope = scope, onSignIntent = onSignIntent)
     private var job: Job? = null
 
     fun resolve(content: ReadableContent) {
@@ -192,10 +192,9 @@ class ZapAction(
 
     private suspend fun sign(session: Session, unsigned: PendingUnsignedEvent): SignOutcome =
         suspendCancellableCoroutine { continuation ->
-            val intent = signer.sign(session, unsigned) { outcome ->
+            signer.sign(session, unsigned) { outcome ->
                 if (continuation.isActive) continuation.resume(outcome)
             }
-            intent?.let(onSignIntent)
             continuation.invokeOnCancellation { signer.cancel() }
         }
 }

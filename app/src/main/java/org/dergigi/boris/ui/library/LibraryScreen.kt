@@ -104,6 +104,7 @@ fun LibraryScreen(
     val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val bucket by viewModel.bucket.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val authMessage by authViewModel.message.collectAsStateWithLifecycle()
     val settings by SettingsSync.settings.collectAsStateWithLifecycle()
@@ -115,6 +116,8 @@ fun LibraryScreen(
         viewModel.onDecryptResult(result.resultCode, result.data)
     }
     val launchArchive = SignerEffects(
+        signIntent = signIntent,
+        onConsumeSignIntent = viewModel::consumeSignIntent,
         message = message,
         onConsumeMessage = viewModel::consumeMessage,
         onSignerResult = viewModel::onArchiveSignerResult,

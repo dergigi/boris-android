@@ -36,7 +36,7 @@ class LibrarySaveAction(
     private val signer = EventSigner(
         app = app,
         scope = scope,
-        onSignIntent = {},
+        onSignIntent = onSignIntent,
     )
 
     fun request(content: ReadableContent, privateBookmark: Boolean = true): Intent? {
@@ -73,7 +73,6 @@ class LibrarySaveAction(
                 tags = tags,
                 content = "",
             ),
-            emitIntent = false,
         )
     }
 
@@ -127,7 +126,7 @@ class LibrarySaveAction(
                     CryptoOutcome.Cancelled -> fail(app.getString(R.string.reader_save_cancelled))
                     CryptoOutcome.Failed -> fail(app.getString(R.string.reader_save_failed))
                 }
-            }?.let(onSignIntent)
+            }
             return
         }
         requestPrivateEncrypt(session, list, listOf(newTag))
@@ -176,7 +175,7 @@ class LibrarySaveAction(
                 CryptoOutcome.Cancelled -> fail(app.getString(R.string.reader_save_cancelled))
                 CryptoOutcome.Failed -> fail(app.getString(R.string.reader_save_failed))
             }
-        }?.let(onSignIntent)
+        }
     }
 
     private fun requestBookmarkListSign(
@@ -194,16 +193,14 @@ class LibrarySaveAction(
                 tags = publicTags,
                 content = content,
             ),
-            emitIntent = true,
         )
     }
 
     private fun sign(
         session: Session,
         unsigned: PendingUnsignedEvent,
-        emitIntent: Boolean,
     ): Intent? {
-        val intent = signer.sign(session, unsigned) { outcome ->
+        return signer.sign(session, unsigned) { outcome ->
             when (outcome) {
                 is SignOutcome.Signed -> onSigned(session, outcome.event)
                 SignOutcome.Rejected -> fail(app.getString(R.string.reader_save_rejected))
@@ -211,8 +208,6 @@ class LibrarySaveAction(
                 SignOutcome.Failed -> fail(app.getString(R.string.reader_save_failed))
             }
         }
-        if (emitIntent) intent?.let(onSignIntent)
-        return intent
     }
 
     private fun onSigned(session: Session, event: Nip01Event) {

@@ -28,32 +28,38 @@ object RemoteSignerBridge {
         }
     }
 
-    /**
-     * Signs via the signer's content provider without showing UI (NIP-55).
-     * Returns the signed event JSON, or null when the user has not granted
-     * background permission for this event kind.
-     */
-    fun signEventSilently(
+    /** NIP-55 uses projection for [payload, peer pubkey, current user], not SQL selection args. */
+    fun queryProvider(
         context: Context,
-        unsignedJson: String,
+        method: String,
+        payload: String,
         signerPackage: String,
         currentUserHex: String,
-    ): String? {
+        peerPubkeyHex: String = "",
+    ): SignerProviderResult {
         return try {
             context.contentResolver.query(
-                Uri.parse("content://$signerPackage.SIGN_EVENT"),
-                arrayOf(unsignedJson, "", currentUserHex),
+                Uri.parse("content://$signerPackage.$method"),
+                arrayOf(payload, peerPubkeyHex, currentUserHex),
                 null,
                 null,
                 null,
             )?.use { cursor ->
-                if (!cursor.moveToFirst()) return null
-                if (cursor.getColumnIndex("rejected") >= 0) return null
-                val index = cursor.getColumnIndex("event")
-                if (index < 0) null else cursor.getString(index)
-            }
+                // Some signers return a rejection column without a data row.
+                if (cursor.getColumnIndex("rejected") >= 0) return SignerProviderResult.Rejected
+                if (!cursor.moveToFirst()) return SignerProviderResult.Unavailable
+                fun value(name: String): String? {
+                    val index = cursor.getColumnIndex(name)
+                    return if (index < 0 || cursor.isNull(index)) null else cursor.getString(index)
+                }
+                val event = value("event")
+                val result = value("result")
+                if (event == null && result == null) SignerProviderResult.Invalid
+                else SignerProviderResult.Value(event, result)
+            } ?: SignerProviderResult.Unavailable
         } catch (_: Exception) {
-            null
+            // Older signers may not expose a provider; retain the interactive path.
+            SignerProviderResult.Unavailable
         }
     }
 

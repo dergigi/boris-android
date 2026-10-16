@@ -23,6 +23,7 @@ class ArchiveAction(
     private val app: Application,
     private val scope: CoroutineScope,
     private val onMessage: (String) -> Unit,
+    private val onSignIntent: (Intent) -> Unit,
     private val onArchived: (key: String?, url: String, eventId: String) -> Unit,
     private val onUnarchived: () -> Unit = {},
 ) {
@@ -32,7 +33,7 @@ class ArchiveAction(
     private val signer = EventSigner(
         app = app,
         scope = scope,
-        onSignIntent = {},
+        onSignIntent = onSignIntent,
     )
 
     fun inFlight(): Boolean = busy
