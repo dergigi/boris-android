@@ -93,6 +93,10 @@ object SignerResults {
             signature = signature,
             pending = pending,
         )
+        if (pending != null && event != null && (
+                event.createdAt != pending.createdAt || event.kind != pending.kind ||
+                    event.content != pending.content || event.tags != pending.tags
+                )) return SignerResult.Cancelled
         return parseSignedEvent(
             resultCode,
             rejected = false,

@@ -73,6 +73,10 @@ data class ArticleActionHandlers(
 class ArticleActionsViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
+    private val _signIntent = MutableStateFlow<Intent?>(null)
+    val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
+    fun consumeSignIntent() { _signIntent.value = null }
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
@@ -88,6 +92,7 @@ class ArticleActionsViewModel(
     private var archiveRefreshJob: Job? = null
     private var listenJob: Job? = null
     private val markAsReadAction = MarkAsReadAction(
+        onSignIntent = { _signIntent.value = it },
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },
@@ -156,7 +161,10 @@ fun rememberArticleActions(
     val loggedIn by viewModel.loggedIn.collectAsStateWithLifecycle()
     val archivedKeys by viewModel.archivedKeys.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val signIntent by viewModel.signIntent.collectAsStateWithLifecycle()
     val launchArchive = SignerEffects(
+        signIntent = signIntent,
+        onConsumeSignIntent = viewModel::consumeSignIntent,
         message = message,
         onConsumeMessage = viewModel::consumeMessage,
         onSignerResult = viewModel::onArchiveSignerResult,

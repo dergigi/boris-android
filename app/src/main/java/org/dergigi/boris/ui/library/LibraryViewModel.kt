@@ -71,6 +71,10 @@ class LibraryViewModel(
     private val _bucket = MutableStateFlow(SettingsSync.settings.value.defaultLibraryView)
     val bucket: StateFlow<BookmarkBucket> = _bucket.asStateFlow()
 
+    private val _signIntent = MutableStateFlow<Intent?>(null)
+    val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
+    fun consumeSignIntent() { _signIntent.value = null }
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
@@ -91,6 +95,7 @@ class LibraryViewModel(
         get() = listEvent?.let { hiddenTagsFor(it) }
 
     private val markAsReadAction = MarkAsReadAction(
+        onSignIntent = { _signIntent.value = it },
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },

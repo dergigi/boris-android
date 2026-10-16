@@ -85,6 +85,10 @@ class HomeViewModel(
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
+    private val _signIntent = MutableStateFlow<Intent?>(null)
+    val signIntent: StateFlow<Intent?> = _signIntent.asStateFlow()
+    fun consumeSignIntent() { _signIntent.value = null }
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
@@ -92,6 +96,7 @@ class HomeViewModel(
     private var listenJob: Job? = null
     private var loadedAt: Long? = null
     private val markAsReadAction = MarkAsReadAction(
+        onSignIntent = { _signIntent.value = it },
         app = application,
         scope = viewModelScope,
         onMessage = { _message.value = it },

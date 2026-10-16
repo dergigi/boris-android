@@ -9,6 +9,10 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 ## [Unreleased]
 
+### Fixed
+
+- Pre-approved Amber signing and encryption requests complete in the background instead of briefly opening the signer for likes, zaps, archive marks, and other actions
+
 ## [1.6.23] - 2026-10-04
 
 ### Fixed

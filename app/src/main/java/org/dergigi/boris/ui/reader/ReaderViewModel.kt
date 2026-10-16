@@ -150,6 +150,7 @@ class ReaderViewModel(
         },
     )
     private val archiveAction = ArchiveAction(
+        onSignIntent = { _signIntent.value = it },
         app = application,
         scope = viewModelScope,
         onMessage = { text ->
@@ -170,6 +171,7 @@ class ReaderViewModel(
     private var archiving = false
     private var archiveIds = emptyList<String>()
     private val reactionAction = ReactionAction(
+        onSignIntent = { _signIntent.value = it },
         app = application,
         scope = viewModelScope,
         onMessage = { text -> _message.value = text },
